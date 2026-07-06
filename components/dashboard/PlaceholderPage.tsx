@@ -1,0 +1,26 @@
+type Props = {
+  title: string;
+  description: string;
+};
+
+export default function PlaceholderPage({ title, description }: Props) {
+  return (
+    <section className="rounded-3xl border border-white/10 bg-[#111111]/85 p-6 shadow-[0_0_80px_rgba(212,175,55,0.06)]">
+      <p className="mb-3 text-xs font-medium uppercase tracking-[0.25em] text-[#D4AF37]">
+        Dividend Lab
+      </p>
+      <h2 className="text-4xl font-semibold tracking-[-0.04em] text-white">
+        {title}
+      </h2>
+      <p className="mt-4 max-w-3xl text-base leading-7 text-gray-400">
+        {description}
+      </p>
+      <div className="mt-8 rounded-2xl border border-white/10 bg-[#161616] p-6">
+        <p className="text-sm leading-6 text-gray-400">
+          This page is ready for future Dividend Lab functionality and already
+          uses the shared application layout.
+        </p>
+      </div>
+    </section>
+  );
+}

@@ -1,10 +1,12 @@
 "use client";
 
-const periods = ["1M", "6M", "1Å", "5Å", "ALL"];
+const periods = ["1M", "6M", "1Å", "5Å", "ALL"] as const;
+
+export type Period = (typeof periods)[number];
 
 type Props = {
-  period: string;
-  setPeriod: (value: string) => void;
+  period: Period;
+  setPeriod: (value: Period) => void;
 };
 
 export default function TimeFilter({ period, setPeriod }: Props) {
@@ -13,6 +15,8 @@ export default function TimeFilter({ period, setPeriod }: Props) {
       {periods.map((item) => (
         <button
           key={item}
+          type="button"
+          aria-pressed={period === item}
           onClick={() => setPeriod(item)}
           className={`rounded-lg px-3 py-1.5 text-sm transition ${
             period === item

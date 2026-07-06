@@ -1,19 +1,18 @@
+import LoginModal from "@/components/modals/LoginModal";
+
 export default function Navbar() {
   return (
-    <header className="fixed top-0 left-0 z-50 w-full">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-8 py-6">
-
-        {/* Logo */}
+    <header className="fixed left-0 top-0 z-50 w-full border-b border-white/10 bg-[#090909]/75 backdrop-blur-xl">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 md:px-8">
         <div className="flex items-center gap-3">
           <span className="text-3xl font-bold text-[#D4AF37]">DL</span>
 
-          <h1 className="text-xl font-semibold tracking-[0.3em] text-white">
+          <h1 className="text-lg font-semibold tracking-[0.3em] text-white md:text-xl">
             DIVIDEND <span className="text-[#D4AF37]">LAB</span>
           </h1>
         </div>
 
-        {/* Navigation */}
-        <nav className="hidden gap-12 text-white lg:flex">
+        <nav className="hidden items-center gap-10 text-sm font-medium text-gray-300 lg:flex">
           <a href="#" className="transition hover:text-[#D4AF37]">
             Funktioner
           </a>
@@ -29,10 +28,9 @@ export default function Navbar() {
           <a href="#" className="transition hover:text-[#D4AF37]">
             Forum
           </a>
-        <button className="rounded-xl border border-[#D4AF37] px-6 py-3 text-[#D4AF37] transition duration-300 hover:bg-[#D4AF37] hover:text-black">
-  Logga in
-</button>
-</nav>
+
+          <LoginModal />
+        </nav>
       </div>
     </header>
   );
