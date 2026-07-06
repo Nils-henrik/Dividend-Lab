@@ -1,7 +1,7 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
   clearMockUser,
   getMockUser,
@@ -10,7 +10,7 @@ import {
 import AppHeader from "./AppHeader";
 import AppSidebar from "./AppSidebar";
 
-const SIDEBAR_STATE_KEY = "dividend-lab:sidebar-collapsed";
+const SIDEBAR_CLOSE_DELAY_MS = 250;
 
 type Props = {
   children: React.ReactNode;
@@ -18,26 +18,12 @@ type Props = {
 
 export default function AppShell({ children }: Props) {
   const router = useRouter();
-  const pathname = usePathname();
   const user = useSyncExternalStore(subscribeMockAuth, getMockUser, () => null);
-  const isForumRoute =
-    pathname.startsWith("/forum") || pathname.startsWith("/dashboard/forum");
-  const [sidebarPreference, setSidebarPreference] = useState<boolean | null>(
-    () => {
-      if (typeof window === "undefined") {
-        return null;
-      }
-
-      const savedState = sessionStorage.getItem(SIDEBAR_STATE_KEY);
-
-      if (!savedState) {
-        return null;
-      }
-
-      return savedState === "collapsed";
-    },
-  );
-  const isSidebarCollapsed = sidebarPreference ?? isForumRoute;
+  const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isPointerInSidebarRef = useRef(false);
+  const isPointerInTriggerRef = useRef(false);
+  const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
+  const isSidebarCollapsed = !isSidebarExpanded;
 
   useEffect(() => {
     if (!user) {
@@ -45,15 +31,61 @@ export default function AppShell({ children }: Props) {
     }
   }, [router, user]);
 
-  function handleSidebarToggle() {
-    setSidebarPreference((current) => {
-      const nextState = !(current ?? isSidebarCollapsed);
-      sessionStorage.setItem(
-        SIDEBAR_STATE_KEY,
-        nextState ? "collapsed" : "expanded",
-      );
-      return nextState;
-    });
+  useEffect(() => {
+    return () => {
+      if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  function openSidebar() {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
+
+    setIsSidebarExpanded(true);
+  }
+
+  function closeSidebarIfInactive() {
+    if (isPointerInSidebarRef.current || isPointerInTriggerRef.current) {
+      return;
+    }
+
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+    }
+
+    closeTimeoutRef.current = setTimeout(() => {
+      if (isPointerInSidebarRef.current || isPointerInTriggerRef.current) {
+        closeTimeoutRef.current = null;
+        return;
+      }
+
+      setIsSidebarExpanded(false);
+      closeTimeoutRef.current = null;
+    }, SIDEBAR_CLOSE_DELAY_MS);
+  }
+
+  function handleTriggerEnter() {
+    isPointerInTriggerRef.current = true;
+    openSidebar();
+  }
+
+  function handleTriggerLeave() {
+    isPointerInTriggerRef.current = false;
+    closeSidebarIfInactive();
+  }
+
+  function handleSidebarEnter() {
+    isPointerInSidebarRef.current = true;
+    openSidebar();
+  }
+
+  function handleSidebarLeave() {
+    isPointerInSidebarRef.current = false;
+    closeSidebarIfInactive();
   }
 
   function handleLogout() {
@@ -73,9 +105,16 @@ export default function AppShell({ children }: Props) {
 
   return (
     <main className="min-h-screen bg-[#090909] text-white">
+      <div
+        aria-hidden="true"
+        onMouseEnter={handleTriggerEnter}
+        onMouseLeave={handleTriggerLeave}
+        className="fixed inset-y-0 left-0 z-50 w-3"
+      />
       <AppSidebar
         isCollapsed={isSidebarCollapsed}
-        onToggle={handleSidebarToggle}
+        onMouseEnter={handleSidebarEnter}
+        onMouseLeave={handleSidebarLeave}
       />
       <AppHeader
         user={user}
@@ -83,7 +122,7 @@ export default function AppShell({ children }: Props) {
         isSidebarCollapsed={isSidebarCollapsed}
       />
       <div
-        className={`min-h-screen pt-20 transition-[padding] duration-300 ${
+        className={`min-h-screen pt-20 transition-[padding] duration-[225ms] ease-in-out ${
           isSidebarCollapsed ? "pl-20" : "pl-64"
         }`}
       >

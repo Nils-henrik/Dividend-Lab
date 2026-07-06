@@ -7,21 +7,28 @@ import AppIcon from "./AppIcon";
 
 type Props = {
   isCollapsed: boolean;
-  onToggle: () => void;
+  onMouseEnter: () => void;
+  onMouseLeave: () => void;
 };
 
-export default function AppSidebar({ isCollapsed, onToggle }: Props) {
+export default function AppSidebar({
+  isCollapsed,
+  onMouseEnter,
+  onMouseLeave,
+}: Props) {
   const pathname = usePathname();
 
   return (
     <aside
-      className={`fixed inset-y-0 left-0 z-40 flex flex-col border-r border-white/10 bg-[#090909] transition-[width] duration-300 ${
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      className={`fixed inset-y-0 left-0 z-40 flex flex-col overflow-hidden border-r border-white/10 bg-[#090909] transition-[width] duration-[225ms] ease-in-out ${
         isCollapsed ? "w-20" : "w-64"
       }`}
     >
       <div
         className={`flex h-20 items-center border-b border-white/10 ${
-          isCollapsed ? "justify-center px-3" : "justify-between px-6"
+          isCollapsed ? "justify-center px-3" : "px-6"
         }`}
       >
         <div className="flex min-w-0 items-center gap-3">
@@ -35,19 +42,6 @@ export default function AppSidebar({ isCollapsed, onToggle }: Props) {
             </p>
           </div>
         </div>
-
-        <button
-          type="button"
-          onClick={onToggle}
-          aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className={`rounded-xl border border-white/10 p-2 text-gray-400 transition hover:border-[#D4AF37]/40 hover:text-[#D4AF37] ${
-            isCollapsed ? "absolute left-14 top-5 bg-[#090909]" : ""
-          }`}
-        >
-          <span className="block h-0.5 w-4 rounded-full bg-current" />
-          <span className="mt-1 block h-0.5 w-4 rounded-full bg-current" />
-          <span className="mt-1 block h-0.5 w-4 rounded-full bg-current" />
-        </button>
       </div>
 
       <nav className="flex-1 space-y-1 px-3 py-5">
@@ -82,8 +76,14 @@ export default function AppSidebar({ isCollapsed, onToggle }: Props) {
         })}
       </nav>
 
-      <div className={`border-t border-white/10 p-4 ${isCollapsed ? "hidden" : ""}`}>
-        <div className="rounded-2xl border border-white/10 bg-[#161616] p-4">
+      <div className="w-64 shrink-0 border-t border-white/10 p-4">
+        <div
+          className={`w-56 rounded-2xl border border-white/10 bg-[#161616] p-4 transition-[opacity,transform] duration-[225ms] ease-in-out ${
+            isCollapsed
+              ? "pointer-events-none -translate-x-4 opacity-0"
+              : "translate-x-0 opacity-100"
+          }`}
+        >
           <p className="text-xs font-medium uppercase tracking-[0.18em] text-gray-500">
             Focus
           </p>

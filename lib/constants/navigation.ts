@@ -14,7 +14,8 @@ export const appNavigation: NavigationItem[] = [
 ];
 
 export const pageTitles: Record<string, string> = {
-  "/account": "Account Overview",
+  "/account": "Investor Identity",
+  "/account/edit": "Edit Profile",
   "/brain": "Dividend Brain",
   "/calendar": "Calendar",
   "/dashboard": "Dashboard",
@@ -24,7 +25,7 @@ export const pageTitles: Record<string, string> = {
   "/portfolio": "Portfolio",
   "/settings": "Settings",
   "/watchlist": "Watchlist",
-  "/dashboard/account": "Account Overview",
+  "/dashboard/account": "Investor Identity",
   "/dashboard/brain": "Dividend Brain",
   "/dashboard/forum": "Forum",
   "/dashboard/goals": "Goals",

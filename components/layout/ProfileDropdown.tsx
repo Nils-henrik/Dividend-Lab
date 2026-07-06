@@ -41,7 +41,7 @@ export default function ProfileDropdown({ user, onLogout }: Props) {
               href="/account"
               className="block rounded-xl px-3 py-2 text-sm text-gray-300 transition hover:bg-white/[0.03] hover:text-white"
             >
-              Account Overview
+              Investor Identity
             </Link>
             <Link
               href="/account"

@@ -28,7 +28,7 @@ export default function AppHeader({
 
   return (
     <header
-      className={`fixed right-0 top-0 z-30 h-20 border-b border-white/10 bg-[#090909]/90 backdrop-blur-xl transition-[left] duration-300 ${
+      className={`fixed right-0 top-0 z-30 h-20 border-b border-white/10 bg-[#090909]/90 backdrop-blur-xl transition-[left] duration-[225ms] ease-in-out ${
         isSidebarCollapsed ? "left-20" : "left-64"
       }`}
     >
