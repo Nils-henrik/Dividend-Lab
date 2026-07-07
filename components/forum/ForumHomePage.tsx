@@ -11,9 +11,13 @@ import ForumThreadList from "./ForumThreadList";
 
 type Props = {
   initialCategorySlug?: string;
+  isAuthenticated?: boolean;
 };
 
-export default function ForumHomePage({ initialCategorySlug }: Props) {
+export default function ForumHomePage({
+  initialCategorySlug,
+  isAuthenticated = false,
+}: Props) {
   const [activeCategorySlug, setActiveCategorySlug] = useState(
     initialCategorySlug &&
       forumCategories.some((category) => category.slug === initialCategorySlug)
@@ -75,6 +79,7 @@ export default function ForumHomePage({ initialCategorySlug }: Props) {
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
             activeCategoryName={activeCategory.name}
+            isAuthenticated={isAuthenticated}
           />
 
           <section className="rounded-lg border border-white/10 bg-[#111111]/85 p-3">

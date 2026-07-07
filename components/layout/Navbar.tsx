@@ -1,6 +1,10 @@
-import LoginModal from "@/components/modals/LoginModal";
+import Link from "next/link";
+import { getAuthenticatedUser } from "@/lib/auth/session";
+import NavbarAuthActions from "./NavbarAuthActions";
 
-export default function Navbar() {
+export default async function Navbar() {
+  const user = await getAuthenticatedUser();
+
   return (
     <header className="fixed left-0 top-0 z-50 w-full border-b border-white/10 bg-[#090909]/75 backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 md:px-8">
@@ -25,11 +29,11 @@ export default function Navbar() {
             Om oss
           </a>
 
-          <a href="#" className="transition hover:text-[#D4AF37]">
+          <Link href="/forum" className="transition hover:text-[#D4AF37]">
             Forum
-          </a>
+          </Link>
 
-          <LoginModal />
+          <NavbarAuthActions user={user} />
         </nav>
       </div>
     </header>

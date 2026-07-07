@@ -1,11 +1,14 @@
+import Link from "next/link";
 import type { ForumPost as ForumPostType } from "@/types/forum";
 import ForumRecognitionBar from "./ForumRecognitionBar";
 
 type Props = {
   post: ForumPostType;
+  isAuthenticated: boolean;
+  loginHref: string;
 };
 
-export default function ForumPost({ post }: Props) {
+export default function ForumPost({ post, isAuthenticated, loginHref }: Props) {
   return (
     <article className="rounded-md border border-white/10 bg-[#161616] px-2.5 py-2">
       <div className="grid gap-2 lg:grid-cols-[112px_1fr]">
@@ -31,20 +34,29 @@ export default function ForumPost({ post }: Props) {
         <div>
           <div className="mb-2 flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-1.5">
             <p className="text-[11px] text-gray-500">{post.timestamp}</p>
-            <div className="flex gap-1.5">
-              <button
-                type="button"
+            {isAuthenticated ? (
+              <div className="flex gap-1.5">
+                <button
+                  type="button"
+                  className="rounded-md border border-white/10 px-2 py-0.5 text-[11px] font-medium text-gray-400 transition hover:border-[#D4AF37]/40 hover:text-[#D4AF37]"
+                >
+                  Quote
+                </button>
+                <button
+                  type="button"
+                  className="rounded-md border border-white/10 px-2 py-0.5 text-[11px] font-medium text-gray-400 transition hover:border-[#D4AF37]/40 hover:text-[#D4AF37]"
+                >
+                  Reply
+                </button>
+              </div>
+            ) : (
+              <Link
+                href={loginHref}
                 className="rounded-md border border-white/10 px-2 py-0.5 text-[11px] font-medium text-gray-400 transition hover:border-[#D4AF37]/40 hover:text-[#D4AF37]"
               >
-                Quote
-              </button>
-              <button
-                type="button"
-                className="rounded-md border border-white/10 px-2 py-0.5 text-[11px] font-medium text-gray-400 transition hover:border-[#D4AF37]/40 hover:text-[#D4AF37]"
-              >
-                Reply
-              </button>
-            </div>
+                Log in to join the discussion.
+              </Link>
+            )}
           </div>
 
           <p className="max-w-4xl text-[0.9rem] leading-6 text-gray-300">
@@ -52,7 +64,11 @@ export default function ForumPost({ post }: Props) {
           </p>
 
           <div className="mt-2 border-t border-white/10 pt-1.5">
-            <ForumRecognitionBar recognitions={post.reactions} />
+            <ForumRecognitionBar
+              recognitions={post.reactions}
+              isAuthenticated={isAuthenticated}
+              loginHref={loginHref}
+            />
           </div>
         </div>
       </div>

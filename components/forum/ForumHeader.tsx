@@ -1,15 +1,18 @@
+import Link from "next/link";
 import ForumSearch from "./ForumSearch";
 
 type Props = {
   searchQuery: string;
   onSearchChange: (value: string) => void;
   activeCategoryName: string;
+  isAuthenticated: boolean;
 };
 
 export default function ForumHeader({
   searchQuery,
   onSearchChange,
   activeCategoryName,
+  isAuthenticated,
 }: Props) {
   return (
     <section className="rounded-lg border border-white/10 bg-[#111111]/85 p-3.5">
@@ -27,11 +30,28 @@ export default function ForumHeader({
           </p>
         </div>
 
-        <ForumSearch
-          value={searchQuery}
-          onChange={onSearchChange}
-          activeCategoryName={activeCategoryName}
-        />
+        <div className="space-y-3">
+          <ForumSearch
+            value={searchQuery}
+            onChange={onSearchChange}
+            activeCategoryName={activeCategoryName}
+          />
+          {isAuthenticated ? (
+            <button
+              type="button"
+              className="w-full rounded-xl border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-4 py-3 text-sm font-medium text-[#D4AF37] transition hover:border-[#D4AF37]/50"
+            >
+              Start discussion
+            </button>
+          ) : (
+            <Link
+              href="/login?redirect=/forum"
+              className="block rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-center text-sm font-medium text-gray-300 transition hover:border-[#D4AF37]/30 hover:text-[#D4AF37]"
+            >
+              Log in to join the discussion.
+            </Link>
+          )}
+        </div>
       </div>
     </section>
   );

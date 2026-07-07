@@ -11,12 +11,19 @@ import ForumSidebar from "./ForumSidebar";
 
 type Props = {
   threadId: string;
+  isAuthenticated?: boolean;
 };
 
-export default function ForumThreadPage({ threadId }: Props) {
+export default function ForumThreadPage({
+  threadId,
+  isAuthenticated = false,
+}: Props) {
   const thread = getForumThread(threadId);
   const posts = getForumPosts(thread.slug);
   const category = getForumThreadCategory(thread);
+  const loginHref = `/login?redirect=${encodeURIComponent(
+    `/forum/${thread.slug}`,
+  )}`;
 
   return (
     <div className="space-y-2.5">
@@ -87,7 +94,12 @@ export default function ForumThreadPage({ threadId }: Props) {
           </section>
 
           {posts.map((post) => (
-            <ForumPost key={post.id} post={post} />
+            <ForumPost
+              key={post.id}
+              post={post}
+              isAuthenticated={isAuthenticated}
+              loginHref={loginHref}
+            />
           ))}
         </main>
 

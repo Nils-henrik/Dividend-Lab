@@ -1,21 +1,23 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import type { MockUser } from "@/lib/auth/mockAuth";
+import type { AuthenticatedUser } from "@/lib/auth/user";
 import { pageTitles } from "@/lib/constants/navigation";
 import NotificationBell from "./NotificationBell";
 import ProfileDropdown from "./ProfileDropdown";
 import SearchBar from "./SearchBar";
 
 type Props = {
-  user: MockUser;
+  user: AuthenticatedUser;
   onLogout: () => void;
+  isLoggingOut: boolean;
   isSidebarCollapsed: boolean;
 };
 
 export default function AppHeader({
   user,
   onLogout,
+  isLoggingOut,
   isSidebarCollapsed,
 }: Props) {
   const pathname = usePathname();
@@ -45,7 +47,11 @@ export default function AppHeader({
         <div className="flex items-center gap-3">
           <SearchBar />
           <NotificationBell />
-          <ProfileDropdown user={user} onLogout={onLogout} />
+          <ProfileDropdown
+            user={user}
+            onLogout={onLogout}
+            isLoggingOut={isLoggingOut}
+          />
         </div>
       </div>
     </header>
