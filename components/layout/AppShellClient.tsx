@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import type { AuthenticatedUser } from "@/lib/auth/user";
+import type { UserDisplayIdentity } from "@/lib/profiles/identity";
 import { createClient } from "@/lib/supabase/client";
 import AppHeader from "./AppHeader";
 import AppSidebar from "./AppSidebar";
@@ -11,7 +11,7 @@ const SIDEBAR_CLOSE_DELAY_MS = 250;
 
 type Props = {
   children: React.ReactNode;
-  user: AuthenticatedUser;
+  user: UserDisplayIdentity;
 };
 
 export default function AppShellClient({ children, user }: Props) {

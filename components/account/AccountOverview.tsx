@@ -1,8 +1,13 @@
 import Link from "next/link";
 import type { AuthenticatedUser } from "@/lib/auth/user";
+import type { UserDisplayIdentity } from "@/lib/profiles/identity";
+import type { UserProfile } from "@/lib/profiles/types";
+import ProfileAvatar from "./ProfileAvatar";
 
 type Props = {
   user: AuthenticatedUser;
+  profile: UserProfile;
+  identity: UserDisplayIdentity;
 };
 
 function formatMemberSince(createdAt: string | null) {
@@ -22,8 +27,18 @@ function formatMemberSince(createdAt: string | null) {
   }).format(createdDate);
 }
 
-export default function AccountOverview({ user }: Props) {
+function EmptyField({ children }: { children: React.ReactNode }) {
+  return <span className="text-gray-500">{children}</span>;
+}
+
+export default function AccountOverview({ user, profile, identity }: Props) {
   const memberSince = formatMemberSince(user.createdAt);
+  const hasPublicProfile =
+    profile.displayName ||
+    profile.username ||
+    profile.bio ||
+    profile.favoriteSector ||
+    profile.investorGoal;
 
   return (
     <div className="space-y-6">
@@ -37,11 +52,12 @@ export default function AccountOverview({ user }: Props) {
               <div className="relative">
                 <div className="absolute inset-[-10px] rounded-full border border-[#D4AF37]/10 bg-[#D4AF37]/[0.03]" />
                 <div className="absolute inset-[-18px] rounded-full bg-[radial-gradient(circle,rgba(212,175,55,0.18),transparent_62%)]" />
-                <div className="relative flex h-28 w-28 items-center justify-center overflow-hidden rounded-full border border-[#D4AF37]/35 bg-gradient-to-br from-[#D4AF37]/20 via-white/[0.04] to-[#050505] text-3xl font-semibold tracking-[-0.04em] text-[#F9D976] shadow-[0_0_34px_rgba(212,175,55,0.1)]">
-                  <span className="absolute inset-0 bg-[radial-gradient(circle_at_35%_25%,rgba(249,217,118,0.22),transparent_36%)]" />
-                  <span className="absolute inset-x-6 top-4 h-px bg-[#F9D976]/25" />
-                  <span className="relative">{user.initials}</span>
-                </div>
+                <ProfileAvatar
+                  avatarUrl={identity.avatarUrl}
+                  initials={identity.initials}
+                  sizeClassName="h-28 w-28"
+                  textClassName="text-3xl tracking-[-0.04em]"
+                />
               </div>
 
               <Link
@@ -57,10 +73,14 @@ export default function AccountOverview({ user }: Props) {
                 Investor Identity
               </p>
               <h2 className="text-4xl font-semibold tracking-[-0.04em] text-white">
-                {user.name}
+                {identity.name}
               </h2>
               <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-gray-400">
-                <span>{user.email}</span>
+                <span>
+                  {identity.username
+                    ? `@${identity.username}`
+                    : "No public handle selected yet"}
+                </span>
                 <span className="h-1 w-1 rounded-full bg-gray-600" />
                 <span>Member since {memberSince}</span>
               </div>
@@ -69,8 +89,9 @@ export default function AccountOverview({ user }: Props) {
                   Profile Status
                 </p>
                 <p className="mt-3 text-base leading-7 text-gray-300">
-                  Your investor profile is not completed yet. Complete your
-                  investor identity to personalize your Dividend Lab profile.
+                  {hasPublicProfile
+                    ? "Your Dividend Lab profile is ready for the next community features."
+                    : "Your investor profile is not completed yet. Complete your investor identity to personalize your Dividend Lab profile."}
                 </p>
               </div>
             </div>
@@ -88,15 +109,29 @@ export default function AccountOverview({ user }: Props) {
             Account Details
           </p>
           <h3 className="text-lg font-semibold text-white">
-            Supabase Auth identity
+            Account and public profile
           </h3>
           <div className="mt-6 space-y-4">
             <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
               <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-gray-500">
-                Email
+                Private Account Email
               </p>
               <p className="mt-2 break-all text-sm text-gray-300">
                 {user.email}
+              </p>
+            </div>
+            <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+              <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-gray-500">
+                Public Handle
+              </p>
+              <p className="mt-2 text-sm text-gray-300">
+                {profile.username ? (
+                  `@${profile.username}`
+                ) : (
+                  <EmptyField>
+                    Choose a public handle before joining discussions.
+                  </EmptyField>
+                )}
               </p>
             </div>
             <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
@@ -113,13 +148,53 @@ export default function AccountOverview({ user }: Props) {
             Profile Setup
           </p>
           <h3 className="text-lg font-semibold text-white">
-            Investor profile fields are not configured yet
+            Investor identity
           </h3>
-          <p className="mt-5 text-sm leading-6 text-gray-400">
-            Biography, investor goals, forum reputation and portfolio disclosure
-            will be connected when Dividend Lab adds a dedicated profile system.
-            Until then, this page only shows verified account data from auth.
-          </p>
+          <div className="mt-6 space-y-4">
+            <div>
+              <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-gray-500">
+                Display Name
+              </p>
+              <p className="mt-2 text-sm leading-6 text-gray-300">
+                {profile.displayName ?? (
+                  <EmptyField>Add a display name for your profile.</EmptyField>
+                )}
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-gray-500">
+                Bio
+              </p>
+              <p className="mt-2 text-sm leading-6 text-gray-300">
+                {profile.bio ?? (
+                  <EmptyField>
+                    Add a short investor bio to personalize your Dividend Lab
+                    identity.
+                  </EmptyField>
+                )}
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-gray-500">
+                Favorite Sector
+              </p>
+              <p className="mt-2 text-sm leading-6 text-gray-300">
+                {profile.favoriteSector ?? (
+                  <EmptyField>No favorite sector selected yet.</EmptyField>
+                )}
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-gray-500">
+                Investor Goal
+              </p>
+              <p className="mt-2 text-sm leading-6 text-gray-300">
+                {profile.investorGoal ?? (
+                  <EmptyField>No investor goal added yet.</EmptyField>
+                )}
+              </p>
+            </div>
+          </div>
         </article>
       </section>
     </div>

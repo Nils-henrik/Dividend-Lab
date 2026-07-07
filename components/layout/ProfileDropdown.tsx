@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import type { AuthenticatedUser } from "@/lib/auth/user";
+import ProfileAvatar from "@/components/account/ProfileAvatar";
+import type { UserDisplayIdentity } from "@/lib/profiles/identity";
 
 type Props = {
-  user: AuthenticatedUser;
+  user: UserDisplayIdentity;
   onLogout: () => void;
   isLoggingOut: boolean;
 };
@@ -22,16 +23,28 @@ export default function ProfileDropdown({
       <button
         type="button"
         onClick={() => setIsProfileOpen((value) => !value)}
-        className="flex h-11 w-11 items-center justify-center rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/10 text-sm font-semibold text-[#D4AF37] transition hover:border-[#D4AF37]"
+        className="rounded-full transition hover:opacity-90"
       >
-        {user.initials}
+        <ProfileAvatar avatarUrl={user.avatarUrl} initials={user.initials} />
       </button>
 
       {isProfileOpen && (
         <div className="absolute right-0 mt-3 w-64 rounded-2xl border border-white/10 bg-[#111111] p-2 shadow-[0_30px_80px_rgba(0,0,0,0.55)]">
-          <div className="border-b border-white/10 px-3 py-3">
-            <p className="text-sm font-medium text-white">{user.name}</p>
-            <p className="mt-1 truncate text-xs text-gray-500">{user.email}</p>
+          <div className="flex items-center gap-3 border-b border-white/10 px-3 py-3">
+            <ProfileAvatar
+              avatarUrl={user.avatarUrl}
+              initials={user.initials}
+              sizeClassName="h-10 w-10"
+              textClassName="text-xs"
+            />
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium text-white">
+                {user.name}
+              </p>
+              <p className="mt-1 truncate text-xs text-gray-500">
+                {user.username ? `@${user.username}` : user.email}
+              </p>
+            </div>
           </div>
 
           <div className="py-2">

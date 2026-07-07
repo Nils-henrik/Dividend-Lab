@@ -1,14 +1,14 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import type { AuthenticatedUser } from "@/lib/auth/user";
+import type { UserDisplayIdentity } from "@/lib/profiles/identity";
 import { pageTitles } from "@/lib/constants/navigation";
 import NotificationBell from "./NotificationBell";
 import ProfileDropdown from "./ProfileDropdown";
 import SearchBar from "./SearchBar";
 
 type Props = {
-  user: AuthenticatedUser;
+  user: UserDisplayIdentity;
   onLogout: () => void;
   isLoggingOut: boolean;
   isSidebarCollapsed: boolean;

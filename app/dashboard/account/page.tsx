@@ -1,8 +1,8 @@
 import AccountOverview from "@/components/account/AccountOverview";
-import { requireAuthenticatedUser } from "@/lib/auth/session";
+import { requireAuthenticatedUserWithProfile } from "@/lib/auth/session";
 
 export default async function AccountOverviewPage() {
-  const user = await requireAuthenticatedUser();
+  const { user, profile, identity } = await requireAuthenticatedUserWithProfile();
 
-  return <AccountOverview user={user} />;
+  return <AccountOverview user={user} profile={profile} identity={identity} />;
 }
