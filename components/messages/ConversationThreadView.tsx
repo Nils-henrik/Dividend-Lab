@@ -50,7 +50,7 @@ export default function ConversationThreadView({
         </div>
       </section>
 
-      <section className="rounded-3xl border border-white/10 bg-[#161616] p-4 sm:p-6">
+      <section className="flex min-h-0 max-h-[min(68vh,760px)] flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#161616] p-4 sm:p-6">
         {conversation.messages.length === 0 ? (
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
             <p className="text-sm leading-6 text-gray-400">
@@ -59,7 +59,7 @@ export default function ConversationThreadView({
             </p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
             {conversation.messages.map((message) => {
               const isOwnMessage = message.senderId === currentUserId;
               const senderLabel = isOwnMessage

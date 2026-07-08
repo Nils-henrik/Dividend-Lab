@@ -117,7 +117,7 @@ export async function startConversationAction(
 
   const supabase = await createClient();
   const { data: conversationId, error } = await supabase.rpc(
-    "get_or_create_private_conversation",
+    "create_private_conversation",
     {
       p_target_user_id: targetProfile.id,
       p_initial_body: messageValidation.body,
