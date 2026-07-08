@@ -100,6 +100,12 @@ export default function LoginForm({ redirectTo }: Props) {
             required
             className="w-full rounded-xl border border-white/10 bg-[#161616] px-4 py-3 text-white outline-none transition focus:border-[#D4AF37]/70"
           />
+          <Link
+            href="/forgot-password"
+            className="mt-3 inline-flex text-sm font-medium text-[#D4AF37] transition hover:text-[#F9D976]"
+          >
+            Glömt lösenord?
+          </Link>
         </label>
 
         {error && (
