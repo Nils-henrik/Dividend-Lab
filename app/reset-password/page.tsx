@@ -1,21 +1,66 @@
 "use client";
 
 import Link from "next/link";
-import { type FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
+import { type FormEvent, useEffect, useState } from "react";
 import PrimaryButton from "@/components/ui/Button";
 import { createClient } from "@/lib/supabase/client";
 
 export default function ResetPasswordPage() {
+  const router = useRouter();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
+  const [isRecoverySessionReady, setIsRecoverySessionReady] = useState(false);
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function checkRecoverySession() {
+      const params = new URLSearchParams(window.location.search);
+
+      if (params.get("error")) {
+        if (!isMounted) {
+          return;
+        }
+
+        setError(
+          "Länken för att återställa lösenordet är ogiltig eller har gått ut.",
+        );
+        setIsCheckingSession(false);
+        return;
+      }
+
+      const supabase = createClient();
+      const { data } = await supabase.auth.getSession();
+
+      if (!isMounted) {
+        return;
+      }
+
+      if (!data.session) {
+        setError(
+          "Öppna länken från e-postmeddelandet för att välja ett nytt lösenord.",
+        );
+      } else {
+        setIsRecoverySessionReady(true);
+      }
+
+      setIsCheckingSession(false);
+    }
+
+    void checkRecoverySession();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
-    setSuccessMessage("");
 
     if (!password) {
       setError("Ange ett nytt lösenord.");
@@ -35,6 +80,17 @@ export default function ResetPasswordPage() {
     setIsLoading(true);
 
     const supabase = createClient();
+    const { data } = await supabase.auth.getSession();
+
+    if (!data.session) {
+      setIsLoading(false);
+      setIsRecoverySessionReady(false);
+      setError(
+        "Din återställningssession saknas eller har gått ut. Be om en ny länk och försök igen.",
+      );
+      return;
+    }
+
     const { error: updateError } = await supabase.auth.updateUser({
       password,
     });
@@ -48,12 +104,7 @@ export default function ResetPasswordPage() {
     }
 
     await supabase.auth.signOut();
-    setIsLoading(false);
-    setPassword("");
-    setConfirmPassword("");
-    setSuccessMessage(
-      "Ditt lösenord är uppdaterat. Du kan nu logga in med ditt nya lösenord.",
-    );
+    router.replace("/login?reset=success");
   }
 
   return (
@@ -72,61 +123,71 @@ export default function ResetPasswordPage() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <label className="block">
-            <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-gray-500">
-              Nytt lösenord
-            </span>
-            <input
-              type="password"
-              value={password}
-              onChange={(event) => {
-                setPassword(event.target.value);
-                setError("");
-                setSuccessMessage("");
-              }}
-              autoComplete="new-password"
-              minLength={6}
-              required
-              className="w-full rounded-xl border border-white/10 bg-[#161616] px-4 py-3 text-white outline-none transition focus:border-[#D4AF37]/70"
-            />
-          </label>
+        {isCheckingSession ? (
+          <p className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm leading-6 text-gray-300">
+            Kontrollerar återställningslänken...
+          </p>
+        ) : isRecoverySessionReady ? (
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <label className="block">
+              <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-gray-500">
+                Nytt lösenord
+              </span>
+              <input
+                type="password"
+                value={password}
+                onChange={(event) => {
+                  setPassword(event.target.value);
+                  setError("");
+                }}
+                autoComplete="new-password"
+                minLength={6}
+                required
+                className="w-full rounded-xl border border-white/10 bg-[#161616] px-4 py-3 text-white outline-none transition focus:border-[#D4AF37]/70"
+              />
+            </label>
 
-          <label className="block">
-            <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-gray-500">
-              Bekräfta nytt lösenord
-            </span>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(event) => {
-                setConfirmPassword(event.target.value);
-                setError("");
-                setSuccessMessage("");
-              }}
-              autoComplete="new-password"
-              minLength={6}
-              required
-              className="w-full rounded-xl border border-white/10 bg-[#161616] px-4 py-3 text-white outline-none transition focus:border-[#D4AF37]/70"
-            />
-          </label>
+            <label className="block">
+              <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-gray-500">
+                Bekräfta nytt lösenord
+              </span>
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(event) => {
+                  setConfirmPassword(event.target.value);
+                  setError("");
+                }}
+                autoComplete="new-password"
+                minLength={6}
+                required
+                className="w-full rounded-xl border border-white/10 bg-[#161616] px-4 py-3 text-white outline-none transition focus:border-[#D4AF37]/70"
+              />
+            </label>
 
-          {error && (
+            {error && (
+              <p className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm leading-6 text-gray-300">
+                {error}
+              </p>
+            )}
+
+            <PrimaryButton type="submit" disabled={isLoading} className="w-full">
+              {isLoading ? "Uppdaterar..." : "Uppdatera lösenord"}
+            </PrimaryButton>
+          </form>
+        ) : (
+          <div className="space-y-5">
             <p className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm leading-6 text-gray-300">
               {error}
             </p>
-          )}
-
-          {successMessage && (
-            <p className="rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/5 px-4 py-3 text-sm leading-6 text-gray-300">
-              {successMessage}
-            </p>
-          )}
-
-          <PrimaryButton type="submit" disabled={isLoading} className="w-full">
-            {isLoading ? "Uppdaterar..." : "Uppdatera lösenord"}
-          </PrimaryButton>
-        </form>
+            <Link
+              href="/forgot-password"
+              className="inline-flex w-full justify-center rounded-xl border border-[#D4AF37]/40 px-8 py-4 text-lg font-semibold text-[#D4AF37] transition hover:border-[#D4AF37] hover:bg-[#D4AF37]/10"
+            >
+              Be om en ny länk
+            </Link>
+          </div>
+        )}
 
         <p className="mt-6 text-center text-sm text-gray-500">
           Redo att fortsätta?{" "}

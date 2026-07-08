@@ -8,9 +8,10 @@ import PrimaryButton from "@/components/ui/Button";
 
 type Props = {
   redirectTo: string;
+  resetSuccess?: boolean;
 };
 
-export default function LoginForm({ redirectTo }: Props) {
+export default function LoginForm({ redirectTo, resetSuccess = false }: Props) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -66,6 +67,12 @@ export default function LoginForm({ redirectTo }: Props) {
           community actions.
         </p>
       </div>
+
+      {resetSuccess && (
+        <p className="mb-5 rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/5 px-4 py-3 text-sm leading-6 text-gray-300">
+          Ditt lösenord är uppdaterat. Logga in med ditt nya lösenord.
+        </p>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <label className="block">
