@@ -28,7 +28,7 @@ export default function Hero() {
           </p>
 
           <div className="mt-12 flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
-            <PrimaryButton>Kom igång</PrimaryButton>
+            <PrimaryButton>Skapa konto</PrimaryButton>
 
             <button className="rounded-xl border border-[#D4AF37]/40 px-8 py-4 text-lg transition hover:border-[#D4AF37] hover:bg-[#D4AF37]/10">
               Se demo
