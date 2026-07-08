@@ -108,7 +108,7 @@ export default function NewConversationForm({ targetParticipant }: Props) {
           disabled={isPending}
           className="rounded-xl border border-[#D4AF37] bg-[#D4AF37] px-5 py-2.5 text-sm font-semibold text-black shadow-[0_0_30px_rgba(212,175,55,0.14)] transition hover:bg-[#F9D976] disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {isPending ? "Startar..." : "Skicka"}
+          {isPending ? "Skickar..." : "Skicka"}
         </button>
       </div>
 

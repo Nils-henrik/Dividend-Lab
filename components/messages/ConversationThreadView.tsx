@@ -76,8 +76,8 @@ export default function ConversationThreadView({
                   <article
                     className={`max-w-[92%] rounded-2xl border px-4 py-3 shadow-[0_18px_44px_rgba(0,0,0,0.16)] md:max-w-[68%] ${
                       isOwnMessage
-                        ? "rounded-br-md border-[#D4AF37]/20 bg-[#111111] text-gray-200"
-                        : "rounded-bl-md border-white/10 bg-[#1B1B1B] text-gray-200"
+                        ? "rounded-br-md border-[#D4AF37]/20 bg-[#D4AF37]/[0.045] text-gray-200"
+                        : "rounded-bl-md border-white/15 bg-[#232323] text-gray-100"
                     }`}
                   >
                     <div
