@@ -16,9 +16,13 @@ const initialState = {
 
 type Props = {
   targetParticipant?: MessageParticipant | null;
+  initialUsername?: string;
 };
 
-export default function NewConversationForm({ targetParticipant }: Props) {
+export default function NewConversationForm({
+  targetParticipant,
+  initialUsername = "",
+}: Props) {
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [state, formAction, isPending] = useActionState(
@@ -39,6 +43,7 @@ export default function NewConversationForm({ targetParticipant }: Props) {
             name="username"
             type="text"
             placeholder="@anvandare"
+            defaultValue={initialUsername}
             autoComplete="off"
             className="w-full rounded-xl border border-white/10 bg-[#111111] px-4 py-3 text-sm text-white outline-none transition placeholder:text-gray-600 focus:border-[#D4AF37]/70"
           />

@@ -1,13 +1,16 @@
 import { forumCategoryGroups } from "@/data/forum";
+import type { ForumCategoryGroup as ForumCategoryGroupType } from "@/types/forum";
 import ForumCategoryGroup from "./ForumCategoryGroup";
 
 type Props = {
   activeCategorySlug: string;
+  categoryGroups?: ForumCategoryGroupType[];
   onSelectCategory?: (categorySlug: string) => void;
 };
 
 export default function ForumSidebar({
   activeCategorySlug,
+  categoryGroups = forumCategoryGroups,
   onSelectCategory,
 }: Props) {
   return (
@@ -22,7 +25,7 @@ export default function ForumSidebar({
       </div>
 
       <nav className="mt-1.5 space-y-1">
-        {forumCategoryGroups.map((group) => (
+        {categoryGroups.map((group) => (
           <ForumCategoryGroup
             key={group.slug}
             group={group}

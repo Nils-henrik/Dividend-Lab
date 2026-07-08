@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
-import { forumCategories, forumThreads, getForumCategory } from "@/data/forum";
+import { forumCategories, getForumCategory } from "@/data/forum";
+import type { ForumCategoryGroup, ForumThread } from "@/types/forum";
 import ForumBreadcrumbs from "./ForumBreadcrumbs";
 import ForumHeader from "./ForumHeader";
 import ForumRightSidebar from "./ForumRightSidebar";
@@ -12,11 +14,23 @@ import ForumThreadList from "./ForumThreadList";
 type Props = {
   initialCategorySlug?: string;
   isAuthenticated?: boolean;
+  threads: ForumThread[];
+  categoryGroups: ForumCategoryGroup[];
 };
+
+function getNewDiscussionHref(categorySlug: string) {
+  return `/forum/new?category=${encodeURIComponent(categorySlug)}`;
+}
+
+function getLoginHref(categorySlug: string) {
+  return `/login?redirect=${encodeURIComponent(getNewDiscussionHref(categorySlug))}`;
+}
 
 export default function ForumHomePage({
   initialCategorySlug,
   isAuthenticated = false,
+  threads,
+  categoryGroups,
 }: Props) {
   const [activeCategorySlug, setActiveCategorySlug] = useState(
     initialCategorySlug &&
@@ -28,9 +42,11 @@ export default function ForumHomePage({
 
   const activeCategory = getForumCategory(activeCategorySlug);
   const normalizedSearch = searchQuery.trim().toLowerCase();
+  const newDiscussionHref = getNewDiscussionHref(activeCategorySlug);
+  const loginHref = getLoginHref(activeCategorySlug);
 
   const filteredThreads = useMemo(() => {
-    return forumThreads.filter((thread) => {
+    return threads.filter((thread) => {
       const matchesCategory = thread.categorySlug === activeCategorySlug;
       const searchableText = [
         thread.title,
@@ -38,9 +54,6 @@ export default function ForumHomePage({
         thread.author,
         thread.category,
         thread.group,
-        ...thread.tags,
-        ...(thread.instruments ?? []),
-        ...(thread.tickers ?? []),
       ]
         .join(" ")
         .toLowerCase();
@@ -50,10 +63,9 @@ export default function ForumHomePage({
         (normalizedSearch === "" || searchableText.includes(normalizedSearch))
       );
     });
-  }, [activeCategorySlug, normalizedSearch]);
+  }, [activeCategorySlug, normalizedSearch, threads]);
 
-  const featuredThread =
-    filteredThreads.find((thread) => thread.sticky) ?? filteredThreads[0];
+  const featuredThread = filteredThreads[0] ?? null;
 
   return (
     <div className="space-y-3">
@@ -68,6 +80,7 @@ export default function ForumHomePage({
       <div className="grid gap-4 2xl:grid-cols-[230px_minmax(0,1fr)_290px]">
         <ForumSidebar
           activeCategorySlug={activeCategorySlug}
+          categoryGroups={categoryGroups}
           onSelectCategory={(categorySlug) => {
             setActiveCategorySlug(categorySlug);
             setSearchQuery("");
@@ -80,31 +93,57 @@ export default function ForumHomePage({
             onSearchChange={setSearchQuery}
             activeCategoryName={activeCategory.name}
             isAuthenticated={isAuthenticated}
+            newDiscussionHref={newDiscussionHref}
+            loginHref={loginHref}
           />
 
-          <section className="rounded-lg border border-white/10 bg-[#111111]/85 p-3">
-            <div className="mb-2 flex items-center justify-between gap-4">
-              <div>
-                <h2 className="text-sm font-medium text-white">
-                  Featured Discussion
-                </h2>
-              </div>
-            </div>
-
-            {featuredThread ? (
-              <ForumThreadCard thread={featuredThread} featured />
-            ) : (
-              <p className="rounded-lg border border-white/10 bg-[#161616] p-4 text-sm text-gray-500">
-                No featured discussion matches this category and search yet.
+          {filteredThreads.length === 0 ? (
+            <section className="rounded-lg border border-white/10 bg-[#111111]/85 p-8 text-center">
+              <p className="text-sm font-medium text-white">No discussions yet</p>
+              <p className="mt-2 text-sm text-gray-500">
+                Start the first discussion in {activeCategory.name}.
               </p>
-            )}
-          </section>
+              {isAuthenticated ? (
+                <Link
+                  href={newDiscussionHref}
+                  className="mt-6 inline-flex rounded-xl border border-[#D4AF37]/40 px-5 py-2.5 text-sm font-semibold text-[#D4AF37] transition hover:border-[#D4AF37] hover:bg-[#D4AF37]/10"
+                >
+                  Start discussion
+                </Link>
+              ) : (
+                <Link
+                  href={loginHref}
+                  className="mt-6 inline-flex rounded-xl border border-white/10 px-5 py-2.5 text-sm font-medium text-gray-300 transition hover:border-[#D4AF37]/40 hover:text-[#D4AF37]"
+                >
+                  Log in to start a discussion
+                </Link>
+              )}
+            </section>
+          ) : (
+            <>
+              <section className="rounded-lg border border-white/10 bg-[#111111]/85 p-3">
+                <div className="mb-2 flex items-center justify-between gap-4">
+                  <div>
+                    <h2 className="text-sm font-medium text-white">
+                      Featured Discussion
+                    </h2>
+                  </div>
+                </div>
 
-          <ForumThreadList
-            title={`${activeCategory.name} Discussions`}
-            description={`${filteredThreads.length} active discussions in ${activeCategory.groupName}.`}
-            threads={filteredThreads}
-          />
+                {featuredThread && (
+                  <ForumThreadCard thread={featuredThread} featured />
+                )}
+              </section>
+
+              <ForumThreadList
+                title={`${activeCategory.name} Discussions`}
+                description={`${filteredThreads.length} discussion${
+                  filteredThreads.length === 1 ? "" : "s"
+                } in ${activeCategory.groupName}.`}
+                threads={filteredThreads}
+              />
+            </>
+          )}
         </main>
 
         <ForumRightSidebar />

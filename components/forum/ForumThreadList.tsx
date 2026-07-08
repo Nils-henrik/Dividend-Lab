@@ -17,12 +17,10 @@ export default function ForumThreadList({ title, description, threads }: Props) 
         )}
       </div>
 
-      <div className="hidden border-b border-white/10 px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.16em] text-gray-600 xl:grid xl:grid-cols-[minmax(0,1fr)_70px_70px_96px_76px_58px]">
+      <div className="hidden border-b border-white/10 px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.16em] text-gray-600 xl:grid xl:grid-cols-[minmax(0,1fr)_70px_96px_58px]">
         <span>Discussion</span>
         <span>Replies</span>
-        <span>Views</span>
         <span>Activity</span>
-        <span>Quality</span>
         <span className="text-right">Share</span>
       </div>
 
@@ -34,7 +32,7 @@ export default function ForumThreadList({ title, description, threads }: Props) 
 
       {threads.length === 0 && (
         <div className="px-4 py-8 text-center text-sm text-gray-500">
-          No discussions match this category and search yet.
+          No discussions yet.
         </div>
       )}
     </section>

@@ -22,34 +22,36 @@ export type ForumCategory = {
 };
 
 export type ForumThread = {
+  id?: string;
   slug: string;
   title: string;
+  body?: string;
   categorySlug: string;
   category: string;
   groupSlug: string;
   group: string;
   author: string;
+  authorUsername?: string | null;
+  authorUserId?: string;
   replies: number;
-  views: number;
   lastActivity: string;
+  createdAt?: string;
   excerpt: string;
   tags: string[];
-  instruments?: string[];
-  tickers?: string[];
-  qualityScore: number;
-  recognitionCount: number;
   sticky?: boolean;
 };
 
 export type ForumPost = {
   id: string;
   username: string;
+  displayName?: string | null;
   avatar: string;
   memberSince: string;
   joinDate: string;
   timestamp: string;
   content: string;
   reactions: ForumReaction[];
+  authorUserId?: string;
 };
 
 export type ForumHelpfulMember = {

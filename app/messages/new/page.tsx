@@ -2,20 +2,27 @@ import Link from "next/link";
 import AppShell from "@/components/layout/AppShell";
 import NewConversationForm from "@/components/messages/NewConversationForm";
 import { requireAuthenticatedUserWithProfile } from "@/lib/auth/session";
-import { getMessageParticipantByUserId } from "@/lib/messages/messages";
+import {
+  getMessageParticipantByUserId,
+  getMessageParticipantByUsername,
+} from "@/lib/messages/messages";
 
 type Props = {
   searchParams: Promise<{
     userId?: string;
+    username?: string;
   }>;
 };
 
 export default async function NewMessagePage({ searchParams }: Props) {
-  const { userId } = await searchParams;
+  const { userId, username } = await searchParams;
   const { user, identity } = await requireAuthenticatedUserWithProfile();
   const targetParticipant = userId
     ? await getMessageParticipantByUserId(userId)
-    : null;
+    : username
+      ? await getMessageParticipantByUsername(username)
+      : null;
+  const initialUsername = username?.trim().replace(/^@/, "").toLowerCase() ?? "";
   const isSelfTarget = targetParticipant?.id === user.id;
 
   return (
@@ -58,10 +65,13 @@ export default async function NewMessagePage({ searchParams }: Props) {
                 Vi hittade inte användaren. Kontrollera länken eller starta med
                 ett användarnamn.
               </p>
-              <NewConversationForm />
+              <NewConversationForm initialUsername={initialUsername} />
             </div>
           ) : (
-            <NewConversationForm targetParticipant={targetParticipant} />
+            <NewConversationForm
+              targetParticipant={targetParticipant}
+              initialUsername={initialUsername}
+            />
           )}
         </section>
       </div>

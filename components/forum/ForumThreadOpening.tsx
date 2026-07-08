@@ -1,37 +1,42 @@
 "use client";
 
 import Link from "next/link";
-import type { ForumPost as ForumPostType } from "@/types/forum";
+import type { ForumThread } from "@/types/forum";
 import type { ForumReactionSummary } from "@/lib/forum/reactions";
 import ForumPostActionRow from "./ForumPostActionRow";
 import ForumQualityReactions from "./ForumQualityReactions";
 import ForumUserActions from "./ForumUserActions";
 
 type Props = {
-  post: ForumPostType;
+  thread: ForumThread;
+  authorUsername: string;
+  authorInitials: string;
+  memberSince: string;
+  timestamp: string;
   threadSlug: string;
   reactions: ForumReactionSummary[];
   isAuthenticated: boolean;
   loginHref: string;
   currentUsername?: string | null;
-  onQuote: (post: ForumPostType) => void;
-  onReply: (post: ForumPostType) => void;
-  reactionsDisabled?: boolean;
+  onReply: () => void;
+  onQuote: () => void;
 };
 
-export default function ForumPost({
-  post,
+export default function ForumThreadOpening({
+  thread,
+  authorUsername,
+  authorInitials,
+  memberSince,
+  timestamp,
   threadSlug,
   reactions,
   isAuthenticated,
   loginHref,
   currentUsername,
-  onQuote,
   onReply,
-  reactionsDisabled = false,
+  onQuote,
 }: Props) {
-  const username = post.username.replace(/^@/, "");
-  const normalizedUsername = username.toLowerCase();
+  const normalizedUsername = authorUsername.replace(/^@/, "").toLowerCase();
   const profileHref = `/profile/${encodeURIComponent(normalizedUsername)}`;
   const messageHref = `/messages/new?username=${encodeURIComponent(
     normalizedUsername,
@@ -44,58 +49,60 @@ export default function ForumPost({
         <aside className="border-b border-white/10 pb-2 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-2">
           <div className="group/forum-author relative flex items-center gap-2 lg:block">
             <div className="flex h-8 w-8 items-center justify-center rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/10 text-[11px] font-semibold text-[#D4AF37]">
-              {post.avatar}
+              {authorInitials}
             </div>
             <div className="min-w-0 lg:mt-1.5">
               <Link
                 href={profileHref}
                 className="block truncate text-xs font-medium text-white transition hover:text-[#D4AF37] focus:text-[#D4AF37] focus:outline-none"
               >
-                @{username}
+                @{authorUsername}
               </Link>
-              <p className="mt-0.5 text-[11px] text-gray-500">
-                {post.memberSince}
-              </p>
+              <p className="mt-0.5 text-[11px] text-gray-500">{memberSince}</p>
               <ForumUserActions
-                username={username}
+                username={authorUsername}
                 profileHref={profileHref}
                 messageHref={messageHref}
                 loginHref={loginHref}
                 isSelf={isSelf}
                 canMessage={isAuthenticated}
                 canQuote={isAuthenticated}
-                onQuote={() => onQuote(post)}
+                onQuote={onQuote}
               />
             </div>
           </div>
         </aside>
 
         <div>
-          <p className="mb-2 border-b border-white/10 pb-1.5 text-[11px] text-gray-500">
-            {post.timestamp}
-          </p>
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-1.5">
+            <p className="text-[11px] text-gray-500">{timestamp}</p>
+            <span className="rounded-md border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-2 py-0.5 text-[11px] font-medium text-[#D4AF37]">
+              Opening post
+            </span>
+          </div>
 
           <p className="max-w-4xl whitespace-pre-wrap text-[0.9rem] leading-6 text-gray-300">
-            {post.content}
+            {thread.body}
           </p>
 
-          <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-white/10 pt-1.5">
-            <ForumQualityReactions
-              targetType="reply"
-              targetId={post.id}
-              threadSlug={threadSlug}
-              reactions={reactions}
-              isAuthenticated={isAuthenticated}
-              loginHref={loginHref}
-              disabled={reactionsDisabled}
-            />
-            <ForumPostActionRow
-              isAuthenticated={isAuthenticated}
-              loginHref={loginHref}
-              onReply={() => onReply(post)}
-              onQuote={() => onQuote(post)}
-            />
-          </div>
+          {thread.id && (
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-white/10 pt-1.5">
+              <ForumQualityReactions
+                targetType="thread"
+                targetId={thread.id}
+                threadSlug={threadSlug}
+                reactions={reactions}
+                isAuthenticated={isAuthenticated}
+                loginHref={loginHref}
+              />
+              <ForumPostActionRow
+                isAuthenticated={isAuthenticated}
+                loginHref={loginHref}
+                onReply={onReply}
+                onQuote={onQuote}
+              />
+            </div>
+          )}
         </div>
       </div>
     </article>

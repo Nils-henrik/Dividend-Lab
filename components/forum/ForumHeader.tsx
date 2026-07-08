@@ -6,6 +6,8 @@ type Props = {
   onSearchChange: (value: string) => void;
   activeCategoryName: string;
   isAuthenticated: boolean;
+  newDiscussionHref: string;
+  loginHref: string;
 };
 
 export default function ForumHeader({
@@ -13,6 +15,8 @@ export default function ForumHeader({
   onSearchChange,
   activeCategoryName,
   isAuthenticated,
+  newDiscussionHref,
+  loginHref,
 }: Props) {
   return (
     <section className="rounded-lg border border-white/10 bg-[#111111]/85 p-3.5">
@@ -37,18 +41,18 @@ export default function ForumHeader({
             activeCategoryName={activeCategoryName}
           />
           {isAuthenticated ? (
-            <button
-              type="button"
-              className="w-full rounded-xl border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-4 py-3 text-sm font-medium text-[#D4AF37] transition hover:border-[#D4AF37]/50"
+            <Link
+              href={newDiscussionHref}
+              className="block w-full rounded-xl border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-4 py-3 text-center text-sm font-medium text-[#D4AF37] transition hover:border-[#D4AF37]/50"
             >
               Start discussion
-            </button>
+            </Link>
           ) : (
             <Link
-              href="/login?redirect=/forum"
+              href={loginHref}
               className="block rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-center text-sm font-medium text-gray-300 transition hover:border-[#D4AF37]/30 hover:text-[#D4AF37]"
             >
-              Log in to join the discussion.
+              Log in to start a discussion
             </Link>
           )}
         </div>

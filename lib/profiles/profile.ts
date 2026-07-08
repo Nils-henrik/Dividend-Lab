@@ -73,6 +73,29 @@ export async function getProfileForUser(userId: string) {
   return data ? mapProfileRow(data) : null;
 }
 
+export async function getPublicProfileByUsername(username: string) {
+  const normalizedUsername = username.trim().replace(/^@/, "").toLowerCase();
+
+  if (!normalizedUsername) {
+    return null;
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("profiles")
+    .select(
+      "id, username, display_name, bio, favorite_sector, investor_goal, avatar_path, created_at, updated_at",
+    )
+    .eq("username", normalizedUsername)
+    .maybeSingle<ProfileRow>();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data ? mapProfileRow(data) : null;
+}
+
 export async function ensureProfileForUser(userId: string) {
   const existingProfile = await getProfileForUser(userId);
 

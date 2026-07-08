@@ -91,6 +91,12 @@ export async function getMessageParticipantByUserId(userId: string) {
   return profile ? mapParticipantProfile(profile, userId) : null;
 }
 
+export async function getMessageParticipantByUsername(username: string) {
+  const profile = await getProfileByUsername(username);
+
+  return profile ? mapParticipantProfile(profile, profile.id) : null;
+}
+
 export async function getProfileByUsername(username: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
