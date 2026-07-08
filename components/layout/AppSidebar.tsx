@@ -9,12 +9,14 @@ type Props = {
   isCollapsed: boolean;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
+  unreadMessageCount: number;
 };
 
 export default function AppSidebar({
   isCollapsed,
   onMouseEnter,
   onMouseLeave,
+  unreadMessageCount,
 }: Props) {
   const pathname = usePathname();
 
@@ -50,6 +52,8 @@ export default function AppSidebar({
             item.href === "/dashboard"
               ? pathname === item.href
               : pathname.startsWith(item.href);
+          const showUnreadIndicator =
+            item.href === "/messages" && unreadMessageCount > 0;
 
           return (
             <Link
@@ -57,7 +61,7 @@ export default function AppSidebar({
               href={item.href}
               title={isCollapsed ? item.label : undefined}
               aria-label={isCollapsed ? item.label : undefined}
-              className={`flex items-center rounded-xl text-sm font-medium transition ${
+              className={`relative flex items-center rounded-xl text-sm font-medium transition ${
                 isCollapsed
                   ? "justify-center px-2 py-2.5"
                   : "gap-3 px-3 py-2.5"
@@ -71,6 +75,21 @@ export default function AppSidebar({
               <span className={isCollapsed ? "sr-only" : "block"}>
                 {item.label}
               </span>
+              {showUnreadIndicator && (
+                <span
+                  className={`rounded-full bg-[#D4AF37] ${
+                    isCollapsed
+                      ? "absolute right-4 top-2 h-2 w-2"
+                      : "ml-auto min-w-5 px-1.5 py-0.5 text-center text-[10px] font-semibold leading-none text-black"
+                  }`}
+                >
+                  {isCollapsed
+                    ? ""
+                    : unreadMessageCount > 9
+                      ? "9+"
+                      : unreadMessageCount}
+                </span>
+              )}
             </Link>
           );
         })}

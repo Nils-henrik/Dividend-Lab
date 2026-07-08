@@ -12,6 +12,7 @@ type Props = {
   onLogout: () => void;
   isLoggingOut: boolean;
   isSidebarCollapsed: boolean;
+  unreadMessageCount: number;
 };
 
 export default function AppHeader({
@@ -19,6 +20,7 @@ export default function AppHeader({
   onLogout,
   isLoggingOut,
   isSidebarCollapsed,
+  unreadMessageCount,
 }: Props) {
   const pathname = usePathname();
   const pageTitle =
@@ -46,7 +48,7 @@ export default function AppHeader({
 
         <div className="flex items-center gap-3">
           <SearchBar />
-          <NotificationBell />
+          <NotificationBell unreadMessageCount={unreadMessageCount} />
           <ProfileDropdown
             user={user}
             onLogout={onLogout}

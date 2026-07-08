@@ -1,31 +1,14 @@
 import Link from "next/link";
 import ProfileAvatar from "@/components/account/ProfileAvatar";
+import { formatMessageTimestamp } from "@/lib/messages/format";
 import type { ConversationSummary } from "@/lib/messages/types";
 
 type Props = {
   conversations: ConversationSummary[];
+  errorMessage?: string;
 };
 
-function formatActivityTime(value: string | null) {
-  if (!value) {
-    return "Ingen aktivitet än";
-  }
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "Tid saknas";
-  }
-
-  return new Intl.DateTimeFormat("sv-SE", {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
-}
-
-export default function MessagesInbox({ conversations }: Props) {
+export default function MessagesInbox({ conversations, errorMessage }: Props) {
   return (
     <div className="space-y-6">
       <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-[#111111]/85 p-6 shadow-[0_0_80px_rgba(212,175,55,0.06)]">
@@ -55,7 +38,22 @@ export default function MessagesInbox({ conversations }: Props) {
         </div>
       </section>
 
-      {conversations.length === 0 ? (
+      {errorMessage ? (
+        <section className="rounded-3xl border border-white/10 bg-[#161616] p-8">
+          <p className="text-lg font-semibold text-white">
+            Inkorgen kunde inte laddas
+          </p>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-gray-400">
+            {errorMessage}
+          </p>
+          <Link
+            href="/messages"
+            className="mt-6 inline-flex rounded-xl border border-[#D4AF37]/40 px-5 py-2.5 text-sm font-semibold text-[#D4AF37] transition hover:border-[#D4AF37] hover:bg-[#D4AF37]/10"
+          >
+            Försök igen
+          </Link>
+        </section>
+      ) : conversations.length === 0 ? (
         <section className="rounded-3xl border border-white/10 bg-[#161616] p-8">
           <p className="text-lg font-semibold text-white">Inga meddelanden än</p>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-gray-400">
@@ -81,7 +79,9 @@ export default function MessagesInbox({ conversations }: Props) {
               <Link
                 key={conversation.id}
                 href={`/messages/${conversation.id}`}
-                className="flex flex-col gap-4 px-5 py-5 transition hover:bg-white/[0.03] md:flex-row md:items-center md:justify-between"
+                className={`grid gap-4 px-5 py-5 transition hover:bg-white/[0.03] md:grid-cols-[minmax(0,1fr)_auto] md:items-center ${
+                  conversation.hasUnread ? "bg-[#D4AF37]/[0.035]" : ""
+                }`}
               >
                 <div className="flex min-w-0 items-center gap-4">
                   {conversation.otherParticipant ? (
@@ -99,24 +99,42 @@ export default function MessagesInbox({ conversations }: Props) {
                       textClassName="text-sm"
                     />
                   )}
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
+                  <div className="grid min-w-0 flex-1 gap-1 md:grid-cols-[220px_minmax(0,1fr)] md:items-center">
+                    <div className="min-w-0">
                       {conversation.hasUnread && (
-                        <span className="h-2 w-2 rounded-full bg-[#D4AF37]" />
+                        <span className="mr-2 inline-block h-2 w-2 rounded-full bg-[#D4AF37]" />
                       )}
-                      <p className="truncate text-sm font-semibold text-white">
+                      <span className="truncate text-sm font-semibold text-white">
                         {conversation.otherParticipant?.name ?? "Dividend Lab-medlem"}
-                      </p>
+                      </span>
+                      {conversation.otherParticipant?.username && (
+                        <p className="mt-1 truncate text-xs text-gray-500">
+                          @{conversation.otherParticipant.username}
+                        </p>
+                      )}
                     </div>
-                    <p className="mt-1 truncate text-sm text-gray-400">
+                    <p
+                      className={`truncate text-sm ${
+                        conversation.hasUnread ? "text-gray-200" : "text-gray-400"
+                      }`}
+                    >
                       {conversation.lastMessagePreview}
                     </p>
                   </div>
                 </div>
 
-                <p className="shrink-0 text-xs text-gray-500 md:text-right">
-                  {formatActivityTime(conversation.lastMessageAt)}
-                </p>
+                <div className="flex items-center justify-between gap-3 pl-16 md:justify-end md:pl-0">
+                  <p
+                    className={`shrink-0 text-xs tabular-nums ${
+                      conversation.hasUnread ? "text-[#D4AF37]" : "text-gray-500"
+                    }`}
+                  >
+                    {formatMessageTimestamp(conversation.lastMessageAt)}
+                  </p>
+                  {conversation.hasUnread && (
+                    <span className="h-2 w-2 rounded-full bg-[#D4AF37] md:hidden" />
+                  )}
+                </div>
               </Link>
             ))}
           </div>

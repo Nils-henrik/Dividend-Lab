@@ -12,9 +12,14 @@ const SIDEBAR_CLOSE_DELAY_MS = 250;
 type Props = {
   children: React.ReactNode;
   user: UserDisplayIdentity;
+  unreadMessageCount: number;
 };
 
-export default function AppShellClient({ children, user }: Props) {
+export default function AppShellClient({
+  children,
+  user,
+  unreadMessageCount,
+}: Props) {
   const router = useRouter();
   const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isPointerInSidebarRef = useRef(false);
@@ -102,12 +107,14 @@ export default function AppShellClient({ children, user }: Props) {
         isCollapsed={isSidebarCollapsed}
         onMouseEnter={handleSidebarEnter}
         onMouseLeave={handleSidebarLeave}
+        unreadMessageCount={unreadMessageCount}
       />
       <AppHeader
         user={user}
         onLogout={handleLogout}
         isLoggingOut={isLoggingOut}
         isSidebarCollapsed={isSidebarCollapsed}
+        unreadMessageCount={unreadMessageCount}
       />
       <div
         className={`min-h-screen pt-20 transition-[padding] duration-[225ms] ease-in-out ${

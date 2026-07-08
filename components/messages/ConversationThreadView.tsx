@@ -1,5 +1,6 @@
 import Link from "next/link";
 import ProfileAvatar from "@/components/account/ProfileAvatar";
+import { formatMessageTimestamp } from "@/lib/messages/format";
 import type { ConversationThread } from "@/lib/messages/types";
 import MessageComposer from "./MessageComposer";
 
@@ -7,21 +8,6 @@ type Props = {
   conversation: ConversationThread;
   currentUserId: string;
 };
-
-function formatMessageTime(value: string) {
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "Tid saknas";
-  }
-
-  return new Intl.DateTimeFormat("sv-SE", {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
-}
 
 export default function ConversationThreadView({
   conversation,
@@ -73,34 +59,46 @@ export default function ConversationThreadView({
             </p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {conversation.messages.map((message) => {
               const isOwnMessage = message.senderId === currentUserId;
+              const senderLabel = isOwnMessage
+                ? "Du"
+                : (otherParticipant?.name ?? "Dividend Lab-medlem");
 
               return (
-                <div
+                <article
                   key={message.id}
-                  className={`flex ${isOwnMessage ? "justify-end" : "justify-start"}`}
+                  className={`w-full rounded-2xl border px-4 py-3 sm:px-5 sm:py-4 ${
+                    isOwnMessage
+                      ? "border-[#D4AF37]/20 bg-[#D4AF37]/[0.055]"
+                      : "border-white/10 bg-white/[0.03]"
+                  }`}
                 >
-                  <article
-                    className={`max-w-2xl rounded-2xl border px-4 py-3 ${
-                      isOwnMessage
-                        ? "border-[#D4AF37]/25 bg-[#D4AF37]/10"
-                        : "border-white/10 bg-white/[0.03]"
-                    }`}
-                  >
-                    <p className="whitespace-pre-wrap text-sm leading-6 text-gray-200">
-                      {message.body}
-                    </p>
+                  <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span
+                        className={`h-2 w-2 rounded-full ${
+                          isOwnMessage ? "bg-[#D4AF37]" : "bg-white/30"
+                        }`}
+                      />
+                      <p className="truncate text-xs font-medium uppercase tracking-[0.18em] text-gray-500">
+                        {senderLabel}
+                      </p>
+                    </div>
                     <p
-                      className={`mt-3 text-[11px] ${
+                      className={`text-xs tabular-nums ${
                         isOwnMessage ? "text-[#F9D976]/70" : "text-gray-500"
                       }`}
                     >
-                      {formatMessageTime(message.createdAt)}
+                      {formatMessageTimestamp(message.createdAt)}
                     </p>
-                  </article>
-                </div>
+                  </div>
+
+                  <p className="whitespace-pre-wrap break-words text-sm leading-7 text-gray-200">
+                    {message.body}
+                  </p>
+                </article>
               );
             })}
           </div>

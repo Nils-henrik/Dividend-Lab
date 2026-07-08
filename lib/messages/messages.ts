@@ -226,6 +226,62 @@ export async function getConversationSummaries(userId: string) {
     );
 }
 
+export async function getUnreadMessageCount(userId: string) {
+  const supabase = await createClient();
+  const { data: ownParticipants, error: participantError } = await supabase
+    .from("conversation_participants")
+    .select("conversation_id, user_id, created_at, last_read_at")
+    .eq("user_id", userId)
+    .returns<(ParticipantRow & { created_at: string })[]>();
+
+  if (participantError) {
+    throw new Error(participantError.message);
+  }
+
+  const conversationIds = (ownParticipants ?? []).map(
+    (participant) => participant.conversation_id,
+  );
+
+  if (conversationIds.length === 0) {
+    return 0;
+  }
+
+  const { data: messages, error: messagesError } = await supabase
+    .from("messages")
+    .select("conversation_id, sender_id, created_at")
+    .in("conversation_id", conversationIds)
+    .neq("sender_id", userId)
+    .returns<Pick<MessageRow, "conversation_id" | "sender_id" | "created_at">[]>();
+
+  if (messagesError) {
+    throw new Error(messagesError.message);
+  }
+
+  const ownParticipantByConversationId = new Map(
+    (ownParticipants ?? []).map((participant) => [
+      participant.conversation_id,
+      participant,
+    ]),
+  );
+  const unreadConversationIds = new Set<string>();
+
+  for (const message of messages ?? []) {
+    const ownParticipant = ownParticipantByConversationId.get(
+      message.conversation_id,
+    );
+    const readBoundary = ownParticipant?.last_read_at ?? ownParticipant?.created_at;
+
+    if (
+      readBoundary &&
+      new Date(message.created_at).getTime() > new Date(readBoundary).getTime()
+    ) {
+      unreadConversationIds.add(message.conversation_id);
+    }
+  }
+
+  return unreadConversationIds.size;
+}
+
 export async function getConversationThread(
   userId: string,
   conversationId: string,
