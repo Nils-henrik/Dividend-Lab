@@ -3,6 +3,7 @@ import ProfileAvatar from "@/components/account/ProfileAvatar";
 import { formatMessageTimestamp } from "@/lib/messages/format";
 import type { ConversationThread } from "@/lib/messages/types";
 import MessageComposer from "./MessageComposer";
+import MessageListAutoScroll from "./MessageListAutoScroll";
 
 type Props = {
   conversation: ConversationThread;
@@ -15,6 +16,11 @@ export default function ConversationThreadView({
 }: Props) {
   const otherParticipant = conversation.otherParticipant;
   const subject = conversation.subject?.trim() || "Ingen ämnesrad";
+  const receivedSenderLabel = otherParticipant?.username
+    ? `@${otherParticipant.username.replace(/^@/, "")}`
+    : (otherParticipant?.name ?? "Dividend Lab-medlem");
+  const lastMessageId =
+    conversation.messages[conversation.messages.length - 1]?.id ?? "empty";
 
   return (
     <div className="space-y-6">
@@ -62,9 +68,7 @@ export default function ConversationThreadView({
           <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
             {conversation.messages.map((message) => {
               const isOwnMessage = message.senderId === currentUserId;
-              const senderLabel = isOwnMessage
-                ? "Du"
-                : (otherParticipant?.name ?? "Dividend Lab-medlem");
+              const senderLabel = isOwnMessage ? "DU" : receivedSenderLabel;
 
               return (
                 <div
@@ -86,7 +90,7 @@ export default function ConversationThreadView({
                       }`}
                     >
                       <p
-                        className={`truncate text-[11px] font-medium uppercase tracking-[0.18em] ${
+                        className={`truncate text-[11px] font-medium tracking-[0.18em] ${
                           isOwnMessage ? "text-[#F9D976]/70" : "text-gray-500"
                         }`}
                       >
@@ -104,6 +108,7 @@ export default function ConversationThreadView({
                 </div>
               );
             })}
+            <MessageListAutoScroll scrollKey={lastMessageId} />
           </div>
         )}
       </section>
