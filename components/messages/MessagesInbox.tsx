@@ -75,68 +75,89 @@ export default function MessagesInbox({ conversations, errorMessage }: Props) {
             </p>
           </div>
           <div className="divide-y divide-white/10">
-            {conversations.map((conversation) => (
-              <Link
-                key={conversation.id}
-                href={`/messages/${conversation.id}`}
-                className={`grid gap-4 px-5 py-5 transition hover:bg-white/[0.03] md:grid-cols-[minmax(0,1fr)_auto] md:items-center ${
-                  conversation.hasUnread ? "bg-[#D4AF37]/[0.035]" : ""
-                }`}
-              >
-                <div className="flex min-w-0 items-center gap-4">
-                  {conversation.otherParticipant ? (
-                    <ProfileAvatar
-                      avatarUrl={conversation.otherParticipant.avatarUrl}
-                      initials={conversation.otherParticipant.initials}
-                      sizeClassName="h-12 w-12"
-                      textClassName="text-sm"
-                    />
-                  ) : (
-                    <ProfileAvatar
-                      avatarUrl={null}
-                      initials="DL"
-                      sizeClassName="h-12 w-12"
-                      textClassName="text-sm"
-                    />
-                  )}
-                  <div className="grid min-w-0 flex-1 gap-1 md:grid-cols-[220px_minmax(0,1fr)] md:items-center">
-                    <div className="min-w-0">
-                      {conversation.hasUnread && (
-                        <span className="mr-2 inline-block h-2 w-2 rounded-full bg-[#D4AF37]" />
-                      )}
-                      <span className="truncate text-sm font-semibold text-white">
-                        {conversation.otherParticipant?.name ?? "Dividend Lab-medlem"}
-                      </span>
-                      {conversation.otherParticipant?.username && (
-                        <p className="mt-1 truncate text-xs text-gray-500">
-                          @{conversation.otherParticipant.username}
+            {conversations.map((conversation) => {
+              const subject =
+                conversation.subject?.trim() ||
+                conversation.lastMessagePreview ||
+                "Ingen ämnesrad";
+
+              return (
+                <Link
+                  key={conversation.id}
+                  href={`/messages/${conversation.id}`}
+                  className={`grid gap-4 px-5 py-5 transition hover:bg-white/[0.03] md:grid-cols-[minmax(0,1fr)_auto] md:items-start ${
+                    conversation.hasUnread ? "bg-[#D4AF37]/[0.035]" : ""
+                  }`}
+                >
+                  <div className="flex min-w-0 items-start gap-4">
+                    {conversation.otherParticipant ? (
+                      <ProfileAvatar
+                        avatarUrl={conversation.otherParticipant.avatarUrl}
+                        initials={conversation.otherParticipant.initials}
+                        sizeClassName="h-12 w-12"
+                        textClassName="text-sm"
+                      />
+                    ) : (
+                      <ProfileAvatar
+                        avatarUrl={null}
+                        initials="DL"
+                        sizeClassName="h-12 w-12"
+                        textClassName="text-sm"
+                      />
+                    )}
+                    <div className="grid min-w-0 flex-1 gap-2 md:grid-cols-[220px_minmax(0,1fr)] md:items-start">
+                      <div className="min-w-0">
+                        <div className="flex min-w-0 items-center gap-2">
+                          {conversation.hasUnread && (
+                            <span className="h-2 w-2 shrink-0 rounded-full bg-[#D4AF37]" />
+                          )}
+                          <span className="truncate text-sm font-semibold text-white">
+                            {conversation.otherParticipant?.name ??
+                              "Dividend Lab-medlem"}
+                          </span>
+                        </div>
+                        {conversation.otherParticipant?.username && (
+                          <p className="mt-1 truncate text-xs text-gray-500">
+                            @{conversation.otherParticipant.username}
+                          </p>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p
+                          className={`truncate text-sm ${
+                            conversation.hasUnread
+                              ? "font-semibold text-white"
+                              : "font-medium text-gray-200"
+                          }`}
+                        >
+                          {subject}
                         </p>
-                      )}
+                        <p
+                          className={`mt-1 truncate text-sm ${
+                            conversation.hasUnread ? "text-gray-300" : "text-gray-500"
+                          }`}
+                        >
+                          {conversation.lastMessagePreview}
+                        </p>
+                      </div>
                     </div>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-3 pl-16 md:justify-end md:pl-0">
                     <p
-                      className={`truncate text-sm ${
-                        conversation.hasUnread ? "text-gray-200" : "text-gray-400"
+                      className={`shrink-0 text-xs tabular-nums ${
+                        conversation.hasUnread ? "text-[#D4AF37]" : "text-gray-500"
                       }`}
                     >
-                      {conversation.lastMessagePreview}
+                      {formatMessageTimestamp(conversation.lastMessageAt)}
                     </p>
+                    {conversation.hasUnread && (
+                      <span className="h-2 w-2 rounded-full bg-[#D4AF37] md:hidden" />
+                    )}
                   </div>
-                </div>
-
-                <div className="flex items-center justify-between gap-3 pl-16 md:justify-end md:pl-0">
-                  <p
-                    className={`shrink-0 text-xs tabular-nums ${
-                      conversation.hasUnread ? "text-[#D4AF37]" : "text-gray-500"
-                    }`}
-                  >
-                    {formatMessageTimestamp(conversation.lastMessageAt)}
-                  </p>
-                  {conversation.hasUnread && (
-                    <span className="h-2 w-2 rounded-full bg-[#D4AF37] md:hidden" />
-                  )}
-                </div>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
           </div>
         </section>
       )}

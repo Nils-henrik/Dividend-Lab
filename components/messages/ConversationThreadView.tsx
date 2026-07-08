@@ -14,6 +14,7 @@ export default function ConversationThreadView({
   currentUserId,
 }: Props) {
   const otherParticipant = conversation.otherParticipant;
+  const subject = conversation.subject?.trim() || "Ingen ämnesrad";
 
   return (
     <div className="space-y-6">
@@ -31,12 +32,11 @@ export default function ConversationThreadView({
                 Privat konversation
               </p>
               <h2 className="truncate text-3xl font-semibold tracking-[-0.04em] text-white">
-                {otherParticipant?.name ?? "Dividend Lab-medlem"}
+                {subject}
               </h2>
               <p className="mt-1 truncate text-sm text-gray-500">
-                {otherParticipant?.username
-                  ? `@${otherParticipant.username}`
-                  : "Profil utan användarnamn"}
+                {otherParticipant?.name ?? "Dividend Lab-medlem"}
+                {otherParticipant?.username ? ` · @${otherParticipant.username}` : ""}
               </p>
             </div>
           </div>
@@ -59,7 +59,7 @@ export default function ConversationThreadView({
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {conversation.messages.map((message) => {
               const isOwnMessage = message.senderId === currentUserId;
               const senderLabel = isOwnMessage
@@ -67,38 +67,41 @@ export default function ConversationThreadView({
                 : (otherParticipant?.name ?? "Dividend Lab-medlem");
 
               return (
-                <article
+                <div
                   key={message.id}
-                  className={`w-full rounded-2xl border px-4 py-3 sm:px-5 sm:py-4 ${
-                    isOwnMessage
-                      ? "border-[#D4AF37]/20 bg-[#D4AF37]/[0.055]"
-                      : "border-white/10 bg-white/[0.03]"
+                  className={`flex w-full ${
+                    isOwnMessage ? "justify-end" : "justify-start"
                   }`}
                 >
-                  <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex min-w-0 items-center gap-2">
-                      <span
-                        className={`h-2 w-2 rounded-full ${
-                          isOwnMessage ? "bg-[#D4AF37]" : "bg-white/30"
-                        }`}
-                      />
-                      <p className="truncate text-xs font-medium uppercase tracking-[0.18em] text-gray-500">
-                        {senderLabel}
-                      </p>
-                    </div>
-                    <p
-                      className={`text-xs tabular-nums ${
-                        isOwnMessage ? "text-[#F9D976]/70" : "text-gray-500"
+                  <article
+                    className={`max-w-[92%] rounded-2xl border px-4 py-3 shadow-[0_18px_44px_rgba(0,0,0,0.16)] md:max-w-[68%] ${
+                      isOwnMessage
+                        ? "rounded-br-md border-[#D4AF37]/20 bg-[#111111] text-gray-200"
+                        : "rounded-bl-md border-white/10 bg-[#1B1B1B] text-gray-200"
+                    }`}
+                  >
+                    <div
+                      className={`mb-2 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between ${
+                        isOwnMessage ? "sm:flex-row-reverse" : ""
                       }`}
                     >
-                      {formatMessageTimestamp(message.createdAt)}
-                    </p>
-                  </div>
+                      <p
+                        className={`truncate text-[11px] font-medium uppercase tracking-[0.18em] ${
+                          isOwnMessage ? "text-[#F9D976]/70" : "text-gray-500"
+                        }`}
+                      >
+                        {senderLabel}
+                      </p>
+                      <p className="shrink-0 text-[11px] tabular-nums text-gray-500">
+                        {formatMessageTimestamp(message.createdAt)}
+                      </p>
+                    </div>
 
-                  <p className="whitespace-pre-wrap break-words text-sm leading-7 text-gray-200">
-                    {message.body}
-                  </p>
-                </article>
+                    <p className="whitespace-pre-wrap break-words text-sm leading-7">
+                      {message.body}
+                    </p>
+                  </article>
+                </div>
               );
             })}
           </div>

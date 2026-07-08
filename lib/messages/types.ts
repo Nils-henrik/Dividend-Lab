@@ -1,4 +1,5 @@
 export const MESSAGE_BODY_MAX_LENGTH = 2000;
+export const MESSAGE_SUBJECT_MAX_LENGTH = 120;
 
 export type MessageParticipant = {
   id: string;
@@ -10,6 +11,7 @@ export type MessageParticipant = {
 
 export type ConversationSummary = {
   id: string;
+  subject: string | null;
   updatedAt: string;
   otherParticipant: MessageParticipant | null;
   lastMessagePreview: string;
@@ -27,6 +29,7 @@ export type ConversationMessage = {
 
 export type ConversationThread = {
   id: string;
+  subject: string | null;
   otherParticipant: MessageParticipant | null;
   messages: ConversationMessage[];
 };

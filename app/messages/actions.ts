@@ -9,6 +9,7 @@ import {
 } from "@/lib/messages/messages";
 import {
   MESSAGE_BODY_MAX_LENGTH,
+  MESSAGE_SUBJECT_MAX_LENGTH,
   type MessageActionState,
 } from "@/lib/messages/types";
 import { createClient } from "@/lib/supabase/server";
@@ -42,6 +43,29 @@ function validateMessageBody(body: string) {
   };
 }
 
+function validateConversationSubject(subject: string) {
+  const normalizedSubject = subject.trim();
+
+  if (!normalizedSubject) {
+    return {
+      subject: "",
+      error: "Ange ett ämne för konversationen.",
+    };
+  }
+
+  if (normalizedSubject.length > MESSAGE_SUBJECT_MAX_LENGTH) {
+    return {
+      subject: "",
+      error: `Ämnet får vara högst ${MESSAGE_SUBJECT_MAX_LENGTH} tecken.`,
+    };
+  }
+
+  return {
+    subject: normalizedSubject,
+    error: null,
+  };
+}
+
 export async function startConversationAction(
   _state: MessageActionState,
   formData: FormData,
@@ -52,7 +76,17 @@ export async function startConversationAction(
     .trim()
     .replace(/^@/, "")
     .toLowerCase();
+  const subjectValidation = validateConversationSubject(
+    getFormString(formData, "subject"),
+  );
   const messageValidation = validateMessageBody(getFormString(formData, "body"));
+
+  if (subjectValidation.error) {
+    return {
+      status: "error",
+      message: subjectValidation.error,
+    };
+  }
 
   if (messageValidation.error) {
     return {
@@ -87,6 +121,7 @@ export async function startConversationAction(
     {
       p_target_user_id: targetProfile.id,
       p_initial_body: messageValidation.body,
+      p_subject: subjectValidation.subject,
     },
   );
 

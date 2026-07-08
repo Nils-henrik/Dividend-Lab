@@ -15,6 +15,7 @@ type ParticipantRow = {
 
 type ConversationRow = {
   id: string;
+  subject: string | null;
   updated_at: string;
   created_at: string;
 };
@@ -132,7 +133,7 @@ export async function getConversationSummaries(userId: string) {
   ] = await Promise.all([
     supabase
       .from("conversations")
-      .select("id, updated_at, created_at")
+      .select("id, subject, updated_at, created_at")
       .in("id", conversationIds)
       .returns<ConversationRow[]>(),
     supabase
@@ -208,6 +209,7 @@ export async function getConversationSummaries(userId: string) {
 
       return {
         id: conversation.id,
+        subject: conversation.subject,
         updatedAt: conversation.updated_at ?? conversation.created_at,
         otherParticipant: otherParticipant
           ? mapParticipantProfile(
@@ -301,6 +303,16 @@ export async function getConversationThread(
     return null;
   }
 
+  const { data: conversation, error: conversationError } = await supabase
+    .from("conversations")
+    .select("id, subject, updated_at, created_at")
+    .eq("id", conversationId)
+    .maybeSingle<ConversationRow>();
+
+  if (conversationError) {
+    throw new Error(conversationError.message);
+  }
+
   const { data: messages, error: messagesError } = await supabase
     .from("messages")
     .select("id, conversation_id, sender_id, body, created_at")
@@ -321,6 +333,7 @@ export async function getConversationThread(
 
   return {
     id: conversationId,
+    subject: conversation?.subject ?? null,
     otherParticipant: otherParticipant
       ? mapParticipantProfile(
           profilesByUserId.get(otherParticipant.user_id),

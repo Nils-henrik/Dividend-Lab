@@ -5,6 +5,7 @@ import { startConversationAction } from "@/app/messages/actions";
 import ProfileAvatar from "@/components/account/ProfileAvatar";
 import {
   MESSAGE_BODY_MAX_LENGTH,
+  MESSAGE_SUBJECT_MAX_LENGTH,
   type MessageParticipant,
 } from "@/lib/messages/types";
 
@@ -18,6 +19,7 @@ type Props = {
 };
 
 export default function NewConversationForm({ targetParticipant }: Props) {
+  const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [state, formAction, isPending] = useActionState(
     startConversationAction,
@@ -63,6 +65,24 @@ export default function NewConversationForm({ targetParticipant }: Props) {
           </div>
         </div>
       )}
+
+      <label className="block">
+        <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-gray-500">
+          Ämne
+        </span>
+        <input
+          name="subject"
+          type="text"
+          value={subject}
+          onChange={(event) => setSubject(event.target.value)}
+          maxLength={MESSAGE_SUBJECT_MAX_LENGTH}
+          placeholder="Vad handlar meddelandet om?"
+          className="w-full rounded-xl border border-white/10 bg-[#111111] px-4 py-3 text-sm text-white outline-none transition placeholder:text-gray-600 focus:border-[#D4AF37]/70"
+        />
+        <span className="mt-2 block text-xs text-gray-500">
+          {subject.length}/{MESSAGE_SUBJECT_MAX_LENGTH} tecken
+        </span>
+      </label>
 
       <label className="block">
         <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-gray-500">
