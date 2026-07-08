@@ -7,6 +7,7 @@ export type AppIconName =
   | "forum"
   | "goals"
   | "learning"
+  | "messages"
   | "portfolio"
   | "search"
   | "settings"
@@ -32,6 +33,8 @@ const icons: Record<AppIconName, string> = {
   goals: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm0-4a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0-3a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z",
   learning:
     "M4 6.5 12 3l8 3.5-8 3.5-8-3.5Zm3 3.5v5c0 1.7 2.2 3 5 3s5-1.3 5-3v-5",
+  messages:
+    "M4 5h16v11H8l-4 4V5Zm5 4h6M9 12h4",
   portfolio:
     "M4 8h16v11H4V8Zm4 0V5h8v3M4 13h16",
   search: "m21 21-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z",
