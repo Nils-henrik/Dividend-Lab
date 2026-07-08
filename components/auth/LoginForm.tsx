@@ -85,28 +85,33 @@ export default function LoginForm({ redirectTo }: Props) {
           />
         </label>
 
-        <label className="block">
-          <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-gray-500">
-            Password
-          </span>
-          <input
-            type="password"
-            value={password}
-            onChange={(event) => {
-              setPassword(event.target.value);
-              setError("");
-            }}
-            autoComplete="current-password"
-            required
-            className="w-full rounded-xl border border-white/10 bg-[#161616] px-4 py-3 text-white outline-none transition focus:border-[#D4AF37]/70"
-          />
-          <Link
-            href="/forgot-password"
-            className="mt-3 inline-flex text-sm font-medium text-[#D4AF37] transition hover:text-[#F9D976]"
-          >
-            Glömt lösenord?
-          </Link>
-        </label>
+        <div className="space-y-3">
+          <label className="block">
+            <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-gray-500">
+              Password
+            </span>
+            <input
+              type="password"
+              value={password}
+              onChange={(event) => {
+                setPassword(event.target.value);
+                setError("");
+              }}
+              autoComplete="current-password"
+              required
+              className="w-full rounded-xl border border-white/10 bg-[#161616] px-4 py-3 text-white outline-none transition focus:border-[#D4AF37]/70"
+            />
+          </label>
+
+          <div className="flex justify-end">
+            <Link
+              href="/forgot-password"
+              className="text-sm font-medium text-[#D4AF37] transition hover:text-[#F9D976]"
+            >
+              Glömt lösenord?
+            </Link>
+          </div>
+        </div>
 
         {error && (
           <p className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm leading-6 text-gray-300">
