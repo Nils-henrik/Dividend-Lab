@@ -56,7 +56,7 @@ function ResultGroup({
                   {item.type === "user"
                     ? "Profil"
                     : item.type === "forum"
-                      ? "Forum"
+                      ? "Ämne"
                       : "Artikel"}
                 </span>
               </div>
@@ -94,7 +94,11 @@ export default function SearchResultsPanel({
       ) : (
         <div className="max-h-[min(28rem,70vh)] overflow-y-auto py-1">
           <ResultGroup label="Användare" items={results.users} onSelect={onSelect} />
-          <ResultGroup label="Forum" items={results.forum} onSelect={onSelect} />
+          <ResultGroup
+            label="Forumämnen"
+            items={results.forum}
+            onSelect={onSelect}
+          />
           <ResultGroup
             label="Utbildning"
             items={results.learning}

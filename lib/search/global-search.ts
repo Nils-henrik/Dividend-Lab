@@ -21,11 +21,17 @@ function escapeIlikePattern(value: string) {
   return value.replace(/[%_,]/g, " ").trim();
 }
 
+function normalizeSearchQuery(query: string) {
+  return query.trim().replace(/^@+/, "");
+}
+
+function isUserOnlySearchQuery(query: string) {
+  return query.trim().startsWith("@");
+}
+
 function isMissingSearchTableError(error: { code?: string; message?: string }) {
   return (
-    error.code === "PGRST205" ||
-    error.message?.includes("forum_threads") ||
-    error.message?.includes("forum_replies")
+    error.code === "PGRST205" || error.message?.includes("forum_threads")
   );
 }
 
@@ -54,7 +60,13 @@ function getLearningArticleSearchText(article: (typeof learningArticles)[number]
 }
 
 async function searchProfiles(query: string): Promise<GlobalSearchResult[]> {
-  const pattern = `%${escapeIlikePattern(query)}%`;
+  const normalizedQuery = normalizeSearchQuery(query);
+
+  if (!normalizedQuery) {
+    return [];
+  }
+
+  const pattern = `%${escapeIlikePattern(normalizedQuery)}%`;
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("profiles")
@@ -106,44 +118,10 @@ async function searchForumThreads(query: string): Promise<GlobalSearchResult[]> 
     id: thread.id,
     type: "forum" as const,
     title: thread.title,
-    subtitle: "Diskussion",
+    subtitle: "Forumämne",
     href: `/forum/${thread.slug}`,
     preview: truncatePreview(getForumExcerpt(thread.body)),
   }));
-}
-
-async function searchForumReplies(query: string): Promise<GlobalSearchResult[]> {
-  const pattern = `%${escapeIlikePattern(query)}%`;
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("forum_replies")
-    .select("id, body, forum_threads!inner(slug, title)")
-    .ilike("body", pattern)
-    .order("created_at", { ascending: false })
-    .limit(GLOBAL_SEARCH_LIMIT_PER_GROUP);
-
-  if (error) {
-    if (isMissingSearchTableError(error)) {
-      return [];
-    }
-
-    throw new Error(error.message);
-  }
-
-  return (data ?? []).map((reply) => {
-    const thread = Array.isArray(reply.forum_threads)
-      ? reply.forum_threads[0]
-      : reply.forum_threads;
-
-    return {
-      id: reply.id,
-      type: "forum" as const,
-      title: thread?.title ?? "Forumsvar",
-      subtitle: "Svar i diskussion",
-      href: thread?.slug ? `/forum/${thread.slug}#forum-replies` : "/forum",
-      preview: truncatePreview(reply.body),
-    };
-  });
 }
 
 function searchLearningArticles(query: string): GlobalSearchResult[] {
@@ -164,31 +142,6 @@ function searchLearningArticles(query: string): GlobalSearchResult[] {
     }));
 }
 
-function mergeForumResults(
-  threads: GlobalSearchResult[],
-  replies: GlobalSearchResult[],
-) {
-  const merged = [...threads];
-  const seen = new Set(threads.map((item) => item.href));
-
-  for (const reply of replies) {
-    if (merged.length >= GLOBAL_SEARCH_LIMIT_PER_GROUP) {
-      break;
-    }
-
-    const dedupeKey = `${reply.href}:${reply.preview ?? ""}`;
-
-    if (seen.has(dedupeKey)) {
-      continue;
-    }
-
-    seen.add(dedupeKey);
-    merged.push(reply);
-  }
-
-  return merged.slice(0, GLOBAL_SEARCH_LIMIT_PER_GROUP);
-}
-
 export async function globalSearch(query: string): Promise<GlobalSearchResults> {
   const trimmedQuery = query.trim();
 
@@ -200,16 +153,25 @@ export async function globalSearch(query: string): Promise<GlobalSearchResults> 
     };
   }
 
-  const [users, forumThreads, forumReplies, learning] = await Promise.all([
+  if (isUserOnlySearchQuery(trimmedQuery)) {
+    const users = await searchProfiles(trimmedQuery);
+
+    return {
+      users,
+      forum: [],
+      learning: [],
+    };
+  }
+
+  const [users, forum, learning] = await Promise.all([
     searchProfiles(trimmedQuery),
     searchForumThreads(trimmedQuery),
-    searchForumReplies(trimmedQuery),
     Promise.resolve(searchLearningArticles(trimmedQuery)),
   ]);
 
   return {
     users,
-    forum: mergeForumResults(forumThreads, forumReplies),
+    forum,
     learning,
   };
 }
