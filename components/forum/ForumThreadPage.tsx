@@ -190,10 +190,9 @@ export default function ForumThreadPage({
         items={[
           { label: "Forum", href: "/forum" },
           {
-            label: category.groupName,
+            label: category.name,
             href: `/forum?category=${category.slug}`,
           },
-          { label: category.name, href: `/forum?category=${category.slug}` },
           { label: activeThread.title },
         ]}
       />

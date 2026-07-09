@@ -72,7 +72,6 @@ export default function ForumHomePage({
       <ForumBreadcrumbs
         items={[
           { label: "Forum", href: "/forum" },
-          { label: activeCategory.groupName },
           { label: activeCategory.name },
         ]}
       />

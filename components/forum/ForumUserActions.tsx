@@ -60,14 +60,18 @@ export default function ForumUserActions({
         href={profileHref}
         className="block rounded-lg px-3 py-2 text-left text-[11px] font-medium text-gray-300 transition hover:bg-white/[0.04] hover:text-white focus:bg-white/[0.04] focus:text-white focus:outline-none"
       >
-        Profile
+        Profil
       </Link>
       {!isSelf && (
         <Link
-          href={canMessage ? messageHref : `/login?redirect=${encodeURIComponent(messageHref)}`}
+          href={
+            canMessage
+              ? messageHref
+              : `/login?redirect=${encodeURIComponent(messageHref)}`
+          }
           className="block rounded-lg px-3 py-2 text-left text-[11px] font-medium text-gray-300 transition hover:bg-white/[0.04] hover:text-white focus:bg-white/[0.04] focus:text-white focus:outline-none"
         >
-          Message
+          Meddelande
         </Link>
       )}
       {canQuote ? (
@@ -79,29 +83,37 @@ export default function ForumUserActions({
           }}
           className="block w-full rounded-lg px-3 py-2 text-left text-[11px] font-medium text-gray-300 transition hover:bg-white/[0.04] hover:text-white focus:bg-white/[0.04] focus:text-white focus:outline-none"
         >
-          Quote
+          Citera
         </button>
       ) : (
         <Link
           href={loginHref}
           className="block rounded-lg px-3 py-2 text-left text-[11px] font-medium text-gray-300 transition hover:bg-white/[0.04] hover:text-white focus:bg-white/[0.04] focus:text-white focus:outline-none"
         >
-          Quote
+          Citera
         </Link>
       )}
     </>
   );
 
+  const desktopMenuVisibility =
+    "lg:pointer-events-none lg:invisible lg:opacity-0 lg:transition lg:duration-200 lg:ease-out lg:group-hover/forum-author:pointer-events-auto lg:group-hover/forum-author:visible lg:group-hover/forum-author:opacity-100 lg:group-focus-within/forum-author:pointer-events-auto lg:group-focus-within/forum-author:visible lg:group-focus-within/forum-author:opacity-100";
+
   return (
     <div ref={menuRef} className="relative z-10">
-      <div className="absolute left-0 top-full z-30 mt-2 hidden w-32 rounded-xl border border-white/10 bg-[#111111] p-1 shadow-[0_18px_50px_rgba(0,0,0,0.45)] lg:block lg:pointer-events-none lg:invisible lg:opacity-0 lg:transition lg:duration-200 lg:ease-out lg:group-hover/forum-author:pointer-events-auto lg:group-hover/forum-author:visible lg:group-hover/forum-author:opacity-100 lg:group-focus-within/forum-author:pointer-events-auto lg:group-focus-within/forum-author:visible lg:group-focus-within/forum-author:opacity-100">
-        {actions}
+      <div
+        className={`absolute left-0 top-full z-30 hidden w-32 pt-2 lg:block ${desktopMenuVisibility}`}
+      >
+        <div className="rounded-xl border border-white/10 bg-[#111111] p-1 shadow-[0_18px_50px_rgba(0,0,0,0.45)]">
+          {actions}
+        </div>
       </div>
 
       <button
         type="button"
-        aria-label={`Open actions for @${cleanUsername}`}
+        aria-label={`Öppna åtgärder för @${cleanUsername}`}
         aria-expanded={isOpen}
+        aria-haspopup="menu"
         onClick={() => setIsOpen((value) => !value)}
         className="mt-1 rounded-md border border-white/10 px-2 py-0.5 text-[11px] font-medium text-gray-500 transition hover:border-[#D4AF37]/40 hover:text-[#D4AF37] focus:border-[#D4AF37]/40 focus:text-[#D4AF37] focus:outline-none lg:hidden"
       >
@@ -109,7 +121,10 @@ export default function ForumUserActions({
       </button>
 
       {isOpen && (
-        <div className="absolute left-0 top-full z-20 mt-2 w-32 rounded-xl border border-white/10 bg-[#111111] p-1 shadow-[0_18px_50px_rgba(0,0,0,0.45)] lg:hidden">
+        <div
+          role="menu"
+          className="absolute left-0 top-full z-20 mt-2 w-32 rounded-xl border border-white/10 bg-[#111111] p-1 shadow-[0_18px_50px_rgba(0,0,0,0.45)] lg:hidden"
+        >
           {actions}
         </div>
       )}

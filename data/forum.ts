@@ -192,6 +192,19 @@ export const forumCategoryGroups: ForumCategoryGroup[] = [
       ),
     ],
   },
+  {
+    slug: "divlab",
+    name: "DivLab",
+    categories: [
+      category(
+        "divlab",
+        "DivLab",
+        "divlab-improvements",
+        "DivLab förbättringar",
+        "Förslag, feedback och idéer för hur DivLab kan bli bättre.",
+      ),
+    ],
+  },
 ];
 
 export const forumCategories: ForumCategory[] = forumCategoryGroups.flatMap(

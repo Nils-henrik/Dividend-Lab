@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Fragment } from "react";
 
 type Breadcrumb = {
   label: string;
@@ -11,19 +12,40 @@ type Props = {
 
 export default function ForumBreadcrumbs({ items }: Props) {
   return (
-    <nav className="flex flex-wrap items-center gap-1.5 text-xs text-gray-500">
-      {items.map((item, index) => (
-        <span key={`${item.label}-${index}`} className="flex items-center gap-1.5">
-          {item.href ? (
-            <Link href={item.href} className="transition hover:text-[#D4AF37]">
-              {item.label}
-            </Link>
-          ) : (
-            <span className="text-gray-300">{item.label}</span>
-          )}
-          {index < items.length - 1 && <span>→</span>}
-        </span>
-      ))}
+    <nav
+      aria-label="Forum-navigering"
+      className="flex min-w-0 items-center gap-2 text-[11px] leading-5 text-gray-500"
+    >
+      {items.map((item, index) => {
+        const isLast = index === items.length - 1;
+
+        return (
+          <Fragment key={`${item.label}-${index}`}>
+            {index > 0 && (
+              <span aria-hidden="true" className="shrink-0 text-gray-600">
+                /
+              </span>
+            )}
+            {item.href ? (
+              <Link
+                href={item.href}
+                className="shrink-0 transition hover:text-[#D4AF37]"
+              >
+                {item.label}
+              </Link>
+            ) : (
+              <span
+                className={`text-gray-400 ${
+                  isLast ? "min-w-0 truncate" : "shrink-0"
+                }`}
+                title={isLast ? item.label : undefined}
+              >
+                {item.label}
+              </span>
+            )}
+          </Fragment>
+        );
+      })}
     </nav>
   );
 }
