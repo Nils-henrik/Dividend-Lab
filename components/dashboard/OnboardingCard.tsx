@@ -1,4 +1,12 @@
+"use client";
+
 import Link from "next/link";
+import { useSyncExternalStore } from "react";
+import {
+  hasVisitedForum,
+  markForumVisited,
+  subscribeForumVisited,
+} from "@/lib/onboarding/forum-visited";
 import type { UserProfile } from "@/lib/profiles/types";
 
 type Props = {
@@ -6,50 +14,74 @@ type Props = {
 };
 
 type Step = {
+  id: string;
   label: string;
   description: string;
   href: string;
   completed: boolean;
+  isForumStep?: boolean;
 };
 
-function getOnboardingSteps(profile: UserProfile): Step[] {
+function getProfileSteps(profile: UserProfile, forumVisited: boolean): Step[] {
   const hasProfileBasics = Boolean(
-    profile.displayName?.trim() || profile.bio?.trim() || profile.favoriteSector?.trim(),
+    profile.displayName?.trim() ||
+      profile.bio?.trim() ||
+      profile.favoriteSector?.trim(),
   );
   const hasUsername = Boolean(profile.username?.trim());
   const hasInvestorGoal = Boolean(profile.investorGoal?.trim());
 
   return [
     {
+      id: "profile",
       label: "Slutför din profil",
       description: "Visa vem du är som investerare.",
       href: "/account/edit",
       completed: hasProfileBasics,
     },
     {
+      id: "username",
       label: "Välj ditt @namn",
       description: "Krävs för att skriva i forumet.",
       href: "/account/edit",
       completed: hasUsername,
     },
     {
+      id: "goal",
       label: "Sätt ditt utdelningsmål",
       description: "Formulera vad du bygger mot.",
       href: "/account/edit",
       completed: hasInvestorGoal,
     },
     {
+      id: "forum",
       label: "Utforska forumet",
-      description: "Läs och lär i din egen takt.",
+      description: "Läs diskussioner i din egen takt.",
       href: "/forum",
-      completed: false,
+      completed: forumVisited,
+      isForumStep: true,
     },
   ];
 }
 
 export default function OnboardingCard({ profile }: Props) {
-  const steps = getOnboardingSteps(profile);
+  const forumVisited = useSyncExternalStore(
+    subscribeForumVisited,
+    hasVisitedForum,
+    () => false,
+  );
+
+  const steps = getProfileSteps(profile, forumVisited);
+
+  if (steps.every((step) => step.completed)) {
+    return null;
+  }
+
   const forumReady = Boolean(profile.username?.trim());
+
+  function handleForumStepClick() {
+    markForumVisited();
+  }
 
   return (
     <section className="rounded-2xl border border-white/10 bg-[#161616] p-6">
@@ -65,8 +97,9 @@ export default function OnboardingCard({ profile }: Props) {
       <div className="mt-5 space-y-2">
         {steps.map((step) => (
           <Link
-            key={step.label}
+            key={step.id}
             href={step.href}
+            onClick={step.isForumStep ? handleForumStepClick : undefined}
             className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 transition hover:border-[#D4AF37]/30 hover:bg-white/[0.05]"
           >
             <span

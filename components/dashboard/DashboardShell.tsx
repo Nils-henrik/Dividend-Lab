@@ -2,7 +2,7 @@ import type { UserProfile } from "@/lib/profiles/types";
 import EducationalInsightsCard from "./EducationalInsightsCard";
 import FireCalculatorCard from "./FireCalculatorCard";
 import ForumPreview from "./ForumPreview";
-import MarketPulsePlaceholder from "./MarketPulsePlaceholder";
+import MarketPulse from "./MarketPulse";
 import OnboardingCard from "./OnboardingCard";
 
 type Props = {
@@ -36,16 +36,20 @@ export default function DashboardShell({ profile }: Props) {
         </div>
       </section>
 
-      <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1.35fr_0.65fr]">
-        <FireCalculatorCard />
-        <OnboardingCard profile={profile} />
+      <section className="flex flex-col gap-6 xl:flex-row xl:items-start">
+        <div className="min-w-0 flex-1">
+          <FireCalculatorCard />
+        </div>
+        <div className="w-full xl:w-[min(100%,360px)] xl:shrink-0">
+          <OnboardingCard profile={profile} />
+        </div>
       </section>
 
       <EducationalInsightsCard />
 
       <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_0.9fr]">
         <ForumPreview />
-        <MarketPulsePlaceholder />
+        <MarketPulse />
       </section>
     </div>
   );

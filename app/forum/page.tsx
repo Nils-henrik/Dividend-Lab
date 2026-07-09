@@ -1,3 +1,4 @@
+import ForumVisitTracker from "@/components/dashboard/ForumVisitTracker";
 import ForumHomePage from "@/components/forum/ForumHomePage";
 import ForumWelcomePage from "@/components/forum/ForumWelcomePage";
 import AppShell from "@/components/layout/AppShell";
@@ -29,6 +30,7 @@ export default async function ForumPage({ searchParams }: Props) {
   if (user) {
     return (
       <AppShell user={user}>
+        <ForumVisitTracker />
         {hasCategoryFilter ? (
           <ForumHomePage
             initialCategorySlug={category}
@@ -49,6 +51,7 @@ export default async function ForumPage({ searchParams }: Props) {
   return (
     <main className="min-h-screen bg-[#090909] text-white">
       <div className="px-8 py-8">
+        <ForumVisitTracker />
         {hasCategoryFilter ? (
           <ForumHomePage
             initialCategorySlug={category}
