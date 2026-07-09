@@ -87,7 +87,7 @@ export default function MarketToday({ compact = false }: Props) {
         </p>
         <h2 className="text-base font-semibold text-white">Börsen idag</h2>
         <p className="mt-2 text-sm leading-6 text-gray-400">
-          Välj instrument och följ marknaden via TradingView.
+          Följ marknaden via TradingView.
         </p>
       </div>
 
