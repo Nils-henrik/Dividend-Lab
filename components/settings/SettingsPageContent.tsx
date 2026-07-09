@@ -11,7 +11,7 @@ export default function SettingsPageContent() {
           Inställningar
         </h2>
         <p className="mt-4 max-w-3xl text-base leading-7 text-gray-400">
-          Hantera kontoinställningar och säkerhet i lugn takt.
+          Kontoinställningar
         </p>
       </section>
 

@@ -53,8 +53,7 @@ export default function ChangePasswordForm() {
       <div className="mb-6">
         <h3 className="text-lg font-semibold text-white">Byt lösenord</h3>
         <p className="mt-2 text-sm leading-6 text-gray-400">
-          Välj ett nytt lösenord för ditt konto. Du fortsätter vara inloggad
-          efter uppdateringen.
+          Uppdatera lösenordet för ditt konto.
         </p>
       </div>
 
