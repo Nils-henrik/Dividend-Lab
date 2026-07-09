@@ -7,8 +7,8 @@ const WIDGET_SCRIPT =
 
 const MARKET_OPTIONS = [
   { id: "omxs30", label: "OMXS30", symbol: "OMXSTO:OMXS30" },
-  { id: "sp500", label: "S&P 500", symbol: "FOREXCOM:SPXUSD" },
-  { id: "nasdaq100", label: "Nasdaq 100", symbol: "NASDAQ:NDX" },
+  { id: "sp500", label: "S&P 500", symbol: "FRED:SP500", interval: "1D" },
+  { id: "nasdaq100", label: "Nasdaq 100", symbol: "FRED:NDQ100", interval: "1D" },
   { id: "dax", label: "DAX", symbol: "XETR:DAX" },
   { id: "gold", label: "Guld", symbol: "TVC:GOLD" },
 ] as const;
@@ -16,8 +16,10 @@ const MARKET_OPTIONS = [
 type MarketOption = (typeof MARKET_OPTIONS)[number];
 
 function buildWidgetConfig(option: MarketOption) {
+  const suffix = "interval" in option ? option.interval : option.label;
+
   return {
-    symbols: [[`${option.symbol}|${option.label}`]],
+    symbols: [[`${option.symbol}|${suffix}`]],
     chartOnly: false,
     width: "100%",
     height: "420",
