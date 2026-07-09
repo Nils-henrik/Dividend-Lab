@@ -4,7 +4,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useEffect, useState } from "react";
 import PrimaryButton from "@/components/ui/Button";
+import { clearRecoveryPendingCookie, markRecoveryPendingCookie } from "@/lib/auth/recovery";
 import { createClient } from "@/lib/supabase/client";
+
+const INVALID_LINK_MESSAGE =
+  "Länken för att återställa lösenordet är ogiltig eller har gått ut.";
+
+const MISSING_SESSION_MESSAGE =
+  "Öppna länken från e-postmeddelandet för att välja ett nytt lösenord.";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -17,8 +24,10 @@ export default function ResetPasswordPage() {
 
   useEffect(() => {
     let isMounted = true;
+    let authTimeout: number | undefined;
+    let unsubscribe: (() => void) | undefined;
 
-    async function checkRecoverySession() {
+    async function initializeRecoverySession() {
       const params = new URLSearchParams(window.location.search);
 
       if (params.get("error")) {
@@ -26,35 +35,79 @@ export default function ResetPasswordPage() {
           return;
         }
 
-        setError(
-          "Länken för att återställa lösenordet är ogiltig eller har gått ut.",
-        );
+        setError(INVALID_LINK_MESSAGE);
         setIsCheckingSession(false);
         return;
       }
 
       const supabase = createClient();
+      const code = params.get("code");
+
+      if (code) {
+        const { error: exchangeError } =
+          await supabase.auth.exchangeCodeForSession(code);
+
+        if (!isMounted) {
+          return;
+        }
+
+        if (exchangeError) {
+          setError(INVALID_LINK_MESSAGE);
+          setIsCheckingSession(false);
+          return;
+        }
+
+        window.history.replaceState({}, "", "/reset-password");
+        markRecoveryPendingCookie();
+      }
+
       const { data } = await supabase.auth.getSession();
 
       if (!isMounted) {
         return;
       }
 
-      if (!data.session) {
-        setError(
-          "Öppna länken från e-postmeddelandet för att välja ett nytt lösenord.",
-        );
-      } else {
+      if (data.session) {
+        markRecoveryPendingCookie();
         setIsRecoverySessionReady(true);
+        setIsCheckingSession(false);
+        return;
       }
 
-      setIsCheckingSession(false);
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange((event, session) => {
+        if (!isMounted) {
+          return;
+        }
+
+        if (event === "PASSWORD_RECOVERY" || (event === "SIGNED_IN" && session)) {
+          window.clearTimeout(authTimeout);
+          markRecoveryPendingCookie();
+          setIsRecoverySessionReady(true);
+          setIsCheckingSession(false);
+          setError("");
+        }
+      });
+
+      unsubscribe = () => subscription.unsubscribe();
+
+      authTimeout = window.setTimeout(() => {
+        if (!isMounted) {
+          return;
+        }
+
+        setError(MISSING_SESSION_MESSAGE);
+        setIsCheckingSession(false);
+      }, 2500);
     }
 
-    void checkRecoverySession();
+    void initializeRecoverySession();
 
     return () => {
       isMounted = false;
+      window.clearTimeout(authTimeout);
+      unsubscribe?.();
     };
   }, []);
 
@@ -103,8 +156,10 @@ export default function ResetPasswordPage() {
       return;
     }
 
+    clearRecoveryPendingCookie();
     await supabase.auth.signOut();
     router.replace("/login?reset=success");
+    router.refresh();
   }
 
   return (

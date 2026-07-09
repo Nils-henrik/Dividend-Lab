@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
+import { RECOVERY_PENDING_COOKIE } from "@/lib/auth/recovery";
 import { getSupabaseConfig } from "./config";
 
 export async function updateSession(request: NextRequest) {
@@ -8,6 +9,20 @@ export async function updateSession(request: NextRequest) {
   });
 
   const { supabaseUrl, supabasePublishableKey } = getSupabaseConfig();
+  const pathname = request.nextUrl.pathname;
+  const recoveryPending =
+    request.cookies.get(RECOVERY_PENDING_COOKIE)?.value === "1";
+
+  if (
+    recoveryPending &&
+    pathname !== "/reset-password" &&
+    !pathname.startsWith("/auth/")
+  ) {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = "/reset-password";
+    redirectUrl.search = "";
+    return NextResponse.redirect(redirectUrl);
+  }
 
   const supabase = createServerClient(supabaseUrl, supabasePublishableKey, {
     cookies: {

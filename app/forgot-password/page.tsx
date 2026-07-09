@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { type FormEvent, useState } from "react";
 import PrimaryButton from "@/components/ui/Button";
+import { getRecoveryCallbackUrl } from "@/lib/auth/recovery";
 import { createClient } from "@/lib/supabase/client";
 
 export default function ForgotPasswordPage() {
@@ -26,9 +27,7 @@ export default function ForgotPasswordPage() {
     setIsLoading(true);
 
     const supabase = createClient();
-    const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(
-      "/reset-password",
-    )}`;
+    const redirectTo = getRecoveryCallbackUrl(window.location.origin);
     const { error: resetError } = await supabase.auth.resetPasswordForEmail(
       normalizedEmail,
       {
