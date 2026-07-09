@@ -39,3 +39,12 @@ export type ForumCategoryCounts = Record<
     latestActivity: string | null;
   }
 >;
+
+export type ForumAuthorActivityItem = {
+  id: string;
+  kind: "thread" | "reply";
+  threadSlug: string;
+  threadTitle: string;
+  body: string;
+  createdAt: string;
+};

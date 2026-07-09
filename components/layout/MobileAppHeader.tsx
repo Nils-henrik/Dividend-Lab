@@ -14,6 +14,7 @@ type Props = {
   isLoggingOut: boolean;
   onOpenMenu: () => void;
   isMenuOpen?: boolean;
+  isGuest?: boolean;
 };
 
 export default function MobileAppHeader({
@@ -22,6 +23,7 @@ export default function MobileAppHeader({
   isLoggingOut,
   onOpenMenu,
   isMenuOpen = false,
+  isGuest = false,
 }: Props) {
   const pathname = usePathname();
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
@@ -78,6 +80,7 @@ export default function MobileAppHeader({
             user={user}
             onLogout={onLogout}
             isLoggingOut={isLoggingOut}
+            isGuest={isGuest}
           />
         )}
       </div>

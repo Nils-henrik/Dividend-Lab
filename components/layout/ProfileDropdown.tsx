@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 import ProfileAvatar from "@/components/account/ProfileAvatar";
 import type { UserDisplayIdentity } from "@/lib/profiles/identity";
@@ -9,14 +10,28 @@ type Props = {
   user: UserDisplayIdentity;
   onLogout: () => void;
   isLoggingOut: boolean;
+  isGuest?: boolean;
 };
 
 export default function ProfileDropdown({
   user,
   onLogout,
   isLoggingOut,
+  isGuest = false,
 }: Props) {
+  const pathname = usePathname();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+
+  if (isGuest) {
+    return (
+      <Link
+        href={`/login?redirect=${encodeURIComponent(pathname)}`}
+        className="rounded-xl border border-white/10 px-3 py-2 text-xs font-medium text-gray-300 transition hover:border-[#D4AF37]/40 hover:text-[#D4AF37]"
+      >
+        Logga in
+      </Link>
+    );
+  }
 
   return (
     <div className="relative">

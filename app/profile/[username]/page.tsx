@@ -1,6 +1,11 @@
 import Link from "next/link";
-import ForumReputationBadge from "@/components/account/ForumReputationBadge";
-import ProfileAvatar from "@/components/account/ProfileAvatar";
+import AppShell from "@/components/layout/AppShell";
+import PublicProfileView from "@/components/profile/PublicProfileView";
+import {
+  getAuthenticatedUser,
+  requireAuthenticatedUserWithProfile,
+} from "@/lib/auth/session";
+import { getRecentForumActivityByAuthorId } from "@/lib/forum/queries";
 import { getForumReputationReceivedTotal } from "@/lib/forum/reputation.server";
 import { getAvatarPublicUrl } from "@/lib/profiles/identity";
 import { getPublicProfileByUsername } from "@/lib/profiles/profile";
@@ -11,15 +16,39 @@ type Props = {
   }>;
 };
 
-function getInitials(value: string) {
-  const initials = value
-    .split(/[\s@._-]+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part.charAt(0).toUpperCase())
-    .join("");
+function ProfileNotFound() {
+  return (
+    <div className="mx-auto max-w-3xl">
+      <section className="rounded-3xl border border-white/10 bg-[#161616] p-8">
+        <p className="text-lg font-semibold text-white">Profilen hittades inte</p>
+        <p className="mt-3 text-sm leading-6 text-gray-400">
+          Denna Dividend Lab-medlemsprofil är inte tillgänglig.
+        </p>
+        <Link
+          href="/forum"
+          className="mt-6 inline-flex rounded-xl border border-[#D4AF37]/40 px-5 py-2.5 text-sm font-semibold text-[#D4AF37] transition hover:border-[#D4AF37] hover:bg-[#D4AF37]/10"
+        >
+          Tillbaka till forumet
+        </Link>
+      </section>
+    </div>
+  );
+}
 
-  return initials || "DL";
+async function renderWithAppShell(content: React.ReactNode) {
+  const currentUser = await getAuthenticatedUser();
+
+  if (currentUser) {
+    const session = await requireAuthenticatedUserWithProfile();
+
+    return (
+      <AppShell user={session.user} identity={session.identity}>
+        {content}
+      </AppShell>
+    );
+  }
+
+  return <AppShell allowGuest>{content}</AppShell>;
 }
 
 export default async function PublicProfilePage({ params }: Props) {
@@ -27,85 +56,24 @@ export default async function PublicProfilePage({ params }: Props) {
   const profile = await getPublicProfileByUsername(username);
 
   if (!profile) {
-    return (
-      <main className="min-h-screen bg-[#090909] px-8 py-8 text-white">
-        <section className="mx-auto max-w-3xl rounded-3xl border border-white/10 bg-[#161616] p-8">
-          <p className="text-lg font-semibold text-white">Profilen hittades inte</p>
-          <p className="mt-3 text-sm leading-6 text-gray-400">
-            Denna Dividend Lab-medlemsprofil är inte tillgänglig.
-          </p>
-          <Link
-            href="/forum"
-            className="mt-6 inline-flex rounded-xl border border-[#D4AF37]/40 px-5 py-2.5 text-sm font-semibold text-[#D4AF37] transition hover:border-[#D4AF37] hover:bg-[#D4AF37]/10"
-          >
-            Tillbaka till forumet
-          </Link>
-        </section>
-      </main>
-    );
+    return await renderWithAppShell(<ProfileNotFound />);
   }
 
-  const displayName = profile.displayName?.trim() || profile.username || "Dividend Lab-medlem";
+  const currentUser = await getAuthenticatedUser();
   const avatarUrl = getAvatarPublicUrl(profile.avatarPath, profile.updatedAt);
-  const totalReceivedReactions = await getForumReputationReceivedTotal(profile.id);
+  const [totalReceivedReactions, recentActivity] = await Promise.all([
+    getForumReputationReceivedTotal(profile.id),
+    getRecentForumActivityByAuthorId(profile.id),
+  ]);
 
-  return (
-    <main className="min-h-screen bg-[#090909] px-8 py-8 text-white">
-      <div className="mx-auto max-w-4xl space-y-6">
-        <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-[#111111]/85 p-6 shadow-[0_0_80px_rgba(212,175,55,0.06)]">
-          <div className="pointer-events-none absolute left-8 top-6 h-44 w-44 rounded-full bg-[#D4AF37]/10 blur-3xl" />
-          <div className="relative flex flex-col gap-6 md:flex-row md:items-center">
-            <ProfileAvatar
-              avatarUrl={avatarUrl}
-              initials={getInitials(displayName)}
-              sizeClassName="h-24 w-24"
-              textClassName="text-2xl"
-            />
-            <div>
-              <p className="mb-3 text-xs font-medium uppercase tracking-[0.25em] text-[#D4AF37]">
-                Dividend Lab-medlem
-              </p>
-              <h1 className="text-4xl font-semibold tracking-[-0.04em] text-white">
-                {displayName}
-              </h1>
-              {profile.username && (
-                <p className="mt-3 text-sm text-gray-400">@{profile.username}</p>
-              )}
-              <ForumReputationBadge
-                className="mt-5"
-                totalReceivedReactions={totalReceivedReactions}
-                showDescription
-              />
-            </div>
-          </div>
-        </section>
-
-        <section className="grid gap-6 md:grid-cols-2">
-          <article className="rounded-2xl border border-white/10 bg-[#161616] p-6">
-            <p className="text-xs font-medium uppercase tracking-[0.2em] text-[#D4AF37]">
-              Bio
-            </p>
-            <p className="mt-4 text-sm leading-7 text-gray-300">
-              {profile.bio || "Medlemmen har inte lagt till en offentlig bio ännu."}
-            </p>
-          </article>
-          <article className="rounded-2xl border border-white/10 bg-[#161616] p-6">
-            <p className="text-xs font-medium uppercase tracking-[0.2em] text-[#D4AF37]">
-              Investeraridentitet
-            </p>
-            <div className="mt-4 space-y-4 text-sm leading-6 text-gray-300">
-              <p>
-                <span className="text-gray-500">Favoritsektor:</span>{" "}
-                {profile.favoriteSector || "Inte valt ännu"}
-              </p>
-              <p>
-                <span className="text-gray-500">Investeringsmål:</span>{" "}
-                {profile.investorGoal || "Inte tillagt ännu"}
-              </p>
-            </div>
-          </article>
-        </section>
-      </div>
-    </main>
+  return await renderWithAppShell(
+    <PublicProfileView
+      profile={profile}
+      avatarUrl={avatarUrl}
+      totalReceivedReactions={totalReceivedReactions}
+      recentActivity={recentActivity}
+      isSelf={currentUser?.id === profile.id}
+      isAuthenticated={Boolean(currentUser)}
+    />,
   );
 }

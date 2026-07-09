@@ -10,6 +10,19 @@ export type UserDisplayIdentity = {
   avatarUrl: string | null;
 };
 
+export const GUEST_DISPLAY_IDENTITY: UserDisplayIdentity = {
+  id: "guest",
+  email: "",
+  name: "Gäst",
+  initials: "DL",
+  username: null,
+  avatarUrl: null,
+};
+
+export function isGuestDisplayIdentity(identity: UserDisplayIdentity) {
+  return identity.id === GUEST_DISPLAY_IDENTITY.id;
+}
+
 const PUBLIC_IDENTITY_FALLBACK = "Dividend Lab-medlem";
 
 export function getAvatarPublicUrl(

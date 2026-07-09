@@ -13,6 +13,7 @@ type Props = {
   isLoggingOut: boolean;
   isSidebarCollapsed: boolean;
   unreadMessageCount: number;
+  isGuest?: boolean;
 };
 
 export default function AppHeader({
@@ -21,6 +22,7 @@ export default function AppHeader({
   isLoggingOut,
   isSidebarCollapsed,
   unreadMessageCount,
+  isGuest = false,
 }: Props) {
   const pathname = usePathname();
   const pageTitle =
@@ -53,6 +55,7 @@ export default function AppHeader({
             user={user}
             onLogout={onLogout}
             isLoggingOut={isLoggingOut}
+            isGuest={isGuest}
           />
         </div>
       </div>

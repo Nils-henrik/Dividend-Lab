@@ -16,12 +16,14 @@ type Props = {
   children: React.ReactNode;
   user: UserDisplayIdentity;
   unreadMessageCount: number;
+  isGuest?: boolean;
 };
 
 export default function AppShellClient({
   children,
   user,
   unreadMessageCount,
+  isGuest = false,
 }: Props) {
   const router = useRouter();
   const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -119,6 +121,7 @@ export default function AppShellClient({
         isLoggingOut={isLoggingOut}
         onOpenMenu={() => setIsMobileNavOpen(true)}
         isMenuOpen={isMobileNavOpen}
+        isGuest={isGuest}
       />
       <MobileNavDrawer
         isOpen={isMobileNavOpen}
@@ -131,6 +134,7 @@ export default function AppShellClient({
         isLoggingOut={isLoggingOut}
         isSidebarCollapsed={isSidebarCollapsed}
         unreadMessageCount={unreadMessageCount}
+        isGuest={isGuest}
       />
       <div
         className={`flex min-h-screen flex-col pt-16 transition-[padding] duration-[225ms] ease-in-out lg:pt-20 ${

@@ -28,6 +28,7 @@ export const pageTitles: Record<string, string> = {
   "/portfolio": "Portfölj",
   "/settings": "Inställningar",
   "/watchlist": "Bevakningslista",
+  "/profile": "Profil",
   "/dashboard/account": "Investeraridentitet",
   "/dashboard/brain": "Dividend Brain",
   "/dashboard/forum": "Forum",

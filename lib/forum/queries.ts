@@ -10,6 +10,7 @@ import {
   getForumExcerpt,
 } from "@/lib/forum/format";
 import type {
+  ForumAuthorActivityItem,
   ForumCategoryCounts,
   ForumReplyRecord,
   ForumThreadRecord,
@@ -288,6 +289,110 @@ export async function getForumRepliesByThreadIdFromDatabase(threadId: string) {
   }
 
   return ((data ?? []) as ReplyRow[]).map(mapReplyRow);
+}
+
+type ReplyActivityRow = {
+  id: string;
+  body: string;
+  created_at: string;
+  forum_threads:
+    | {
+        slug: string;
+        title: string;
+      }
+    | {
+        slug: string;
+        title: string;
+      }[]
+    | null;
+};
+
+function getReplyThreadMeta(
+  threadRelation: ReplyActivityRow["forum_threads"],
+) {
+  if (!threadRelation) {
+    return null;
+  }
+
+  return Array.isArray(threadRelation) ? (threadRelation[0] ?? null) : threadRelation;
+}
+
+export async function getRecentForumActivityByAuthorId(
+  authorId: string,
+  limit = 5,
+): Promise<ForumAuthorActivityItem[]> {
+  const supabase = await createClient();
+  const fetchLimit = limit;
+
+  const [threadsResult, repliesResult] = await Promise.all([
+    supabase
+      .from("forum_threads")
+      .select("id, slug, title, body, created_at")
+      .eq("author_id", authorId)
+      .order("created_at", { ascending: false })
+      .limit(fetchLimit),
+    supabase
+      .from("forum_replies")
+      .select(
+        `
+        id,
+        body,
+        created_at,
+        forum_threads:thread_id (
+          slug,
+          title
+        )
+      `,
+      )
+      .eq("author_id", authorId)
+      .order("created_at", { ascending: false })
+      .limit(fetchLimit),
+  ]);
+
+  if (threadsResult.error && !isMissingForumTableError(threadsResult.error)) {
+    throw new Error(threadsResult.error.message);
+  }
+
+  if (repliesResult.error && !isMissingForumTableError(repliesResult.error)) {
+    throw new Error(repliesResult.error.message);
+  }
+
+  const items: ForumAuthorActivityItem[] = [];
+
+  for (const thread of threadsResult.data ?? []) {
+    items.push({
+      id: thread.id,
+      kind: "thread",
+      threadSlug: thread.slug,
+      threadTitle: thread.title,
+      body: thread.body,
+      createdAt: thread.created_at,
+    });
+  }
+
+  for (const reply of (repliesResult.data ?? []) as ReplyActivityRow[]) {
+    const thread = getReplyThreadMeta(reply.forum_threads);
+
+    if (!thread) {
+      continue;
+    }
+
+    items.push({
+      id: reply.id,
+      kind: "reply",
+      threadSlug: thread.slug,
+      threadTitle: thread.title,
+      body: reply.body,
+      createdAt: reply.created_at,
+    });
+  }
+
+  return items
+    .sort(
+      (first, second) =>
+        new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime(),
+    )
+    .slice(0, limit);
 }
 
 export function buildForumCategoryCounts(
