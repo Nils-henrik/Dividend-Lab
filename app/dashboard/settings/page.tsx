@@ -1,10 +1,5 @@
-import PlaceholderPage from "@/components/dashboard/PlaceholderPage";
+import SettingsPageContent from "@/components/settings/SettingsPageContent";
 
-export default function SettingsPage() {
-  return (
-    <PlaceholderPage
-      title="Inställningar"
-      description="Inställningar samlar preferenser för Dividend Lab-upplevelsen."
-    />
-  );
+export default function DashboardSettingsPage() {
+  return <SettingsPageContent />;
 }
