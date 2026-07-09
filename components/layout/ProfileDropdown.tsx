@@ -26,7 +26,7 @@ export default function ProfileDropdown({
     return (
       <Link
         href={`/login?redirect=${encodeURIComponent(pathname)}`}
-        className="rounded-xl border border-white/10 px-3 py-2 text-xs font-medium text-gray-300 transition hover:border-[#D4AF37]/40 hover:text-[#D4AF37]"
+        className="rounded-xl border divlab-border-neutral px-3 py-2 text-xs font-medium text-divlab-text-secondary transition hover:border-divlab-gold/40 hover:text-divlab-gold"
       >
         Logga in
       </Link>
@@ -44,8 +44,8 @@ export default function ProfileDropdown({
       </button>
 
       {isProfileOpen && (
-        <div className="absolute right-0 mt-3 w-64 rounded-2xl border border-white/10 bg-[#111111] p-2 shadow-[0_30px_80px_rgba(0,0,0,0.55)]">
-          <div className="flex items-center gap-3 border-b border-white/10 px-3 py-3">
+        <div className="absolute right-0 mt-3 w-64 divlab-dropdown">
+          <div className="flex items-center gap-3 border-b divlab-border-neutral px-3 py-3">
             <ProfileAvatar
               avatarUrl={user.avatarUrl}
               initials={user.initials}
@@ -53,10 +53,10 @@ export default function ProfileDropdown({
               textClassName="text-xs"
             />
             <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-white">
+              <p className="truncate text-sm font-medium text-divlab-text">
                 {user.name}
               </p>
-              <p className="mt-1 truncate text-xs text-gray-500">
+              <p className="mt-1 truncate text-xs text-divlab-text-muted">
                 {user.username ? `@${user.username}` : user.email}
               </p>
             </div>
@@ -65,25 +65,25 @@ export default function ProfileDropdown({
           <div className="py-2">
             <Link
               href="/account"
-              className="block rounded-xl px-3 py-2 text-sm text-gray-300 transition hover:bg-white/[0.03] hover:text-white"
+              className="block rounded-xl px-3 py-2 text-sm text-divlab-text-secondary transition hover:bg-white/[0.03] hover:text-divlab-text"
             >
               Profil
             </Link>
             <Link
               href="/account"
-              className="block rounded-xl px-3 py-2 text-sm text-gray-300 transition hover:bg-white/[0.03] hover:text-white"
+              className="block rounded-xl px-3 py-2 text-sm text-divlab-text-secondary transition hover:bg-white/[0.03] hover:text-divlab-text"
             >
               Investeraridentitet
             </Link>
             <Link
               href="/account"
-              className="block rounded-xl px-3 py-2 text-sm text-gray-300 transition hover:bg-white/[0.03] hover:text-white"
+              className="block rounded-xl px-3 py-2 text-sm text-divlab-text-secondary transition hover:bg-white/[0.03] hover:text-divlab-text"
             >
               Prenumeration
             </Link>
             <Link
               href="/settings"
-              className="block rounded-xl px-3 py-2 text-sm text-gray-300 transition hover:bg-white/[0.03] hover:text-white"
+              className="block rounded-xl px-3 py-2 text-sm text-divlab-text-secondary transition hover:bg-white/[0.03] hover:text-divlab-text"
             >
               Inställningar
             </Link>
@@ -93,7 +93,7 @@ export default function ProfileDropdown({
             type="button"
             onClick={onLogout}
             disabled={isLoggingOut}
-            className="w-full rounded-xl border-t border-white/10 px-3 py-2 text-left text-sm text-gray-400 transition hover:bg-white/[0.03] hover:text-white"
+            className="w-full rounded-xl border-t divlab-border-neutral px-3 py-2 text-left text-sm text-divlab-text-muted transition hover:bg-white/[0.03] hover:text-divlab-text"
           >
             {isLoggingOut ? "Loggar ut..." : "Logga ut"}
           </button>

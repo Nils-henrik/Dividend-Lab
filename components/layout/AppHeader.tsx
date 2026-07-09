@@ -34,16 +34,16 @@ export default function AppHeader({
 
   return (
     <header
-      className={`fixed right-0 top-0 z-30 hidden h-20 border-b border-white/10 bg-[#090909]/90 backdrop-blur-xl transition-[left] duration-[225ms] ease-in-out lg:block ${
+      className={`fixed right-0 top-0 z-30 hidden h-20 divlab-shell-header transition-[left] duration-[225ms] ease-in-out lg:block ${
         isSidebarCollapsed ? "left-20" : "left-64"
       }`}
     >
       <div className="flex h-full items-center justify-between px-8">
         <div>
-          <p className="text-xs font-medium uppercase tracking-[0.22em] text-gray-500">
+          <p className="text-xs font-medium uppercase tracking-[0.22em] text-divlab-text-muted">
             Dividend Lab
           </p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-white">
+          <h1 className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-divlab-text">
             {pageTitle}
           </h1>
         </div>

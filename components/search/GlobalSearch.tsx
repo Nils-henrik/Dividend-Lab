@@ -127,7 +127,7 @@ export default function GlobalSearch({
         type="button"
         onClick={openMobileSearch}
         aria-label="Öppna sökning"
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 text-gray-300 transition hover:border-[#D4AF37]/40 hover:text-[#D4AF37]"
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border divlab-border-neutral text-divlab-text-secondary transition hover:border-divlab-gold/40 hover:text-divlab-gold"
       >
         <AppIcon name="search" className="h-4 w-4" />
       </button>
@@ -149,7 +149,7 @@ export default function GlobalSearch({
     >
       <label
         htmlFor={inputId}
-        className={`flex items-center gap-3 rounded-xl border border-white/10 bg-[#161616] text-sm text-gray-500 transition focus-within:border-[#D4AF37]/40 ${
+        className={`flex items-center gap-3 divlab-input text-divlab-text-muted focus-within:border-divlab-gold/40 ${
           variant === "desktop" ? "px-4 py-3" : "px-3 py-2"
         }`}
       >
@@ -164,14 +164,14 @@ export default function GlobalSearch({
           placeholder="Sök i DivLab"
           autoComplete="off"
           aria-label="Sök i DivLab"
-          className="w-full bg-transparent text-gray-300 outline-none placeholder:text-gray-600"
+          className="w-full bg-transparent text-divlab-text-secondary outline-none placeholder:text-divlab-text-muted"
         />
         {variant === "mobile" && (
           <button
             type="button"
             onClick={handleClose}
             aria-label="Stäng sökning"
-            className="shrink-0 text-[11px] font-medium text-gray-500 transition hover:text-white"
+            className="shrink-0 text-[11px] font-medium text-divlab-text-muted transition hover:text-divlab-text"
           >
             Stäng
           </button>

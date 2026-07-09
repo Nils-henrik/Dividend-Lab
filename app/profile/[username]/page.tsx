@@ -19,15 +19,12 @@ type Props = {
 function ProfileNotFound() {
   return (
     <div className="mx-auto max-w-3xl">
-      <section className="rounded-3xl border border-white/10 bg-[#161616] p-8">
-        <p className="text-lg font-semibold text-white">Profilen hittades inte</p>
-        <p className="mt-3 text-sm leading-6 text-gray-400">
+      <section className="divlab-card p-8">
+        <p className="text-lg font-semibold text-divlab-text">Profilen hittades inte</p>
+        <p className="mt-3 text-sm leading-6 text-divlab-text-secondary">
           Denna Dividend Lab-medlemsprofil är inte tillgänglig.
         </p>
-        <Link
-          href="/forum"
-          className="mt-6 inline-flex rounded-xl border border-[#D4AF37]/40 px-5 py-2.5 text-sm font-semibold text-[#D4AF37] transition hover:border-[#D4AF37] hover:bg-[#D4AF37]/10"
-        >
+        <Link href="/forum" className="divlab-btn-ghost mt-6 inline-flex px-5 py-2.5 text-sm">
           Tillbaka till forumet
         </Link>
       </section>

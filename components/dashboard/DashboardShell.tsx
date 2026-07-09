@@ -13,25 +13,25 @@ type Props = {
 export default function DashboardShell({ profile }: Props) {
   return (
     <div className="space-y-6">
-      <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-[#111111]/85 p-6 shadow-[0_0_80px_rgba(212,175,55,0.06)]">
-        <div className="pointer-events-none absolute left-8 top-6 h-44 w-44 rounded-full bg-[#D4AF37]/10 blur-3xl" />
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#D4AF37]/40 to-transparent" />
+      <section className="divlab-hero">
+        <div className="pointer-events-none absolute left-8 top-6 h-44 w-44 rounded-full bg-divlab-gold/10 blur-3xl" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-divlab-gold/30 to-transparent" />
 
         <div className="relative flex flex-col justify-between gap-6 xl:flex-row xl:items-end">
           <div>
-            <p className="mb-3 text-xs font-medium uppercase tracking-[0.25em] text-[#D4AF37]">
+            <p className="mb-3 text-xs font-medium uppercase tracking-[0.25em] text-divlab-gold">
               DivLab Start
             </p>
-            <h1 className="text-4xl font-semibold tracking-[-0.04em] text-white">
+            <h1 className="text-4xl font-semibold tracking-[-0.04em] text-divlab-text">
               Bygg din frihetsplan med utdelningar
             </h1>
-            <p className="mt-4 max-w-3xl text-base leading-7 text-gray-400">
+            <p className="mt-4 max-w-3xl text-base leading-7 text-divlab-text-secondary">
               Planera långsiktigt, lär dig mer om utdelning och FIRE, och hitta
               stöd i communityn — innan portföljintegrationer finns på plats.
             </p>
           </div>
 
-          <div className="inline-flex w-fit items-center rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-xs font-medium text-gray-400">
+          <div className="inline-flex w-fit items-center rounded-full border divlab-border-neutral divlab-inset px-3 py-1 text-xs font-medium text-divlab-text-secondary">
             Planering · Utbildning · Gemenskap
           </div>
         </div>

@@ -20,19 +20,19 @@ export default function ForumReputationBadge({
         <span
           className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium tracking-[0.02em] ${
             isVeteran
-              ? "border-[#D4AF37]/35 bg-[#D4AF37]/10 text-[#D4AF37]"
-              : "border-white/10 bg-white/[0.03] text-gray-300"
+              ? "border-divlab-gold/35 bg-divlab-gold/10 text-divlab-gold"
+              : "border-divlab-border-neutral divlab-inset text-divlab-text-secondary"
           }`}
         >
           {badge.label}
         </span>
-        <span className="text-xs text-gray-500">
+        <span className="text-xs text-divlab-text-muted">
           {badge.score}{" "}
           {badge.score === 1 ? "mottagen reaktion" : "mottagna reaktioner"}
         </span>
       </div>
       {showDescription && (
-        <p className="mt-3 max-w-xl text-sm leading-6 text-gray-400">
+        <p className="mt-3 max-w-xl text-sm leading-6 text-divlab-text-secondary">
           {badge.description}
         </p>
       )}

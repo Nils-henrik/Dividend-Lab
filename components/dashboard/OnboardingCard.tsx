@@ -84,12 +84,10 @@ export default function OnboardingCard({ profile }: Props) {
   }
 
   return (
-    <section className="rounded-2xl border border-white/10 bg-[#161616] p-6">
-      <p className="mb-3 text-xs font-medium uppercase tracking-[0.2em] text-[#D4AF37]">
-        Nästa steg
-      </p>
-      <h2 className="text-lg font-semibold text-white">Kom igång i DivLab</h2>
-      <p className="mt-2 text-sm leading-6 text-gray-400">
+    <section className="divlab-card p-6">
+      <p className="mb-3 divlab-section-label">Nästa steg</p>
+      <h2 className="text-lg font-semibold text-divlab-text">Kom igång i DivLab</h2>
+      <p className="mt-2 text-sm leading-6 text-divlab-text-secondary">
         Ett färdigt konto och @namn behövs för att skriva i forumet. Allt annat
         kan du ta i din egen takt.
       </p>
@@ -100,22 +98,22 @@ export default function OnboardingCard({ profile }: Props) {
             key={step.id}
             href={step.href}
             onClick={step.isForumStep ? handleForumStepClick : undefined}
-            className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 transition hover:border-[#D4AF37]/30 hover:bg-white/[0.05]"
+            className="flex items-start gap-3 rounded-xl border divlab-inset px-4 py-3 transition hover:border-divlab-gold/30 hover:bg-white/[0.05]"
           >
             <span
               className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[10px] font-medium ${
                 step.completed
-                  ? "border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]"
-                  : "border-white/10 text-gray-500"
+                  ? "border-divlab-gold/40 bg-divlab-gold/10 text-divlab-gold"
+                  : "border-divlab-border-neutral text-divlab-text-muted"
               }`}
             >
               {step.completed ? "✓" : ""}
             </span>
             <span>
-              <span className="block text-sm font-medium text-white">
+              <span className="block text-sm font-medium text-divlab-text">
                 {step.label}
               </span>
-              <span className="mt-0.5 block text-xs leading-5 text-gray-500">
+              <span className="mt-0.5 block text-xs leading-5 text-divlab-text-muted">
                 {step.description}
               </span>
             </span>
@@ -123,7 +121,7 @@ export default function OnboardingCard({ profile }: Props) {
         ))}
       </div>
 
-      <p className="mt-5 text-xs leading-5 text-gray-500">
+      <p className="mt-5 text-xs leading-5 text-divlab-text-muted">
         {forumReady
           ? "Ditt @namn är klart. Du kan skriva i forumet när du känner dig redo."
           : "Välj ett @namn i profilen innan du skapar trådar eller svarar i forumet."}

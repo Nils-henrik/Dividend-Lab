@@ -41,11 +41,7 @@ export default function AppNavigationLinks({
               isCollapsed
                 ? "justify-center px-2 py-2.5"
                 : "gap-3 px-3 py-2.5"
-            } ${
-              isActive
-                ? "border border-[#D4AF37]/30 bg-[#D4AF37]/10 text-[#D4AF37]"
-                : "text-gray-400 hover:bg-white/[0.03] hover:text-white"
-            }`}
+            } ${isActive ? "divlab-nav-active" : "divlab-nav-idle"}`}
           >
             <AppIcon name={item.icon} />
             <span className={isCollapsed ? "sr-only" : "block"}>
@@ -53,7 +49,7 @@ export default function AppNavigationLinks({
             </span>
             {showUnreadIndicator && (
               <span
-                className={`rounded-full bg-[#D4AF37] ${
+                className={`rounded-full bg-divlab-gold ${
                   isCollapsed
                     ? "absolute right-4 top-2 h-2 w-2"
                     : "ml-auto min-w-5 px-1.5 py-0.5 text-center text-[10px] font-semibold leading-none text-black"

@@ -49,7 +49,7 @@ export default async function ForumPage({ searchParams }: Props) {
   }
 
   return (
-    <main className="min-h-screen bg-[#090909] text-white">
+    <main className="min-h-screen bg-divlab-bg text-divlab-text">
       <div className="px-8 py-8">
         <ForumVisitTracker />
         {hasCategoryFilter ? (

@@ -56,21 +56,21 @@ export default function MobileNavDrawer({
         role="dialog"
         aria-modal="true"
         aria-label="Main navigation"
-        className="relative flex h-full w-[min(18rem,85vw)] flex-col border-r border-white/10 bg-[#090909] shadow-[0_0_60px_rgba(0,0,0,0.45)] transition-transform duration-200 ease-out"
+        className="relative flex h-full w-[min(18rem,85vw)] flex-col border-r divlab-border-neutral bg-divlab-bg shadow-[0_0_60px_rgba(0,0,0,0.45)] transition-transform duration-200 ease-out"
       >
-        <div className="flex h-16 items-center justify-between border-b border-white/10 px-4">
+        <div className="flex h-16 items-center justify-between border-b divlab-border-neutral px-4">
           <Link
             href="/dashboard"
             onClick={onClose}
             className="flex items-center gap-3 transition hover:opacity-90"
             aria-label="DivLab Start"
           >
-            <span className="text-2xl font-bold text-[#D4AF37]">DL</span>
+            <span className="text-2xl font-bold text-divlab-gold">DL</span>
             <div>
-              <p className="text-xs font-semibold tracking-[0.28em] text-white">
+              <p className="text-xs font-semibold tracking-[0.28em] text-divlab-text">
                 DIVIDEND
               </p>
-              <p className="text-[11px] font-semibold tracking-[0.32em] text-[#D4AF37]">
+              <p className="text-[11px] font-semibold tracking-[0.32em] text-divlab-gold">
                 LAB
               </p>
             </div>
@@ -80,7 +80,7 @@ export default function MobileNavDrawer({
             type="button"
             onClick={onClose}
             aria-label="Close navigation menu"
-            className="rounded-lg border border-white/10 px-2.5 py-1.5 text-xs font-medium text-gray-400 transition hover:border-white/20 hover:text-white"
+            className="rounded-lg border divlab-border-neutral px-2.5 py-1.5 text-xs font-medium text-divlab-text-muted transition hover:border-divlab-border-strong hover:text-divlab-text"
           >
             Close
           </button>

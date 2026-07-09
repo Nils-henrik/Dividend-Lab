@@ -176,7 +176,7 @@ export default function FreedomPlanCard() {
     !result.exceedsHorizon && result.yearsToGoal !== null && result.yearsToGoal >= 0;
 
   return (
-    <section className="rounded-2xl border border-white/10 bg-[#161616] p-6">
+    <section className="divlab-card p-6">
       <p className="mb-3 text-xs font-medium uppercase tracking-[0.2em] text-[#D4AF37]">
         Frihetsplan
       </p>

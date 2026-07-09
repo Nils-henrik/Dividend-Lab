@@ -64,15 +64,12 @@ export default function ForumThreadPage({
             { label: "Diskussionen hittades inte" },
           ]}
         />
-        <section className="rounded-md border border-white/10 bg-[#161616] p-8 text-center">
-          <p className="text-sm font-medium text-white">Diskussionen hittades inte</p>
-          <p className="mt-2 text-sm text-gray-500">
+        <section className="divlab-card p-8 text-center">
+          <p className="text-sm font-medium text-divlab-text">Diskussionen hittades inte</p>
+          <p className="mt-2 text-sm text-divlab-text-muted">
             Denna diskussion är inte tillgänglig eller kan ha tagits bort.
           </p>
-          <Link
-            href="/forum"
-            className="mt-6 inline-flex rounded-xl border border-[#D4AF37]/40 px-5 py-2.5 text-sm font-semibold text-[#D4AF37] transition hover:border-[#D4AF37] hover:bg-[#D4AF37]/10"
-          >
+          <Link href="/forum" className="divlab-btn-ghost mt-6 inline-flex px-5 py-2.5 text-sm">
             Tillbaka till forumet
           </Link>
         </section>

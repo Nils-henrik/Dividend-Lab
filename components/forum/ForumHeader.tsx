@@ -19,7 +19,7 @@ export default function ForumHeader({
   loginHref,
 }: Props) {
   return (
-    <section className="rounded-lg border border-white/10 bg-[#111111]/85 p-3.5">
+    <section className="divlab-surface-panel p-3.5">
       <div className="grid gap-4 xl:grid-cols-[1fr_420px] xl:items-center">
         <div>
           <p className="mb-1.5 text-[11px] font-medium uppercase tracking-[0.25em] text-[#D4AF37]">
@@ -50,7 +50,7 @@ export default function ForumHeader({
           ) : (
             <Link
               href={loginHref}
-              className="block rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-center text-sm font-medium text-gray-300 transition hover:border-[#D4AF37]/30 hover:text-[#D4AF37]"
+              className="block rounded-xl border divlab-inset px-4 py-3 text-center text-sm font-medium text-divlab-text-secondary transition hover:border-divlab-gold/30 hover:text-divlab-gold"
             >
               Logga in för att starta en diskussion
             </Link>

@@ -102,7 +102,7 @@ export default function AppShellClient({
   }
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#090909] text-white">
+    <main className="min-h-screen overflow-x-hidden bg-divlab-bg text-divlab-text">
       <div
         aria-hidden="true"
         onMouseEnter={handleTriggerEnter}

@@ -20,12 +20,12 @@ export default function AppSidebar({
     <aside
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
-      className={`fixed inset-y-0 left-0 z-40 hidden flex-col overflow-hidden border-r border-white/10 bg-[#090909] transition-[width] duration-[225ms] ease-in-out lg:flex ${
+      className={`fixed inset-y-0 left-0 z-40 hidden flex-col overflow-hidden border-r divlab-border-neutral bg-divlab-bg transition-[width] duration-[225ms] ease-in-out lg:flex ${
         isCollapsed ? "w-20" : "w-64"
       }`}
     >
       <div
-        className={`flex h-20 items-center border-b border-white/10 ${
+        className={`flex h-20 items-center border-b divlab-border-neutral ${
           isCollapsed ? "justify-center px-3" : "px-6"
         }`}
       >
@@ -34,12 +34,12 @@ export default function AppSidebar({
           className="flex min-w-0 items-center gap-3 transition hover:opacity-90"
           aria-label="DivLab Start"
         >
-          <span className="text-3xl font-bold text-[#D4AF37]">DL</span>
+          <span className="text-3xl font-bold text-divlab-gold">DL</span>
           <div className={isCollapsed ? "hidden" : "block"}>
-            <p className="text-sm font-semibold tracking-[0.28em] text-white">
+            <p className="text-sm font-semibold tracking-[0.28em] text-divlab-text">
               DIVIDEND
             </p>
-            <p className="text-xs font-semibold tracking-[0.32em] text-[#D4AF37]">
+            <p className="text-xs font-semibold tracking-[0.32em] text-divlab-gold">
               LAB
             </p>
           </div>
