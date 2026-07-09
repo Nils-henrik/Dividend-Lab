@@ -1,7 +1,6 @@
 "use client";
 
 import { type FormEvent, useState } from "react";
-import PrimaryButton from "@/components/ui/Button";
 import { createClient } from "@/lib/supabase/client";
 
 const MIN_PASSWORD_LENGTH = 6;
@@ -110,10 +109,14 @@ export default function ChangePasswordForm() {
           </p>
         )}
 
-        <div className="flex justify-end">
-          <PrimaryButton type="submit" disabled={isLoading} className="w-full sm:w-auto">
+        <div className="flex flex-col sm:flex-row sm:justify-end">
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="inline-flex h-11 w-full items-center justify-center rounded-lg border border-[#D4AF37] bg-[#D4AF37] px-6 text-sm font-semibold text-black shadow-[0_0_20px_rgba(212,175,55,0.14)] transition-all duration-300 hover:bg-[#F5D77A] hover:shadow-[0_0_28px_rgba(212,175,55,0.2)] disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
+          >
             {isLoading ? "Sparar..." : "Uppdatera lösenord"}
-          </PrimaryButton>
+          </button>
         </div>
       </form>
     </section>
