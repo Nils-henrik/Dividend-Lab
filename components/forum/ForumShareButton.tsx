@@ -2,6 +2,11 @@
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import {
+  ShareCopyIcon,
+  ShareFacebookIcon,
+  ShareXIcon,
+} from "./ShareBrandIcons";
 
 type Props = {
   label?: string;
@@ -124,7 +129,8 @@ export default function ForumShareButton({
     : undefined;
 
   const shareActionClassName =
-    "rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-medium text-gray-300 transition hover:border-[#D4AF37]/40 hover:text-[#D4AF37] focus:border-[#D4AF37]/40 focus:text-[#D4AF37] focus:outline-none";
+    "inline-flex min-w-[5.5rem] flex-col items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 text-center transition hover:border-[#D4AF37]/40 focus:border-[#D4AF37]/40 focus:outline-none";
+  const shareActionLabelClassName = "text-[10px] font-medium text-gray-400";
 
   const dialog =
     isOpen && resolvedUrl ? (
@@ -181,8 +187,9 @@ export default function ForumShareButton({
               <button
                 type="button"
                 onClick={handleCopyLink}
-                className="shrink-0 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-medium text-gray-300 transition hover:border-[#D4AF37]/40 hover:text-[#D4AF37] focus:border-[#D4AF37]/40 focus:text-[#D4AF37] focus:outline-none"
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-medium text-gray-300 transition hover:border-[#D4AF37]/40 hover:text-[#D4AF37] focus:border-[#D4AF37]/40 focus:text-[#D4AF37] focus:outline-none"
               >
+                <ShareCopyIcon className="h-3.5 w-3.5" />
                 {copyFeedback ? "Länk kopierad" : "Kopiera"}
               </button>
             </div>
@@ -198,9 +205,11 @@ export default function ForumShareButton({
                   href={twitterShareUrl}
                   target="_blank"
                   rel="noopener noreferrer"
+                  aria-label="Dela på X/Twitter"
                   className={shareActionClassName}
                 >
-                  X/Twitter
+                  <ShareXIcon className="h-4 w-4 text-white" />
+                  <span className={shareActionLabelClassName}>X/Twitter</span>
                 </a>
               )}
               {facebookShareUrl && (
@@ -208,9 +217,11 @@ export default function ForumShareButton({
                   href={facebookShareUrl}
                   target="_blank"
                   rel="noopener noreferrer"
+                  aria-label="Dela på Facebook"
                   className={shareActionClassName}
                 >
-                  Facebook
+                  <ShareFacebookIcon className="h-4 w-4" />
+                  <span className={shareActionLabelClassName}>Facebook</span>
                 </a>
               )}
             </div>
