@@ -3,6 +3,7 @@ import EducationalInsightsCard from "./EducationalInsightsCard";
 import FireCalculatorCard from "./FireCalculatorCard";
 import ForumPreview from "./ForumPreview";
 import MarketPulse from "./MarketPulse";
+import MarketToday from "./MarketToday";
 import OnboardingCard from "./OnboardingCard";
 
 type Props = {
@@ -46,6 +47,8 @@ export default function DashboardShell({ profile }: Props) {
       </section>
 
       <EducationalInsightsCard />
+
+      <MarketToday />
 
       <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_0.9fr]">
         <ForumPreview />

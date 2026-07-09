@@ -101,3 +101,45 @@ export function formatYearsToGoal(years: number | null) {
 
   return `Ca ${wholeYears} år och ${months} månader`;
 }
+
+export type CapitalProjectionPoint = {
+  year: string;
+  capital: number;
+};
+
+export function getCapitalProjectionSeries(
+  input: FireCalculatorInput,
+): CapitalProjectionPoint[] {
+  const currentCapital = clampNonNegative(input.currentCapital);
+  const monthlySavings = clampNonNegative(input.monthlySavings);
+  const expectedGrowthPercent = clampNonNegative(input.expectedGrowthPercent);
+  const plan = calculateFirePlan(input);
+
+  const monthlyRate =
+    expectedGrowthPercent > 0
+      ? (1 + expectedGrowthPercent / 100) ** (1 / 12) - 1
+      : 0;
+
+  const horizonYears =
+    plan.yearsToGoal !== null
+      ? Math.min(40, Math.max(10, Math.ceil(plan.yearsToGoal) + 3))
+      : 30;
+
+  let capital = currentCapital;
+  const points: CapitalProjectionPoint[] = [
+    { year: "0", capital: Math.round(capital) },
+  ];
+
+  for (let year = 1; year <= horizonYears; year += 1) {
+    for (let month = 0; month < 12; month += 1) {
+      capital = capital * (1 + monthlyRate) + monthlySavings;
+    }
+
+    points.push({
+      year: `${year}`,
+      capital: Math.round(capital),
+    });
+  }
+
+  return points;
+}

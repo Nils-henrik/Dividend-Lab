@@ -1,9 +1,13 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import AppShell from "@/components/layout/AppShell";
+import LearningArticleComments from "@/components/learning/LearningArticleComments";
+import LearningPageShell from "@/components/learning/LearningPageShell";
 import LearningArticleView, {
   getLearningArticleOrThrow,
 } from "@/components/learning/LearningArticleView";
-import { learningArticles } from "@/data/learning-articles";
+import { getLearningArticle, learningArticles } from "@/data/learning-articles";
+import { getAuthenticatedUser } from "@/lib/auth/session";
+import { getProfileForUser } from "@/lib/profiles/profile";
 
 type Props = {
   params: Promise<{
@@ -17,6 +21,25 @@ export function generateStaticParams() {
   }));
 }
 
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params;
+  const article = getLearningArticle(slug);
+
+  if (!article) {
+    return {};
+  }
+
+  return {
+    title: `${article.title} | Dividend Lab`,
+    description: article.description,
+    openGraph: {
+      title: article.title,
+      description: article.description,
+      type: "article",
+    },
+  };
+}
+
 export default async function LearningArticlePage({ params }: Props) {
   const { slug } = await params;
   const article = getLearningArticleOrThrow(slug);
@@ -25,9 +48,19 @@ export default async function LearningArticlePage({ params }: Props) {
     notFound();
   }
 
+  const user = await getAuthenticatedUser();
+  const profile = user ? await getProfileForUser(user.id) : null;
+
   return (
-    <AppShell>
-      <LearningArticleView article={article} />
-    </AppShell>
+    <LearningPageShell>
+      <div className="space-y-6">
+        <LearningArticleView article={article} />
+        <LearningArticleComments
+          articleSlug={article.slug}
+          user={user}
+          profile={profile}
+        />
+      </div>
+    </LearningPageShell>
   );
 }

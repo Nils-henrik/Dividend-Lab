@@ -1,10 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import FireProjectionChart from "@/components/dashboard/FireProjectionChart";
 import {
   calculateFirePlan,
   formatSek,
   formatYearsToGoal,
+  getCapitalProjectionSeries,
 } from "@/lib/dashboard/fire-calculator";
 
 const defaultValues = {
@@ -34,15 +36,14 @@ export default function FireCalculatorCard() {
     defaultValues.expectedGrowthPercent,
   );
 
-  const result = useMemo(
-    () =>
-      calculateFirePlan({
-        currentCapital: parseInput(currentCapital),
-        monthlySavings: parseInput(monthlySavings),
-        targetMonthlyIncome: parseInput(targetMonthlyIncome),
-        expectedYieldPercent: parseInput(expectedYieldPercent),
-        expectedGrowthPercent: parseInput(expectedGrowthPercent),
-      }),
+  const calculatorInput = useMemo(
+    () => ({
+      currentCapital: parseInput(currentCapital),
+      monthlySavings: parseInput(monthlySavings),
+      targetMonthlyIncome: parseInput(targetMonthlyIncome),
+      expectedYieldPercent: parseInput(expectedYieldPercent),
+      expectedGrowthPercent: parseInput(expectedGrowthPercent),
+    }),
     [
       currentCapital,
       expectedGrowthPercent,
@@ -50,6 +51,16 @@ export default function FireCalculatorCard() {
       monthlySavings,
       targetMonthlyIncome,
     ],
+  );
+
+  const result = useMemo(
+    () => calculateFirePlan(calculatorInput),
+    [calculatorInput],
+  );
+
+  const projectionSeries = useMemo(
+    () => getCapitalProjectionSeries(calculatorInput),
+    [calculatorInput],
   );
 
   const inputClassName =
@@ -68,90 +79,96 @@ export default function FireCalculatorCard() {
         att nå en önskad månadsinkomst från utdelningar.
       </p>
 
-      <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <label className="block">
-          <span className="text-xs font-medium text-gray-400">Nuvarande kapital</span>
-          <input
-            type="text"
-            inputMode="decimal"
-            value={currentCapital}
-            onChange={(event) => setCurrentCapital(event.target.value)}
-            className={`${inputClassName} mt-2`}
-          />
-        </label>
-        <label className="block">
-          <span className="text-xs font-medium text-gray-400">Månadssparande</span>
-          <input
-            type="text"
-            inputMode="decimal"
-            value={monthlySavings}
-            onChange={(event) => setMonthlySavings(event.target.value)}
-            className={`${inputClassName} mt-2`}
-          />
-        </label>
-        <label className="block">
-          <span className="text-xs font-medium text-gray-400">
-            Önskad månadsinkomst från utdelningar
-          </span>
-          <input
-            type="text"
-            inputMode="decimal"
-            value={targetMonthlyIncome}
-            onChange={(event) => setTargetMonthlyIncome(event.target.value)}
-            className={`${inputClassName} mt-2`}
-          />
-        </label>
-        <label className="block">
-          <span className="text-xs font-medium text-gray-400">
-            Förväntad direktavkastning (%)
-          </span>
-          <input
-            type="text"
-            inputMode="decimal"
-            value={expectedYieldPercent}
-            onChange={(event) => setExpectedYieldPercent(event.target.value)}
-            className={`${inputClassName} mt-2`}
-          />
-        </label>
-        <label className="block md:col-span-2 xl:col-span-2">
-          <span className="text-xs font-medium text-gray-400">
-            Förväntad årlig tillväxt (%)
-          </span>
-          <input
-            type="text"
-            inputMode="decimal"
-            value={expectedGrowthPercent}
-            onChange={(event) => setExpectedGrowthPercent(event.target.value)}
-            className={`${inputClassName} mt-2`}
-          />
-        </label>
-      </div>
+      <div className="mt-6 grid gap-6 xl:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="block sm:col-span-2">
+            <span className="text-xs font-medium text-gray-400">Nuvarande kapital</span>
+            <input
+              type="text"
+              inputMode="decimal"
+              value={currentCapital}
+              onChange={(event) => setCurrentCapital(event.target.value)}
+              className={`${inputClassName} mt-2`}
+            />
+          </label>
+          <label className="block">
+            <span className="text-xs font-medium text-gray-400">Månadssparande</span>
+            <input
+              type="text"
+              inputMode="decimal"
+              value={monthlySavings}
+              onChange={(event) => setMonthlySavings(event.target.value)}
+              className={`${inputClassName} mt-2`}
+            />
+          </label>
+          <label className="block">
+            <span className="text-xs font-medium text-gray-400">
+              Önskad månadsinkomst från utdelningar
+            </span>
+            <input
+              type="text"
+              inputMode="decimal"
+              value={targetMonthlyIncome}
+              onChange={(event) => setTargetMonthlyIncome(event.target.value)}
+              className={`${inputClassName} mt-2`}
+            />
+          </label>
+          <label className="block">
+            <span className="text-xs font-medium text-gray-400">
+              Förväntad direktavkastning (%)
+            </span>
+            <input
+              type="text"
+              inputMode="decimal"
+              value={expectedYieldPercent}
+              onChange={(event) => setExpectedYieldPercent(event.target.value)}
+              className={`${inputClassName} mt-2`}
+            />
+          </label>
+          <label className="block">
+            <span className="text-xs font-medium text-gray-400">
+              Förväntad årlig tillväxt (%)
+            </span>
+            <input
+              type="text"
+              inputMode="decimal"
+              value={expectedGrowthPercent}
+              onChange={(event) => setExpectedGrowthPercent(event.target.value)}
+              className={`${inputClassName} mt-2`}
+            />
+          </label>
+        </div>
 
-      <div className="mt-6 grid gap-4 md:grid-cols-3">
-        <article className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
-          <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-gray-500">
-            Ungefärligt kapital som krävs
-          </p>
-          <p className="mt-3 text-xl font-medium tracking-[-0.03em] text-white tabular-nums">
-            {formatSek(result.requiredCapital)}
-          </p>
-        </article>
-        <article className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
-          <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-gray-500">
-            Estimerad tid till målet
-          </p>
-          <p className="mt-3 text-xl font-medium tracking-[-0.03em] text-white">
-            {formatYearsToGoal(result.yearsToGoal)}
-          </p>
-        </article>
-        <article className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
-          <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-gray-500">
-            Estimerad årlig utdelning vid målet
-          </p>
-          <p className="mt-3 text-xl font-medium tracking-[-0.03em] text-white tabular-nums">
-            {formatSek(result.annualDividendAtGoal)}
-          </p>
-        </article>
+        <div className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-3">
+            <article className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+              <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-gray-500">
+                Ungefärligt kapital som krävs
+              </p>
+              <p className="mt-3 text-xl font-medium tracking-[-0.03em] text-white tabular-nums">
+                {formatSek(result.requiredCapital)}
+              </p>
+            </article>
+            <article className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+              <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-gray-500">
+                Estimerad tid till målet
+              </p>
+              <p className="mt-3 text-xl font-medium tracking-[-0.03em] text-white">
+                {formatYearsToGoal(result.yearsToGoal)}
+              </p>
+            </article>
+            <article className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+              <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-gray-500">
+                Estimerad årlig utdelning vid målet
+              </p>
+              <p className="mt-3 text-xl font-medium tracking-[-0.03em] text-white tabular-nums">
+                {formatSek(result.annualDividendAtGoal)}
+              </p>
+            </article>
+          </div>
+
+          <FireProjectionChart data={projectionSeries} />
+        </div>
       </div>
 
       <p className="mt-5 text-xs leading-5 text-gray-500">
