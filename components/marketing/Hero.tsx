@@ -1,6 +1,8 @@
 import Link from "next/link";
 import Dashboard from "./DashboardComponent";
-import PrimaryButton from "../ui/Button";
+
+const primaryButtonClasses =
+  "inline-flex items-center justify-center rounded-xl border border-[#D4AF37] bg-[#D4AF37] px-8 py-4 text-lg font-semibold text-black shadow-[0_0_30px_rgba(212,175,55,0.18)] transition-all duration-300 hover:bg-[#F5D77A] hover:shadow-[0_0_40px_rgba(212,175,55,0.28)]";
 
 const secondaryButtonClasses =
   "inline-flex items-center justify-center rounded-xl border border-[#D4AF37]/40 px-8 py-4 text-lg transition hover:border-[#D4AF37] hover:bg-[#D4AF37]/10";
@@ -32,9 +34,12 @@ export default function Hero() {
           </p>
 
           <div className="relative z-10 mt-12 flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
-            <PrimaryButton href="/register" className="w-full sm:w-auto">
+            <Link
+              href="/register"
+              className={`${primaryButtonClasses} w-full sm:w-auto`}
+            >
               Skapa konto
-            </PrimaryButton>
+            </Link>
 
             <Link
               href="/login?redirect=/dashboard"
