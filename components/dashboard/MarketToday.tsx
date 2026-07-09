@@ -7,9 +7,9 @@ const WIDGET_SCRIPT =
 
 const MARKET_OPTIONS = [
   { id: "omxs30", label: "OMXS30", symbol: "OMXSTO:OMXS30" },
-  { id: "sp500", label: "S&P 500", symbol: "FRED:SP500", interval: "1D" },
-  { id: "nasdaq100", label: "Nasdaq 100", symbol: "FRED:NDQ100", interval: "1D" },
-  { id: "dax", label: "DAX", symbol: "XETR:DAX" },
+  { id: "sp500", label: "S&P 500", symbol: "FOREXCOM:SPXUSD", interval: "1D" },
+  { id: "nasdaq100", label: "Nasdaq 100", symbol: "FOREXCOM:NSXUSD", interval: "1D" },
+  { id: "dax", label: "DAX", symbol: "FOREXCOM:GRXEUR", interval: "1D" },
   { id: "gold", label: "Guld", symbol: "TVC:GOLD" },
 ] as const;
 
