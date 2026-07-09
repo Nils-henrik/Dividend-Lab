@@ -3,19 +3,31 @@ import {
   getMarketPulseItems,
 } from "@/lib/news/market-pulse";
 
-export default async function MarketPulse() {
+type Props = {
+  compact?: boolean;
+};
+
+export default async function MarketPulse({ compact = false }: Props) {
   const { items, error } = await getMarketPulseItems();
 
   return (
-    <section className="rounded-2xl border border-white/10 bg-[#161616] p-6">
-      <div className="mb-6">
-        <p className="mb-3 text-xs font-medium uppercase tracking-[0.2em] text-[#D4AF37]">
+    <section
+      className={`rounded-2xl border border-white/10 bg-[#161616] ${
+        compact ? "p-5" : "p-6"
+      }`}
+    >
+      <div className={compact ? "mb-4" : "mb-6"}>
+        <p className="mb-2 text-xs font-medium uppercase tracking-[0.2em] text-[#D4AF37]">
           Marknadspuls
         </p>
-        <h2 className="text-lg font-semibold text-white">Senaste affärsnyheter</h2>
-        <p className="mt-2 text-sm leading-6 text-gray-400">
-          Rubrik, källa och tid. Länkar går till originalkällan.
-        </p>
+        <h2 className={`font-semibold text-white ${compact ? "text-base" : "text-lg"}`}>
+          Senaste affärsnyheter
+        </h2>
+        {!compact && (
+          <p className="mt-2 text-sm leading-6 text-gray-400">
+            Rubrik, källa och tid. Länkar går till originalkällan.
+          </p>
+        )}
       </div>
 
       {error ? (

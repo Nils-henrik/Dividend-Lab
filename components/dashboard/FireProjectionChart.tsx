@@ -72,9 +72,8 @@ export default function FireProjectionChart({
 
       {exceedsHorizon && (
         <p className="mt-3 rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2 text-xs leading-5 text-gray-400">
-          Med nuvarande sparande och tillväxt når planen inte kapitalmålet inom
-          50 år. Justera sparande, mål eller antaganden för att se en tydligare
-          tidslinje.
+          Målet nås inte inom den valda prognosperioden. Höj sparandet, justera
+          målet eller ändra antagandena för att se en tydligare tidslinje.
         </p>
       )}
 

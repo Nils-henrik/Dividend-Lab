@@ -43,16 +43,14 @@ export default function DashboardShell({ profile }: Props) {
         </div>
         <div className="space-y-6">
           <MarketToday compact />
+          <MarketPulse compact />
           <OnboardingCard profile={profile} />
         </div>
       </section>
 
       <EducationalInsightsCard />
 
-      <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_0.9fr]">
-        <ForumPreview />
-        <MarketPulse />
-      </section>
+      <ForumPreview />
     </div>
   );
 }

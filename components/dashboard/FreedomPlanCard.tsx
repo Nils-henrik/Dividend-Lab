@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import FireProjectionChart from "@/components/dashboard/FireProjectionChart";
 import {
   calculateFreedomPlan,
+  formatEstimatedAgeAtGoal,
   formatFreedomTimeline,
   formatSek,
   getCapitalProjectionSeries,
@@ -11,6 +12,7 @@ import {
 } from "@/lib/dashboard/fire-calculator";
 
 const defaultValues = {
+  currentAge: 35,
   currentCapital: 250_000,
   monthlySavings: 5_000,
   targetMonthlyIncome: 25_000,
@@ -34,6 +36,10 @@ function formatFieldValue(value: number, suffix?: string) {
     return value.toLocaleString("sv-SE", { maximumFractionDigits: 1 });
   }
 
+  if (suffix === "år") {
+    return Math.round(value).toLocaleString("sv-SE");
+  }
+
   return Math.round(value).toLocaleString("sv-SE");
 }
 
@@ -55,7 +61,8 @@ function SliderField({
   suffix,
   onChange,
 }: SliderFieldProps) {
-  const displaySuffix = suffix === "%" ? "%" : suffix === "kr" ? " kr" : "";
+  const displaySuffix =
+    suffix === "%" ? "%" : suffix === "kr" ? " kr" : suffix === "år" ? " år" : "";
 
   return (
     <label className="block space-y-2">
@@ -123,6 +130,7 @@ function ModeToggle({
 
 export default function FreedomPlanCard() {
   const [mode, setMode] = useState<FreedomPlanMode>("monthly-dividend");
+  const [currentAge, setCurrentAge] = useState(defaultValues.currentAge);
   const [currentCapital, setCurrentCapital] = useState(defaultValues.currentCapital);
   const [monthlySavings, setMonthlySavings] = useState(defaultValues.monthlySavings);
   const [targetMonthlyIncome, setTargetMonthlyIncome] = useState(
@@ -163,6 +171,10 @@ export default function FreedomPlanCard() {
     [planInput],
   );
 
+  const estimatedAgeAtGoal = formatEstimatedAgeAtGoal(currentAge, result.yearsToGoal);
+  const goalReached =
+    !result.exceedsHorizon && result.yearsToGoal !== null && result.yearsToGoal >= 0;
+
   return (
     <section className="rounded-2xl border border-white/10 bg-[#161616] p-6">
       <p className="mb-3 text-xs font-medium uppercase tracking-[0.2em] text-[#D4AF37]">
@@ -180,29 +192,57 @@ export default function FreedomPlanCard() {
         <ModeToggle mode={mode} onChange={setMode} />
 
         <div className="rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/5 px-4 py-4">
-          <p className="text-lg font-medium leading-7 text-white">
-            {formatFreedomTimeline(result.yearsToGoal)}
-          </p>
-          <div className="mt-3 space-y-1 text-sm text-gray-300">
-            <p>
-              Kapitalmål:{" "}
-              <span className="font-medium text-white tabular-nums">
-                {formatSek(result.capitalGoal)}
-              </span>
-            </p>
-            <p>
-              Beräknad månadsutdelning vid målet:{" "}
-              <span className="font-medium text-white tabular-nums">
-                {formatSek(result.monthlyDividendAtGoal)}
-              </span>
-            </p>
-          </div>
+          {result.exceedsHorizon ? (
+            <div className="space-y-2">
+              <p className="text-lg font-medium leading-7 text-white">
+                {formatFreedomTimeline(result.yearsToGoal)}
+              </p>
+              <p className="text-sm leading-6 text-gray-300">
+                Höj sparandet, justera målet eller ändra antagandena för att se
+                en tydligare tidslinje.
+              </p>
+            </div>
+          ) : (
+            <>
+              <p className="text-lg font-medium leading-7 text-white">
+                {formatFreedomTimeline(result.yearsToGoal)}
+              </p>
+              {goalReached && estimatedAgeAtGoal && (
+                <p className="mt-2 text-sm leading-6 text-gray-300">
+                  {estimatedAgeAtGoal}
+                </p>
+              )}
+              <div className="mt-3 space-y-1 text-sm text-gray-300">
+                <p>
+                  Kapitalmål:{" "}
+                  <span className="font-medium text-white tabular-nums">
+                    {formatSek(result.capitalGoal)}
+                  </span>
+                </p>
+                <p>
+                  Beräknad månadsutdelning vid målet:{" "}
+                  <span className="font-medium text-white tabular-nums">
+                    {formatSek(result.monthlyDividendAtGoal)}
+                  </span>
+                </p>
+              </div>
+            </>
+          )}
           <p className="mt-3 text-xs leading-5 text-gray-500">
-            Uppskattning baserad på dina antaganden — inte en garanti.
+            Beräkningen är en förenklad prognos baserad på dina egna antaganden.
           </p>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
+          <SliderField
+            label="Din ålder"
+            value={currentAge}
+            min={18}
+            max={80}
+            step={1}
+            suffix="år"
+            onChange={setCurrentAge}
+          />
           <SliderField
             label="Nuvarande kapital"
             value={currentCapital}

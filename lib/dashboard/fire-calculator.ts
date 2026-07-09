@@ -205,7 +205,7 @@ export function formatSek(value: number) {
 
 export function formatFreedomTimeline(years: number | null) {
   if (years === null) {
-    return "Målet nås inte inom 50 år med nuvarande antaganden";
+    return "Målet nås inte inom den valda prognosperioden";
   }
 
   if (years <= 0) {
@@ -225,6 +225,18 @@ export function formatFreedomTimeline(years: number | null) {
   }
 
   return `Du når målet om cirka ${wholeYears} ${wholeYears === 1 ? "år" : "år"} och ${months} ${months === 1 ? "månad" : "månader"}`;
+}
+
+export function formatEstimatedAgeAtGoal(
+  currentAge: number,
+  yearsToGoal: number | null,
+) {
+  if (yearsToGoal === null || currentAge <= 0) {
+    return null;
+  }
+
+  const estimatedAge = Math.round(currentAge + yearsToGoal);
+  return `Uppskattad ålder vid målet: cirka ${estimatedAge} år`;
 }
 
 /** @deprecated Use calculateFreedomPlan */

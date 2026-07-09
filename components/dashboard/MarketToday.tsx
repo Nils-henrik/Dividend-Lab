@@ -1,51 +1,39 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const WIDGET_SCRIPT =
-  "https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js";
+  "https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js";
 
-const widgetConfig = {
-  colorTheme: "dark",
-  dateRange: "1D",
-  showChart: true,
-  locale: "sv",
-  largeChartUrl: "",
-  isTransparent: true,
-  showSymbolLogo: false,
-  showFloatingTooltip: false,
-  width: "100%",
-  height: "340",
-  plotLineColorGrowing: "rgba(212, 175, 55, 1)",
-  plotLineColorFalling: "rgba(212, 175, 55, 1)",
-  gridLineColor: "rgba(255, 255, 255, 0.06)",
-  scaleFontColor: "rgba(156, 163, 175, 1)",
-  belowLineFillColorGrowing: "rgba(212, 175, 55, 0.18)",
-  belowLineFillColorFalling: "rgba(212, 175, 55, 0.12)",
-  belowLineFillColorGrowingBottom: "rgba(212, 175, 55, 0)",
-  belowLineFillColorFallingBottom: "rgba(212, 175, 55, 0)",
-  symbolActiveColor: "rgba(212, 175, 55, 0.12)",
-  tabs: [
-    {
-      title: "Index",
-      symbols: [
-        { s: "OMXSTO:OMXS30", d: "OMXS30" },
-        { s: "FOREXCOM:SPXUSD", d: "S&P 500" },
-        { s: "NASDAQ:NDX", d: "Nasdaq 100" },
-        { s: "XETR:DAX", d: "DAX" },
-      ],
-    },
-    {
-      title: "Valuta & råvaror",
-      symbols: [
-        { s: "FX:USDSEK", d: "USD/SEK" },
-        { s: "FX:EURSEK", d: "EUR/SEK" },
-        { s: "TVC:UKOIL", d: "Brentolja" },
-        { s: "TVC:GOLD", d: "Guld" },
-      ],
-    },
-  ],
-};
+const MARKET_OPTIONS = [
+  { id: "omxs30", label: "OMXS30", symbol: "OMXSTO:OMXS30" },
+  { id: "sp500", label: "S&P 500", symbol: "FOREXCOM:SPXUSD" },
+  { id: "nasdaq100", label: "Nasdaq 100", symbol: "NASDAQ:NDX" },
+  { id: "dax", label: "DAX", symbol: "XETR:DAX" },
+  { id: "gold", label: "Guld", symbol: "TVC:GOLD" },
+] as const;
+
+type MarketOption = (typeof MARKET_OPTIONS)[number];
+
+function buildWidgetConfig(option: MarketOption) {
+  return {
+    symbols: [[`${option.symbol}|${option.label}`]],
+    chartOnly: false,
+    width: "100%",
+    height: "420",
+    locale: "sv",
+    colorTheme: "dark",
+    isTransparent: true,
+    showVolume: false,
+    showMA: false,
+    lineWidth: 2,
+    lineColor: "rgba(212, 175, 55, 1)",
+    topColor: "rgba(212, 175, 55, 0.28)",
+    bottomColor: "rgba(212, 175, 55, 0)",
+    gridLineColor: "rgba(255, 255, 255, 0.06)",
+    fontColor: "rgba(156, 163, 175, 1)",
+  };
+}
 
 type Props = {
   compact?: boolean;
@@ -53,6 +41,9 @@ type Props = {
 
 export default function MarketToday({ compact = false }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [selectedOption, setSelectedOption] = useState<MarketOption>(
+    MARKET_OPTIONS[0],
+  );
 
   useEffect(() => {
     const container = containerRef.current;
@@ -76,20 +67,17 @@ export default function MarketToday({ compact = false }: Props) {
     script.src = WIDGET_SCRIPT;
     script.async = true;
     script.type = "text/javascript";
-    script.innerHTML = JSON.stringify({
-      ...widgetConfig,
-      height: compact ? "300" : "340",
-    });
+    script.innerHTML = JSON.stringify(buildWidgetConfig(selectedOption));
     widgetRoot.appendChild(script);
 
     const copyright = document.createElement("div");
     copyright.className = "tradingview-widget-copyright text-[10px] text-gray-600";
     copyright.innerHTML =
-      '<a href="https://www.tradingview.com/markets/" rel="noopener nofollow" target="_blank" class="text-gray-500 hover:text-gray-400">Marknader</a> av TradingView';
+      '<a href="https://www.tradingview.com/symbols/" rel="noopener nofollow" target="_blank" class="text-gray-500 hover:text-gray-400">Marknader</a> av TradingView';
     widgetRoot.appendChild(copyright);
 
     container.appendChild(widgetRoot);
-  }, [compact]);
+  }, [selectedOption]);
 
   return (
     <section className="rounded-2xl border border-white/10 bg-[#161616] p-5">
@@ -98,17 +86,36 @@ export default function MarketToday({ compact = false }: Props) {
           Marknadsläge
         </p>
         <h2 className="text-base font-semibold text-white">Börsen idag</h2>
-        {!compact && (
-          <p className="mt-2 text-sm leading-6 text-gray-400">
-            Klickbara marknadssiffror från TradingView. Endast översikt — inte
-            investeringsråd.
-          </p>
-        )}
+        <p className="mt-2 text-sm leading-6 text-gray-400">
+          Välj instrument och följ marknaden via TradingView.
+        </p>
+      </div>
+
+      <div className="mb-3 flex flex-wrap gap-2">
+        {MARKET_OPTIONS.map((option) => {
+          const isActive = selectedOption.id === option.id;
+
+          return (
+            <button
+              key={option.id}
+              type="button"
+              onClick={() => setSelectedOption(option)}
+              className={`rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition ${
+                isActive
+                  ? "border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]"
+                  : "border-white/10 bg-white/[0.03] text-gray-400 hover:border-white/20 hover:text-gray-200"
+              }`}
+            >
+              {option.label}
+            </button>
+          );
+        })}
       </div>
 
       <div
+        key={selectedOption.id}
         ref={containerRef}
-        className="overflow-hidden rounded-xl border border-white/10 bg-[#111111]"
+        className="min-h-[420px] overflow-hidden rounded-xl border border-white/10 bg-[#111111]"
       />
     </section>
   );
