@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
+import GlobalSearch from "@/components/search/GlobalSearch";
 import type { UserDisplayIdentity } from "@/lib/profiles/identity";
 import { pageTitles } from "@/lib/constants/navigation";
 import ProfileDropdown from "./ProfileDropdown";
@@ -22,6 +24,7 @@ export default function MobileAppHeader({
   isMenuOpen = false,
 }: Props) {
   const pathname = usePathname();
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const pageTitle =
     pageTitles[pathname] ??
     Object.entries(pageTitles).find(
@@ -31,8 +34,8 @@ export default function MobileAppHeader({
 
   return (
     <header className="fixed inset-x-0 top-0 z-40 border-b border-white/10 bg-[#090909]/95 backdrop-blur-xl lg:hidden">
-      <div className="flex h-16 items-center justify-between gap-3 px-4">
-        <div className="flex min-w-0 items-center gap-3">
+      <div className="flex h-16 items-center gap-2 px-4">
+        {!isSearchExpanded && (
           <button
             type="button"
             onClick={onOpenMenu}
@@ -47,10 +50,12 @@ export default function MobileAppHeader({
               <span className="block h-0.5 w-4 rounded-full bg-current" />
             </span>
           </button>
+        )}
 
+        {!isSearchExpanded && (
           <Link
             href="/dashboard"
-            className="flex min-w-0 items-center gap-2 transition hover:opacity-90"
+            className="flex min-w-0 flex-1 items-center gap-2 transition hover:opacity-90"
             aria-label="DivLab Start"
           >
             <span className="text-xl font-bold text-[#D4AF37]">DL</span>
@@ -61,13 +66,20 @@ export default function MobileAppHeader({
               <p className="truncate text-[10px] text-gray-500">{pageTitle}</p>
             </div>
           </Link>
-        </div>
+        )}
 
-        <ProfileDropdown
-          user={user}
-          onLogout={onLogout}
-          isLoggingOut={isLoggingOut}
+        <GlobalSearch
+          variant="mobile"
+          onExpandedChange={setIsSearchExpanded}
         />
+
+        {!isSearchExpanded && (
+          <ProfileDropdown
+            user={user}
+            onLogout={onLogout}
+            isLoggingOut={isLoggingOut}
+          />
+        )}
       </div>
     </header>
   );
