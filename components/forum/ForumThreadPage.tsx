@@ -25,6 +25,7 @@ type Props = {
   isDemoThread?: boolean;
   isAuthenticated?: boolean;
   currentUsername?: string | null;
+  currentUserId?: string | null;
   openingAuthorUsername: string;
   openingAuthorInitials: string;
   openingMemberSince: string;
@@ -43,6 +44,7 @@ export default function ForumThreadPage({
   isDemoThread = false,
   isAuthenticated = false,
   currentUsername = null,
+  currentUserId = null,
   openingAuthorUsername,
   openingAuthorInitials,
   openingMemberSince,
@@ -89,6 +91,8 @@ export default function ForumThreadPage({
     reactionMap[getForumReactionTargetKey("thread", activeThread.id)]
       ? reactionMap[getForumReactionTargetKey("thread", activeThread.id)]
       : emptyReactions;
+  const isOpeningAuthor =
+    Boolean(currentUserId) && currentUserId === activeThread.authorUserId;
 
   function focusReplyEditor() {
     window.requestAnimationFrame(() => {
@@ -250,6 +254,7 @@ export default function ForumThreadPage({
               isAuthenticated={isAuthenticated}
               loginHref={loginHref}
               currentUsername={currentUsername}
+              reactionsDisabled={isOpeningAuthor}
               onReply={handleReplyToThread}
               onQuote={handleQuoteOpeningPost}
             />
@@ -306,6 +311,9 @@ export default function ForumThreadPage({
                   currentUsername={currentUsername}
                   onQuote={handleQuoteFromPost}
                   onReply={handleReplyToPost}
+                  reactionsDisabled={
+                    Boolean(currentUserId) && currentUserId === post.authorUserId
+                  }
                 />
               ))
             )}

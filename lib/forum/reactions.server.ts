@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import {
   buildForumReactionMap,
   type ForumReactionRow,
+  type ForumReactionTargetType,
 } from "@/lib/forum/reactions";
 
 function isMissingForumReactionsTableError(error: {
@@ -49,4 +50,38 @@ export async function getForumReactionsForThreadPage(
     replyIds,
     currentUserId,
   );
+}
+
+export async function isSelfForumReactionTarget(
+  userId: string,
+  targetType: ForumReactionTargetType,
+  targetId: string,
+) {
+  const supabase = await createClient();
+
+  if (targetType === "thread") {
+    const { data, error } = await supabase
+      .from("forum_threads")
+      .select("author_id")
+      .eq("id", targetId)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data?.author_id === userId;
+  }
+
+  const { data, error } = await supabase
+    .from("forum_replies")
+    .select("author_id")
+    .eq("id", targetId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data?.author_id === userId;
 }

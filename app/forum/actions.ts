@@ -12,6 +12,7 @@ import {
   isForumReactionTargetType,
   isForumReactionType,
 } from "@/lib/forum/reactions";
+import { isSelfForumReactionTarget } from "@/lib/forum/reactions.server";
 import type { ForumActionState } from "@/lib/forum/types";
 import {
   validateForumBody,
@@ -177,27 +178,39 @@ export async function toggleForumReactionAction(formData: FormData) {
     if (deleteError) {
       return;
     }
-  } else if (targetType === "thread") {
-    const { error: insertError } = await supabase.from("forum_reactions").insert({
-      user_id: user.id,
-      target_type: "thread",
-      thread_id: targetId,
-      reaction_type: reactionType,
-    });
+  } else {
+    const isSelfReaction = await isSelfForumReactionTarget(
+      user.id,
+      targetType,
+      targetId,
+    );
 
-    if (insertError) {
+    if (isSelfReaction) {
       return;
     }
-  } else {
-    const { error: insertError } = await supabase.from("forum_reactions").insert({
-      user_id: user.id,
-      target_type: "reply",
-      reply_id: targetId,
-      reaction_type: reactionType,
-    });
 
-    if (insertError) {
-      return;
+    if (targetType === "thread") {
+      const { error: insertError } = await supabase.from("forum_reactions").insert({
+        user_id: user.id,
+        target_type: "thread",
+        thread_id: targetId,
+        reaction_type: reactionType,
+      });
+
+      if (insertError) {
+        return;
+      }
+    } else {
+      const { error: insertError } = await supabase.from("forum_reactions").insert({
+        user_id: user.id,
+        target_type: "reply",
+        reply_id: targetId,
+        reaction_type: reactionType,
+      });
+
+      if (insertError) {
+        return;
+      }
     }
   }
 

@@ -13,6 +13,7 @@ function isMissingForumReactionsTableError(error: {
 async function countReactionsForTargetIds(
   column: "thread_id" | "reply_id",
   targetIds: string[],
+  profileId: string,
 ) {
   if (targetIds.length === 0) {
     return 0;
@@ -22,7 +23,8 @@ async function countReactionsForTargetIds(
   const { count, error } = await supabase
     .from("forum_reactions")
     .select("id", { count: "exact", head: true })
-    .in(column, targetIds);
+    .in(column, targetIds)
+    .neq("user_id", profileId);
 
   if (error) {
     if (isMissingForumReactionsTableError(error)) {
@@ -55,8 +57,8 @@ export async function getForumReputationReceivedTotal(profileId: string) {
   const replyIds = (repliesResult.data ?? []).map((row) => row.id);
 
   const [threadReactions, replyReactions] = await Promise.all([
-    countReactionsForTargetIds("thread_id", threadIds),
-    countReactionsForTargetIds("reply_id", replyIds),
+    countReactionsForTargetIds("thread_id", threadIds, profileId),
+    countReactionsForTargetIds("reply_id", replyIds, profileId),
   ]);
 
   return threadReactions + replyReactions;

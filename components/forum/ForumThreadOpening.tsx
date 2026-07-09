@@ -18,6 +18,7 @@ type Props = {
   isAuthenticated: boolean;
   loginHref: string;
   currentUsername?: string | null;
+  reactionsDisabled?: boolean;
   onReply: () => void;
   onQuote: () => void;
 };
@@ -33,6 +34,7 @@ export default function ForumThreadOpening({
   isAuthenticated,
   loginHref,
   currentUsername,
+  reactionsDisabled = false,
   onReply,
   onQuote,
 }: Props) {
@@ -94,6 +96,7 @@ export default function ForumThreadOpening({
                 reactions={reactions}
                 isAuthenticated={isAuthenticated}
                 loginHref={loginHref}
+                disabled={reactionsDisabled}
               />
               <ForumPostActionRow
                 isAuthenticated={isAuthenticated}

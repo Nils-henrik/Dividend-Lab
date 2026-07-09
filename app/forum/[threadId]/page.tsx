@@ -133,6 +133,7 @@ export default async function ForumThreadRoute({ params }: Props) {
           isDemoThread={isDemoThread}
           isAuthenticated
           currentUsername={session.identity.username}
+          currentUserId={session.user.id}
           openingAuthorUsername={openingAuthorUsername}
           openingAuthorInitials={openingAuthorInitials}
           openingMemberSince={openingMemberSince}
