@@ -1,75 +1,41 @@
-export const overviewStats = [
-  {
-    title: "Portfolio Value",
-    value: "1 842 500 kr",
-    change: "+9.8%",
-  },
-  {
-    title: "Annual Dividends",
-    value: "86 420 kr",
-    change: "+12.4%",
-  },
-  {
-    title: "Dividend Yield",
-    value: "4.83%",
-    change: "+0.32%",
-  },
-  {
-    title: "Monthly Income",
-    value: "7 202 kr",
-    change: "+8.7%",
-  },
-];
-
-export const upcomingDividends = [
-  {
-    company: "Investor AB",
-    date: "25 Jan",
-    amount: "3 240 kr",
-    status: "Confirmed",
-  },
-  {
-    company: "Axfood",
-    date: "31 Jan",
-    amount: "1 860 kr",
-    status: "Expected",
-  },
-  {
-    company: "SEB",
-    date: "08 Feb",
-    amount: "2 420 kr",
-    status: "Expected",
-  },
-  {
-    company: "Castellum",
-    date: "15 Feb",
-    amount: "1 520 kr",
-    status: "Planned",
-  },
-];
-
 export const forumDiscussions = [
   {
-    title: "How do you evaluate dividend durability?",
+    title: "Hur bedömer ni hållbarheten i en utdelning?",
     replies: "18",
-    activity: "12 min ago",
+    activity: "12 min sedan",
   },
   {
-    title: "Monthly income milestones for 2026",
+    title: "Månadsinkomst och milstolpar för 2026",
     replies: "9",
-    activity: "42 min ago",
+    activity: "42 min sedan",
   },
   {
-    title: "Balancing yield and growth in Sweden",
+    title: "Balans mellan avkastning och tillväxt i Sverige",
     replies: "24",
-    activity: "2 h ago",
+    activity: "2 h sedan",
   },
 ];
 
+/** @deprecated Used only by legacy dashboard components not shown on DivLab Start. */
+export const overviewStats = [
+  { title: "Portfolio Value", value: "—", change: "—" },
+  { title: "Annual Dividends", value: "—", change: "—" },
+  { title: "Dividend Yield", value: "—", change: "—" },
+  { title: "Monthly Income", value: "—", change: "—" },
+];
+
+/** @deprecated Used only by legacy dashboard components not shown on DivLab Start. */
+export const upcomingDividends: Array<{
+  company: string;
+  date: string;
+  amount: string;
+  status: string;
+}> = [];
+
+/** @deprecated Used only by legacy dashboard components not shown on DivLab Start. */
 export const annualDividendGoal = {
-  progress: "72%",
-  current: "18,000 SEK",
-  target: "25,000 SEK",
-  message:
-    "Dividend Brain: You are ahead of pace. Keep focusing on durable payout growth and consistent monthly contributions.",
+  progress: "—",
+  current: "—",
+  target: "—",
+  message: "",
 };

@@ -1,46 +1,51 @@
-import DividendBrainPanel from "@/components/brain/DividendBrainPanel";
+import type { UserProfile } from "@/lib/profiles/types";
+import EducationalInsightsCard from "./EducationalInsightsCard";
+import FireCalculatorCard from "./FireCalculatorCard";
 import ForumPreview from "./ForumPreview";
-import GoalsCard from "./GoalsCard";
-import OverviewCards from "./OverviewCards";
-import PortfolioGraph from "./PortfolioGraph";
-import UpcomingDividends from "./UpcomingDividends";
+import MarketPulsePlaceholder from "./MarketPulsePlaceholder";
+import OnboardingCard from "./OnboardingCard";
 
-export default function DashboardShell() {
+type Props = {
+  profile: UserProfile;
+};
+
+export default function DashboardShell({ profile }: Props) {
   return (
     <div className="space-y-6">
-      <section className="rounded-3xl border border-white/10 bg-[#111111]/85 p-6 shadow-[0_0_80px_rgba(212,175,55,0.06)]">
-        <div className="flex flex-col justify-between gap-6 xl:flex-row xl:items-end">
+      <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-[#111111]/85 p-6 shadow-[0_0_80px_rgba(212,175,55,0.06)]">
+        <div className="pointer-events-none absolute left-8 top-6 h-44 w-44 rounded-full bg-[#D4AF37]/10 blur-3xl" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#D4AF37]/40 to-transparent" />
+
+        <div className="relative flex flex-col justify-between gap-6 xl:flex-row xl:items-end">
           <div>
             <p className="mb-3 text-xs font-medium uppercase tracking-[0.25em] text-[#D4AF37]">
-              Today in Dividend Lab
+              DivLab Start
             </p>
-            <h2 className="text-4xl font-semibold tracking-[-0.04em] text-white">
-              Build long-term dividend income with clarity.
-            </h2>
+            <h1 className="text-4xl font-semibold tracking-[-0.04em] text-white">
+              Bygg din frihetsplan med utdelningar
+            </h1>
             <p className="mt-4 max-w-3xl text-base leading-7 text-gray-400">
-              See portfolio progress, AI observations, upcoming payouts and
-              community discussions in one calm workspace.
+              Planera långsiktigt, lär dig mer om utdelning och FIRE, och hitta
+              stöd i communityn — innan portföljintegrationer finns på plats.
             </p>
           </div>
 
-          <div className="inline-flex w-fit items-center gap-2 rounded-full border border-green-400/20 bg-green-400/10 px-3 py-1 text-xs font-medium text-green-400">
-            <span className="h-1.5 w-1.5 rounded-full bg-green-400 shadow-[0_0_10px_rgba(74,222,128,0.65)]" />
-            Portfolio updated today
+          <div className="inline-flex w-fit items-center rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-xs font-medium text-gray-400">
+            Planering · Utbildning · Community
           </div>
         </div>
       </section>
 
-      <OverviewCards />
-
-      <section className="grid grid-cols-1 gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-        <PortfolioGraph />
-        <DividendBrainPanel />
+      <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1.35fr_0.65fr]">
+        <FireCalculatorCard />
+        <OnboardingCard profile={profile} />
       </section>
 
-      <section className="grid grid-cols-1 gap-6 xl:grid-cols-[0.95fr_0.7fr_0.85fr]">
-        <UpcomingDividends />
-        <GoalsCard />
+      <EducationalInsightsCard />
+
+      <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_0.9fr]">
         <ForumPreview />
+        <MarketPulsePlaceholder />
       </section>
     </div>
   );
