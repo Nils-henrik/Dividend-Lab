@@ -33,7 +33,11 @@ export default function AppSidebar({
           isCollapsed ? "justify-center px-3" : "px-6"
         }`}
       >
-        <div className="flex min-w-0 items-center gap-3">
+        <Link
+          href="/dashboard"
+          className="flex min-w-0 items-center gap-3 transition hover:opacity-90"
+          aria-label="DivLab Start"
+        >
           <span className="text-3xl font-bold text-[#D4AF37]">DL</span>
           <div className={isCollapsed ? "hidden" : "block"}>
             <p className="text-sm font-semibold tracking-[0.28em] text-white">
@@ -43,7 +47,7 @@ export default function AppSidebar({
               LAB
             </p>
           </div>
-        </div>
+        </Link>
       </div>
 
       <nav className="flex-1 space-y-1 px-3 py-5">
@@ -94,23 +98,6 @@ export default function AppSidebar({
           );
         })}
       </nav>
-
-      <div className="w-64 shrink-0 border-t border-white/10 p-4">
-        <div
-          className={`w-56 rounded-2xl border border-white/10 bg-[#161616] p-4 transition-[opacity,transform] duration-[225ms] ease-in-out ${
-            isCollapsed
-              ? "pointer-events-none -translate-x-4 opacity-0"
-              : "translate-x-0 opacity-100"
-          }`}
-        >
-          <p className="text-xs font-medium uppercase tracking-[0.18em] text-gray-500">
-            Fokus
-          </p>
-          <p className="mt-3 text-sm leading-6 text-gray-300">
-            Bygg långsiktig inkomst med data, disciplin och lugna beslut.
-          </p>
-        </div>
-      </div>
     </aside>
   );
 }

@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import type { UserDisplayIdentity } from "@/lib/profiles/identity";
 import { createClient } from "@/lib/supabase/client";
 import AppHeader from "./AppHeader";
+import AppLegalFooter from "./AppLegalFooter";
 import AppSidebar from "./AppSidebar";
 
 const SIDEBAR_CLOSE_DELAY_MS = 250;
@@ -117,11 +118,14 @@ export default function AppShellClient({
         unreadMessageCount={unreadMessageCount}
       />
       <div
-        className={`min-h-screen pt-20 transition-[padding] duration-[225ms] ease-in-out ${
+        className={`flex min-h-screen flex-col pt-20 transition-[padding] duration-[225ms] ease-in-out ${
           isSidebarCollapsed ? "pl-20" : "pl-64"
         }`}
       >
-        <div className="px-8 py-8">{children}</div>
+        <div className="flex flex-1 flex-col px-8 py-8">
+          <div className="flex-1">{children}</div>
+          <AppLegalFooter />
+        </div>
       </div>
     </main>
   );
