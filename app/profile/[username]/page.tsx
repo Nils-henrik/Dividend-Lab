@@ -1,5 +1,7 @@
 import Link from "next/link";
+import ForumReputationBadge from "@/components/account/ForumReputationBadge";
 import ProfileAvatar from "@/components/account/ProfileAvatar";
+import { getForumReputationReceivedTotal } from "@/lib/forum/reputation.server";
 import { getAvatarPublicUrl } from "@/lib/profiles/identity";
 import { getPublicProfileByUsername } from "@/lib/profiles/profile";
 
@@ -45,6 +47,7 @@ export default async function PublicProfilePage({ params }: Props) {
 
   const displayName = profile.displayName?.trim() || profile.username || "Dividend Lab Member";
   const avatarUrl = getAvatarPublicUrl(profile.avatarPath, profile.updatedAt);
+  const totalReceivedReactions = await getForumReputationReceivedTotal(profile.id);
 
   return (
     <main className="min-h-screen bg-[#090909] px-8 py-8 text-white">
@@ -68,6 +71,11 @@ export default async function PublicProfilePage({ params }: Props) {
               {profile.username && (
                 <p className="mt-3 text-sm text-gray-400">@{profile.username}</p>
               )}
+              <ForumReputationBadge
+                className="mt-5"
+                totalReceivedReactions={totalReceivedReactions}
+                showDescription
+              />
             </div>
           </div>
         </section>
