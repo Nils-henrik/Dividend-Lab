@@ -2,9 +2,8 @@
 
 import Link from "next/link";
 import { type FormEvent, useState } from "react";
+import { requestPasswordReset } from "@/app/forgot-password/actions";
 import PrimaryButton from "@/components/ui/Button";
-import { getRecoveryCallbackUrl } from "@/lib/auth/recovery";
-import { createClient } from "@/lib/supabase/client";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -26,27 +25,30 @@ export default function ForgotPasswordPage() {
 
     setIsLoading(true);
 
-    const supabase = createClient();
-    const redirectTo = getRecoveryCallbackUrl(window.location.origin);
-    const { error: resetError } = await supabase.auth.resetPasswordForEmail(
-      normalizedEmail,
-      {
-        redirectTo,
-      },
-    );
+    try {
+      const result = await requestPasswordReset(normalizedEmail);
 
-    setIsLoading(false);
+      if (!result.ok) {
+        setError(
+          "Det gick inte att skicka instruktionerna just nu. Försök igen om en stund.",
+        );
+        return;
+      }
 
-    if (resetError) {
+      setSuccessMessage(
+        "Om kontot finns skickar vi instruktioner till e-postadressen.",
+      );
+    } catch (submitError) {
+      console.error("[password-reset] forgot-password submit failed", {
+        message:
+          submitError instanceof Error ? submitError.message : "unknown_error",
+      });
       setError(
         "Det gick inte att skicka instruktionerna just nu. Försök igen om en stund.",
       );
-      return;
+    } finally {
+      setIsLoading(false);
     }
-
-    setSuccessMessage(
-      "Om kontot finns skickar vi instruktioner till e-postadressen.",
-    );
   }
 
   return (
