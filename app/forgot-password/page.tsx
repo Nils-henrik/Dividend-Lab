@@ -5,6 +5,12 @@ import { type FormEvent, useState } from "react";
 import { requestPasswordReset } from "@/app/forgot-password/actions";
 import PrimaryButton from "@/components/ui/Button";
 
+const GENERIC_RESET_ERROR =
+  "Det gick inte att skicka instruktionerna just nu. Försök igen om en stund.";
+
+const RATE_LIMIT_RESET_ERROR =
+  "För många återställningsmail har skickats på kort tid. Vänta en stund och försök igen.";
+
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
@@ -30,7 +36,9 @@ export default function ForgotPasswordPage() {
 
       if (!result.ok) {
         setError(
-          "Det gick inte att skicka instruktionerna just nu. Försök igen om en stund.",
+          result.reason === "rate_limit"
+            ? RATE_LIMIT_RESET_ERROR
+            : GENERIC_RESET_ERROR,
         );
         return;
       }
@@ -43,9 +51,7 @@ export default function ForgotPasswordPage() {
         message:
           submitError instanceof Error ? submitError.message : "unknown_error",
       });
-      setError(
-        "Det gick inte att skicka instruktionerna just nu. Försök igen om en stund.",
-      );
+      setError(GENERIC_RESET_ERROR);
     } finally {
       setIsLoading(false);
     }
@@ -62,8 +68,7 @@ export default function ForgotPasswordPage() {
             Återställ lösenord
           </h1>
           <p className="mt-3 text-sm leading-6 text-gray-400">
-            Ange e-postadressen som hör till ditt konto, så skickar vi lugna
-            och tydliga instruktioner om hur du går vidare.
+            Ange e-postadressen som är kopplad till ditt konto.
           </p>
         </div>
 

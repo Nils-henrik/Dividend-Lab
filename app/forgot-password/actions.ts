@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 
 export type PasswordResetRequestResult =
   | { ok: true }
-  | { ok: false; reason: "request_failed" };
+  | { ok: false; reason: "request_failed" | "rate_limit" };
 
 export async function requestPasswordReset(
   email: string,
@@ -30,7 +30,13 @@ export async function requestPasswordReset(
       name: error.name,
     });
 
-    return { ok: false, reason: "request_failed" };
+    return {
+      ok: false,
+      reason:
+        error.status === 429 || error.code === "over_email_send_rate_limit"
+          ? "rate_limit"
+          : "request_failed",
+    };
   }
 
   console.info("[password-reset] reset email requested", {
