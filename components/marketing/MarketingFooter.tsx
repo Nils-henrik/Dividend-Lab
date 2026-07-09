@@ -35,9 +35,6 @@ export default function MarketingFooter() {
             <p className="text-sm font-semibold tracking-[0.22em] text-white">
               DIVIDEND <span className="text-[#D4AF37]">LAB</span>
             </p>
-            <p className="mt-3 text-sm leading-6 text-gray-500">
-              Lugn plattform för långsiktiga utdelningsinvesterare.
-            </p>
           </div>
 
           {linkGroups.map((group) => (
