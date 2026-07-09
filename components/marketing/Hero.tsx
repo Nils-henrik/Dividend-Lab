@@ -1,13 +1,17 @@
+import Link from "next/link";
 import Dashboard from "./DashboardComponent";
 import PrimaryButton from "../ui/Button";
+
+const secondaryButtonClasses =
+  "inline-flex items-center justify-center rounded-xl border border-[#D4AF37]/40 px-8 py-4 text-lg transition hover:border-[#D4AF37] hover:bg-[#D4AF37]/10";
 
 export default function Hero() {
   return (
     <section className="relative min-h-screen overflow-hidden bg-[#090909]">
-      <div className="absolute left-[-250px] top-[300px] h-[600px] w-[600px] rounded-full bg-[#D4AF37]/10 blur-[180px]" />
-      <div className="absolute right-[-220px] top-[-180px] h-[520px] w-[520px] rounded-full bg-[#D4AF37]/5 blur-[160px]" />
+      <div className="pointer-events-none absolute left-[-250px] top-[300px] h-[600px] w-[600px] rounded-full bg-[#D4AF37]/10 blur-[180px]" />
+      <div className="pointer-events-none absolute right-[-220px] top-[-180px] h-[520px] w-[520px] rounded-full bg-[#D4AF37]/5 blur-[160px]" />
 
-      <div className="relative mx-auto grid min-h-screen max-w-7xl grid-cols-1 items-center gap-16 px-6 pb-20 pt-32 md:px-8 lg:grid-cols-2 lg:pb-0 lg:pt-24">
+      <div className="relative z-10 mx-auto grid min-h-screen max-w-7xl grid-cols-1 items-center gap-16 px-6 pb-20 pt-32 md:px-8 lg:grid-cols-2 lg:pb-0 lg:pt-24">
         <div>
           <p className="mb-8 inline-flex items-center gap-3 rounded-full border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-4 py-2 text-xs font-medium uppercase tracking-[0.25em] text-[#D4AF37]">
             <span className="h-2 w-2 rounded-full bg-[#D4AF37] shadow-[0_0_16px_rgba(212,175,55,0.8)]" />
@@ -27,12 +31,17 @@ export default function Hero() {
             i kvalitetsbolag som delar ut till sina ägare.
           </p>
 
-          <div className="mt-12 flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
-            <PrimaryButton>Skapa konto</PrimaryButton>
+          <div className="relative z-10 mt-12 flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
+            <PrimaryButton href="/register" className="w-full sm:w-auto">
+              Skapa konto
+            </PrimaryButton>
 
-            <button className="rounded-xl border border-[#D4AF37]/40 px-8 py-4 text-lg transition hover:border-[#D4AF37] hover:bg-[#D4AF37]/10">
+            <Link
+              href="/login?redirect=/dashboard"
+              className={`${secondaryButtonClasses} w-full sm:w-auto`}
+            >
               Se demo
-            </button>
+            </Link>
           </div>
 
           <div className="mt-10 grid max-w-xl grid-cols-1 gap-4 border-t border-white/10 pt-8 text-sm text-gray-400 sm:grid-cols-3">
