@@ -1,11 +1,10 @@
-import Navbar from "@/components/layout/Navbar";
 import Hero from "@/components/marketing/Hero";
+import MarketingPageShell from "@/components/marketing/MarketingPageShell";
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-[#090909] text-white overflow-x-hidden">
-      <Navbar />
+    <MarketingPageShell>
       <Hero />
-    </main>
+    </MarketingPageShell>
   );
 }
