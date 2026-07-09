@@ -1,3 +1,10 @@
+import {
+  formatStockholmDateTime,
+  formatStockholmTime,
+  isSameStockholmDay,
+  parseDate,
+} from "@/lib/time";
+
 const PUBLIC_MEMBER_FALLBACK = "medlem";
 
 export function getForumAuthorLabel(
@@ -54,34 +61,25 @@ export function getForumAuthorInitials(
 }
 
 export function formatForumTimestamp(value: string) {
-  const date = new Date(value);
+  const date = parseDate(value);
 
-  if (Number.isNaN(date.getTime())) {
+  if (!date) {
     return "Okänt datum";
   }
 
-  const now = new Date();
-  const isSameDay =
-    date.getFullYear() === now.getFullYear() &&
-    date.getMonth() === now.getMonth() &&
-    date.getDate() === now.getDate();
+  const time = formatStockholmTime(date);
 
-  const time = new Intl.DateTimeFormat("sv-SE", {
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
-
-  if (isSameDay) {
+  if (isSameStockholmDay(date, new Date())) {
     return `Idag kl. ${time}`;
   }
 
-  return new Intl.DateTimeFormat("sv-SE", {
+  return formatStockholmDateTime(date, {
     day: "numeric",
     month: "short",
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-  }).format(date);
+  });
 }
 
 export function formatForumRelativeActivity(value: string | null) {
@@ -122,15 +120,15 @@ export function formatForumMemberSince(profileCreatedAt: string | null) {
     return "Dividend Lab-medlem";
   }
 
-  const date = new Date(profileCreatedAt);
+  const date = parseDate(profileCreatedAt);
 
-  if (Number.isNaN(date.getTime())) {
+  if (!date) {
     return "Dividend Lab-medlem";
   }
 
-  const year = new Intl.DateTimeFormat("sv-SE", {
+  const year = formatStockholmDateTime(date, {
     year: "numeric",
-  }).format(date);
+  });
 
   return `Medlem sedan ${year}`;
 }
