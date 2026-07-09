@@ -135,7 +135,7 @@ export default function ForumShareButton({
   const dialog =
     isOpen && resolvedUrl ? (
       <div
-        className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm"
+        className="fixed inset-0 z-[200] overflow-y-auto bg-black/70 backdrop-blur-sm"
         onMouseDown={(event) => {
           if (event.target === event.currentTarget) {
             closeDialog();
@@ -143,12 +143,20 @@ export default function ForumShareButton({
         }}
       >
         <div
-          ref={dialogRef}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby={titleId}
-          className="relative w-full max-w-md rounded-2xl border border-white/10 bg-[#161616] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.55)]"
+          className="flex min-h-dvh items-center justify-center p-4 sm:p-6"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              closeDialog();
+            }
+          }}
         >
+          <div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={titleId}
+            className="relative w-full max-w-md max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-2xl border border-white/10 bg-[#161616] p-6 pb-7 shadow-[0_24px_80px_rgba(0,0,0,0.55)] sm:max-h-[calc(100dvh-3rem)]"
+          >
           <button
             type="button"
             onClick={closeDialog}
@@ -195,11 +203,11 @@ export default function ForumShareButton({
             </div>
           </div>
 
-          <div className="mt-5 border-t border-white/10 pt-5">
+          <div className="mt-5 border-t border-white/10 pt-5 pb-1">
             <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-gray-500">
               Dela via
             </p>
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-3 flex flex-wrap gap-2.5">
               {twitterShareUrl && (
                 <a
                   href={twitterShareUrl}
@@ -225,6 +233,7 @@ export default function ForumShareButton({
                 </a>
               )}
             </div>
+          </div>
           </div>
         </div>
       </div>
