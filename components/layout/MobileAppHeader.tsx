@@ -1,0 +1,74 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import type { UserDisplayIdentity } from "@/lib/profiles/identity";
+import { pageTitles } from "@/lib/constants/navigation";
+import ProfileDropdown from "./ProfileDropdown";
+
+type Props = {
+  user: UserDisplayIdentity;
+  onLogout: () => void;
+  isLoggingOut: boolean;
+  onOpenMenu: () => void;
+  isMenuOpen?: boolean;
+};
+
+export default function MobileAppHeader({
+  user,
+  onLogout,
+  isLoggingOut,
+  onOpenMenu,
+  isMenuOpen = false,
+}: Props) {
+  const pathname = usePathname();
+  const pageTitle =
+    pageTitles[pathname] ??
+    Object.entries(pageTitles).find(
+      ([path]) => path !== "/dashboard" && pathname.startsWith(`${path}/`),
+    )?.[1] ??
+    "Start";
+
+  return (
+    <header className="fixed inset-x-0 top-0 z-40 border-b border-white/10 bg-[#090909]/95 backdrop-blur-xl lg:hidden">
+      <div className="flex h-16 items-center justify-between gap-3 px-4">
+        <div className="flex min-w-0 items-center gap-3">
+          <button
+            type="button"
+            onClick={onOpenMenu}
+            aria-label="Open navigation menu"
+            aria-expanded={isMenuOpen}
+            aria-controls="mobile-nav-drawer"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 text-gray-300 transition hover:border-[#D4AF37]/40 hover:text-[#D4AF37]"
+          >
+            <span className="flex flex-col gap-1" aria-hidden="true">
+              <span className="block h-0.5 w-4 rounded-full bg-current" />
+              <span className="block h-0.5 w-4 rounded-full bg-current" />
+              <span className="block h-0.5 w-4 rounded-full bg-current" />
+            </span>
+          </button>
+
+          <Link
+            href="/dashboard"
+            className="flex min-w-0 items-center gap-2 transition hover:opacity-90"
+            aria-label="DivLab Start"
+          >
+            <span className="text-xl font-bold text-[#D4AF37]">DL</span>
+            <div className="min-w-0">
+              <p className="truncate text-[11px] font-semibold tracking-[0.22em] text-white">
+                DIVLAB
+              </p>
+              <p className="truncate text-[10px] text-gray-500">{pageTitle}</p>
+            </div>
+          </Link>
+        </div>
+
+        <ProfileDropdown
+          user={user}
+          onLogout={onLogout}
+          isLoggingOut={isLoggingOut}
+        />
+      </div>
+    </header>
+  );
+}

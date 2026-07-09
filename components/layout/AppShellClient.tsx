@@ -7,6 +7,8 @@ import { createClient } from "@/lib/supabase/client";
 import AppHeader from "./AppHeader";
 import AppLegalFooter from "./AppLegalFooter";
 import AppSidebar from "./AppSidebar";
+import MobileAppHeader from "./MobileAppHeader";
+import MobileNavDrawer from "./MobileNavDrawer";
 
 const SIDEBAR_CLOSE_DELAY_MS = 250;
 
@@ -26,6 +28,7 @@ export default function AppShellClient({
   const isPointerInSidebarRef = useRef(false);
   const isPointerInTriggerRef = useRef(false);
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const isSidebarCollapsed = !isSidebarExpanded;
 
@@ -97,17 +100,29 @@ export default function AppShellClient({
   }
 
   return (
-    <main className="min-h-screen bg-[#090909] text-white">
+    <main className="min-h-screen overflow-x-hidden bg-[#090909] text-white">
       <div
         aria-hidden="true"
         onMouseEnter={handleTriggerEnter}
         onMouseLeave={handleTriggerLeave}
-        className="fixed inset-y-0 left-0 z-50 w-3"
+        className="fixed inset-y-0 left-0 z-50 hidden w-3 lg:block"
       />
       <AppSidebar
         isCollapsed={isSidebarCollapsed}
         onMouseEnter={handleSidebarEnter}
         onMouseLeave={handleSidebarLeave}
+        unreadMessageCount={unreadMessageCount}
+      />
+      <MobileAppHeader
+        user={user}
+        onLogout={handleLogout}
+        isLoggingOut={isLoggingOut}
+        onOpenMenu={() => setIsMobileNavOpen(true)}
+        isMenuOpen={isMobileNavOpen}
+      />
+      <MobileNavDrawer
+        isOpen={isMobileNavOpen}
+        onClose={() => setIsMobileNavOpen(false)}
         unreadMessageCount={unreadMessageCount}
       />
       <AppHeader
@@ -118,12 +133,12 @@ export default function AppShellClient({
         unreadMessageCount={unreadMessageCount}
       />
       <div
-        className={`flex min-h-screen flex-col pt-20 transition-[padding] duration-[225ms] ease-in-out ${
-          isSidebarCollapsed ? "pl-20" : "pl-64"
+        className={`flex min-h-screen flex-col pt-16 transition-[padding] duration-[225ms] ease-in-out lg:pt-20 ${
+          isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"
         }`}
       >
-        <div className="flex flex-1 flex-col px-8 py-8">
-          <div className="flex-1">{children}</div>
+        <div className="flex flex-1 flex-col px-4 py-4 lg:px-8 lg:py-8">
+          <div className="min-w-0 flex-1">{children}</div>
           <AppLegalFooter />
         </div>
       </div>
