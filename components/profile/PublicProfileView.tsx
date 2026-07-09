@@ -142,45 +142,46 @@ export default function PublicProfileView({
         </ProfileInfoCard>
       </section>
 
-      <section className="rounded-2xl border border-white/10 bg-[#161616] p-6">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <p className="text-xs font-medium uppercase tracking-[0.2em] text-[#D4AF37]">
-              Forum
-            </p>
-            <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-white">
-              Senaste inlägg i forumet
-            </h2>
-          </div>
+      <section className="rounded-2xl border border-white/10 bg-[#161616] p-5">
+        <div>
+          <p className="text-xs font-medium uppercase tracking-[0.2em] text-[#D4AF37]">
+            Forum
+          </p>
+          <h2 className="mt-1.5 text-lg font-semibold tracking-[-0.03em] text-white">
+            Senaste inlägg i forumet
+          </h2>
         </div>
 
         {recentActivity.length === 0 ? (
-          <p className="mt-6 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-4 text-sm leading-6 text-gray-400">
+          <p className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-3 text-sm leading-6 text-gray-400">
             Medlemmen har inte publicerat något i forumet ännu.
           </p>
         ) : (
-          <ul className="mt-6 space-y-3">
-            {recentActivity.map((item) => (
-              <li key={`${item.kind}-${item.id}`}>
+          <ul className="mt-4 overflow-hidden rounded-xl border border-white/10">
+            {recentActivity.map((item, index) => (
+              <li
+                key={`${item.kind}-${item.id}`}
+                className={index > 0 ? "border-t border-white/10" : undefined}
+              >
                 <Link
                   href={`/forum/${encodeURIComponent(item.threadSlug)}`}
-                  className="group block rounded-xl border border-white/10 bg-white/[0.03] px-4 py-4 transition hover:border-[#D4AF37]/30 hover:bg-white/[0.05]"
+                  className="group block px-3 py-2.5 transition hover:bg-white/[0.03] sm:px-4 sm:py-3"
                 >
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="rounded-full border border-white/10 px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.12em] text-gray-400">
+                  <div className="flex items-center gap-2">
+                    <span className="shrink-0 rounded-md border border-white/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.1em] text-gray-500">
                       {item.kind === "thread" ? "Ämne" : "Svar"}
                     </span>
-                    <span className="text-xs text-gray-500">
+                    <span className="truncate text-[11px] text-gray-500">
                       {formatForumTimestamp(item.createdAt)}
                     </span>
                   </div>
-                  <p className="mt-3 text-sm font-medium text-white transition group-hover:text-[#D4AF37]">
+                  <p className="mt-1 line-clamp-1 text-sm font-medium text-white transition group-hover:text-[#D4AF37]">
                     {item.kind === "thread"
                       ? item.threadTitle
                       : `Svar i ${item.threadTitle}`}
                   </p>
-                  <p className="mt-2 text-sm leading-6 text-gray-400">
-                    {getForumExcerpt(item.body, 120)}
+                  <p className="mt-0.5 line-clamp-2 text-xs leading-5 text-gray-400">
+                    {getForumExcerpt(item.body, 90)}
                   </p>
                 </Link>
               </li>

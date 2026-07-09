@@ -63,7 +63,7 @@ export default async function PublicProfilePage({ params }: Props) {
   const avatarUrl = getAvatarPublicUrl(profile.avatarPath, profile.updatedAt);
   const [totalReceivedReactions, recentActivity] = await Promise.all([
     getForumReputationReceivedTotal(profile.id),
-    getRecentForumActivityByAuthorId(profile.id),
+    getRecentForumActivityByAuthorId(profile.id, 5),
   ]);
 
   return await renderWithAppShell(
