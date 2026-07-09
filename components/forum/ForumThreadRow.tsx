@@ -41,7 +41,10 @@ export default function ForumThreadRow({ thread }: Props) {
           <span>{thread.replies} replies</span>
           <span>{thread.lastActivity}</span>
         </div>
-        <ForumShareButton />
+        <ForumShareButton
+          shareUrl={`/forum/${thread.slug}`}
+          shareTitle={thread.title}
+        />
       </div>
     </div>
   );

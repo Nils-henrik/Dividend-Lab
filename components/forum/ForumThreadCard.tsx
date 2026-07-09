@@ -45,7 +45,10 @@ export default function ForumThreadCard({ thread, featured = false }: Props) {
         <span>Started by {thread.author}</span>
         <div className="flex items-center gap-3">
           <span>{thread.lastActivity}</span>
-          <ForumShareButton />
+          <ForumShareButton
+            shareUrl={`/forum/${thread.slug}`}
+            shareTitle={thread.title}
+          />
         </div>
       </div>
     </div>

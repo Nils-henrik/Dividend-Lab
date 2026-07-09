@@ -224,7 +224,10 @@ export default function ForumThreadPage({
                 <span className="tabular-nums">{activeThread.replies} replies</span>
                 <span>·</span>
                 <span>{activeThread.lastActivity}</span>
-                <ForumShareButton />
+                <ForumShareButton
+                  shareUrl={`/forum/${activeThread.slug}`}
+                  shareTitle={activeThread.title}
+                />
               </div>
             </div>
           </section>
