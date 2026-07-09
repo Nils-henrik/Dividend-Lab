@@ -29,11 +29,11 @@ function buildWidgetConfig(option: MarketOption) {
     showVolume: false,
     showMA: false,
     lineWidth: 2,
-    lineColor: "rgba(212, 175, 55, 1)",
-    topColor: "rgba(212, 175, 55, 0.28)",
-    bottomColor: "rgba(212, 175, 55, 0)",
+    lineColor: "rgba(10, 132, 255, 1)",
+    topColor: "rgba(10, 132, 255, 0.28)",
+    bottomColor: "rgba(10, 132, 255, 0)",
     gridLineColor: "rgba(255, 255, 255, 0.06)",
-    fontColor: "rgba(156, 163, 175, 1)",
+    fontColor: "rgba(161, 161, 170, 1)",
   };
 }
 
@@ -73,24 +73,25 @@ export default function MarketToday({ compact = false }: Props) {
     widgetRoot.appendChild(script);
 
     const copyright = document.createElement("div");
-    copyright.className = "tradingview-widget-copyright text-[10px] text-gray-600";
+    copyright.className =
+      "tradingview-widget-copyright text-[10px] text-divlab-text-subtle";
     copyright.innerHTML =
-      '<a href="https://www.tradingview.com/symbols/" rel="noopener nofollow" target="_blank" class="text-gray-500 hover:text-gray-400">Marknader</a> av TradingView';
+      '<a href="https://www.tradingview.com/symbols/" rel="noopener nofollow" target="_blank" class="text-divlab-text-muted hover:text-divlab-text-secondary">Marknader</a> av TradingView';
     widgetRoot.appendChild(copyright);
 
     container.appendChild(widgetRoot);
   }, [selectedOption]);
 
   return (
-    <section className="rounded-2xl border border-white/10 bg-[#161616] p-5">
+    <section className={`divlab-card ${compact ? "p-5" : "p-6"}`}>
       <div className={compact ? "mb-4" : "mb-6"}>
-        <p className="mb-2 text-xs font-medium uppercase tracking-[0.2em] text-[#D4AF37]">
-          Marknadsläge
-        </p>
-        <h2 className="text-base font-semibold text-white">Börsen idag</h2>
-        <p className="mt-2 text-sm leading-6 text-gray-400">
-          Följ marknaden via TradingView.
-        </p>
+        <p className="mb-2 divlab-section-label">Marknadsläge</p>
+        <h2 className="text-base font-semibold text-divlab-text">Börsen idag</h2>
+        {!compact && (
+          <p className="mt-2 text-sm leading-6 text-divlab-text-secondary">
+            Följ marknaden via TradingView.
+          </p>
+        )}
       </div>
 
       <div className="mb-3 flex flex-wrap gap-2">
@@ -104,8 +105,8 @@ export default function MarketToday({ compact = false }: Props) {
               onClick={() => setSelectedOption(option)}
               className={`rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition ${
                 isActive
-                  ? "border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]"
-                  : "border-white/10 bg-white/[0.03] text-gray-400 hover:border-white/20 hover:text-gray-200"
+                  ? "divlab-selected"
+                  : "border-transparent bg-divlab-surface text-divlab-text-muted hover:text-divlab-text-secondary"
               }`}
             >
               {option.label}
@@ -117,7 +118,7 @@ export default function MarketToday({ compact = false }: Props) {
       <div
         key={selectedOption.id}
         ref={containerRef}
-        className="min-h-[420px] overflow-hidden rounded-xl border border-white/10 bg-[#111111]"
+        className="min-h-[420px] overflow-hidden rounded-xl border divlab-border-neutral bg-divlab-surface"
       />
     </section>
   );

@@ -27,17 +27,14 @@ export default async function ConversationPage({ params }: Props) {
       {conversation ? (
         <ConversationThreadView conversation={conversation} currentUserId={user.id} />
       ) : (
-        <section className="rounded-3xl border border-white/10 bg-[#161616] p-8">
-          <p className="text-lg font-semibold text-white">
+        <section className="divlab-card p-8">
+          <p className="text-lg font-semibold text-divlab-text">
             Konversationen kunde inte öppnas
           </p>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-gray-400">
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-divlab-text-secondary">
             Den kan vara borttagen, eller så har du inte tillgång till den.
           </p>
-          <Link
-            href="/messages"
-            className="mt-6 inline-flex rounded-xl border border-[#D4AF37]/40 px-5 py-2.5 text-sm font-semibold text-[#D4AF37] transition hover:border-[#D4AF37] hover:bg-[#D4AF37]/10"
-          >
+          <Link href="/messages" className="divlab-btn-ghost mt-6 inline-flex px-5 py-2.5 text-sm">
             Till inkorgen
           </Link>
         </section>

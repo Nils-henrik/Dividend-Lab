@@ -3,6 +3,7 @@ type Props = {
   initials: string;
   sizeClassName?: string;
   textClassName?: string;
+  highlighted?: boolean;
 };
 
 export default function ProfileAvatar({
@@ -10,10 +11,15 @@ export default function ProfileAvatar({
   initials,
   sizeClassName = "h-11 w-11",
   textClassName = "text-sm",
+  highlighted = false,
 }: Props) {
-  return (
+  const avatarContent = (
     <span
-      className={`relative flex shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#D4AF37]/35 bg-gradient-to-br from-[#D4AF37]/20 via-white/[0.04] to-[#050505] font-semibold text-[#F9D976] shadow-[0_0_34px_rgba(212,175,55,0.1)] ${sizeClassName} ${textClassName}`}
+      className={`relative flex h-full w-full items-center justify-center overflow-hidden rounded-full font-semibold text-divlab-text-secondary ${
+        highlighted
+          ? "divlab-avatar-highlight-ring"
+          : "border border-divlab-border-strong bg-gradient-to-br from-divlab-elevated via-divlab-card to-divlab-bg"
+      } ${textClassName}`}
     >
       {avatarUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
@@ -24,12 +30,22 @@ export default function ProfileAvatar({
           aria-hidden="true"
         />
       ) : (
-        <>
-          <span className="absolute inset-0 bg-[radial-gradient(circle_at_35%_25%,rgba(249,217,118,0.22),transparent_36%)]" />
-          <span className="absolute inset-x-6 top-4 h-px bg-[#F9D976]/25" />
-          <span className="relative">{initials}</span>
-        </>
+        initials
       )}
+    </span>
+  );
+
+  if (!highlighted) {
+    return (
+      <span className={`relative inline-flex shrink-0 ${sizeClassName}`}>
+        {avatarContent}
+      </span>
+    );
+  }
+
+  return (
+    <span className={`divlab-avatar-highlight ${sizeClassName}`}>
+      {avatarContent}
     </span>
   );
 }

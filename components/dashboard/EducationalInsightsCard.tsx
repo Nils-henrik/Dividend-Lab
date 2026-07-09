@@ -31,7 +31,7 @@ export default function EducationalInsightsCard() {
             </p>
             <Link
               href={`/learning/${insight.slug}`}
-              className="mt-3 inline-flex text-xs font-medium text-divlab-gold transition hover:text-divlab-gold-hover"
+              className="mt-3 inline-flex text-xs font-medium text-divlab-blue-muted transition hover:text-divlab-blue"
             >
               Läs mer
             </Link>

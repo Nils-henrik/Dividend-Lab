@@ -17,6 +17,8 @@ type Props = {
   className?: string;
 };
 
+const CHART_BLUE = "#0A84FF";
+
 const data = [
   { month: "Jan", value: 42000 },
   { month: "Feb", value: 44500 },
@@ -54,7 +56,7 @@ const chartData = {
     { month: "2026", value: 72100 },
   ],
 
-  "ALL": [
+  ALL: [
     { month: "2018", value: 3000 },
     { month: "2019", value: 9000 },
     { month: "2020", value: 16000 },
@@ -78,8 +80,8 @@ const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
   if (!active || !payload || !payload.length) return null;
 
   return (
-    <div className="rounded-lg border border-[#D4AF37] bg-[#111111]/95 px-3 py-2 backdrop-blur-md shadow-[0_0_16px_rgba(212,175,55,0.12)]">
-      <p className="text-base font-semibold text-white">
+    <div className="rounded-lg border divlab-border-neutral bg-divlab-elevated/95 px-3 py-2 backdrop-blur-md">
+      <p className="text-base font-semibold text-divlab-text">
         {payload[0].value.toLocaleString("sv-SE")} kr
       </p>
     </div>
@@ -93,11 +95,9 @@ export default function DividendChart({
   const [period, setPeriod] = useState<Period>("6M");
 
   return (
-    <div
-      className={`${className} rounded-2xl border border-white/10 bg-[#161616] p-6`}
-    >
+    <div className={`${className} divlab-surface-panel p-6`}>
       <div className="mb-6 flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-white">
+        <h3 className="text-lg font-semibold text-divlab-text">
           Portföljutveckling
         </h3>
 
@@ -108,21 +108,21 @@ export default function DividendChart({
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={chartData[period]}>
             <defs>
-              <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#D4AF37" stopOpacity={0.6} />
-                <stop offset="100%" stopColor="#D4AF37" stopOpacity={0} />
+              <linearGradient id="divlabChartBlue" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={CHART_BLUE} stopOpacity={0.45} />
+                <stop offset="100%" stopColor={CHART_BLUE} stopOpacity={0} />
               </linearGradient>
             </defs>
 
             <XAxis
               dataKey="month"
-              tick={{ fill: "#777", fontSize: 12 }}
+              tick={{ fill: "#71717A", fontSize: 12 }}
               axisLine={false}
               tickLine={false}
             />
 
             <YAxis
-              tick={{ fill: "#777", fontSize: 12 }}
+              tick={{ fill: "#71717A", fontSize: 12 }}
               axisLine={false}
               tickLine={false}
             />
@@ -131,7 +131,7 @@ export default function DividendChart({
               content={<CustomTooltip />}
               offset={20}
               cursor={{
-                stroke: "#D4AF37",
+                stroke: CHART_BLUE,
                 strokeWidth: 1,
                 strokeDasharray: "4 4",
               }}
@@ -140,15 +140,15 @@ export default function DividendChart({
             <Area
               type="monotone"
               dataKey="value"
-              stroke="#D4AF37"
-              strokeWidth={3}
-              fill="url(#gold)"
+              stroke={CHART_BLUE}
+              strokeWidth={2.5}
+              fill="url(#divlabChartBlue)"
               animationDuration={1800}
               dot={false}
               activeDot={{
                 r: 5,
-                fill: "#D4AF37",
-                stroke: "#111111",
+                fill: CHART_BLUE,
+                stroke: "#12161C",
                 strokeWidth: 2,
               }}
             />

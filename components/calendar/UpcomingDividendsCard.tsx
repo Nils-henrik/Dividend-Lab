@@ -6,8 +6,8 @@ type Props = {
 
 export default function UpcomingDividendsCard({ payments }: Props) {
   return (
-    <section className="rounded-2xl border border-white/10 bg-[#111111]/80 p-4">
-      <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-gray-500">
+    <section className="divlab-card p-4">
+      <p className="divlab-section-label text-[10px] tracking-[0.2em]">
         Kommande utdelningar
       </p>
 
@@ -15,17 +15,17 @@ export default function UpcomingDividendsCard({ payments }: Props) {
         {payments.map((payment) => (
           <article
             key={payment.id}
-            className="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-white/[0.02] px-3.5 py-2.5 transition-all duration-300 hover:border-[#D4AF37]/25"
+            className="flex items-center justify-between gap-4 rounded-xl border divlab-border-neutral bg-divlab-surface px-3.5 py-2.5 transition-all duration-300 hover:border-divlab-blue/25"
           >
             <div>
-              <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-gray-600">
+              <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-divlab-text-subtle">
                 {payment.dayLabel}
               </p>
-              <p className="mt-1 text-sm font-medium text-white">
+              <p className="mt-1 text-sm font-medium text-divlab-text">
                 {payment.company}
               </p>
             </div>
-            <p className="text-sm font-medium text-green-400 tabular-nums">
+            <p className="text-sm font-medium text-divlab-green tabular-nums">
               {payment.amount}
             </p>
           </article>

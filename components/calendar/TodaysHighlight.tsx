@@ -6,26 +6,26 @@ type Props = {
 
 export default function TodaysHighlight({ highlight }: Props) {
   return (
-    <article className="rounded-2xl border border-[#D4AF37]/20 bg-[#161616] px-6 py-5 shadow-[0_0_36px_rgba(212,175,55,0.05)]">
-      <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]">
+    <article className="divlab-card px-6 py-5">
+      <p className="divlab-section-label text-[10px] tracking-[0.22em]">
         Dagens höjdpunkt
       </p>
 
       <div className="mt-4 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="text-xl font-semibold tracking-[-0.02em] text-white">
+          <p className="text-xl font-semibold tracking-[-0.02em] text-divlab-text">
             {highlight.company}
           </p>
-          <p className="mt-1 text-sm text-gray-400">{highlight.headline}</p>
+          <p className="mt-1 text-sm text-divlab-text-secondary">{highlight.headline}</p>
         </div>
 
         <div className="flex items-center gap-5">
-          <p className="text-2xl font-medium text-green-400 tabular-nums">
+          <p className="text-2xl font-medium text-divlab-green tabular-nums">
             {highlight.metric}
           </p>
           <button
             type="button"
-            className="text-sm font-medium text-[#D4AF37] transition-colors duration-300 hover:text-[#F9D976]"
+            className="divlab-link text-sm font-medium"
           >
             {highlight.ctaLabel} →
           </button>

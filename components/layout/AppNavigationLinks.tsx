@@ -49,7 +49,7 @@ export default function AppNavigationLinks({
             </span>
             {showUnreadIndicator && (
               <span
-                className={`rounded-full bg-divlab-gold ${
+                className={`rounded-full bg-divlab-blue ${
                   isCollapsed
                     ? "absolute right-4 top-2 h-2 w-2"
                     : "ml-auto min-w-5 px-1.5 py-0.5 text-center text-[10px] font-semibold leading-none text-black"

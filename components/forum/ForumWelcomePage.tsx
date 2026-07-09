@@ -44,8 +44,8 @@ export default function ForumWelcomePage({
         <ForumSidebar categoryGroups={categoryGroups} activeCategorySlug="" />
 
         <main className="space-y-3">
-          <section className="rounded-lg border border-white/10 bg-[#111111]/85 p-6">
-            <p className="text-xs font-medium uppercase tracking-[0.2em] text-[#D4AF37]">
+          <section className="divlab-card p-6">
+            <p className="divlab-section-label">
               Välkommen
             </p>
             <h1 className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-white">
@@ -59,7 +59,7 @@ export default function ForumWelcomePage({
             </p>
           </section>
 
-          <section className="rounded-lg border border-white/10 bg-[#161616] p-6">
+          <section className="divlab-surface-panel p-6">
             <h2 className="text-sm font-semibold text-white">
               Forumets grundprinciper
             </h2>
@@ -75,7 +75,7 @@ export default function ForumWelcomePage({
             </div>
           </section>
 
-          <section className="rounded-lg border border-white/10 bg-[#161616] p-6">
+          <section className="divlab-surface-panel p-6">
             <h2 className="text-sm font-semibold text-white">
               Uppföranderegler
             </h2>
@@ -91,7 +91,7 @@ export default function ForumWelcomePage({
             </ol>
           </section>
 
-          <section className="rounded-lg border border-white/10 bg-[#161616] p-6">
+          <section className="divlab-surface-panel p-6">
             <h2 className="text-sm font-semibold text-white">
               Alla börjar någonstans
             </h2>
@@ -103,7 +103,7 @@ export default function ForumWelcomePage({
             </p>
           </section>
 
-          <section className="rounded-lg border border-white/10 bg-[#161616] p-6">
+          <section className="divlab-surface-panel p-6">
             <h2 className="text-sm font-semibold text-white">
               Ekonomiska diskussioner
             </h2>
@@ -116,7 +116,7 @@ export default function ForumWelcomePage({
             </p>
           </section>
 
-          <section className="rounded-lg border border-white/10 bg-[#161616] p-6">
+          <section className="divlab-surface-panel p-6">
             <h2 className="text-sm font-semibold text-white">Vid missbruk</h2>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-gray-300">
               För att skydda forumets kvalitet kan inlägg redigeras, döljas
@@ -127,7 +127,7 @@ export default function ForumWelcomePage({
             </p>
           </section>
 
-          <section className="rounded-lg border border-white/10 bg-[#161616] p-6">
+          <section className="divlab-surface-panel p-6">
             <h2 className="text-sm font-semibold text-white">DivLab-kulturen</h2>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-gray-300">
               Det bästa inlägget är inte alltid det som har starkast åsikt, utan
@@ -136,7 +136,7 @@ export default function ForumWelcomePage({
             </p>
           </section>
 
-          <section className="rounded-lg border border-white/10 bg-[#161616] p-6">
+          <section className="divlab-surface-panel p-6">
             <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
               <div>
                 <h2 className="text-sm font-semibold text-white">
@@ -149,14 +149,14 @@ export default function ForumWelcomePage({
               {isAuthenticated ? (
                 <Link
                   href={`/forum?category=${categoryGroups[0]?.categories[0]?.slug ?? "stocks"}`}
-                  className="inline-flex shrink-0 rounded-xl border border-[#D4AF37]/40 px-5 py-2.5 text-sm font-semibold text-[#D4AF37] transition hover:border-[#D4AF37] hover:bg-[#D4AF37]/10"
+                  className="divlab-btn-ghost inline-flex shrink-0 px-5 py-2.5 text-sm"
                 >
                   Gå till diskussioner
                 </Link>
               ) : (
                 <Link
                   href={`/login?redirect=${encodeURIComponent("/forum?category=stocks")}`}
-                  className="inline-flex shrink-0 rounded-xl border border-white/10 px-5 py-2.5 text-sm font-medium text-gray-300 transition hover:border-[#D4AF37]/40 hover:text-[#D4AF37]"
+                  className="divlab-btn-secondary inline-flex shrink-0 px-5 py-2.5 text-sm transition hover:border-divlab-blue/30 hover:text-divlab-blue-muted"
                 >
                   Logga in för att delta
                 </Link>

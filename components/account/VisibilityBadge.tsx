@@ -6,7 +6,7 @@ type Props = {
 
 const visibilityStyles: Record<VisibilityState, string> = {
   Public: "border-green-400/20 bg-green-400/10 text-green-400",
-  Friends: "border-[#D4AF37]/25 bg-[#D4AF37]/10 text-[#D4AF37]",
+  Friends: "border-divlab-blue/25 bg-divlab-blue/10 text-divlab-blue",
   Private: "border-white/10 bg-white/[0.03] text-gray-400",
 };
 

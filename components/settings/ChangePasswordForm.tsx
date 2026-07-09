@@ -49,17 +49,17 @@ export default function ChangePasswordForm() {
   }
 
   return (
-    <section className="rounded-3xl border border-white/10 bg-[#161616] p-8 shadow-[0_0_80px_rgba(212,175,55,0.05)]">
+    <section className="divlab-card rounded-3xl p-8">
       <div className="mb-6">
-        <h3 className="text-lg font-semibold text-white">Byt lösenord</h3>
-        <p className="mt-2 text-sm leading-6 text-gray-400">
+        <h3 className="text-lg font-semibold text-divlab-text">Byt lösenord</h3>
+        <p className="mt-2 text-sm leading-6 text-divlab-text-secondary">
           Uppdatera lösenordet för ditt konto.
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <label className="block">
-          <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-gray-500">
+          <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-divlab-text-muted">
             Nytt lösenord
           </span>
           <input
@@ -73,12 +73,12 @@ export default function ChangePasswordForm() {
             autoComplete="new-password"
             minLength={MIN_PASSWORD_LENGTH}
             required
-            className="w-full rounded-xl border border-white/10 bg-[#111111] px-4 py-3 text-white outline-none transition focus:border-[#D4AF37]/70"
+            className="divlab-input w-full px-4 py-3"
           />
         </label>
 
         <label className="block">
-          <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-gray-500">
+          <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-divlab-text-muted">
             Bekräfta nytt lösenord
           </span>
           <input
@@ -92,18 +92,18 @@ export default function ChangePasswordForm() {
             autoComplete="new-password"
             minLength={MIN_PASSWORD_LENGTH}
             required
-            className="w-full rounded-xl border border-white/10 bg-[#111111] px-4 py-3 text-white outline-none transition focus:border-[#D4AF37]/70"
+            className="divlab-input w-full px-4 py-3"
           />
         </label>
 
         {error && (
-          <p className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm leading-6 text-gray-300">
+          <p className="rounded-xl border divlab-border-neutral divlab-inset px-4 py-3 text-sm leading-6 text-divlab-text-secondary">
             {error}
           </p>
         )}
 
         {successMessage && (
-          <p className="rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/5 px-4 py-3 text-sm leading-6 text-gray-300">
+          <p className="rounded-xl border border-divlab-blue/20 bg-divlab-blue/5 px-4 py-3 text-sm leading-6 text-divlab-text-secondary">
             {successMessage}
           </p>
         )}
@@ -112,7 +112,7 @@ export default function ChangePasswordForm() {
           <button
             type="submit"
             disabled={isLoading}
-            className="inline-flex h-11 w-full items-center justify-center rounded-lg border border-[#D4AF37] bg-[#D4AF37] px-6 text-sm font-semibold text-black shadow-[0_0_20px_rgba(212,175,55,0.14)] transition-all duration-300 hover:bg-[#F5D77A] hover:shadow-[0_0_28px_rgba(212,175,55,0.2)] disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
+            className="divlab-btn-primary h-11 w-full px-6 disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
           >
             {isLoading ? "Sparar..." : "Uppdatera lösenord"}
           </button>

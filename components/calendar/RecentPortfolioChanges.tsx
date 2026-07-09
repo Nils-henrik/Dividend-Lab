@@ -17,8 +17,8 @@ function formatTimestamp(timestamp: string): string {
 
 export default function RecentPortfolioChanges({ changes }: Props) {
   return (
-    <section className="rounded-2xl border border-white/10 bg-[#111111]/80 p-4">
-      <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-gray-500">
+    <section className="divlab-card p-4">
+      <p className="divlab-section-label text-[10px] tracking-[0.2em]">
         Senaste portföljförändringar
       </p>
 
@@ -26,21 +26,21 @@ export default function RecentPortfolioChanges({ changes }: Props) {
         {changes.map((change) => (
           <article
             key={change.id}
-            className="rounded-xl border border-white/10 bg-white/[0.02] px-3.5 py-2.5 transition-all duration-300 hover:border-[#D4AF37]/25"
+            className="rounded-xl border divlab-border-neutral bg-divlab-surface px-3.5 py-2.5 transition-all duration-300 hover:border-divlab-blue/25"
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-[10px] uppercase tracking-[0.1em] text-gray-600">
+                <p className="text-[10px] uppercase tracking-[0.1em] text-divlab-text-subtle">
                   {portfolioChangeTypeLabels[change.type]}
                 </p>
-                <p className="mt-1 text-sm font-medium text-white">
+                <p className="mt-1 text-sm font-medium text-divlab-text">
                   {change.company}
                 </p>
-                <p className="mt-1 text-[12px] leading-5 text-gray-400">
+                <p className="mt-1 text-[12px] leading-5 text-divlab-text-secondary">
                   {change.title}
                 </p>
               </div>
-              <span className="shrink-0 text-[10px] text-gray-600 tabular-nums">
+              <span className="shrink-0 text-[10px] text-divlab-text-muted tabular-nums">
                 {formatTimestamp(change.timestamp)}
               </span>
             </div>

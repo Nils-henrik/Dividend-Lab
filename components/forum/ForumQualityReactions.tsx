@@ -18,6 +18,13 @@ type Props = {
   disabled?: boolean;
 };
 
+const reactionButtonClass = (active: boolean) =>
+  `inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10px] font-medium leading-4 transition disabled:cursor-not-allowed disabled:opacity-60 ${
+    active
+      ? "divlab-selected"
+      : "border-divlab-border-neutral bg-transparent text-divlab-text-muted hover:border-divlab-blue/25 hover:text-divlab-text-secondary"
+  }`;
+
 function ReactionSubmitButton({ summary }: { summary: ForumReactionSummary }) {
   const { pending } = useFormStatus();
 
@@ -27,17 +34,12 @@ function ReactionSubmitButton({ summary }: { summary: ForumReactionSummary }) {
       disabled={pending}
       aria-pressed={summary.active}
       aria-label={`${summary.label}: ${summary.count}`}
-      className={`rounded border px-1.5 py-0.5 text-[10px] leading-4 transition disabled:cursor-not-allowed disabled:opacity-60 ${
-        summary.active
-          ? "border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]"
-          : "border-white/10 bg-white/[0.03] text-gray-400 hover:border-[#D4AF37]/30 hover:text-white"
-      }`}
+      className={reactionButtonClass(summary.active)}
     >
-      <span aria-hidden="true">{summary.icon}</span>
+      <span>{summary.label}</span>
       {summary.count > 0 && (
-        <span className="ml-1 tabular-nums">{summary.count}</span>
+        <span className="tabular-nums text-divlab-text-subtle">{summary.count}</span>
       )}
-      <span className="ml-1 text-gray-500">{summary.label}</span>
     </button>
   );
 }
@@ -53,17 +55,16 @@ export default function ForumQualityReactions({
 }: Props) {
   if (disabled) {
     return (
-      <div className="flex flex-wrap items-center gap-1">
+      <div className="flex flex-wrap items-center gap-1.5">
         {reactions.map((summary) => (
           <span
             key={summary.type}
-            className="rounded border border-white/10 bg-white/[0.03] px-1.5 py-0.5 text-[10px] leading-4 text-gray-500"
+            className="inline-flex items-center gap-1 rounded-full border border-divlab-border-neutral px-2.5 py-0.5 text-[10px] font-medium leading-4 text-divlab-text-muted"
           >
-            <span aria-hidden="true">{summary.icon}</span>
+            <span>{summary.label}</span>
             {summary.count > 0 && (
-              <span className="ml-1 tabular-nums">{summary.count}</span>
+              <span className="tabular-nums text-divlab-text-subtle">{summary.count}</span>
             )}
-            <span className="ml-1 text-gray-600">{summary.label}</span>
           </span>
         ))}
       </div>
@@ -71,7 +72,7 @@ export default function ForumQualityReactions({
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-1">
+    <div className="flex flex-wrap items-center gap-1.5">
       {reactions.map((summary) =>
         isAuthenticated ? (
           <form key={summary.type} action={toggleForumReactionAction}>
@@ -86,13 +87,12 @@ export default function ForumQualityReactions({
             key={summary.type}
             href={loginHref}
             aria-label={`${summary.label}: logga in för att reagera`}
-            className="rounded border border-white/10 bg-white/[0.03] px-1.5 py-0.5 text-[10px] leading-4 text-gray-500 transition hover:border-[#D4AF37]/30 hover:text-[#D4AF37]"
+            className={reactionButtonClass(false)}
           >
-            <span aria-hidden="true">{summary.icon}</span>
+            <span>{summary.label}</span>
             {summary.count > 0 && (
-              <span className="ml-1 tabular-nums">{summary.count}</span>
+              <span className="tabular-nums text-divlab-text-subtle">{summary.count}</span>
             )}
-            <span className="ml-1 text-gray-600">{summary.label}</span>
           </Link>
         ),
       )}

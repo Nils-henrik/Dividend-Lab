@@ -90,15 +90,15 @@ export default function CalendarHub() {
 
   return (
     <div className="space-y-5">
-      <header className="flex flex-col justify-between gap-4 border-b border-white/10 pb-5 lg:flex-row lg:items-end">
+      <header className="flex flex-col justify-between gap-4 border-b divlab-border-neutral pb-5 lg:flex-row lg:items-end">
         <div>
-          <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]">
+          <p className="divlab-section-label text-[10px] tracking-[0.22em]">
             Investeraröversikt
           </p>
-          <h1 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-white">
+          <h1 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-divlab-text">
             Kalender
           </h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-400">
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-divlab-text-secondary">
             Vad behöver du veta idag?
           </p>
         </div>
@@ -134,8 +134,8 @@ export default function CalendarHub() {
       </div>
 
       {selectedEvent && (
-        <section className="rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/5 px-4 py-3">
-          <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-[#D4AF37]">
+        <section className="rounded-xl border border-divlab-blue/20 bg-divlab-blue/5 px-4 py-3">
+          <p className="divlab-section-label text-[10px] tracking-[0.16em]">
             Förhandsvisning av händelse
           </p>
           <p className="mt-1.5 text-sm text-white">

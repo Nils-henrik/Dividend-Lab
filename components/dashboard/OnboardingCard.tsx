@@ -98,12 +98,12 @@ export default function OnboardingCard({ profile }: Props) {
             key={step.id}
             href={step.href}
             onClick={step.isForumStep ? handleForumStepClick : undefined}
-            className="flex items-start gap-3 rounded-xl border divlab-inset px-4 py-3 transition hover:border-divlab-gold/30 hover:bg-white/[0.05]"
+            className="flex items-start gap-3 rounded-xl border divlab-inset px-4 py-3 transition hover:border-divlab-blue/30 hover:bg-white/[0.05]"
           >
             <span
               className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[10px] font-medium ${
                 step.completed
-                  ? "border-divlab-gold/40 bg-divlab-gold/10 text-divlab-gold"
+                  ? "border-divlab-blue/40 bg-divlab-blue/10 text-divlab-blue"
                   : "border-divlab-border-neutral text-divlab-text-muted"
               }`}
             >

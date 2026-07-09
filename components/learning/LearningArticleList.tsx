@@ -4,14 +4,12 @@ import { learningArticles } from "@/data/learning-articles";
 export default function LearningArticleList() {
   return (
     <div className="space-y-6">
-      <section className="rounded-3xl border border-white/10 bg-[#111111]/85 p-6">
-        <p className="mb-3 text-xs font-medium uppercase tracking-[0.25em] text-[#D4AF37]">
-          Utbildning
-        </p>
-        <h1 className="text-3xl font-semibold tracking-[-0.04em] text-white">
+      <section className="divlab-hero">
+        <p className="mb-3 divlab-section-label">Utbildning</p>
+        <h1 className="text-3xl font-semibold tracking-[-0.04em] text-divlab-text">
           Lär dig mer om utdelning och FIRE
         </h1>
-        <p className="mt-4 max-w-3xl text-sm leading-7 text-gray-400">
+        <p className="mt-4 max-w-3xl text-sm leading-7 text-divlab-text-secondary">
           Saklig, långsiktig utbildning för investerare som tänker i år — inte
           dagar.
         </p>
@@ -22,13 +20,13 @@ export default function LearningArticleList() {
           <Link
             key={article.slug}
             href={`/learning/${article.slug}`}
-            className="rounded-2xl border border-white/10 bg-[#161616] p-6 transition hover:border-[#D4AF37]/30"
+            className="divlab-card p-6 transition hover:border-divlab-border-strong"
           >
-            <h2 className="text-lg font-semibold text-white">{article.title}</h2>
-            <p className="mt-2 text-sm leading-6 text-gray-400">
+            <h2 className="text-lg font-semibold text-divlab-text">{article.title}</h2>
+            <p className="mt-2 text-sm leading-6 text-divlab-text-secondary">
               {article.description}
             </p>
-            <p className="mt-4 text-xs font-medium text-[#D4AF37]">
+            <p className="mt-4 text-xs font-medium text-divlab-blue-muted">
               {article.readingMinutes} min läsning · Läs artikel
             </p>
           </Link>

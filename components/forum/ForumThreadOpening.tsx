@@ -46,18 +46,18 @@ export default function ForumThreadOpening({
   const isSelf = currentUsername?.toLowerCase() === normalizedUsername;
 
   return (
-    <article className="rounded-2xl border divlab-border-neutral bg-divlab-card px-2.5 py-2">
-      <div className="grid gap-2 lg:grid-cols-[112px_1fr]">
-        <aside className="border-b divlab-border-neutral pb-2 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-2">
+    <article className="divlab-opening-post">
+      <div className="grid gap-4 lg:grid-cols-[7.5rem_minmax(0,1fr)]">
+        <aside className="border-b divlab-border-neutral pb-3 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-4">
           <div className="group/forum-author relative">
-            <div className="flex items-center gap-2 lg:block">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full border border-divlab-gold/30 bg-divlab-gold/10 text-[11px] font-semibold text-divlab-gold">
+            <div className="flex items-center gap-2.5 lg:block">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full border border-divlab-blue/25 bg-divlab-blue/10 text-[11px] font-semibold text-divlab-blue">
                 {authorInitials}
               </div>
-              <div className="min-w-0 lg:mt-1.5">
+              <div className="min-w-0 lg:mt-2">
                 <Link
                   href={profileHref}
-                  className="block truncate text-xs font-medium text-divlab-text transition hover:text-divlab-gold focus:text-divlab-gold focus:outline-none"
+                  className="block truncate text-xs font-medium text-divlab-text transition hover:text-divlab-blue-muted focus:text-divlab-blue-muted focus:outline-none"
                 >
                   @{authorUsername}
                 </Link>
@@ -78,19 +78,19 @@ export default function ForumThreadOpening({
         </aside>
 
         <div>
-          <div className="mb-2 flex flex-wrap items-center justify-between gap-2 border-b divlab-border-neutral pb-1.5">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <p className="text-[11px] text-divlab-text-muted">{timestamp}</p>
-            <span className="rounded-md border border-divlab-gold/20 bg-divlab-gold/10 px-2 py-0.5 text-[11px] font-medium text-divlab-gold">
+            <span className="rounded-full border border-divlab-blue/25 bg-divlab-blue/10 px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.14em] text-divlab-blue-muted">
               Inledande inlägg
             </span>
           </div>
 
-          <p className="max-w-4xl whitespace-pre-wrap text-[0.9rem] leading-6 text-divlab-text-secondary">
+          <p className="max-w-4xl whitespace-pre-wrap text-sm leading-6 text-divlab-text">
             {thread.body}
           </p>
 
           {thread.id && (
-            <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t divlab-border-neutral pt-1.5">
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t divlab-border-neutral pt-3">
               <ForumQualityReactions
                 targetType="thread"
                 targetId={thread.id}

@@ -129,13 +129,12 @@ export default function ForumShareButton({
     : undefined;
 
   const shareActionClassName =
-    "inline-flex min-w-[5.5rem] flex-col items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 text-center transition hover:border-[#D4AF37]/40 focus:border-[#D4AF37]/40 focus:outline-none";
-  const shareActionLabelClassName = "text-[10px] font-medium text-gray-400";
+    "inline-flex min-w-[5.5rem] flex-col items-center gap-2 rounded-xl border divlab-border-neutral bg-divlab-surface px-3 py-3 text-center transition hover:border-divlab-blue/30 hover:bg-divlab-blue/[0.04] focus:border-divlab-blue/40 focus:outline-none";
 
   const dialog =
     isOpen && resolvedUrl ? (
       <div
-        className="fixed inset-0 z-[200] overflow-y-auto bg-black/70 backdrop-blur-sm"
+        className="fixed inset-0 z-[200] overflow-y-auto bg-black/75 backdrop-blur-sm"
         onMouseDown={(event) => {
           if (event.target === event.currentTarget) {
             closeDialog();
@@ -155,85 +154,90 @@ export default function ForumShareButton({
             role="dialog"
             aria-modal="true"
             aria-labelledby={titleId}
-            className="relative w-full max-w-md max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-2xl border border-white/10 bg-[#161616] p-6 pb-7 shadow-[0_24px_80px_rgba(0,0,0,0.55)] sm:max-h-[calc(100dvh-3rem)]"
+            className="divlab-card relative w-full max-w-md max-h-[calc(100dvh-2rem)] overflow-y-auto p-6 pb-7 sm:max-h-[calc(100dvh-3rem)]"
           >
-          <button
-            type="button"
-            onClick={closeDialog}
-            aria-label="Stäng delningsdialog"
-            className="absolute right-4 top-4 rounded-md border border-white/10 px-2 py-1 text-xs font-medium text-gray-400 transition hover:border-white/20 hover:text-white focus:border-white/20 focus:text-white focus:outline-none"
-          >
-            Stäng
-          </button>
-
-          <div className="pr-16">
-            <h2
-              id={titleId}
-              className="text-lg font-semibold tracking-[-0.03em] text-white"
+            <button
+              type="button"
+              onClick={closeDialog}
+              aria-label="Stäng delningsdialog"
+              className="absolute right-4 top-4 divlab-btn-ghost px-2.5 py-1 text-xs"
             >
-              Dela diskussion
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-gray-400">
-              Dela länken till den här diskussionen.
-            </p>
-          </div>
+              Stäng
+            </button>
 
-          <div className="mt-5">
-            <label
-              htmlFor="forum-share-link"
-              className="text-[10px] font-medium uppercase tracking-[0.18em] text-gray-500"
-            >
-              Länk
-            </label>
-            <div className="mt-2 flex gap-2">
-              <input
-                id="forum-share-link"
-                readOnly
-                value={resolvedUrl}
-                className="min-w-0 flex-1 rounded-xl border border-white/10 bg-[#111111] px-3 py-2 text-xs text-gray-300 outline-none"
-              />
-              <button
-                type="button"
-                onClick={handleCopyLink}
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-medium text-gray-300 transition hover:border-[#D4AF37]/40 hover:text-[#D4AF37] focus:border-[#D4AF37]/40 focus:text-[#D4AF37] focus:outline-none"
+            <div className="pr-16">
+              <p className="divlab-section-label text-[10px]">Dela</p>
+              <h2
+                id={titleId}
+                className="mt-2 text-lg font-semibold tracking-[-0.03em] text-divlab-text"
               >
-                <ShareCopyIcon className="h-3.5 w-3.5" />
-                {copyFeedback ? "Länk kopierad" : "Kopiera"}
-              </button>
+                Dela diskussion
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-divlab-text-secondary">
+                Dela länken till den här diskussionen.
+              </p>
             </div>
-          </div>
 
-          <div className="mt-5 border-t border-white/10 pt-5 pb-1">
-            <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-gray-500">
-              Dela via
-            </p>
-            <div className="mt-3 flex flex-wrap gap-2.5">
-              {twitterShareUrl && (
-                <a
-                  href={twitterShareUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Dela på X/Twitter"
-                  className={shareActionClassName}
+            <div className="mt-5">
+              <label
+                htmlFor="forum-share-link"
+                className="text-[10px] font-medium uppercase tracking-[0.18em] text-divlab-text-muted"
+              >
+                Länk
+              </label>
+              <div className="mt-2 flex gap-2">
+                <input
+                  id="forum-share-link"
+                  readOnly
+                  value={resolvedUrl}
+                  className="divlab-input min-w-0 flex-1 px-3 py-2 text-xs"
+                />
+                <button
+                  type="button"
+                  onClick={handleCopyLink}
+                  className="divlab-btn-primary inline-flex shrink-0 items-center gap-1.5 px-3 py-2 text-xs"
                 >
-                  <ShareXIcon className="h-4 w-4 text-white" />
-                  <span className={shareActionLabelClassName}>X/Twitter</span>
-                </a>
-              )}
-              {facebookShareUrl && (
-                <a
-                  href={facebookShareUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Dela på Facebook"
-                  className={shareActionClassName}
-                >
-                  <ShareFacebookIcon className="h-4 w-4" />
-                  <span className={shareActionLabelClassName}>Facebook</span>
-                </a>
-              )}
+                  <ShareCopyIcon className="h-3.5 w-3.5" />
+                  {copyFeedback ? "Länk kopierad" : "Kopiera"}
+                </button>
+              </div>
             </div>
-          </div>
+
+            <div className="mt-5 border-t divlab-border-neutral pt-5 pb-1">
+              <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-divlab-text-muted">
+                Dela via
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2.5">
+                {twitterShareUrl && (
+                  <a
+                    href={twitterShareUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Dela på X"
+                    className={shareActionClassName}
+                  >
+                    <ShareXIcon />
+                    <span className="text-[10px] font-medium text-divlab-text-muted">
+                      X
+                    </span>
+                  </a>
+                )}
+                {facebookShareUrl && (
+                  <a
+                    href={facebookShareUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Dela på Facebook"
+                    className={shareActionClassName}
+                  >
+                    <ShareFacebookIcon />
+                    <span className="text-[10px] font-medium text-divlab-text-muted">
+                      Facebook
+                    </span>
+                  </a>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -247,7 +251,7 @@ export default function ForumShareButton({
         aria-haspopup="dialog"
         aria-expanded={isOpen}
         onClick={openDialog}
-        className="rounded-md border border-white/10 px-2 py-1 text-[11px] font-medium text-gray-400 transition hover:border-[#D4AF37]/40 hover:text-[#D4AF37] focus:border-[#D4AF37]/40 focus:text-[#D4AF37] focus:outline-none"
+        className="divlab-btn-ghost px-2 py-1 text-[11px]"
       >
         {label}
       </button>

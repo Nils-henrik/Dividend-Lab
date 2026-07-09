@@ -127,7 +127,7 @@ export default function GlobalSearch({
         type="button"
         onClick={openMobileSearch}
         aria-label="Öppna sökning"
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border divlab-border-neutral text-divlab-text-secondary transition hover:border-divlab-gold/40 hover:text-divlab-gold"
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border divlab-border-neutral text-divlab-text-secondary transition hover:border-divlab-blue/40 hover:text-divlab-blue"
       >
         <AppIcon name="search" className="h-4 w-4" />
       </button>
@@ -149,7 +149,7 @@ export default function GlobalSearch({
     >
       <label
         htmlFor={inputId}
-        className={`flex items-center gap-3 divlab-input text-divlab-text-muted focus-within:border-divlab-gold/40 ${
+        className={`flex items-center gap-3 divlab-input text-divlab-text-muted focus-within:border-divlab-blue/40 ${
           variant === "desktop" ? "px-4 py-3" : "px-3 py-2"
         }`}
       >

@@ -22,13 +22,11 @@ export default function ForumHeader({
     <section className="divlab-surface-panel p-3.5">
       <div className="grid gap-4 xl:grid-cols-[1fr_420px] xl:items-center">
         <div>
-          <p className="mb-1.5 text-[11px] font-medium uppercase tracking-[0.25em] text-[#D4AF37]">
-            Dividend Lab Forum
-          </p>
-          <h2 className="text-2xl font-semibold tracking-[-0.04em] text-white">
+          <p className="mb-1.5 divlab-section-label">Dividend Lab Forum</p>
+          <h2 className="text-2xl font-semibold tracking-[-0.04em] text-divlab-text">
             {activeCategoryName}
           </h2>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-500">
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-divlab-text-muted">
             Lär av erfarna investerare, granska portföljtänkande och hitta
             hållbara inkomstidéer utan marknadsbrus.
           </p>
@@ -41,16 +39,13 @@ export default function ForumHeader({
             activeCategoryName={activeCategoryName}
           />
           {isAuthenticated ? (
-            <Link
-              href={newDiscussionHref}
-              className="block w-full rounded-xl border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-4 py-3 text-center text-sm font-medium text-[#D4AF37] transition hover:border-[#D4AF37]/50"
-            >
+            <Link href={newDiscussionHref} className="divlab-btn-primary block w-full px-4 py-3">
               Starta diskussion
             </Link>
           ) : (
             <Link
               href={loginHref}
-              className="block rounded-xl border divlab-inset px-4 py-3 text-center text-sm font-medium text-divlab-text-secondary transition hover:border-divlab-gold/30 hover:text-divlab-gold"
+              className="block rounded-xl border divlab-inset px-4 py-3 text-center text-sm font-medium text-divlab-text-secondary transition hover:border-divlab-blue/30 hover:text-divlab-blue-muted"
             >
               Logga in för att starta en diskussion
             </Link>

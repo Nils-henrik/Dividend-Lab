@@ -15,8 +15,7 @@ export default function ForumPostActionRow({
   onReply,
   onQuote,
 }: Props) {
-  const buttonClassName =
-    "rounded-md border border-white/10 px-2 py-0.5 text-[11px] font-medium text-gray-400 transition hover:border-[#D4AF37]/40 hover:text-[#D4AF37]";
+  const buttonClassName = "divlab-btn-ghost px-2 py-0.5 text-[11px]";
 
   if (!isAuthenticated) {
     return (

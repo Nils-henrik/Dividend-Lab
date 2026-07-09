@@ -97,7 +97,7 @@ export default function ForumHomePage({
           />
 
           {filteredThreads.length === 0 ? (
-            <section className="rounded-lg border border-white/10 bg-[#111111]/85 p-8 text-center">
+            <section className="divlab-card p-8 text-center">
               <p className="text-sm font-medium text-white">Inga diskussioner än</p>
               <p className="mt-2 text-sm text-gray-500">
                 Starta den första diskussionen i {activeCategory.name}.
@@ -105,14 +105,14 @@ export default function ForumHomePage({
               {isAuthenticated ? (
                 <Link
                   href={newDiscussionHref}
-                  className="mt-6 inline-flex rounded-xl border border-[#D4AF37]/40 px-5 py-2.5 text-sm font-semibold text-[#D4AF37] transition hover:border-[#D4AF37] hover:bg-[#D4AF37]/10"
+                  className="divlab-btn-ghost mt-6 inline-flex px-5 py-2.5 text-sm"
                 >
                   Starta diskussion
                 </Link>
               ) : (
                 <Link
                   href={loginHref}
-                  className="mt-6 inline-flex rounded-xl border border-white/10 px-5 py-2.5 text-sm font-medium text-gray-300 transition hover:border-[#D4AF37]/40 hover:text-[#D4AF37]"
+                  className="divlab-btn-secondary mt-6 inline-flex px-5 py-2.5 text-sm transition hover:border-divlab-blue/30 hover:text-divlab-blue-muted"
                 >
                   Logga in för att starta en diskussion
                 </Link>
@@ -120,7 +120,7 @@ export default function ForumHomePage({
             </section>
           ) : (
             <>
-              <section className="rounded-lg border border-white/10 bg-[#111111]/85 p-3">
+              <section className="divlab-card p-3">
                 <div className="mb-2 flex items-center justify-between gap-4">
                   <div>
                     <h2 className="text-sm font-medium text-white">

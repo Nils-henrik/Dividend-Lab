@@ -14,14 +14,14 @@ export default function ForumCategoryItem({
 }: Props) {
   const className = `flex w-full items-center justify-between gap-2 rounded px-2 py-1 text-left text-xs leading-4 transition ${
     isActive
-      ? "border border-[#D4AF37]/30 bg-[#D4AF37]/10 text-[#D4AF37]"
-      : "text-gray-400 hover:bg-white/[0.03] hover:text-white"
+      ? "divlab-selected"
+      : "text-divlab-text-muted divlab-row-hover hover:text-divlab-text"
   }`;
 
   const content = (
     <>
       <span className="truncate">{category.name}</span>
-      <span className="text-[10px] text-gray-600 tabular-nums">
+      <span className="text-[10px] text-divlab-text-subtle tabular-nums">
         {category.discussions}
       </span>
     </>
@@ -36,11 +36,7 @@ export default function ForumCategoryItem({
   }
 
   return (
-    <button
-      type="button"
-      onClick={() => onSelect(category.slug)}
-      className={className}
-    >
+    <button type="button" onClick={() => onSelect(category.slug)} className={className}>
       {content}
     </button>
   );

@@ -2,28 +2,26 @@ import { premiumMembership } from "@/data/account";
 
 export default function PremiumMembershipCard() {
   return (
-    <article className="rounded-2xl border border-[#D4AF37]/25 bg-[#161616] p-6 shadow-[0_0_42px_rgba(212,175,55,0.06)]">
+    <article className="divlab-card border-divlab-blue/25 p-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="mb-3 text-xs font-medium uppercase tracking-[0.2em] text-[#D4AF37]">
-            Premium-medlemskap
-          </p>
-          <h3 className="text-lg font-semibold text-white">
+          <p className="mb-3 divlab-section-label">Premium-medlemskap</p>
+          <h3 className="text-lg font-semibold text-divlab-text">
             {premiumMembership.status}
           </h3>
         </div>
 
-        <span className="rounded-full border border-[#D4AF37]/40 bg-[#D4AF37]/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[#D4AF37]">
+        <span className="rounded-full border border-divlab-blue/35 bg-divlab-blue/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-divlab-blue">
           PRO
         </span>
       </div>
 
-      <p className="mt-5 text-sm leading-6 text-gray-400">
+      <p className="mt-5 text-sm leading-6 text-divlab-text-secondary">
         {premiumMembership.description}
       </p>
 
-      <div className="mt-7 rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/[0.06] px-4 py-3">
-        <p className="text-sm leading-6 text-gray-300">
+      <div className="mt-7 rounded-xl border divlab-border-neutral divlab-inset px-4 py-3">
+        <p className="text-sm leading-6 text-divlab-text-secondary">
           En nybörjare kan vara PRO. En utdelningsmästare kan vara Free.
           Medlemskap och investerarnivå är oberoende system.
         </p>

@@ -36,7 +36,7 @@ export default function NewDiscussionForm({ initialCategorySlug }: Props) {
           name="categorySlug"
           value={categorySlug}
           onChange={(event) => setCategorySlug(event.target.value)}
-          className="w-full rounded-xl border border-white/10 bg-[#111111] px-4 py-3 text-sm text-white outline-none transition focus:border-[#D4AF37]/70"
+          className="w-full divlab-input px-4 py-3 text-divlab-text"
         >
           {forumCategoryGroups.map((group) => (
             <optgroup key={group.slug} label={group.name}>
@@ -61,7 +61,7 @@ export default function NewDiscussionForm({ initialCategorySlug }: Props) {
           onChange={(event) => setTitle(event.target.value)}
           maxLength={FORUM_TITLE_MAX_LENGTH}
           placeholder="Vad vill du diskutera?"
-          className="w-full rounded-xl border border-white/10 bg-[#111111] px-4 py-3 text-sm text-white outline-none transition placeholder:text-gray-600 focus:border-[#D4AF37]/70"
+          className="w-full divlab-input px-4 py-3 text-divlab-text placeholder:text-divlab-text-subtle"
         />
         <span className="mt-2 block text-xs text-gray-500">
           {title.length}/{FORUM_TITLE_MAX_LENGTH} tecken
@@ -79,7 +79,7 @@ export default function NewDiscussionForm({ initialCategorySlug }: Props) {
           maxLength={FORUM_BODY_MAX_LENGTH}
           rows={8}
           placeholder="Dela din fråga, insikt eller portföljtänkande..."
-          className="w-full resize-none rounded-xl border border-white/10 bg-[#111111] px-4 py-3 text-sm leading-6 text-white outline-none transition placeholder:text-gray-600 focus:border-[#D4AF37]/70"
+          className="w-full resize-none divlab-input px-4 py-3 leading-6 text-divlab-text placeholder:text-divlab-text-subtle"
         />
         <span className="mt-2 block text-xs text-gray-500">
           {body.length}/{FORUM_BODY_MAX_LENGTH} tecken
@@ -90,7 +90,7 @@ export default function NewDiscussionForm({ initialCategorySlug }: Props) {
         <button
           type="submit"
           disabled={isPending}
-          className="rounded-xl border border-[#D4AF37] bg-[#D4AF37] px-5 py-2.5 text-sm font-semibold text-black shadow-[0_0_30px_rgba(212,175,55,0.14)] transition hover:bg-[#F9D976] disabled:cursor-not-allowed disabled:opacity-60"
+          className="divlab-btn-primary px-5 py-2.5 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isPending ? "Skapar..." : "Skapa diskussion"}
         </button>

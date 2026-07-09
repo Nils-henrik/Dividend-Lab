@@ -1,32 +1,43 @@
 import Link from "next/link";
 import { trendingThreads } from "@/data/forum";
 
-export default function ForumTrending() {
+type Props = {
+  embedded?: boolean;
+};
+
+export default function ForumTrending({ embedded = false }: Props) {
+  const content =
+    trendingThreads.length === 0 ? (
+      <p className="mt-3 text-[11px] leading-5 text-divlab-text-muted">
+        Inga trendande diskussioner än.
+      </p>
+    ) : (
+      <div className="mt-3 space-y-2">
+        {trendingThreads.map((thread) => (
+          <Link
+            key={thread.slug}
+            href={`/forum/${thread.slug}`}
+            className="block border-b divlab-border-neutral pb-2 last:border-0 last:pb-0"
+          >
+            <p className="text-xs font-medium leading-5 text-divlab-text transition hover:text-divlab-blue-muted">
+              {thread.title}
+            </p>
+            <p className="mt-0.5 text-[11px] text-divlab-text-muted">
+              {thread.replies} svar · {thread.lastActivity}
+            </p>
+          </Link>
+        ))}
+      </div>
+    );
+
+  if (embedded) {
+    return content;
+  }
+
   return (
-    <section className="rounded-md border border-white/10 bg-[#161616] px-2.5 py-2">
-      <h2 className="text-xs font-semibold text-white">Trendande diskussioner</h2>
-      {trendingThreads.length === 0 ? (
-        <p className="mt-2 text-[11px] leading-4 text-gray-500">
-          Inga trendande diskussioner än.
-        </p>
-      ) : (
-        <div className="mt-2 space-y-2">
-          {trendingThreads.map((thread) => (
-            <Link
-              key={thread.slug}
-              href={`/forum/${thread.slug}`}
-              className="block border-b border-white/10 pb-2 last:border-0 last:pb-0"
-            >
-              <p className="text-xs font-medium leading-4 text-white transition hover:text-[#D4AF37]">
-                {thread.title}
-              </p>
-              <p className="mt-0.5 text-[11px] text-gray-500">
-                {thread.replies} svar · {thread.lastActivity}
-              </p>
-            </Link>
-          ))}
-        </div>
-      )}
+    <section className="divlab-aside-panel">
+      <h2 className="divlab-aside-panel-title">Trendande diskussioner</h2>
+      {content}
     </section>
   );
 }

@@ -104,7 +104,7 @@ export default function ForumUserActions({
       <div
         className={`absolute left-0 top-full z-30 hidden w-32 pt-2 lg:block ${desktopMenuVisibility}`}
       >
-        <div className="rounded-xl border border-white/10 bg-[#111111] p-1 shadow-[0_18px_50px_rgba(0,0,0,0.45)]">
+        <div className="divlab-dropdown p-1">
           {actions}
         </div>
       </div>
@@ -115,7 +115,7 @@ export default function ForumUserActions({
         aria-expanded={isOpen}
         aria-haspopup="menu"
         onClick={() => setIsOpen((value) => !value)}
-        className="mt-1 rounded-md border border-white/10 px-2 py-0.5 text-[11px] font-medium text-gray-500 transition hover:border-[#D4AF37]/40 hover:text-[#D4AF37] focus:border-[#D4AF37]/40 focus:text-[#D4AF37] focus:outline-none lg:hidden"
+        className="mt-1 rounded-md border divlab-border-neutral px-2 py-0.5 text-[11px] font-medium text-divlab-text-muted transition hover:border-divlab-blue/40 hover:text-divlab-blue-muted focus:border-divlab-blue/40 focus:text-divlab-blue-muted focus:outline-none lg:hidden"
       >
         ⋯
       </button>
@@ -123,7 +123,7 @@ export default function ForumUserActions({
       {isOpen && (
         <div
           role="menu"
-          className="absolute left-0 top-full z-20 mt-2 w-32 rounded-xl border border-white/10 bg-[#111111] p-1 shadow-[0_18px_50px_rgba(0,0,0,0.45)] lg:hidden"
+          className="divlab-dropdown absolute left-0 top-full z-20 mt-2 w-32 p-1 lg:hidden"
         >
           {actions}
         </div>

@@ -20,8 +20,8 @@ export default function TimeFilter({ period, setPeriod }: Props) {
           onClick={() => setPeriod(item)}
           className={`rounded-lg px-3 py-1.5 text-sm transition ${
             period === item
-              ? "border border-[#D4AF37] bg-[#D4AF37]/10 text-[#D4AF37]"
-              : "text-gray-400 hover:text-white"
+              ? "divlab-selected"
+              : "text-divlab-text-muted hover:text-divlab-text"
           }`}
         >
           {item}

@@ -19,7 +19,7 @@ export default function ForumRecognitionBar({
           <button
             key={recognition.label}
             type="button"
-            className="rounded border border-white/10 bg-white/[0.03] px-1.5 py-0.5 text-[10px] leading-4 text-gray-400 transition hover:border-[#D4AF37]/30 hover:text-white"
+            className="rounded border border-divlab-border-neutral bg-white/[0.03] px-1.5 py-0.5 text-[10px] leading-4 text-divlab-text-muted transition hover:border-divlab-blue/30 hover:text-divlab-text"
             aria-label={`${recognition.label}: ${recognition.count}`}
           >
             <span aria-hidden="true">{recognition.icon}</span>{" "}
@@ -41,7 +41,7 @@ export default function ForumRecognitionBar({
       {!isAuthenticated && (
         <Link
           href={loginHref}
-          className="ml-1 text-[10px] font-medium text-[#D4AF37] transition hover:text-[#F9D976]"
+          className="divlab-link ml-1 text-[10px] font-medium"
         >
           Logga in för att delta i diskussionen.
         </Link>

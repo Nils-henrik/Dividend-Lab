@@ -12,14 +12,9 @@ export default function MessagesInbox({ conversations, errorMessage }: Props) {
   return (
     <div className="space-y-6">
       <section className="divlab-hero">
-        <div className="pointer-events-none absolute left-8 top-6 h-44 w-44 rounded-full bg-divlab-gold/10 blur-3xl" />
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-divlab-gold/30 to-transparent" />
-
         <div className="relative flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="mb-3 text-xs font-medium uppercase tracking-[0.25em] text-divlab-gold">
-              Meddelanden
-            </p>
+            <p className="mb-3 divlab-section-label">Meddelanden</p>
             <h2 className="text-4xl font-semibold tracking-[-0.04em] text-divlab-text">
               Inkorg
             </h2>
@@ -77,7 +72,7 @@ export default function MessagesInbox({ conversations, errorMessage }: Props) {
                   key={conversation.id}
                   href={`/messages/${conversation.id}`}
                   className={`grid gap-4 px-5 py-5 divlab-row-hover md:grid-cols-[minmax(0,1fr)_auto] md:items-start ${
-                    conversation.hasUnread ? "bg-divlab-gold/[0.04]" : ""
+                    conversation.hasUnread ? "bg-divlab-blue/[0.06]" : ""
                   }`}
                 >
                   <div className="flex min-w-0 items-start gap-4">
@@ -100,15 +95,15 @@ export default function MessagesInbox({ conversations, errorMessage }: Props) {
                       <div className="min-w-0">
                         <div className="flex min-w-0 items-center gap-2">
                           {conversation.hasUnread && (
-                            <span className="h-2 w-2 shrink-0 rounded-full bg-[#D4AF37]" />
+                            <span className="h-2 w-2 shrink-0 rounded-full bg-divlab-blue" />
                           )}
-                          <span className="truncate text-sm font-semibold text-white">
+                          <span className="truncate text-sm font-semibold text-divlab-text">
                             {conversation.otherParticipant?.name ??
                               "Dividend Lab-medlem"}
                           </span>
                         </div>
                         {conversation.otherParticipant?.username && (
-                          <p className="mt-1 truncate text-xs text-gray-500">
+                          <p className="mt-1 truncate text-xs text-divlab-text-muted">
                             @{conversation.otherParticipant.username}
                           </p>
                         )}
@@ -117,15 +112,15 @@ export default function MessagesInbox({ conversations, errorMessage }: Props) {
                         <p
                           className={`truncate text-sm ${
                             conversation.hasUnread
-                              ? "font-semibold text-white"
-                              : "font-medium text-gray-200"
+                              ? "font-semibold text-divlab-text"
+                              : "font-medium text-divlab-text-secondary"
                           }`}
                         >
                           {subject}
                         </p>
                         <p
                           className={`mt-1 truncate text-sm ${
-                            conversation.hasUnread ? "text-gray-300" : "text-gray-500"
+                            conversation.hasUnread ? "text-divlab-text-secondary" : "text-divlab-text-muted"
                           }`}
                         >
                           {conversation.lastMessagePreview}
@@ -137,13 +132,13 @@ export default function MessagesInbox({ conversations, errorMessage }: Props) {
                   <div className="flex items-center justify-between gap-3 pl-16 md:justify-end md:pl-0">
                     <p
                       className={`shrink-0 text-xs tabular-nums ${
-                        conversation.hasUnread ? "text-[#D4AF37]" : "text-gray-500"
+                        conversation.hasUnread ? "text-divlab-blue-muted" : "text-divlab-text-muted"
                       }`}
                     >
                       {formatMessageTimestamp(conversation.lastMessageAt)}
                     </p>
                     {conversation.hasUnread && (
-                      <span className="h-2 w-2 rounded-full bg-[#D4AF37] md:hidden" />
+                      <span className="h-2 w-2 rounded-full bg-divlab-blue md:hidden" />
                     )}
                   </div>
                 </Link>

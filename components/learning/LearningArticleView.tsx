@@ -12,57 +12,54 @@ type Props = {
 export default function LearningArticleView({ article }: Props) {
   return (
     <article className="space-y-6">
-      <Link
-        href="/learning"
-        className="inline-flex text-sm text-gray-400 transition hover:text-[#D4AF37]"
-      >
+      <Link href="/learning" className="divlab-link inline-flex text-sm">
         ← Tillbaka till utbildning
       </Link>
 
-      <header className="rounded-3xl border border-white/10 bg-[#111111]/85 p-6">
-        <p className="mb-3 text-xs font-medium uppercase tracking-[0.25em] text-[#D4AF37]">
-          Utbildning
-        </p>
-        <h1 className="text-3xl font-semibold tracking-[-0.04em] text-white">
+      <header className="divlab-hero">
+        <p className="mb-3 divlab-section-label">Utbildning</p>
+        <h1 className="text-3xl font-semibold tracking-[-0.04em] text-divlab-text">
           {article.title}
         </h1>
-        <p className="mt-4 max-w-3xl text-base leading-7 text-gray-300">
+        <p className="mt-4 max-w-3xl text-base leading-7 text-divlab-text-secondary">
           {article.intro}
         </p>
-        <p className="mt-3 text-xs text-gray-500">
+        <p className="mt-3 text-xs text-divlab-text-muted">
           {article.readingMinutes} min läsning
         </p>
       </header>
 
-      <div className="space-y-8 rounded-2xl border border-white/10 bg-[#161616] p-6">
+      <div className="divlab-card space-y-8 p-6">
         {article.sections.map((section, index) => (
           <section
             key={`${section.heading ?? "section"}-${index}`}
             className="space-y-4"
           >
             {section.heading && (
-              <h2 className="text-xl font-semibold text-white">{section.heading}</h2>
+              <h2 className="text-xl font-semibold text-divlab-text">
+                {section.heading}
+              </h2>
             )}
 
             {section.intro?.map((paragraph) => (
-              <p key={paragraph} className="text-sm leading-7 text-gray-300">
+              <p key={paragraph} className="text-sm leading-7 text-divlab-text-secondary">
                 {paragraph}
               </p>
             ))}
 
             {section.paragraphs?.map((paragraph) => (
-              <p key={paragraph} className="text-sm leading-7 text-gray-300">
+              <p key={paragraph} className="text-sm leading-7 text-divlab-text-secondary">
                 {paragraph}
               </p>
             ))}
 
             {section.subsections?.map((subsection) => (
               <div key={subsection.subheading} className="space-y-3">
-                <h3 className="text-base font-semibold text-white">
+                <h3 className="text-base font-semibold text-divlab-text">
                   {subsection.subheading}
                 </h3>
                 {subsection.paragraphs.map((paragraph) => (
-                  <p key={paragraph} className="text-sm leading-7 text-gray-300">
+                  <p key={paragraph} className="text-sm leading-7 text-divlab-text-secondary">
                     {paragraph}
                   </p>
                 ))}
@@ -70,21 +67,21 @@ export default function LearningArticleView({ article }: Props) {
             ))}
 
             {section.callout && (
-              <blockquote className="rounded-xl border border-[#D4AF37]/25 bg-[#D4AF37]/5 px-4 py-4 text-sm leading-7 text-gray-200">
+              <blockquote className="rounded-xl border divlab-border-neutral divlab-inset px-4 py-4 text-sm leading-7 text-divlab-text-secondary">
                 {section.callout}
               </blockquote>
             )}
 
             {section.calculation && (
-              <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-4">
-                <p className="text-xs font-medium uppercase tracking-[0.16em] text-[#D4AF37]">
+              <div className="rounded-xl border divlab-border-neutral divlab-inset px-4 py-4">
+                <p className="divlab-section-label tracking-[0.16em]">
                   {section.calculation.title}
                 </p>
                 <ul className="mt-3 space-y-2">
                   {section.calculation.lines.map((line) => (
                     <li
                       key={line}
-                      className="font-mono text-xs leading-6 text-gray-300"
+                      className="font-mono text-xs leading-6 text-divlab-text-secondary"
                     >
                       {line}
                     </li>
@@ -94,11 +91,8 @@ export default function LearningArticleView({ article }: Props) {
             )}
 
             {section.relatedLinks?.map((link) => (
-              <p key={link.slug} className="text-sm leading-7 text-gray-400">
-                <Link
-                  href={`/learning/${link.slug}`}
-                  className="font-medium text-[#D4AF37] transition hover:text-[#F9D976]"
-                >
+              <p key={link.slug} className="text-sm leading-7 text-divlab-text-secondary">
+                <Link href={`/learning/${link.slug}`} className="divlab-link font-medium">
                   {link.text}
                 </Link>
               </p>
@@ -106,22 +100,24 @@ export default function LearningArticleView({ article }: Props) {
           </section>
         ))}
 
-        <section className="space-y-3 border-t border-white/10 pt-6">
-          <h2 className="text-lg font-semibold text-white">Det viktigaste att ta med sig</h2>
+        <section className="space-y-3 border-t divlab-border-neutral pt-6">
+          <h2 className="text-lg font-semibold text-divlab-text">
+            Det viktigaste att ta med sig
+          </h2>
           <ul className="space-y-2">
             {article.takeaways.map((takeaway) => (
               <li
                 key={takeaway}
-                className="flex gap-3 text-sm leading-7 text-gray-300"
+                className="flex gap-3 text-sm leading-7 text-divlab-text-secondary"
               >
-                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#D4AF37]/70" />
+                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-divlab-blue/70" />
                 <span>{takeaway}</span>
               </li>
             ))}
           </ul>
         </section>
 
-        <p className="border-t border-white/10 pt-5 text-xs leading-5 text-gray-500">
+        <p className="border-t divlab-border-neutral pt-5 text-xs leading-5 text-divlab-text-muted">
           {learningDisclaimer}
         </p>
       </div>

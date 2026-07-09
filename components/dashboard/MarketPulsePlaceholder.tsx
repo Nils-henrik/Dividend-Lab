@@ -21,9 +21,7 @@ export default function MarketPulsePlaceholder() {
     <section className="rounded-2xl border border-white/10 bg-[#161616] p-6">
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
-          <p className="mb-3 text-xs font-medium uppercase tracking-[0.2em] text-[#D4AF37]">
-            Marknadspuls
-          </p>
+          <p className="mb-3 divlab-section-label">Marknadspuls</p>
           <h2 className="text-lg font-semibold text-white">Senaste affärsnyheter</h2>
           <p className="mt-2 text-sm leading-6 text-gray-400">
             Plats för framtida nyhetsflöde. Endast rubrik, källa och tid visas

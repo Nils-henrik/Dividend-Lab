@@ -76,7 +76,7 @@ function SliderField({
             const parsed = parseFieldValue(event.target.value);
             onChange(Math.min(max, Math.max(min, parsed)));
           }}
-          className="w-[9.5rem] rounded-lg border border-white/10 bg-[#111111] px-2.5 py-1.5 text-right text-xs text-white outline-none transition focus:border-[#D4AF37]/60"
+          className="w-[9.5rem] rounded-lg border border-white/10 bg-[#111111] px-2.5 py-1.5 text-right text-xs text-white outline-none transition focus:border-divlab-blue/40"
         />
       </div>
       <input
@@ -86,7 +86,7 @@ function SliderField({
         step={step}
         value={value}
         onChange={(event) => onChange(Number(event.target.value))}
-        className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-white/10 accent-[#D4AF37]"
+        className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-white/10 accent-divlab-blue"
       />
     </label>
   );
@@ -116,7 +116,7 @@ function ModeToggle({
             onClick={() => onChange(option.id)}
             className={`rounded-lg px-3 py-2 text-xs font-medium transition ${
               isActive
-                ? "bg-[#D4AF37]/15 text-[#D4AF37]"
+                ? "divlab-selected"
                 : "text-gray-400 hover:text-gray-200"
             }`}
           >
@@ -177,9 +177,7 @@ export default function FreedomPlanCard() {
 
   return (
     <section className="divlab-card p-6">
-      <p className="mb-3 text-xs font-medium uppercase tracking-[0.2em] text-[#D4AF37]">
-        Frihetsplan
-      </p>
+      <p className="mb-3 divlab-section-label">Frihetsplan</p>
       <h2 className="text-2xl font-semibold tracking-[-0.03em] text-white">
         Planera din utdelningsfrihet
       </h2>
@@ -191,7 +189,7 @@ export default function FreedomPlanCard() {
       <div className="mt-5 space-y-5">
         <ModeToggle mode={mode} onChange={setMode} />
 
-        <div className="rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/5 px-4 py-4">
+        <div className="rounded-xl border border-divlab-blue/20 bg-divlab-blue/5 px-4 py-4">
           {result.exceedsHorizon ? (
             <div className="space-y-2">
               <p className="text-lg font-medium leading-7 text-white">

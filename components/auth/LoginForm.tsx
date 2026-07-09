@@ -54,28 +54,26 @@ export default function LoginForm({ redirectTo, resetSuccess = false }: Props) {
   }
 
   return (
-    <section className="w-full max-w-md rounded-3xl border border-white/10 bg-[#111111] p-8 shadow-[0_40px_120px_rgba(0,0,0,0.45)]">
+    <section className="divlab-card w-full max-w-md rounded-3xl p-8 shadow-[0_40px_120px_rgba(0,0,0,0.45)]">
       <div className="mb-8">
-        <p className="mb-3 text-xs font-medium uppercase tracking-[0.25em] text-[#D4AF37]">
-          Dividend Lab
-        </p>
-        <h1 className="text-3xl font-semibold tracking-[-0.03em] text-white">
+        <p className="mb-3 divlab-section-label">Dividend Lab</p>
+        <h1 className="text-3xl font-semibold tracking-[-0.03em] text-divlab-text">
           Logga in
         </h1>
-        <p className="mt-3 text-sm leading-6 text-gray-400">
+        <p className="mt-3 text-sm leading-6 text-divlab-text-secondary">
           Få åtkomst till din portfölj, kontoinställningar och community-funktioner.
         </p>
       </div>
 
       {resetSuccess && (
-        <p className="mb-5 rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/5 px-4 py-3 text-sm leading-6 text-gray-300">
+        <p className="mb-5 rounded-xl border border-divlab-blue/20 bg-divlab-blue/5 px-4 py-3 text-sm leading-6 text-divlab-text-secondary">
           Ditt lösenord är uppdaterat. Logga in med ditt nya lösenord.
         </p>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <label className="block">
-          <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-gray-500">
+          <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-divlab-text-muted">
             E-post
           </span>
           <input
@@ -87,13 +85,13 @@ export default function LoginForm({ redirectTo, resetSuccess = false }: Props) {
             }}
             autoComplete="email"
             required
-            className="w-full rounded-xl border border-white/10 bg-[#161616] px-4 py-3 text-white outline-none transition focus:border-[#D4AF37]/70"
+            className="divlab-input w-full px-4 py-3"
           />
         </label>
 
         <div className="space-y-3">
           <label className="block">
-            <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-gray-500">
+            <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-divlab-text-muted">
               Lösenord
             </span>
             <input
@@ -105,22 +103,19 @@ export default function LoginForm({ redirectTo, resetSuccess = false }: Props) {
               }}
               autoComplete="current-password"
               required
-              className="w-full rounded-xl border border-white/10 bg-[#161616] px-4 py-3 text-white outline-none transition focus:border-[#D4AF37]/70"
+              className="divlab-input w-full px-4 py-3"
             />
           </label>
 
           <div className="flex justify-end">
-            <Link
-              href="/forgot-password"
-              className="text-sm font-medium text-[#D4AF37] transition hover:text-[#F9D976]"
-            >
+            <Link href="/forgot-password" className="divlab-link text-sm font-medium">
               Glömt lösenord?
             </Link>
           </div>
         </div>
 
         {error && (
-          <p className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm leading-6 text-gray-300">
+          <p className="rounded-xl border divlab-border-neutral divlab-inset px-4 py-3 text-sm leading-6 text-divlab-text-secondary">
             {error}
           </p>
         )}
@@ -130,12 +125,9 @@ export default function LoginForm({ redirectTo, resetSuccess = false }: Props) {
         </PrimaryButton>
       </form>
 
-      <p className="mt-6 text-center text-sm text-gray-500">
+      <p className="mt-6 text-center text-sm text-divlab-text-muted">
         Ny på Dividend Lab?{" "}
-        <Link
-          href="/register"
-          className="font-medium text-[#D4AF37] transition hover:text-[#F9D976]"
-        >
+        <Link href="/register" className="divlab-link font-medium">
           Skapa konto
         </Link>
       </p>

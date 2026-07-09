@@ -44,7 +44,7 @@ export default function MobileAppHeader({
             aria-label="Open navigation menu"
             aria-expanded={isMenuOpen}
             aria-controls="mobile-nav-drawer"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border divlab-border-neutral text-divlab-text-secondary transition hover:border-divlab-gold/40 hover:text-divlab-gold"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border divlab-border-neutral text-divlab-text-secondary transition hover:border-divlab-blue/40 hover:text-divlab-blue"
           >
             <span className="flex flex-col gap-1" aria-hidden="true">
               <span className="block h-0.5 w-4 rounded-full bg-current" />
@@ -60,7 +60,7 @@ export default function MobileAppHeader({
             className="flex min-w-0 flex-1 items-center gap-2 transition hover:opacity-90"
             aria-label="DivLab Start"
           >
-            <span className="text-xl font-bold text-divlab-gold">DL</span>
+            <span className="divlab-brand-logo text-xl">DL</span>
             <div className="min-w-0">
               <p className="truncate text-[11px] font-semibold tracking-[0.22em] text-divlab-text">
                 DIVLAB

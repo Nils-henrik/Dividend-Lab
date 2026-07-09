@@ -14,14 +14,9 @@ export default function DashboardShell({ profile }: Props) {
   return (
     <div className="space-y-6">
       <section className="divlab-hero">
-        <div className="pointer-events-none absolute left-8 top-6 h-44 w-44 rounded-full bg-divlab-gold/10 blur-3xl" />
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-divlab-gold/30 to-transparent" />
-
         <div className="relative flex flex-col justify-between gap-6 xl:flex-row xl:items-end">
           <div>
-            <p className="mb-3 text-xs font-medium uppercase tracking-[0.25em] text-divlab-gold">
-              DivLab Start
-            </p>
+            <p className="mb-3 divlab-section-label">DivLab Start</p>
             <h1 className="text-4xl font-semibold tracking-[-0.04em] text-divlab-text">
               Bygg din frihetsplan med utdelningar
             </h1>

@@ -7,14 +7,12 @@ export default function InvestorStatistics() {
     <section>
       <div className="mb-4 flex flex-col justify-between gap-3 md:flex-row md:items-end">
         <div>
-          <p className="mb-3 text-xs font-medium uppercase tracking-[0.2em] text-[#D4AF37]">
-            Offentliga investeringssignaler
-          </p>
-          <h3 className="text-lg font-semibold text-white">
+          <p className="mb-3 divlab-section-label">Offentliga investeringssignaler</p>
+          <h3 className="text-lg font-semibold text-divlab-text">
             Strategi, erfarenhet och sammanhang
           </h3>
         </div>
-        <p className="max-w-xl text-sm leading-6 text-gray-400">
+        <p className="max-w-xl text-sm leading-6 text-divlab-text-secondary">
           Uppgifterna beskriver hur investeraren tänker och bidrar utan att
           göra förmögenhet till trovärdighetens källa.
         </p>
@@ -24,24 +22,24 @@ export default function InvestorStatistics() {
         {investorStatistics.map((statistic) => (
           <article
             key={statistic.label}
-            className="rounded-2xl border border-white/10 bg-[#161616] p-5 transition-all duration-300 hover:border-[#D4AF37]/40 hover:shadow-[0_0_24px_rgba(212,175,55,0.08)]"
+            className="divlab-card p-5 transition-all duration-300 hover:border-divlab-border-strong"
           >
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-start gap-3">
-                <div className="rounded-xl border border-white/10 bg-white/[0.03] p-2 text-gray-500">
+                <div className="rounded-xl border divlab-border-neutral divlab-inset p-2 text-divlab-text-muted">
                   <AccountIcon name={statistic.icon} className="h-3.5 w-3.5" />
                 </div>
-                <p className="text-[10px] font-medium uppercase leading-[1.35] tracking-[0.18em] text-gray-500">
+                <p className="text-[10px] font-medium uppercase leading-[1.35] tracking-[0.18em] text-divlab-text-muted">
                   {statistic.label}
                 </p>
               </div>
               <VisibilityBadge visibility={statistic.visibility} />
             </div>
 
-            <p className="mt-5 text-[1.42rem] font-medium leading-none tracking-[-0.025em] text-white tabular-nums">
+            <p className="mt-5 text-[1.42rem] font-medium leading-none tracking-[-0.025em] text-divlab-text tabular-nums">
               {statistic.value}
             </p>
-            <p className="mt-4 text-sm leading-6 text-gray-400">
+            <p className="mt-4 text-sm leading-6 text-divlab-text-secondary">
               {statistic.detail}
             </p>
           </article>

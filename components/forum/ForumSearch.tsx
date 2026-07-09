@@ -21,7 +21,7 @@ export default function ForumSearch({
             ? `Sök diskussioner i ${activeCategoryName}...`
             : "Sök diskussioner i forumet..."
         }
-        className="w-full rounded-lg border border-white/10 bg-[#161616] px-3 py-2.5 text-sm text-white outline-none transition placeholder:text-gray-600 focus:border-[#D4AF37]/60"
+        className="w-full divlab-input px-3 py-2.5 text-divlab-text placeholder:text-divlab-text-subtle"
       />
       <span className="mt-1.5 block text-[11px] text-gray-600">
         Sök på rubrik, kategori, tagg, bolag, ETF, fond, ticker och användarnamn.

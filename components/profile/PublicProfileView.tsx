@@ -64,24 +64,20 @@ export default function PublicProfileView({
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       <section className="divlab-hero">
-        <div className="pointer-events-none absolute left-8 top-6 h-44 w-44 rounded-full bg-divlab-gold/10 blur-3xl" />
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-divlab-gold/30 to-transparent" />
-
         <div className="relative flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex flex-col gap-6 md:flex-row md:items-start">
             <div className="relative shrink-0">
-              <div className="absolute inset-[-10px] rounded-full border border-divlab-gold/10 bg-divlab-gold/[0.03]" />
-              <div className="absolute inset-[-18px] rounded-full bg-[radial-gradient(circle,rgba(212,175,55,0.12),transparent_62%)]" />
               <ProfileAvatar
                 avatarUrl={avatarUrl}
                 initials={getInitials(displayName)}
                 sizeClassName="h-28 w-28"
                 textClassName="text-3xl tracking-[-0.04em]"
+                highlighted
               />
             </div>
 
             <div className="min-w-0">
-              <p className="mb-3 text-xs font-medium uppercase tracking-[0.25em] text-divlab-gold">
+              <p className="mb-3 divlab-section-label">
                 Dividend Lab-medlem
               </p>
               <h1 className="text-3xl font-semibold tracking-[-0.04em] text-divlab-text md:text-4xl">
@@ -170,7 +166,7 @@ export default function PublicProfileView({
                       {formatForumTimestamp(item.createdAt)}
                     </span>
                   </div>
-                  <p className="mt-1 line-clamp-1 text-sm font-medium text-divlab-text transition group-hover:text-divlab-gold">
+                  <p className="mt-1 line-clamp-1 text-sm font-medium text-divlab-text transition group-hover:text-divlab-blue-muted">
                     {item.kind === "thread"
                       ? item.threadTitle
                       : `Svar i ${item.threadTitle}`}

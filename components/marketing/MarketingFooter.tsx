@@ -28,12 +28,12 @@ const linkGroups = [
 
 export default function MarketingFooter() {
   return (
-    <footer className="border-t border-white/10 bg-[#090909]">
+    <footer className="border-t divlab-border-neutral bg-divlab-shell">
       <div className="mx-auto max-w-7xl px-6 py-12 md:px-8">
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
           <div className="lg:col-span-1">
-            <p className="text-sm font-semibold tracking-[0.22em] text-white">
-              DIVIDEND <span className="text-[#D4AF37]">LAB</span>
+            <p className="divlab-brand-wordmark text-sm">
+              DIVIDEND <span className="text-divlab-text-muted">LAB</span>
             </p>
           </div>
 
@@ -47,7 +47,7 @@ export default function MarketingFooter() {
                   <li key={link.href}>
                     <Link
                       href={link.href}
-                      className="text-sm text-gray-400 transition hover:text-[#D4AF37]"
+                      className="text-sm text-divlab-text-secondary transition hover:text-divlab-blue-muted"
                     >
                       {link.label}
                     </Link>

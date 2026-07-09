@@ -19,18 +19,15 @@ export default async function LearningPageShell({ children }: Props) {
   }
 
   return (
-    <main className="min-h-screen bg-[#090909] text-white">
-      <header className="border-b border-white/10 px-8 py-4">
+    <main className="min-h-screen bg-divlab-bg text-divlab-text">
+      <header className="divlab-shell-header px-8 py-4">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-4">
-          <Link
-            href="/learning"
-            className="text-sm font-medium text-white transition hover:text-[#D4AF37]"
-          >
+          <Link href="/learning" className="divlab-link text-sm font-medium">
             Dividend Lab · Utbildning
           </Link>
           <Link
             href="/login?redirect=/learning"
-            className="rounded-xl border border-white/10 px-3 py-2 text-xs font-medium text-gray-300 transition hover:border-[#D4AF37]/40 hover:text-[#D4AF37]"
+            className="divlab-btn-secondary px-3 py-2 text-xs"
           >
             Logga in
           </Link>

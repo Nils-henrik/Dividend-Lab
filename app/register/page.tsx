@@ -19,7 +19,7 @@ export default async function RegisterPage({ searchParams }: Props) {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#090909] px-6 py-12 text-white">
+    <main className="flex min-h-screen items-center justify-center bg-divlab-bg px-6 py-12 text-divlab-text">
       <RegisterForm redirectTo={redirectTo} />
     </main>
   );

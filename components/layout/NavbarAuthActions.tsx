@@ -6,10 +6,10 @@ type Props = {
 };
 
 const primaryActionClassName =
-  "rounded-xl border border-[#D4AF37]/70 px-6 py-3 text-[#D4AF37] transition duration-300 hover:border-[#D4AF37] hover:bg-[#D4AF37] hover:text-black";
+  "divlab-btn-primary rounded-xl px-6 py-3 text-sm font-semibold";
 
 const secondaryActionClassName =
-  "rounded-xl border border-white/10 px-6 py-3 text-gray-300 transition duration-300 hover:border-white/20 hover:text-white";
+  "rounded-xl border divlab-border-neutral px-6 py-3 text-sm text-divlab-text-secondary transition duration-300 hover:border-divlab-border-strong hover:text-divlab-text";
 
 export default function NavbarAuthActions({ user }: Props) {
   if (user) {

@@ -47,11 +47,9 @@ export default async function NewForumDiscussionPage({ searchParams }: Props) {
           ]}
         />
 
-        <section className="rounded-3xl border border-white/10 bg-[#161616] p-6">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-[#D4AF37]">
-            Starta diskussion
-          </p>
-          <h1 className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-white">
+        <section className="divlab-card rounded-3xl p-6">
+          <p className="divlab-section-label">Starta diskussion</p>
+          <h1 className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-divlab-text">
             Ny diskussion i {activeCategory.name}
           </h1>
           <p className="mt-2 text-sm leading-6 text-gray-500">

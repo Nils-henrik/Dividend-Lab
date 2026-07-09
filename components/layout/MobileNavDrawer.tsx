@@ -56,7 +56,7 @@ export default function MobileNavDrawer({
         role="dialog"
         aria-modal="true"
         aria-label="Main navigation"
-        className="relative flex h-full w-[min(18rem,85vw)] flex-col border-r divlab-border-neutral bg-divlab-bg shadow-[0_0_60px_rgba(0,0,0,0.45)] transition-transform duration-200 ease-out"
+        className="relative flex h-full w-[min(18rem,85vw)] flex-col border-r divlab-border-neutral bg-divlab-shell shadow-[0_0_60px_rgba(0,0,0,0.45)] transition-transform duration-200 ease-out"
       >
         <div className="flex h-16 items-center justify-between border-b divlab-border-neutral px-4">
           <Link
@@ -65,14 +65,10 @@ export default function MobileNavDrawer({
             className="flex items-center gap-3 transition hover:opacity-90"
             aria-label="DivLab Start"
           >
-            <span className="text-2xl font-bold text-divlab-gold">DL</span>
+            <span className="divlab-brand-logo text-2xl">DL</span>
             <div>
-              <p className="text-xs font-semibold tracking-[0.28em] text-divlab-text">
-                DIVIDEND
-              </p>
-              <p className="text-[11px] font-semibold tracking-[0.32em] text-divlab-gold">
-                LAB
-              </p>
+              <p className="divlab-brand-wordmark text-xs">DIVIDEND</p>
+              <p className="divlab-brand-wordmark-sub text-[11px]">LAB</p>
             </div>
           </Link>
 

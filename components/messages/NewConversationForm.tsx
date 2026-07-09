@@ -45,7 +45,7 @@ export default function NewConversationForm({
             placeholder="@anvandare"
             defaultValue={initialUsername}
             autoComplete="off"
-            className="w-full rounded-xl border border-white/10 bg-[#111111] px-4 py-3 text-sm text-white outline-none transition placeholder:text-gray-600 focus:border-[#D4AF37]/70"
+            className="w-full divlab-input px-4 py-3 text-sm text-divlab-text placeholder:text-divlab-text-subtle"
           />
         </label>
       )}
@@ -82,7 +82,7 @@ export default function NewConversationForm({
           onChange={(event) => setSubject(event.target.value)}
           maxLength={MESSAGE_SUBJECT_MAX_LENGTH}
           placeholder="Vad handlar meddelandet om?"
-          className="w-full rounded-xl border border-white/10 bg-[#111111] px-4 py-3 text-sm text-white outline-none transition placeholder:text-gray-600 focus:border-[#D4AF37]/70"
+          className="w-full divlab-input px-4 py-3 text-sm text-divlab-text placeholder:text-divlab-text-subtle"
         />
         <span className="mt-2 block text-xs text-gray-500">
           {subject.length}/{MESSAGE_SUBJECT_MAX_LENGTH} tecken
@@ -100,7 +100,7 @@ export default function NewConversationForm({
           maxLength={MESSAGE_BODY_MAX_LENGTH}
           rows={6}
           placeholder="Skriv ett meddelande..."
-          className="w-full resize-none rounded-xl border border-white/10 bg-[#111111] px-4 py-3 text-sm leading-6 text-white outline-none transition placeholder:text-gray-600 focus:border-[#D4AF37]/70"
+          className="w-full resize-none divlab-input px-4 py-3 text-sm leading-6 text-divlab-text placeholder:text-divlab-text-subtle"
         />
       </label>
 
@@ -111,7 +111,7 @@ export default function NewConversationForm({
         <button
           type="submit"
           disabled={isPending}
-          className="rounded-xl border border-[#D4AF37] bg-[#D4AF37] px-5 py-2.5 text-sm font-semibold text-black shadow-[0_0_30px_rgba(212,175,55,0.14)] transition hover:bg-[#F9D976] disabled:cursor-not-allowed disabled:opacity-60"
+          className="divlab-btn-primary px-5 py-2.5 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isPending ? "Skickar..." : "Skicka"}
         </button>

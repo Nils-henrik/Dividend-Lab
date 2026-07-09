@@ -45,7 +45,7 @@ export default function ForumReplyForm({
         rows={5}
         maxLength={FORUM_BODY_MAX_LENGTH}
         placeholder="Skriv ett lugnt, användbart svar..."
-        className="w-full resize-none rounded-xl border border-white/10 bg-[#111111] px-3 py-2 text-sm leading-6 text-gray-300 outline-none transition placeholder:text-gray-600 focus:border-[#D4AF37]/60"
+        className="w-full resize-none divlab-input px-3 py-2 text-sm leading-6 placeholder:text-divlab-text-subtle"
       />
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-xs text-gray-500">
@@ -62,7 +62,7 @@ export default function ForumReplyForm({
           <button
             type="submit"
             disabled={isPending}
-            className="rounded-xl border border-[#D4AF37]/40 px-4 py-2 text-xs font-semibold text-[#D4AF37] transition hover:border-[#D4AF37] hover:bg-[#D4AF37]/10 disabled:cursor-not-allowed disabled:opacity-60"
+            className="divlab-btn-ghost px-4 py-2 text-xs disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isPending ? "Publicerar..." : "Publicera svar"}
           </button>

@@ -27,13 +27,11 @@ function formatDisclosureRange(
 
 export default function PortfolioPrivacySection() {
   return (
-    <section className="rounded-2xl border border-white/10 bg-[#161616] p-6">
+    <section className="divlab-card p-6">
       <div className="mb-6 flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <div>
-          <p className="mb-3 text-xs font-medium uppercase tracking-[0.2em] text-[#D4AF37]">
-            Portföljinformation
-          </p>
-          <h3 className="text-lg font-semibold text-white">
+          <p className="mb-3 divlab-section-label">Portföljinformation</p>
+          <h3 className="text-lg font-semibold text-divlab-text">
             Valfri delning med integritet i fokus
           </h3>
         </div>

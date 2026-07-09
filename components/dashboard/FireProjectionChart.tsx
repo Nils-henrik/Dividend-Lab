@@ -32,7 +32,7 @@ function ProjectionTooltip({ active, payload, label }: TooltipProps) {
   }
 
   return (
-    <div className="rounded-lg border border-[#D4AF37]/40 bg-[#111111]/95 px-3 py-2">
+    <div className="rounded-lg border border-divlab-blue/40 bg-[#111111]/95 px-3 py-2">
       <p className="text-[11px] text-gray-500">År {label}</p>
       <p className="text-sm font-semibold text-white tabular-nums">
         {formatSek(payload[0].value)}
@@ -63,7 +63,7 @@ export default function FireProjectionChart({
         {targetCapital > 0 && (
           <p className="text-xs text-gray-500">
             Kapitalmål:{" "}
-            <span className="font-medium text-[#D4AF37] tabular-nums">
+            <span className="font-medium text-divlab-blue tabular-nums">
               {formatSek(targetCapital)}
             </span>
           </p>
@@ -81,9 +81,9 @@ export default function FireProjectionChart({
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data}>
             <defs>
-              <linearGradient id="freedomProjectionGold" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#D4AF37" stopOpacity={0.45} />
-                <stop offset="100%" stopColor="#D4AF37" stopOpacity={0} />
+              <linearGradient id="freedomProjectionBlue" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#0a84ff" stopOpacity={0.45} />
+                <stop offset="100%" stopColor="#0a84ff" stopOpacity={0} />
               </linearGradient>
             </defs>
             <XAxis
@@ -111,7 +111,7 @@ export default function FireProjectionChart({
             {targetCapital > 0 && (
               <ReferenceLine
                 y={targetCapital}
-                stroke="#D4AF37"
+                stroke="#0a84ff"
                 strokeDasharray="5 5"
                 strokeOpacity={0.55}
                 label={{
@@ -125,13 +125,13 @@ export default function FireProjectionChart({
             <Area
               type="monotone"
               dataKey="capital"
-              stroke="#D4AF37"
+              stroke="#0a84ff"
               strokeWidth={2}
-              fill="url(#freedomProjectionGold)"
+              fill="url(#freedomProjectionBlue)"
               dot={false}
               activeDot={{
                 r: 4,
-                fill: "#D4AF37",
+                fill: "#0a84ff",
                 stroke: "#111111",
                 strokeWidth: 2,
               }}
@@ -141,7 +141,7 @@ export default function FireProjectionChart({
                 x={goalPoint.year}
                 y={goalPoint.capital}
                 r={5}
-                fill="#D4AF37"
+                fill="#0a84ff"
                 stroke="#111111"
                 strokeWidth={2}
               />

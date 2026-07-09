@@ -105,12 +105,10 @@ export default function AvatarCropModal({
         className="absolute inset-0 cursor-default"
       />
 
-      <section className="relative w-full max-w-2xl rounded-3xl border border-white/10 bg-[#111111] p-6 shadow-[0_40px_120px_rgba(0,0,0,0.6)]">
+      <section className="relative w-full max-w-2xl rounded-3xl divlab-card p-6 shadow-[0_40px_120px_rgba(0,0,0,0.6)]">
         <div className="mb-5">
-          <p className="mb-3 text-xs font-medium uppercase tracking-[0.25em] text-[#D4AF37]">
-            Profilbild
-          </p>
-          <h2 className="text-2xl font-semibold tracking-[-0.03em] text-white">
+          <p className="mb-3 divlab-section-label">Profilbild</p>
+          <h2 className="text-2xl font-semibold tracking-[-0.03em] text-divlab-text">
             Placera din profilbild
           </h2>
           <p className="mt-3 text-sm leading-6 text-gray-400">
@@ -138,7 +136,7 @@ export default function AvatarCropModal({
             classes={{
               containerClassName: "bg-[#2A2A2A]",
               cropAreaClassName:
-                "border border-[#D4AF37]/55 shadow-[0_0_0_9999px_rgba(0,0,0,0.45)]",
+                "border border-divlab-blue/55 shadow-[0_0_0_9999px_rgba(0,0,0,0.45)]",
             }}
           />
         </div>
@@ -154,7 +152,7 @@ export default function AvatarCropModal({
             step="0.01"
             value={zoom}
             onChange={(event) => setZoom(Number(event.target.value))}
-            className="w-full accent-[#D4AF37]"
+            className="w-full accent-divlab-blue"
           />
         </label>
 
@@ -179,7 +177,7 @@ export default function AvatarCropModal({
               type="button"
               onClick={handleConfirm}
               disabled={!croppedAreaPixels || isSaving}
-              className="rounded-xl border border-[#D4AF37] bg-[#D4AF37] px-6 py-3 text-sm font-semibold text-black shadow-[0_0_30px_rgba(212,175,55,0.16)] transition hover:bg-[#F9D976] disabled:cursor-not-allowed disabled:opacity-70"
+              className="divlab-btn-primary px-6 py-3 disabled:cursor-not-allowed disabled:opacity-70"
             >
               {isSaving ? "Sparar..." : "Spara bild"}
             </button>

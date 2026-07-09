@@ -8,25 +8,23 @@ export default function DividendBrainPanel() {
 
   return (
     <section
-      className={`rounded-2xl border border-white/10 bg-[#161616] p-6 transition-all duration-300 ${
+      className={`divlab-card p-6 transition-all duration-300 ${
         isExpanded ? "min-h-[430px]" : "min-h-[320px]"
       }`}
     >
       <div className="mb-6 flex items-start justify-between gap-6">
         <div>
-          <p className="mb-3 text-xs font-medium uppercase tracking-[0.22em] text-[#D4AF37]">
-            Dividend Brain
-          </p>
-          <h2 className="text-2xl font-semibold tracking-[-0.03em] text-white">
+          <p className="mb-3 divlab-section-label">Dividend Brain</p>
+          <h2 className="text-2xl font-semibold tracking-[-0.03em] text-divlab-text">
             Dagens insikter
           </h2>
-          <p className="mt-3 text-sm leading-6 text-gray-400">
+          <p className="mt-3 text-sm leading-6 text-divlab-text-secondary">
             Utbildande observationer baserade på din mock-portfölj. Ingen
             finansiell rådgivning.
           </p>
         </div>
 
-        <div className="rounded-full border border-green-400/20 bg-green-400/10 px-3 py-1 text-xs font-medium text-green-400">
+        <div className="rounded-full border border-divlab-green/20 bg-divlab-green/10 px-3 py-1 text-xs font-medium text-divlab-green">
           Aktiv
         </div>
       </div>
@@ -35,24 +33,22 @@ export default function DividendBrainPanel() {
         {dividendBrainInsights.map((insight) => (
           <div
             key={insight}
-            className="rounded-xl border border-white/10 bg-white/[0.03] p-4 text-sm leading-6 text-gray-300"
+            className="rounded-xl border divlab-inset p-4 text-sm leading-6 text-divlab-text-secondary"
           >
             {insight}
           </div>
         ))}
       </div>
 
-      <div className="mt-5 rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/5 p-4">
+      <div className="mt-5 rounded-xl border divlab-border-neutral divlab-inset p-4">
         <div className="mb-3 flex items-center justify-between text-sm">
-          <span className="font-medium text-white">Framsteg mot årsmål</span>
-          <span className="text-[#D4AF37] tabular-nums">
-            {dividendBrainGoal.progress}
-          </span>
+          <span className="font-medium text-divlab-text">Framsteg mot årsmål</span>
+          <span className="text-divlab-blue tabular-nums">{dividendBrainGoal.progress}</span>
         </div>
         <div className="h-2 rounded-full bg-white/10">
-          <div className="h-2 w-[72%] rounded-full bg-[#D4AF37]" />
+          <div className="h-2 w-[72%] rounded-full bg-divlab-blue" />
         </div>
-        <p className="mt-3 text-sm leading-6 text-gray-400">
+        <p className="mt-3 text-sm leading-6 text-divlab-text-secondary">
           {dividendBrainGoal.observation}
         </p>
       </div>
@@ -66,7 +62,7 @@ export default function DividendBrainPanel() {
           }}
           placeholder="Fråga Dividend Brain..."
           rows={isExpanded ? 5 : 2}
-          className="w-full resize-none rounded-xl border border-white/10 bg-[#111111] px-4 py-3 text-sm leading-6 text-white outline-none transition-all duration-300 placeholder:text-gray-600 focus:border-[#D4AF37]/60"
+          className="w-full resize-none divlab-input px-4 py-3 text-sm leading-6 text-divlab-text placeholder:text-divlab-text-subtle transition-all duration-300"
         />
       </label>
     </section>

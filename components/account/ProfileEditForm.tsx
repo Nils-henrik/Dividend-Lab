@@ -94,25 +94,25 @@ export default function ProfileEditForm({
 
   return (
     <div className="space-y-8">
-      <section className="rounded-3xl border border-white/10 bg-[#111111]/85 p-6 shadow-[0_0_80px_rgba(212,175,55,0.06)]">
-        <p className="mb-3 text-xs font-medium uppercase tracking-[0.25em] text-[#D4AF37]">
+      <section className="divlab-hero">
+        <p className="mb-3 divlab-section-label tracking-[0.25em]">
           Investeraridentitet
         </p>
-        <h2 className="text-4xl font-semibold tracking-[-0.04em] text-white">
+        <h2 className="text-4xl font-semibold tracking-[-0.04em] text-divlab-text">
           Redigera profil
         </h2>
-        <p className="mt-4 max-w-3xl text-base leading-7 text-gray-400">
+        <p className="mt-4 max-w-3xl text-base leading-7 text-divlab-text-secondary">
           Hantera de offentliga profilfält som Dividend Lab använder för din
           community-identitet.
         </p>
       </section>
 
-      <section className="rounded-3xl border border-white/10 bg-[#161616] p-8 shadow-[0_0_80px_rgba(212,175,55,0.05)]">
+      <section className="divlab-card rounded-3xl p-8">
         <form action={formAction} className="space-y-6">
           <input type="hidden" name="avatarDataUrl" value={avatarDataUrl} />
           <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
             <div className="flex flex-col gap-5 md:flex-row md:items-center">
-              <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#D4AF37]/35 bg-gradient-to-br from-[#D4AF37]/20 via-white/[0.04] to-[#050505] text-2xl font-semibold text-[#F9D976]">
+              <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full border border-divlab-blue/35 bg-gradient-to-br from-divlab-blue/20 via-white/[0.04] to-[#050505] text-2xl font-semibold text-divlab-blue-muted">
                 {avatarPreviewUrl || avatarUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -132,7 +132,7 @@ export default function ProfileEditForm({
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
                   onChange={handleAvatarChange}
-                  className="w-full rounded-xl border border-white/10 bg-[#111111] px-4 py-3 text-sm text-gray-300 outline-none transition file:mr-4 file:rounded-lg file:border-0 file:bg-[#D4AF37] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-black focus:border-[#D4AF37]/70"
+                  className="divlab-input w-full px-4 py-3 text-sm text-gray-300 file:mr-4 file:rounded-lg file:border-0 file:bg-divlab-blue file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white"
                 />
                 <span className="mt-2 block text-xs leading-5 text-gray-600">
                   JPEG, PNG eller WebP upp till 10 MB. Du placerar och beskär
@@ -157,7 +157,7 @@ export default function ProfileEditForm({
                 type="text"
                 defaultValue={initialValues.displayName}
                 maxLength={PROFILE_LIMITS.displayNameMax}
-                className="w-full rounded-xl border border-white/10 bg-[#111111] px-4 py-3 text-white outline-none transition focus:border-[#D4AF37]/70"
+                className="divlab-input w-full px-4 py-3 text-white"
               />
               <span className="mt-2 block text-xs text-gray-600">
                 Upp till {PROFILE_LIMITS.displayNameMax} tecken.
@@ -175,7 +175,7 @@ export default function ProfileEditForm({
                 minLength={PROFILE_LIMITS.usernameMin}
                 maxLength={PROFILE_LIMITS.usernameMax}
                 pattern="[A-Za-z0-9_]{3,20}"
-                className="w-full rounded-xl border border-white/10 bg-[#111111] px-4 py-3 text-white outline-none transition focus:border-[#D4AF37]/70"
+                className="divlab-input w-full px-4 py-3 text-white"
               />
               <span className="mt-2 block text-xs text-gray-600">
                 Offentliga användarnamn sparas med gemener. Använd{" "}
@@ -194,7 +194,7 @@ export default function ProfileEditForm({
               defaultValue={initialValues.bio}
               maxLength={PROFILE_LIMITS.bioMax}
               rows={5}
-              className="w-full resize-none rounded-xl border border-white/10 bg-[#111111] px-4 py-3 text-white outline-none transition focus:border-[#D4AF37]/70"
+              className="divlab-input w-full resize-none px-4 py-3 text-white"
             />
             <span className="mt-2 block text-xs text-gray-600">
               Upp till {PROFILE_LIMITS.bioMax} tecken.
@@ -211,7 +211,7 @@ export default function ProfileEditForm({
                 type="text"
                 defaultValue={initialValues.favoriteSector}
                 maxLength={PROFILE_LIMITS.favoriteSectorMax}
-                className="w-full rounded-xl border border-white/10 bg-[#111111] px-4 py-3 text-white outline-none transition focus:border-[#D4AF37]/70"
+                className="divlab-input w-full px-4 py-3 text-white"
               />
               <span className="mt-2 block text-xs text-gray-600">
                 Upp till {PROFILE_LIMITS.favoriteSectorMax} tecken.
@@ -227,7 +227,7 @@ export default function ProfileEditForm({
                 type="text"
                 defaultValue={initialValues.investorGoal}
                 maxLength={PROFILE_LIMITS.investorGoalMax}
-                className="w-full rounded-xl border border-white/10 bg-[#111111] px-4 py-3 text-white outline-none transition focus:border-[#D4AF37]/70"
+                className="divlab-input w-full px-4 py-3 text-white"
               />
               <span className="mt-2 block text-xs text-gray-600">
                 Upp till {PROFILE_LIMITS.investorGoalMax} tecken.
@@ -239,7 +239,7 @@ export default function ProfileEditForm({
             <p
               className={`rounded-xl border px-4 py-3 text-sm leading-6 ${
                 state.status === "success"
-                  ? "border-[#D4AF37]/20 bg-[#D4AF37]/5 text-gray-300"
+                  ? "border-divlab-blue/20 bg-divlab-blue/5 text-gray-300"
                   : "border-white/10 bg-white/[0.03] text-gray-300"
               }`}
             >
@@ -251,7 +251,7 @@ export default function ProfileEditForm({
             <button
               type="submit"
               disabled={isPending}
-              className="rounded-xl border border-[#D4AF37] bg-[#D4AF37] px-8 py-3 text-sm font-semibold text-black shadow-[0_0_30px_rgba(212,175,55,0.16)] transition-all duration-300 hover:bg-[#F9D976] hover:shadow-[0_0_34px_rgba(212,175,55,0.22)] disabled:cursor-not-allowed disabled:opacity-70"
+              className="divlab-btn-primary px-8 py-3 disabled:cursor-not-allowed disabled:opacity-70"
             >
               {isPending ? "Sparar..." : "Spara profil"}
             </button>

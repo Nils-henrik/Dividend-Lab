@@ -16,7 +16,7 @@ export default function GoalsCard() {
           <span className="text-sm text-divlab-text-secondary">Framsteg</span>
         </div>
         <div className="h-2 rounded-full bg-white/10">
-          <div className="h-2 w-[72%] rounded-full bg-divlab-gold" />
+          <div className="h-2 w-[72%] rounded-full bg-divlab-blue" />
         </div>
       </div>
 

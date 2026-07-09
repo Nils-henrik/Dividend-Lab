@@ -20,7 +20,7 @@ export default function ForumReputationBadge({
         <span
           className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium tracking-[0.02em] ${
             isVeteran
-              ? "border-divlab-gold/35 bg-divlab-gold/10 text-divlab-gold"
+              ? "border-divlab-blue/35 bg-divlab-blue/10 text-divlab-blue"
               : "border-divlab-border-neutral divlab-inset text-divlab-text-secondary"
           }`}
         >

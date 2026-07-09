@@ -26,7 +26,7 @@ export default function ProfileDropdown({
     return (
       <Link
         href={`/login?redirect=${encodeURIComponent(pathname)}`}
-        className="rounded-xl border divlab-border-neutral px-3 py-2 text-xs font-medium text-divlab-text-secondary transition hover:border-divlab-gold/40 hover:text-divlab-gold"
+        className="rounded-xl border divlab-border-neutral px-3 py-2 text-xs font-medium text-divlab-text-secondary transition hover:border-divlab-blue/40 hover:text-divlab-blue"
       >
         Logga in
       </Link>

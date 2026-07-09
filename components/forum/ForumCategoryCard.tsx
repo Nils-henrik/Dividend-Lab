@@ -6,7 +6,7 @@ type Props = {
 
 export default function ForumCategoryCard({ category }: Props) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-[#161616] p-5 transition hover:border-[#D4AF37]/30">
+    <div className="divlab-card p-5 transition hover:border-divlab-blue/30">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h3 className="text-base font-semibold text-white">{category.name}</h3>

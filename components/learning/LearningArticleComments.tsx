@@ -23,41 +23,41 @@ export default async function LearningArticleComments({
   const loginHref = `/login?redirect=${encodeURIComponent(`/learning/${articleSlug}`)}`;
 
   return (
-    <section className="space-y-4 rounded-2xl border border-white/10 bg-[#161616] p-6">
+    <section className="divlab-card space-y-4 p-6">
       <div>
-        <p className="text-xs font-medium uppercase tracking-[0.18em] text-gray-500">
+        <p className="text-xs font-medium uppercase tracking-[0.18em] text-divlab-text-muted">
           Kommentarer
         </p>
-        <h2 className="mt-2 text-lg font-semibold text-white">
+        <h2 className="mt-2 text-lg font-semibold text-divlab-text">
           Diskussion om artikeln
         </h2>
-        <p className="mt-2 text-sm leading-6 text-gray-400">
+        <p className="mt-2 text-sm leading-6 text-divlab-text-secondary">
           Dela frågor och perspektiv. Kommentarer är synliga för alla besökare.
         </p>
       </div>
 
       <div className="space-y-3">
         {comments.length === 0 ? (
-          <p className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-gray-400">
+          <p className="rounded-xl border divlab-border-neutral divlab-inset px-4 py-3 text-sm text-divlab-text-secondary">
             Inga kommentarer ännu. Var den första som delar ett lugn perspektiv.
           </p>
         ) : (
           comments.map((comment) => (
             <article
               key={comment.id}
-              className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3"
+              className="rounded-xl border divlab-border-neutral divlab-inset px-4 py-3"
             >
-              <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-gray-500">
+              <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-divlab-text-muted">
                 <Link
                   href={`/profile/${encodeURIComponent(comment.username)}`}
-                  className="font-medium text-white transition hover:text-[#D4AF37]"
+                  className="font-medium text-divlab-text transition hover:text-divlab-blue-muted"
                 >
                   @{comment.username}
                 </Link>
-                <span className="h-1 w-1 rounded-full bg-gray-600" />
+                <span className="h-1 w-1 rounded-full bg-divlab-text-subtle" />
                 <span>{formatLearningCommentTimestamp(comment.createdAt)}</span>
               </div>
-              <p className="whitespace-pre-wrap text-sm leading-6 text-gray-300">
+              <p className="whitespace-pre-wrap text-sm leading-6 text-divlab-text-secondary">
                 {comment.body}
               </p>
             </article>
@@ -65,23 +65,17 @@ export default async function LearningArticleComments({
         )}
       </div>
 
-      <div className="border-t border-white/10 pt-5">
+      <div className="border-t divlab-border-neutral pt-5">
         {!user ? (
-          <p className="text-sm leading-6 text-gray-400">
-            <Link
-              href={loginHref}
-              className="font-medium text-[#D4AF37] transition hover:text-[#F9D976]"
-            >
+          <p className="text-sm leading-6 text-divlab-text-secondary">
+            <Link href={loginHref} className="divlab-link font-medium">
               Logga in
             </Link>{" "}
             för att kommentera.
           </p>
         ) : !username ? (
-          <p className="text-sm leading-6 text-gray-400">
-            <Link
-              href="/account/edit"
-              className="font-medium text-[#D4AF37] transition hover:text-[#F9D976]"
-            >
+          <p className="text-sm leading-6 text-divlab-text-secondary">
+            <Link href="/account/edit" className="divlab-link font-medium">
               Välj ett @namn i din profil
             </Link>{" "}
             för att kunna kommentera.

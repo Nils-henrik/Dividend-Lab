@@ -198,26 +198,26 @@ export default function ForumThreadPage({
         <ForumSidebar activeCategorySlug={category.slug} />
 
         <main className="space-y-2">
-          <section className="rounded-md border border-white/10 bg-[#111111]/85 px-3 py-2.5">
-            <div className="mb-1.5 flex flex-wrap items-center gap-1">
-              <span className="rounded border border-white/10 px-1.5 py-0.5 text-[10px] text-gray-500">
+          <section className="divlab-thread-header">
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              <span className="rounded-md border divlab-border-neutral px-2 py-0.5 text-[10px] font-medium text-divlab-text-muted">
                 {activeThread.category}
               </span>
             </div>
 
-            <div className="flex flex-col justify-between gap-2 xl:flex-row xl:items-start">
+            <div className="flex flex-col justify-between gap-3 xl:flex-row xl:items-start">
               <div>
-                <h2 className="text-xl font-semibold tracking-[-0.04em] text-white">
+                <h2 className="text-xl font-semibold tracking-[-0.04em] text-divlab-text">
                   {activeThread.title}
                 </h2>
                 {!isDemoThread && (
-                  <p className="mt-1 text-xs text-gray-500">
+                  <p className="mt-1.5 text-xs text-divlab-text-muted">
                     Startad av {activeThread.author}
                   </p>
                 )}
               </div>
 
-              <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-gray-500">
+              <div className="flex flex-wrap items-center gap-2 text-[11px] text-divlab-text-muted">
                 <span className="tabular-nums">{activeThread.replies} svar</span>
                 <span>·</span>
                 <span>{activeThread.lastActivity}</span>
@@ -242,48 +242,53 @@ export default function ForumThreadPage({
           )}
 
           {!isDemoThread && activeThread.body && (
-            <ForumThreadOpening
-              thread={activeThread}
-              authorUsername={openingAuthorUsername}
-              authorInitials={openingAuthorInitials}
-              memberSince={openingMemberSince}
-              timestamp={openingTimestamp}
-              threadSlug={activeThread.slug}
-              reactions={threadReactions}
-              isAuthenticated={isAuthenticated}
-              loginHref={loginHref}
-              currentUsername={currentUsername}
-              reactionsDisabled={isOpeningAuthor}
-              onReply={handleReplyToThread}
-              onQuote={handleQuoteOpeningPost}
-            />
+            <div className="mb-8">
+              <ForumThreadOpening
+                thread={activeThread}
+                authorUsername={openingAuthorUsername}
+                authorInitials={openingAuthorInitials}
+                memberSince={openingMemberSince}
+                timestamp={openingTimestamp}
+                threadSlug={activeThread.slug}
+                reactions={threadReactions}
+                isAuthenticated={isAuthenticated}
+                loginHref={loginHref}
+                currentUsername={currentUsername}
+                reactionsDisabled={isOpeningAuthor}
+                onReply={handleReplyToThread}
+                onQuote={handleQuoteOpeningPost}
+              />
+            </div>
           )}
 
-          <div id="forum-replies" className="space-y-2">
+          <div id="forum-replies">
             {isDemoThread ? (
-              replies.map((post) => (
-                <ForumPost
-                  key={post.id}
-                  post={post}
-                  threadSlug={activeThread.slug}
-                  reactions={emptyReactions}
-                  isAuthenticated={isAuthenticated}
-                  loginHref={loginHref}
-                  currentUsername={currentUsername}
-                  onQuote={handleDemoQuote}
-                  onReply={() =>
-                    openReplyEditor({
-                      contextLabel: `Svarar @${post.username.replace(/^@/, "")}`,
-                      replaceText: true,
-                    })
-                  }
-                  reactionsDisabled
-                />
-              ))
+              <div className="divlab-reply-thread">
+                {replies.map((post, index) => (
+                  <ForumPost
+                    key={post.id}
+                    tone={index % 2 === 0 ? "a" : "b"}
+                    post={post}
+                    threadSlug={activeThread.slug}
+                    reactions={emptyReactions}
+                    isAuthenticated={isAuthenticated}
+                    loginHref={loginHref}
+                    currentUsername={currentUsername}
+                    onQuote={handleDemoQuote}
+                    onReply={() =>
+                      openReplyEditor({
+                        contextLabel: `Svarar @${post.username.replace(/^@/, "")}`,
+                        replaceText: true,
+                      })
+                    }
+                    reactionsDisabled
+                  />
+                ))}
+              </div>
             ) : replies.length === 0 ? (
-              <section className="rounded-md border border-white/10 bg-[#161616] px-4 py-8 text-center">
-                <p className="text-sm font-medium text-white">Inga svar än</p>
-                <p className="mt-2 text-sm text-gray-500">
+              <section className="divlab-card px-4 py-8 text-center">
+                <p className="text-sm font-medium text-divlab-text">Inga svar än</p>
+                <p className="mt-2 text-sm text-divlab-text-muted">
                   Var den första att svara i denna diskussion.
                 </p>
                 <div className="mt-4 flex justify-center">
@@ -296,36 +301,37 @@ export default function ForumThreadPage({
                 </div>
               </section>
             ) : (
-              replies.map((post) => (
-                <ForumPost
-                  key={post.id}
-                  post={post}
-                  threadSlug={activeThread.slug}
-                  reactions={
-                    reactionMap[getForumReactionTargetKey("reply", post.id)] ??
-                    emptyReactions
-                  }
-                  isAuthenticated={isAuthenticated}
-                  loginHref={loginHref}
-                  currentUsername={currentUsername}
-                  onQuote={handleQuoteFromPost}
-                  onReply={handleReplyToPost}
-                  reactionsDisabled={
-                    Boolean(currentUserId) && currentUserId === post.authorUserId
-                  }
-                />
-              ))
+              <div className="divlab-reply-thread">
+                {replies.map((post, index) => (
+                  <ForumPost
+                    key={post.id}
+                    tone={index % 2 === 0 ? "a" : "b"}
+                    post={post}
+                    threadSlug={activeThread.slug}
+                    reactions={
+                      reactionMap[getForumReactionTargetKey("reply", post.id)] ??
+                      emptyReactions
+                    }
+                    isAuthenticated={isAuthenticated}
+                    loginHref={loginHref}
+                    currentUsername={currentUsername}
+                    onQuote={handleQuoteFromPost}
+                    onReply={handleReplyToPost}
+                    reactionsDisabled={
+                      Boolean(currentUserId) && currentUserId === post.authorUserId
+                    }
+                  />
+                ))}
+              </div>
             )}
           </div>
 
           {!isDemoThread && editorOpen && isAuthenticated && (
             <section
               id="forum-reply-editor"
-              className="rounded-md border border-white/10 bg-[#161616] p-3"
+              className="divlab-card p-4"
             >
-              <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.18em] text-gray-500">
-                Svara
-              </p>
+              <p className="mb-3 divlab-section-label text-[11px]">Svara</p>
               <ForumReplyForm
                 threadSlug={activeThread.slug}
                 body={replyText}
@@ -340,22 +346,22 @@ export default function ForumThreadPage({
           {isDemoThread && editorOpen && isAuthenticated && (
             <section
               id="forum-reply-editor"
-              className="rounded-md border border-white/10 bg-[#161616] p-3"
+              className="divlab-card p-4"
             >
-              <div className="mb-2 flex items-center justify-between gap-3">
-                <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-gray-500">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <p className="divlab-section-label text-[11px]">
                   Förhandsvisning av svar
                 </p>
                 <button
                   type="button"
                   onClick={closeReplyEditor}
-                  className="rounded-md border border-white/10 px-2 py-0.5 text-[11px] font-medium text-gray-400 transition hover:border-white/20 hover:text-white"
+                  className="divlab-btn-ghost px-2 py-0.5 text-[11px]"
                 >
                   Avbryt
                 </button>
               </div>
               {replyContext && (
-                <p className="mb-2 text-[11px] text-gray-500">{replyContext}</p>
+                <p className="mb-2 text-[11px] text-divlab-text-muted">{replyContext}</p>
               )}
               <textarea
                 ref={replyEditorRef}
@@ -363,7 +369,7 @@ export default function ForumThreadPage({
                 onChange={(event) => setReplyText(event.target.value)}
                 rows={5}
                 placeholder="Citat infogas här för förhandsgranskning..."
-                className="w-full resize-none rounded-xl border border-white/10 bg-[#111111] px-3 py-2 text-sm leading-6 text-gray-300 outline-none transition placeholder:text-gray-600 focus:border-[#D4AF37]/60"
+                className="w-full resize-none divlab-input px-3 py-2 text-sm leading-6 placeholder:text-divlab-text-subtle"
               />
             </section>
           )}

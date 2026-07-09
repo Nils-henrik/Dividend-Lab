@@ -29,7 +29,7 @@ export default function ForumBreadcrumbs({ items }: Props) {
             {item.href ? (
               <Link
                 href={item.href}
-                className="shrink-0 transition hover:text-[#D4AF37]"
+                className="shrink-0 transition hover:text-divlab-blue-muted"
               >
                 {item.label}
               </Link>

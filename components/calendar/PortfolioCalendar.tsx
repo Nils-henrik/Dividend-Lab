@@ -63,7 +63,7 @@ function EventDensityIndicator({ count }: { count: number }) {
         <span
           key={index}
           className={`h-1 rounded-full ${
-            index === 0 ? "w-3 bg-[#D4AF37]/45" : "w-2 bg-white/15"
+            index === 0 ? "w-3 bg-divlab-blue/45" : "w-2 bg-white/15"
           }`}
         />
       ))}
@@ -103,10 +103,10 @@ export default function PortfolioCalendar({
     <section>
       <div className="mb-3 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]">
+          <p className="divlab-section-label text-[10px] tracking-[0.22em]">
             Portföljkalender
           </p>
-          <h2 className="mt-1.5 text-lg font-semibold text-white">
+          <h2 className="mt-1.5 text-lg font-semibold text-divlab-text">
             {view === "day"
               ? formatDayHeading(activeDate)
               : view === "week"
@@ -115,7 +115,7 @@ export default function PortfolioCalendar({
           </h2>
         </div>
 
-        <div className="flex rounded-xl border border-white/10 bg-[#111111] p-1">
+        <div className="flex rounded-xl border divlab-border-neutral bg-divlab-surface p-1">
           {viewOptions.map((option) => (
             <button
               key={option.value}
@@ -123,8 +123,8 @@ export default function PortfolioCalendar({
               onClick={() => onViewChange(option.value)}
               className={`rounded-lg px-3.5 py-1.5 text-xs font-medium transition-all duration-300 ${
                 view === option.value
-                  ? "bg-[#D4AF37]/15 text-[#F9D976]"
-                  : "text-gray-400 hover:text-gray-300"
+                  ? "divlab-selected"
+                  : "text-divlab-text-muted hover:text-divlab-text-secondary"
               }`}
             >
               {option.label}
@@ -133,14 +133,14 @@ export default function PortfolioCalendar({
         </div>
       </div>
 
-      <div className="rounded-2xl border border-white/10 bg-[#161616] p-4">
+      <div className="divlab-card p-4">
         {view === "month" && (
-          <div className="overflow-hidden rounded-xl border border-white/10">
-            <div className="grid grid-cols-7 border-b border-white/10 bg-white/[0.03]">
+          <div className="overflow-hidden rounded-xl border divlab-border-neutral">
+            <div className="grid grid-cols-7 border-b divlab-border-neutral bg-divlab-surface">
               {WEEKDAY_LABELS.map((label) => (
                 <div
                   key={label}
-                  className="px-2 py-2 text-center text-[10px] font-medium uppercase tracking-[0.16em] text-gray-500"
+                  className="px-2 py-2 text-center text-[10px] font-medium uppercase tracking-[0.16em] text-divlab-text-muted"
                 >
                   {label}
                 </div>
@@ -160,18 +160,18 @@ export default function PortfolioCalendar({
                     key={isoDate}
                     type="button"
                     onClick={() => onSelectDate(isoDate)}
-                    className={`relative min-h-[76px] border-b border-r border-white/10 p-2 text-left transition-colors duration-300 hover:bg-white/[0.03] ${
-                      inCurrentMonth ? "text-white" : "text-gray-600"
-                    } ${isToday ? "bg-[#D4AF37]/[0.06]" : ""}`}
+                    className={`relative min-h-[76px] border-b border-r divlab-border-neutral p-2 text-left transition-colors duration-300 hover:bg-white/[0.04] ${
+                      inCurrentMonth ? "text-divlab-text" : "text-divlab-text-subtle"
+                    } ${isToday ? "bg-divlab-blue/[0.06]" : "bg-divlab-card"}`}
                   >
                     {hasEvents && (
-                      <span className="absolute bottom-0 left-0 top-0 w-px bg-[#D4AF37]/25" />
+                      <span className="absolute bottom-0 left-0 top-0 w-px bg-divlab-blue/25" />
                     )}
 
                     <div className="flex items-start justify-between gap-1">
                       <span
                         className={`text-xs font-medium tabular-nums ${
-                          isToday ? "text-[#F9D976]" : ""
+                          isToday ? "text-divlab-blue" : ""
                         }`}
                       >
                         {date.getDate()}
@@ -223,8 +223,8 @@ export default function PortfolioCalendar({
                   key={isoDate}
                   className={`rounded-xl border p-3 ${
                     isToday
-                      ? "border-[#D4AF37]/30 bg-[#D4AF37]/[0.05]"
-                      : "border-white/10 bg-white/[0.02]"
+                      ? "border-divlab-blue/30 bg-divlab-blue/[0.05]"
+                      : "border-transparent bg-divlab-surface"
                   }`}
                 >
                   <button
@@ -249,9 +249,9 @@ export default function PortfolioCalendar({
                           key={event.id}
                           type="button"
                           onClick={() => onEventSelect(event.id)}
-                          className="block w-full rounded-lg border border-white/10 bg-[#111111] px-2 py-2 text-left transition-all duration-300 hover:border-[#D4AF37]/30"
+                          className="block w-full rounded-lg border divlab-border-neutral bg-divlab-card px-2 py-2 text-left transition-all duration-300 hover:border-divlab-blue/30"
                         >
-                          <p className="text-[10px] font-medium text-[#D4AF37]">
+                          <p className="text-[10px] font-medium text-divlab-blue">
                             {event.ticker}
                           </p>
                           <p className="mt-0.5 text-[10px] leading-4 text-gray-500">
@@ -273,7 +273,7 @@ export default function PortfolioCalendar({
         {view === "day" && (
           <div className="space-y-2">
             {dayEvents.length === 0 ? (
-              <p className="rounded-xl border border-white/10 bg-white/[0.02] px-4 py-5 text-sm text-gray-500">
+              <p className="rounded-xl border divlab-border-neutral bg-divlab-surface px-4 py-5 text-sm text-divlab-text-muted">
                 Inga portföljhändelser planerade denna dag.
               </p>
             ) : (
@@ -282,7 +282,7 @@ export default function PortfolioCalendar({
                   key={event.id}
                   type="button"
                   onClick={() => onEventSelect(event.id)}
-                  className="flex w-full items-start justify-between gap-4 rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 text-left transition-all duration-300 hover:border-[#D4AF37]/30"
+                  className="flex w-full items-start justify-between gap-4 rounded-xl border divlab-border-neutral bg-divlab-surface px-4 py-3 text-left transition-all duration-300 hover:border-divlab-blue/30"
                 >
                   <div>
                     <p className="text-sm font-medium text-white">

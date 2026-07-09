@@ -23,49 +23,46 @@ export default function ConversationThreadView({
     conversation.messages[conversation.messages.length - 1]?.id ?? "empty";
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-3xl border border-white/10 bg-[#111111]/85 p-6 shadow-[0_0_80px_rgba(212,175,55,0.06)]">
-        <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-          <div className="flex min-w-0 items-center gap-4">
-            <ProfileAvatar
-              avatarUrl={otherParticipant?.avatarUrl ?? null}
-              initials={otherParticipant?.initials ?? "DL"}
-              sizeClassName="h-14 w-14"
-              textClassName="text-base"
-            />
-            <div className="min-w-0">
-              <p className="mb-2 text-xs font-medium uppercase tracking-[0.22em] text-[#D4AF37]">
-                Privat konversation
-              </p>
-              <h2 className="truncate text-3xl font-semibold tracking-[-0.04em] text-white">
-                {subject}
-              </h2>
-              <p className="mt-1 truncate text-sm text-gray-500">
-                {otherParticipant?.name ?? "Dividend Lab-medlem"}
-                {otherParticipant?.username ? ` · @${otherParticipant.username}` : ""}
-              </p>
-            </div>
+    <div className="space-y-4">
+      <section className="divlab-surface-panel flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-center gap-4">
+          <ProfileAvatar
+            avatarUrl={otherParticipant?.avatarUrl ?? null}
+            initials={otherParticipant?.initials ?? "DL"}
+            sizeClassName="h-12 w-12"
+            textClassName="text-sm"
+          />
+          <div className="min-w-0">
+            <h2 className="truncate text-xl font-semibold tracking-[-0.03em] text-divlab-text">
+              {subject}
+            </h2>
+            <p className="mt-1 truncate text-sm text-divlab-text-muted">
+              {otherParticipant?.name ?? "Dividend Lab-medlem"}
+              {otherParticipant?.username ? ` · @${otherParticipant.username}` : ""}
+            </p>
           </div>
-
-          <Link
-            href="/messages"
-            className="w-fit rounded-xl border border-white/10 px-4 py-2 text-sm font-medium text-gray-300 transition hover:border-[#D4AF37]/40 hover:text-[#D4AF37]"
-          >
-            Till inkorgen
-          </Link>
         </div>
+
+        <Link href="/messages" className="divlab-btn-secondary w-fit shrink-0 px-4 py-2 text-xs">
+          Till inkorgen
+        </Link>
       </section>
 
-      <section className="flex min-h-0 max-h-[min(68vh,760px)] flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#161616] p-4 sm:p-6">
+      <section className="divlab-card flex min-h-[420px] max-h-[min(72vh,780px)] flex-col overflow-hidden">
+        <div className="border-b divlab-border-neutral px-4 py-3 sm:px-5">
+          <p className="text-xs font-medium uppercase tracking-[0.18em] text-divlab-text-muted">
+            Konversation
+          </p>
+        </div>
+
         {conversation.messages.length === 0 ? (
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-            <p className="text-sm leading-6 text-gray-400">
-              Inga meddelanden än. Skriv ett lugnt och tydligt första
-              meddelande.
+          <div className="flex flex-1 items-center px-5 py-8">
+            <p className="text-sm leading-6 text-divlab-text-secondary">
+              Inga meddelanden än. Skriv ett lugnt och tydligt första meddelande.
             </p>
           </div>
         ) : (
-          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
+          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4 sm:px-5">
             {conversation.messages.map((message) => {
               const isOwnMessage = message.senderId === currentUserId;
               const senderLabel = isOwnMessage ? "DU" : receivedSenderLabel;
@@ -78,30 +75,30 @@ export default function ConversationThreadView({
                   }`}
                 >
                   <article
-                    className={`max-w-[92%] rounded-2xl border px-4 py-3 shadow-[0_18px_44px_rgba(0,0,0,0.16)] md:max-w-[68%] ${
+                    className={`max-w-[92%] rounded-2xl border px-4 py-3 md:max-w-[68%] ${
                       isOwnMessage
-                        ? "rounded-br-md border-[#D4AF37]/20 bg-[#D4AF37]/[0.045] text-gray-200"
-                        : "rounded-bl-md border-white/15 bg-[#232323] text-gray-100"
+                        ? "rounded-br-md border-divlab-blue/30 bg-divlab-blue/10 text-divlab-text"
+                        : "rounded-bl-md border-divlab-border-neutral bg-divlab-surface text-divlab-text-secondary"
                     }`}
                   >
                     <div
-                      className={`mb-2 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between ${
+                      className={`mb-1.5 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between ${
                         isOwnMessage ? "sm:flex-row-reverse" : ""
                       }`}
                     >
                       <p
-                        className={`truncate text-[11px] font-medium tracking-[0.18em] ${
-                          isOwnMessage ? "text-[#F9D976]/70" : "text-gray-500"
+                        className={`truncate text-[10px] font-medium uppercase tracking-[0.16em] ${
+                          isOwnMessage ? "text-divlab-blue-muted" : "text-divlab-text-muted"
                         }`}
                       >
                         {senderLabel}
                       </p>
-                      <p className="shrink-0 text-[11px] tabular-nums text-gray-500">
+                      <p className="shrink-0 text-[10px] tabular-nums text-divlab-text-muted">
                         {formatMessageTimestamp(message.createdAt)}
                       </p>
                     </div>
 
-                    <p className="whitespace-pre-wrap break-words text-sm leading-7">
+                    <p className="whitespace-pre-wrap break-words text-sm leading-6">
                       {message.body}
                     </p>
                   </article>
@@ -111,10 +108,10 @@ export default function ConversationThreadView({
             <MessageListAutoScroll scrollKey={lastMessageId} />
           </div>
         )}
-      </section>
 
-      <section className="rounded-3xl border border-white/10 bg-[#161616] p-5">
-        <MessageComposer conversationId={conversation.id} />
+        <div className="border-t divlab-border-neutral bg-divlab-surface px-4 py-4 sm:px-5">
+          <MessageComposer conversationId={conversation.id} />
+        </div>
       </section>
     </div>
   );
