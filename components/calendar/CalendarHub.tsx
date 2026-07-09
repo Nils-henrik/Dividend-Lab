@@ -93,13 +93,13 @@ export default function CalendarHub() {
       <header className="flex flex-col justify-between gap-4 border-b border-white/10 pb-5 lg:flex-row lg:items-end">
         <div>
           <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]">
-            Investor Command Center
+            Investeraröversikt
           </p>
           <h1 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-white">
-            Calendar
+            Kalender
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-400">
-            What do you need to know today?
+            Vad behöver du veta idag?
           </p>
         </div>
 
@@ -136,13 +136,13 @@ export default function CalendarHub() {
       {selectedEvent && (
         <section className="rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/5 px-4 py-3">
           <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-[#D4AF37]">
-            Event Detail Preview
+            Förhandsvisning av händelse
           </p>
           <p className="mt-1.5 text-sm text-white">
             {selectedEvent.company} · {selectedEvent.ticker}
           </p>
           <p className="mt-0.5 text-xs text-gray-500">
-            Detail view reserved for a future release.
+            Detaljvy kommer i en framtida version.
           </p>
         </section>
       )}

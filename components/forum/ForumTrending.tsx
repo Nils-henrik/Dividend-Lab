@@ -4,10 +4,10 @@ import { trendingThreads } from "@/data/forum";
 export default function ForumTrending() {
   return (
     <section className="rounded-md border border-white/10 bg-[#161616] px-2.5 py-2">
-      <h2 className="text-xs font-semibold text-white">Trending Discussions</h2>
+      <h2 className="text-xs font-semibold text-white">Trendande diskussioner</h2>
       {trendingThreads.length === 0 ? (
         <p className="mt-2 text-[11px] leading-4 text-gray-500">
-          No trending discussions yet.
+          Inga trendande diskussioner än.
         </p>
       ) : (
         <div className="mt-2 space-y-2">
@@ -21,7 +21,7 @@ export default function ForumTrending() {
                 {thread.title}
               </p>
               <p className="mt-0.5 text-[11px] text-gray-500">
-                {thread.replies} replies · {thread.lastActivity}
+                {thread.replies} svar · {thread.lastActivity}
               </p>
             </Link>
           ))}

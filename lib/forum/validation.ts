@@ -9,14 +9,14 @@ export function validateForumTitle(title: string) {
   if (!normalizedTitle) {
     return {
       title: "",
-      error: "Enter a discussion title.",
+      error: "Ange en rubrik för diskussionen.",
     };
   }
 
   if (normalizedTitle.length > FORUM_TITLE_MAX_LENGTH) {
     return {
       title: "",
-      error: `The title can be at most ${FORUM_TITLE_MAX_LENGTH} characters.`,
+      error: `Rubriken får vara högst ${FORUM_TITLE_MAX_LENGTH} tecken.`,
     };
   }
 
@@ -32,14 +32,14 @@ export function validateForumBody(body: string) {
   if (!normalizedBody) {
     return {
       body: "",
-      error: "Write something before submitting.",
+      error: "Skriv något innan du skickar.",
     };
   }
 
   if (normalizedBody.length > FORUM_BODY_MAX_LENGTH) {
     return {
       body: "",
-      error: `The content can be at most ${FORUM_BODY_MAX_LENGTH} characters.`,
+      error: `Innehållet får vara högst ${FORUM_BODY_MAX_LENGTH} tecken.`,
     };
   }
 

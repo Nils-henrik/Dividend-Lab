@@ -11,20 +11,20 @@ export default function ForumSearch({
 }: Props) {
   return (
     <label className="block">
-      <span className="sr-only">Search forum</span>
+      <span className="sr-only">Sök i forumet</span>
       <input
         type="search"
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={
           activeCategoryName
-            ? `Search ${activeCategoryName} discussions...`
-            : "Search forum discussions..."
+            ? `Sök diskussioner i ${activeCategoryName}...`
+            : "Sök diskussioner i forumet..."
         }
         className="w-full rounded-lg border border-white/10 bg-[#161616] px-3 py-2.5 text-sm text-white outline-none transition placeholder:text-gray-600 focus:border-[#D4AF37]/60"
       />
       <span className="mt-1.5 block text-[11px] text-gray-600">
-        Ready for title, category, tag, company, ETF, fund, ticker and username.
+        Sök på rubrik, kategori, tagg, bolag, ETF, fond, ticker och användarnamn.
       </span>
     </label>
   );

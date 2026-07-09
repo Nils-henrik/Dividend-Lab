@@ -22,10 +22,10 @@ export default function ForumPostActionRow({
     return (
       <div className="flex flex-wrap gap-1.5">
         <Link href={loginHref} className={buttonClassName}>
-          Reply
+          Svara
         </Link>
         <Link href={loginHref} className={buttonClassName}>
-          Quote
+          Citera
         </Link>
       </div>
     );
@@ -34,10 +34,10 @@ export default function ForumPostActionRow({
   return (
     <div className="flex flex-wrap gap-1.5">
       <button type="button" onClick={onReply} className={buttonClassName}>
-        Reply
+        Svara
       </button>
       <button type="button" onClick={onQuote} className={buttonClassName}>
-        Quote
+        Citera
       </button>
     </div>
   );

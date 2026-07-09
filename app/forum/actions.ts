@@ -38,7 +38,7 @@ export async function createForumThreadAction(
   if (!isForumCategorySlug(categorySlug)) {
     return {
       status: "error",
-      message: "Choose a valid category.",
+      message: "Välj en giltig kategori.",
     };
   }
 
@@ -73,7 +73,7 @@ export async function createForumThreadAction(
   if (error || !data) {
     return {
       status: "error",
-      message: "The discussion could not be created. Try again.",
+      message: "Diskussionen kunde inte skapas. Försök igen.",
     };
   }
 
@@ -93,7 +93,7 @@ export async function createForumReplyAction(
   if (!threadSlug) {
     return {
       status: "error",
-      message: "This discussion could not be found.",
+      message: "Diskussionen kunde inte hittas.",
     };
   }
 
@@ -109,7 +109,7 @@ export async function createForumReplyAction(
   if (!thread) {
     return {
       status: "error",
-      message: "This discussion could not be found.",
+      message: "Diskussionen kunde inte hittas.",
     };
   }
 
@@ -123,7 +123,7 @@ export async function createForumReplyAction(
   if (error) {
     return {
       status: "error",
-      message: "Your reply could not be posted. Try again.",
+      message: "Ditt svar kunde inte publiceras. Försök igen.",
     };
   }
 

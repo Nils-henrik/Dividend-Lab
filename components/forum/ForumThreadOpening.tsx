@@ -81,7 +81,7 @@ export default function ForumThreadOpening({
           <div className="mb-2 flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-1.5">
             <p className="text-[11px] text-gray-500">{timestamp}</p>
             <span className="rounded-md border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-2 py-0.5 text-[11px] font-medium text-[#D4AF37]">
-              Opening post
+              Inledande inlägg
             </span>
           </div>
 

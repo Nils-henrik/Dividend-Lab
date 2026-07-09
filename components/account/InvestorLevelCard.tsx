@@ -4,7 +4,7 @@ export default function InvestorLevelCard() {
   return (
     <article className="rounded-2xl border border-white/10 bg-[#161616] p-6">
       <p className="mb-3 text-xs font-medium uppercase tracking-[0.2em] text-[#D4AF37]">
-        Investor Level
+        Investerarnivå
       </p>
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
         <div>
@@ -12,13 +12,13 @@ export default function InvestorLevelCard() {
             {investorLevel.current}
           </h3>
           <p className="mt-2 text-sm leading-6 text-gray-400">
-            Investor level is earned through activity and contribution. It is
-            separate from paid membership and cannot be purchased.
+            Investerarnivå byggs upp genom aktivitet och bidrag. Den är
+            separat från betalt medlemskap och kan inte köpas.
           </p>
         </div>
 
         <span className="w-fit rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-xs font-medium uppercase tracking-[0.16em] text-gray-400">
-          Earned Status
+          Intjänad nivå
         </span>
       </div>
 
@@ -28,7 +28,7 @@ export default function InvestorLevelCard() {
             {investorLevel.progress}%
           </span>
           <span className="text-sm text-gray-400">
-            Progress to {investorLevel.next}
+            Framsteg mot {investorLevel.next}
           </span>
         </div>
         <div className="h-2 rounded-full bg-white/10">

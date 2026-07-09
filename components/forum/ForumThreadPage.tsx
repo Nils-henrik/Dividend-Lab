@@ -34,7 +34,7 @@ type Props = {
 
 function getQuoteText(username: string, content: string) {
   const cleanUsername = username.replace(/^@/, "");
-  return `@${cleanUsername} wrote:\n> ${content}\n\n`;
+  return `@${cleanUsername} skrev:\n> ${content}\n\n`;
 }
 
 export default function ForumThreadPage({
@@ -61,19 +61,19 @@ export default function ForumThreadPage({
         <ForumBreadcrumbs
           items={[
             { label: "Forum", href: "/forum" },
-            { label: "Discussion not found" },
+            { label: "Diskussionen hittades inte" },
           ]}
         />
         <section className="rounded-md border border-white/10 bg-[#161616] p-8 text-center">
-          <p className="text-sm font-medium text-white">Discussion not found</p>
+          <p className="text-sm font-medium text-white">Diskussionen hittades inte</p>
           <p className="mt-2 text-sm text-gray-500">
-            This discussion is not available or may have been removed.
+            Denna diskussion är inte tillgänglig eller kan ha tagits bort.
           </p>
           <Link
             href="/forum"
             className="mt-6 inline-flex rounded-xl border border-[#D4AF37]/40 px-5 py-2.5 text-sm font-semibold text-[#D4AF37] transition hover:border-[#D4AF37] hover:bg-[#D4AF37]/10"
           >
-            Back to forum
+            Tillbaka till forumet
           </Link>
         </section>
       </div>
@@ -137,7 +137,7 @@ export default function ForumThreadPage({
 
     openReplyEditor({
       quote: getQuoteText(post.username, post.content),
-      contextLabel: `Quoting @${post.username.replace(/^@/, "")}`,
+      contextLabel: `Citerar @${post.username.replace(/^@/, "")}`,
       replaceText: false,
     });
   }
@@ -148,7 +148,7 @@ export default function ForumThreadPage({
     }
 
     openReplyEditor({
-      contextLabel: `Replying to @${post.username.replace(/^@/, "")}`,
+      contextLabel: `Svarar @${post.username.replace(/^@/, "")}`,
       replaceText: true,
     });
   }
@@ -160,7 +160,7 @@ export default function ForumThreadPage({
 
     openReplyEditor({
       quote: getQuoteText(openingAuthorUsername, activeThread.body),
-      contextLabel: `Quoting @${openingAuthorUsername.replace(/^@/, "")}`,
+      contextLabel: `Citerar @${openingAuthorUsername.replace(/^@/, "")}`,
       replaceText: false,
     });
   }
@@ -171,7 +171,7 @@ export default function ForumThreadPage({
     }
 
     openReplyEditor({
-      contextLabel: "Replying to this discussion",
+      contextLabel: "Svarar på denna diskussion",
       replaceText: true,
     });
   }
@@ -179,7 +179,7 @@ export default function ForumThreadPage({
   function handleDemoQuote(post: ForumPostType) {
     openReplyEditor({
       quote: getQuoteText(post.username, post.content),
-      contextLabel: `Quoting @${post.username.replace(/^@/, "")}`,
+      contextLabel: `Citerar @${post.username.replace(/^@/, "")}`,
       replaceText: false,
     });
   }
@@ -215,13 +215,13 @@ export default function ForumThreadPage({
                 </h2>
                 {!isDemoThread && (
                   <p className="mt-1 text-xs text-gray-500">
-                    Started by {activeThread.author}
+                    Startad av {activeThread.author}
                   </p>
                 )}
               </div>
 
               <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-gray-500">
-                <span className="tabular-nums">{activeThread.replies} replies</span>
+                <span className="tabular-nums">{activeThread.replies} svar</span>
                 <span>·</span>
                 <span>{activeThread.lastActivity}</span>
                 <ForumShareButton
@@ -235,11 +235,11 @@ export default function ForumThreadPage({
           {isDemoThread && (
             <section className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2">
               <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-amber-300">
-                Development preview
+                Förhandsvisning
               </p>
               <p className="mt-1 text-[11px] leading-5 text-gray-300">
-                Sample content for testing forum interactions only. Not real
-                member activity.
+                Exempelinnehåll för att testa forumfunktioner. Inte riktig
+                medlemsaktivitet.
               </p>
             </section>
           )}
@@ -276,7 +276,7 @@ export default function ForumThreadPage({
                   onQuote={handleDemoQuote}
                   onReply={() =>
                     openReplyEditor({
-                      contextLabel: `Replying to @${post.username.replace(/^@/, "")}`,
+                      contextLabel: `Svarar @${post.username.replace(/^@/, "")}`,
                       replaceText: true,
                     })
                   }
@@ -285,9 +285,9 @@ export default function ForumThreadPage({
               ))
             ) : replies.length === 0 ? (
               <section className="rounded-md border border-white/10 bg-[#161616] px-4 py-8 text-center">
-                <p className="text-sm font-medium text-white">No replies yet</p>
+                <p className="text-sm font-medium text-white">Inga svar än</p>
                 <p className="mt-2 text-sm text-gray-500">
-                  Be the first to reply to this discussion.
+                  Var den första att svara i denna diskussion.
                 </p>
                 <div className="mt-4 flex justify-center">
                   <ForumPostActionRow
@@ -327,7 +327,7 @@ export default function ForumThreadPage({
               className="rounded-md border border-white/10 bg-[#161616] p-3"
             >
               <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.18em] text-gray-500">
-                Reply
+                Svara
               </p>
               <ForumReplyForm
                 threadSlug={activeThread.slug}
@@ -347,14 +347,14 @@ export default function ForumThreadPage({
             >
               <div className="mb-2 flex items-center justify-between gap-3">
                 <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-gray-500">
-                  Reply preview
+                  Förhandsvisning av svar
                 </p>
                 <button
                   type="button"
                   onClick={closeReplyEditor}
                   className="rounded-md border border-white/10 px-2 py-0.5 text-[11px] font-medium text-gray-400 transition hover:border-white/20 hover:text-white"
                 >
-                  Cancel
+                  Avbryt
                 </button>
               </div>
               {replyContext && (
@@ -365,7 +365,7 @@ export default function ForumThreadPage({
                 value={replyText}
                 onChange={(event) => setReplyText(event.target.value)}
                 rows={5}
-                placeholder="Quote inserts text here for preview testing..."
+                placeholder="Citat infogas här för förhandsgranskning..."
                 className="w-full resize-none rounded-xl border border-white/10 bg-[#111111] px-3 py-2 text-sm leading-6 text-gray-300 outline-none transition placeholder:text-gray-600 focus:border-[#D4AF37]/60"
               />
             </section>

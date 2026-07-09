@@ -6,7 +6,7 @@ export default function SearchBar() {
       <AppIcon name="search" className="h-4 w-4" />
       <input
         type="search"
-        placeholder="Search Dividend Lab"
+        placeholder="Sök i DivLab"
         className="w-full bg-transparent text-gray-300 outline-none placeholder:text-gray-600"
       />
     </label>

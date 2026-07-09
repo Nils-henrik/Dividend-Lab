@@ -1,4 +1,4 @@
-const PUBLIC_MEMBER_FALLBACK = "member";
+const PUBLIC_MEMBER_FALLBACK = "medlem";
 
 export function getForumAuthorLabel(
   username: string | null | undefined,
@@ -16,7 +16,7 @@ export function getForumAuthorLabel(
     return normalizedDisplayName;
   }
 
-  return "Dividend Lab Member";
+  return "Dividend Lab-medlem";
 }
 
 export function getForumAuthorUsername(
@@ -57,7 +57,7 @@ export function formatForumTimestamp(value: string) {
   const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) {
-    return "Unknown date";
+    return "Okänt datum";
   }
 
   const now = new Date();
@@ -66,16 +66,16 @@ export function formatForumTimestamp(value: string) {
     date.getMonth() === now.getMonth() &&
     date.getDate() === now.getDate();
 
-  const time = new Intl.DateTimeFormat("en-GB", {
+  const time = new Intl.DateTimeFormat("sv-SE", {
     hour: "2-digit",
     minute: "2-digit",
   }).format(date);
 
   if (isSameDay) {
-    return `Today at ${time}`;
+    return `Idag kl. ${time}`;
   }
 
-  return new Intl.DateTimeFormat("en-GB", {
+  return new Intl.DateTimeFormat("sv-SE", {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -99,19 +99,19 @@ export function formatForumRelativeActivity(value: string | null) {
   const diffMinutes = Math.max(1, Math.floor(diffMs / 60000));
 
   if (diffMinutes < 60) {
-    return `${diffMinutes} min ago`;
+    return `${diffMinutes} min sedan`;
   }
 
   const diffHours = Math.floor(diffMinutes / 60);
 
   if (diffHours < 24) {
-    return `${diffHours} h ago`;
+    return `${diffHours} tim sedan`;
   }
 
   const diffDays = Math.floor(diffHours / 24);
 
   if (diffDays < 7) {
-    return `${diffDays} d ago`;
+    return `${diffDays} d sedan`;
   }
 
   return formatForumTimestamp(value);
@@ -119,20 +119,20 @@ export function formatForumRelativeActivity(value: string | null) {
 
 export function formatForumMemberSince(profileCreatedAt: string | null) {
   if (!profileCreatedAt) {
-    return "Dividend Lab member";
+    return "Dividend Lab-medlem";
   }
 
   const date = new Date(profileCreatedAt);
 
   if (Number.isNaN(date.getTime())) {
-    return "Dividend Lab member";
+    return "Dividend Lab-medlem";
   }
 
-  const year = new Intl.DateTimeFormat("en-GB", {
+  const year = new Intl.DateTimeFormat("sv-SE", {
     year: "numeric",
   }).format(date);
 
-  return `Member since ${year}`;
+  return `Medlem sedan ${year}`;
 }
 
 export function createForumThreadSlug(title: string) {

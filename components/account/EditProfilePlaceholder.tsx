@@ -3,13 +3,13 @@ export default function EditProfilePlaceholder() {
     <div className="space-y-8">
       <section className="rounded-3xl border border-white/10 bg-[#111111]/85 p-6 shadow-[0_0_80px_rgba(212,175,55,0.06)]">
         <p className="mb-3 text-xs font-medium uppercase tracking-[0.25em] text-[#D4AF37]">
-          Investor Identity
+          Investeraridentitet
         </p>
         <h2 className="text-4xl font-semibold tracking-[-0.04em] text-white">
-          Edit Profile
+          Redigera profil
         </h2>
         <p className="mt-4 max-w-3xl text-base leading-7 text-gray-400">
-          Manage your public investor profile.
+          Hantera din offentliga investerarprofil.
         </p>
       </section>
 
@@ -20,19 +20,19 @@ export default function EditProfilePlaceholder() {
 
           <div className="relative">
             <p className="text-xs font-medium uppercase tracking-[0.22em] text-[#D4AF37]">
-              Profile Editing
+              Profilredigering
             </p>
             <h3 className="mt-5 text-2xl font-semibold tracking-[-0.035em] text-white">
-              Profile editing is coming soon.
+              Profilredigering kommer snart.
             </h3>
             <div className="mx-auto mt-5 max-w-2xl space-y-4 text-sm leading-7 text-gray-400">
               <p>
-                Dividend Lab will soon allow you to customize your public
-                investor profile, avatar, biography and visibility settings.
+                Dividend Lab kommer snart att låta dig anpassa din offentliga
+                investerarprofil, profilbild, biografi och synlighetsinställningar.
               </p>
               <p>
-                We are building a thoughtful editing experience that
-                prioritizes privacy, simplicity and long-term investing.
+                Vi bygger en genomtänkt redigeringsupplevelse som prioriterar
+                integritet, enkelhet och långsiktigt investerande.
               </p>
             </div>
 
@@ -41,7 +41,7 @@ export default function EditProfilePlaceholder() {
               disabled
               className="mt-8 cursor-not-allowed rounded-xl border border-[#D4AF37]/60 bg-[#D4AF37] px-8 py-3 text-sm font-semibold text-black opacity-70 shadow-[0_0_30px_rgba(212,175,55,0.16)]"
             >
-              Coming Soon
+              Kommer snart
             </button>
           </div>
         </article>

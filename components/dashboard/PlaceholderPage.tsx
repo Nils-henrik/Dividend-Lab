@@ -17,8 +17,8 @@ export default function PlaceholderPage({ title, description }: Props) {
       </p>
       <div className="mt-8 rounded-2xl border border-white/10 bg-[#161616] p-6">
         <p className="text-sm leading-6 text-gray-400">
-          This page is ready for future Dividend Lab functionality and already
-          uses the shared application layout.
+          Sidan är redo för framtida Dividend Lab-funktioner och använder redan
+          den gemensamma applikationslayouten.
         </p>
       </div>
     </section>

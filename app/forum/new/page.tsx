@@ -43,20 +43,19 @@ export default async function NewForumDiscussionPage({ searchParams }: Props) {
               label: activeCategory.name,
               href: `/forum?category=${activeCategory.slug}`,
             },
-            { label: "New discussion" },
+            { label: "Ny diskussion" },
           ]}
         />
 
         <section className="rounded-3xl border border-white/10 bg-[#161616] p-6">
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-[#D4AF37]">
-            Start a discussion
+            Starta diskussion
           </p>
           <h1 className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-white">
-            New discussion in {activeCategory.name}
+            Ny diskussion i {activeCategory.name}
           </h1>
           <p className="mt-2 text-sm leading-6 text-gray-500">
-            Share a thoughtful question or insight with the Dividend Lab
-            community.
+            Dela en genomtänkt fråga eller insikt med Dividend Lab-gemenskapen.
           </p>
 
           <div className="mt-6">
@@ -66,7 +65,7 @@ export default async function NewForumDiscussionPage({ searchParams }: Props) {
 
         <p className="text-center text-xs text-gray-600">
           <Link href="/forum" className="transition hover:text-gray-400">
-            Back to forum
+            Tillbaka till forumet
           </Link>
         </p>
       </div>

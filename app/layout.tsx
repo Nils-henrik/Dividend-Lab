@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Dividend Lab | Premium dividend investing platform",
+  title: "Dividend Lab | Plattform för långsiktiga utdelningsinvesterare",
   description:
-    "Analyze dividends, understand your portfolio, and build long-term passive income with Dividend Lab.",
+    "Analysera utdelningar, förstå din portfölj och bygg långsiktig passiv inkomst med Dividend Lab.",
 };
 
 export default function RootLayout({
@@ -25,7 +25,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="sv"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>

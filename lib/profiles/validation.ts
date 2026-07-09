@@ -27,27 +27,27 @@ export function validateProfileValues(values: ProfileFormValues) {
 
   if (username && !USERNAME_PATTERN.test(username)) {
     errors.push(
-      "Username must be 3-20 characters and use only letters, numbers or underscores.",
+      "Användarnamnet måste vara 3–20 tecken och får bara innehålla bokstäver, siffror eller understreck.",
     );
   }
 
   if (displayName && displayName.length > PROFILE_LIMITS.displayNameMax) {
-    errors.push("Display name must be 40 characters or less.");
+    errors.push("Visningsnamnet får vara högst 40 tecken.");
   }
 
   if (bio && bio.length > PROFILE_LIMITS.bioMax) {
-    errors.push("Bio must be 240 characters or less.");
+    errors.push("Bio får vara högst 240 tecken.");
   }
 
   if (
     favoriteSector &&
     favoriteSector.length > PROFILE_LIMITS.favoriteSectorMax
   ) {
-    errors.push("Favorite sector must be 40 characters or less.");
+    errors.push("Favoritsektorn får vara högst 40 tecken.");
   }
 
   if (investorGoal && investorGoal.length > PROFILE_LIMITS.investorGoalMax) {
-    errors.push("Investor goal must be 120 characters or less.");
+    errors.push("Investeringsmålet får vara högst 120 tecken.");
   }
 
   return {

@@ -10,8 +10,8 @@ export default function ForumRightSidebar() {
           Dividend Brain Ready
         </p>
         <p className="mt-1 text-[11px] leading-4 text-gray-300">
-          Future AI integration can recommend discussions, educational content
-          and thread analysis from this structure.
+          Framtida AI-integration kan rekommendera diskussioner, utbildningsinnehåll
+          och trådanalys utifrån denna struktur.
         </p>
       </section>
 

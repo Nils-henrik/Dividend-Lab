@@ -8,7 +8,7 @@ export default function UpcomingDividendsCard({ payments }: Props) {
   return (
     <section className="rounded-2xl border border-white/10 bg-[#111111]/80 p-4">
       <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-gray-500">
-        Upcoming Dividends
+        Kommande utdelningar
       </p>
 
       <div className="mt-3 space-y-2">

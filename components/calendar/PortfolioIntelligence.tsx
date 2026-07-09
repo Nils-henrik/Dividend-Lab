@@ -13,15 +13,15 @@ type Props = {
 };
 
 const futureSearchFields = [
-  "Latest News",
-  "Upcoming Events",
-  "Latest Dividend",
-  "Earnings Date",
-  "Dividend History",
+  "Senaste nyheter",
+  "Kommande händelser",
+  "Senaste utdelning",
+  "Rapporteringsdatum",
+  "Utdelningshistorik",
 ] as const;
 
 function formatTimestamp(timestamp: string): string {
-  return new Date(timestamp).toLocaleTimeString("en-GB", {
+  return new Date(timestamp).toLocaleTimeString("sv-SE", {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
@@ -68,10 +68,10 @@ export default function PortfolioIntelligence({
     <section>
       <div className="mb-3">
         <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]">
-          Portfolio Intelligence
+          Portföljintelligens
         </p>
         <h2 className="mt-1.5 text-lg font-semibold text-white">
-          Curated portfolio news
+          Utvalda portföljnyheter
         </h2>
       </div>
 
@@ -92,7 +92,7 @@ export default function PortfolioIntelligence({
 
               <div className="rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2.5">
                 <p className="text-[10px] uppercase tracking-[0.12em] text-gray-600">
-                  Latest News
+                  Senaste nyheter
                 </p>
                 <p className="mt-1 text-[12px] leading-5 text-gray-300">
                   {searchResult.latestNews}
@@ -101,7 +101,7 @@ export default function PortfolioIntelligence({
 
               <div className="rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2.5">
                 <p className="text-[10px] uppercase tracking-[0.12em] text-gray-600">
-                  Upcoming Events
+                  Kommande händelser
                 </p>
                 <p className="mt-1 text-[12px] leading-5 text-gray-300">
                   {searchResult.upcomingEvent}
@@ -110,7 +110,7 @@ export default function PortfolioIntelligence({
 
               <div className="rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2.5">
                 <p className="text-[10px] uppercase tracking-[0.12em] text-gray-600">
-                  Latest Dividend
+                  Senaste utdelning
                 </p>
                 <p className="mt-1 text-[12px] text-gray-300 tabular-nums">
                   {searchResult.latestDividend}
@@ -119,7 +119,7 @@ export default function PortfolioIntelligence({
 
               <div className="rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2.5">
                 <p className="text-[10px] uppercase tracking-[0.12em] text-gray-600">
-                  Earnings Date
+                  Rapporteringsdatum
                 </p>
                 <p className="mt-1 text-[12px] text-gray-300 tabular-nums">
                   {searchResult.earningsDate}
@@ -128,10 +128,10 @@ export default function PortfolioIntelligence({
 
               <div className="rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2.5 sm:col-span-2">
                 <p className="text-[10px] uppercase tracking-[0.12em] text-gray-600">
-                  Dividend History
+                  Utdelningshistorik
                 </p>
                 <p className="mt-1 text-[12px] text-gray-500">
-                  {searchResult.dividendHistory ?? "Available in a future release"}
+                  {searchResult.dividendHistory ?? "Tillgänglig i en framtida version"}
                 </p>
               </div>
             </div>
@@ -154,7 +154,7 @@ export default function PortfolioIntelligence({
         <div className="mt-4 divide-y divide-white/10">
           {filteredItems.length === 0 ? (
             <p className="py-5 text-sm text-gray-500">
-              No intelligence items match your search.
+              Inga nyheter matchar din sökning.
             </p>
           ) : (
             filteredItems.map((item) => (

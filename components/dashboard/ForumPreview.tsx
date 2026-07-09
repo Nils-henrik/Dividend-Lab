@@ -7,7 +7,7 @@ export default function ForumPreview() {
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
           <p className="mb-3 text-xs font-medium uppercase tracking-[0.2em] text-[#D4AF37]">
-            Community
+            Gemenskap
           </p>
           <h2 className="text-lg font-semibold text-white">Utforska forumet</h2>
           <p className="mt-2 text-sm leading-6 text-gray-400">

@@ -1,5 +1,29 @@
-import { portfolioDisclosure, portfolioPrivacyMessage } from "@/data/account";
+import {
+  portfolioDisclosure,
+  portfolioPrivacyMessage,
+  type DividendIncomeRange,
+  type PortfolioRange,
+} from "@/data/account";
 import AccountIcon from "./AccountIcon";
+
+function formatDisclosureRange(
+  range: PortfolioRange | DividendIncomeRange,
+): string {
+  const labels: Record<PortfolioRange | DividendIncomeRange, string> = {
+    Private: "Privat",
+    "Under 100k": "Under 100 000 kr",
+    "100k-500k": "100 000–500 000 kr",
+    "500k-1M": "500 000 kr–1 Mkr",
+    "1M-5M": "1–5 Mkr",
+    "5M+": "Över 5 Mkr",
+    "Under 10k/year": "Under 10 000 kr/år",
+    "10k-50k/year": "10 000–50 000 kr/år",
+    "50k-100k/year": "50 000–100 000 kr/år",
+    "100k+/year": "Över 100 000 kr/år",
+  };
+
+  return labels[range];
+}
 
 export default function PortfolioPrivacySection() {
   return (
@@ -7,10 +31,10 @@ export default function PortfolioPrivacySection() {
       <div className="mb-6 flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <div>
           <p className="mb-3 text-xs font-medium uppercase tracking-[0.2em] text-[#D4AF37]">
-            Portfolio Information
+            Portföljinformation
           </p>
           <h3 className="text-lg font-semibold text-white">
-            Optional privacy-conscious disclosure
+            Valfri delning med integritet i fokus
           </h3>
         </div>
         <p className="max-w-2xl text-sm leading-6 text-gray-400">
@@ -34,12 +58,12 @@ export default function PortfolioPrivacySection() {
                 </p>
               </div>
               <span className="rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.16em] text-gray-400">
-                Range
+                Intervall
               </span>
             </div>
 
             <p className="mt-5 text-[1.42rem] font-medium leading-none tracking-[-0.025em] text-white tabular-nums">
-              {item.range}
+              {formatDisclosureRange(item.range)}
             </p>
             <p className="mt-4 text-sm leading-6 text-gray-400">
               {item.detail}

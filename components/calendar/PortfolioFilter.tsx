@@ -8,8 +8,8 @@ type Props = {
 };
 
 const options: { mode: PortfolioFilterMode; label: string }[] = [
-  { mode: "portfolio", label: "Only My Portfolio" },
-  { mode: "market", label: "Entire Market" },
+  { mode: "portfolio", label: "Bara min portfölj" },
+  { mode: "market", label: "Hela marknaden" },
 ];
 
 export default function PortfolioFilter({ mode, onChange }: Props) {

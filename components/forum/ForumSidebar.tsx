@@ -20,7 +20,7 @@ export default function ForumSidebar({
           Forum
         </p>
         <p className="mt-1 text-[11px] leading-4 text-gray-500">
-          Long-term investing topics.
+          Ämnen för långsiktigt investerande.
         </p>
       </div>
 

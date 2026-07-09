@@ -4,7 +4,7 @@ export default function DividendBrainPage() {
   return (
     <PlaceholderPage
       title="Dividend Brain"
-      description="Dividend Brain will explain portfolio patterns, compare trade-offs and educate users without giving financial advice."
+      description="Dividend Brain förklarar portföljmönster, jämför avvägningar och utbildar utan att ge finansiell rådgivning."
     />
   );
 }

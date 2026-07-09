@@ -24,12 +24,12 @@ export default function RegisterForm({ redirectTo }: Props) {
     const normalizedEmail = email.trim().toLowerCase();
 
     if (!normalizedEmail.includes("@")) {
-      setError("Enter a valid email address.");
+      setError("Ange en giltig e-postadress.");
       return;
     }
 
     if (password.length < 6) {
-      setError("Use at least 6 characters for your password.");
+      setError("Använd minst 6 tecken i lösenordet.");
       return;
     }
 
@@ -56,13 +56,13 @@ export default function RegisterForm({ redirectTo }: Props) {
 
     if (data.session) {
       setSuccessMessage(
-        "Your account is ready. You can now open your Dividend Lab workspace.",
+        "Ditt konto är klart. Du kan nu öppna din Dividend Lab-miljö.",
       );
       return;
     }
 
     setSuccessMessage(
-      "Check your email to confirm your account, then log in to Dividend Lab.",
+      "Bekräfta ditt konto via e-post och logga sedan in på Dividend Lab.",
     );
   }
 
@@ -73,18 +73,18 @@ export default function RegisterForm({ redirectTo }: Props) {
           Dividend Lab
         </p>
         <h1 className="text-3xl font-semibold tracking-[-0.03em] text-white">
-          Create account
+          Skapa konto
         </h1>
         <p className="mt-3 text-sm leading-6 text-gray-400">
-          Register with email and password to start building your long-term
-          investing workspace.
+          Registrera dig med e-post och lösenord för att börja bygga din
+          långsiktiga investeringsmiljö.
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <label className="block">
           <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-gray-500">
-            Email
+            E-post
           </span>
           <input
             type="email"
@@ -102,7 +102,7 @@ export default function RegisterForm({ redirectTo }: Props) {
 
         <label className="block">
           <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-gray-500">
-            Password
+            Lösenord
           </span>
           <input
             type="password"
@@ -132,17 +132,17 @@ export default function RegisterForm({ redirectTo }: Props) {
         )}
 
         <PrimaryButton type="submit" disabled={isLoading} className="w-full">
-          {isLoading ? "Creating account..." : "Create account"}
+          {isLoading ? "Skapar konto..." : "Skapa konto"}
         </PrimaryButton>
       </form>
 
       <p className="mt-6 text-center text-sm text-gray-500">
-        Already have an account?{" "}
+        Har du redan ett konto?{" "}
         <Link
           href="/login"
           className="font-medium text-[#D4AF37] transition hover:text-[#F9D976]"
         >
-          Log in
+          Logga in
         </Link>
       </p>
     </section>

@@ -8,7 +8,7 @@ export default function TodaysHighlight({ highlight }: Props) {
   return (
     <article className="rounded-2xl border border-[#D4AF37]/20 bg-[#161616] px-6 py-5 shadow-[0_0_36px_rgba(212,175,55,0.05)]">
       <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]">
-        Today&apos;s Highlight
+        Dagens höjdpunkt
       </p>
 
       <div className="mt-4 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">

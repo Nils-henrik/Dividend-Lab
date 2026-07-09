@@ -8,15 +8,15 @@ export default function InvestorStatistics() {
       <div className="mb-4 flex flex-col justify-between gap-3 md:flex-row md:items-end">
         <div>
           <p className="mb-3 text-xs font-medium uppercase tracking-[0.2em] text-[#D4AF37]">
-            Public Investor Signals
+            Offentliga investeringssignaler
           </p>
           <h3 className="text-lg font-semibold text-white">
-            Strategy, experience and context
+            Strategi, erfarenhet och sammanhang
           </h3>
         </div>
         <p className="max-w-xl text-sm leading-6 text-gray-400">
-          These details describe how the investor thinks and participates
-          without making wealth the source of credibility.
+          Uppgifterna beskriver hur investeraren tänker och bidrar utan att
+          göra förmögenhet till trovärdighetens källa.
         </p>
       </div>
 

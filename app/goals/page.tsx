@@ -5,8 +5,8 @@ export default function GoalsPage() {
   return (
     <AppShell>
       <PlaceholderPage
-        title="Goals"
-        description="Goals will help users track dividend income milestones and long-term wealth-building progress."
+        title="Mål"
+        description="Mål hjälper dig följa utdelningsmilstolpar och långsiktig förmögenhetsuppbyggnad."
       />
     </AppShell>
   );

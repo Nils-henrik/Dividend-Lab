@@ -29,8 +29,8 @@ export default function ForumHeader({
             {activeCategoryName}
           </h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-500">
-            Learn from experienced investors, review portfolio thinking and
-            find durable income ideas without market noise.
+            Lär av erfarna investerare, granska portföljtänkande och hitta
+            hållbara inkomstidéer utan marknadsbrus.
           </p>
         </div>
 
@@ -45,14 +45,14 @@ export default function ForumHeader({
               href={newDiscussionHref}
               className="block w-full rounded-xl border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-4 py-3 text-center text-sm font-medium text-[#D4AF37] transition hover:border-[#D4AF37]/50"
             >
-              Start discussion
+              Starta diskussion
             </Link>
           ) : (
             <Link
               href={loginHref}
               className="block rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-center text-sm font-medium text-gray-300 transition hover:border-[#D4AF37]/30 hover:text-[#D4AF37]"
             >
-              Log in to start a discussion
+              Logga in för att starta en diskussion
             </Link>
           )}
         </div>

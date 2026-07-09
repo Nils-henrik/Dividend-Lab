@@ -9,9 +9,9 @@ export default function DailyOverview({ metrics }: Props) {
     <section>
       <div className="mb-3 flex items-baseline justify-between gap-4">
         <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]">
-          Today&apos;s Portfolio Overview
+          Dagens portföljöversikt
         </p>
-        <p className="text-xs text-gray-500">What you need to know today</p>
+        <p className="text-xs text-gray-500">Det du behöver veta idag</p>
       </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">

@@ -6,7 +6,7 @@ type Props = {
 };
 
 function formatTimestamp(timestamp: string): string {
-  return new Date(timestamp).toLocaleDateString("en-GB", {
+  return new Date(timestamp).toLocaleDateString("sv-SE", {
     day: "numeric",
     month: "short",
     hour: "2-digit",
@@ -19,7 +19,7 @@ export default function RecentPortfolioChanges({ changes }: Props) {
   return (
     <section className="rounded-2xl border border-white/10 bg-[#111111]/80 p-4">
       <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-gray-500">
-        Recent Portfolio Changes
+        Senaste portföljförändringar
       </p>
 
       <div className="mt-3 space-y-2">

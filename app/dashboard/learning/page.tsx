@@ -3,8 +3,8 @@ import PlaceholderPage from "@/components/dashboard/PlaceholderPage";
 export default function LearningPage() {
   return (
     <PlaceholderPage
-      title="Learning"
-      description="Learning will provide calm, high-quality education for investors who think in years instead of days."
+      title="Utbildning"
+      description="Utbildning erbjuder lugn, hög kvalitet för investerare som tänker i år istället för dagar."
     />
   );
 }

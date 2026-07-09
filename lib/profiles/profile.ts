@@ -155,7 +155,7 @@ export async function updateProfileForUser(
       profile: null,
       error:
         error.code === "23505"
-          ? "That username is already taken."
+          ? "Användarnamnet är redan upptaget."
           : error.message,
     };
   }

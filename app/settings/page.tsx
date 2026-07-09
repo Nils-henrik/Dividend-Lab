@@ -5,8 +5,8 @@ export default function SettingsPage() {
   return (
     <AppShell>
       <PlaceholderPage
-        title="Settings"
-        description="Settings will centralize preferences for the Dividend Lab application experience."
+        title="Inställningar"
+        description="Inställningar samlar preferenser för Dividend Lab-upplevelsen."
       />
     </AppShell>
   );

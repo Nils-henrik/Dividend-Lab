@@ -52,25 +52,25 @@ export default function ProfileDropdown({
               href="/account"
               className="block rounded-xl px-3 py-2 text-sm text-gray-300 transition hover:bg-white/[0.03] hover:text-white"
             >
-              Profile
+              Profil
             </Link>
             <Link
               href="/account"
               className="block rounded-xl px-3 py-2 text-sm text-gray-300 transition hover:bg-white/[0.03] hover:text-white"
             >
-              Investor Identity
+              Investeraridentitet
             </Link>
             <Link
               href="/account"
               className="block rounded-xl px-3 py-2 text-sm text-gray-300 transition hover:bg-white/[0.03] hover:text-white"
             >
-              Subscription
+              Prenumeration
             </Link>
             <Link
               href="/settings"
               className="block rounded-xl px-3 py-2 text-sm text-gray-300 transition hover:bg-white/[0.03] hover:text-white"
             >
-              Settings
+              Inställningar
             </Link>
           </div>
 
@@ -80,7 +80,7 @@ export default function ProfileDropdown({
             disabled={isLoggingOut}
             className="w-full rounded-xl border-t border-white/10 px-3 py-2 text-left text-sm text-gray-400 transition hover:bg-white/[0.03] hover:text-white"
           >
-            {isLoggingOut ? "Logging out..." : "Logout"}
+            {isLoggingOut ? "Loggar ut..." : "Logga ut"}
           </button>
         </div>
       )}

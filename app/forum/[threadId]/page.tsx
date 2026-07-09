@@ -89,7 +89,7 @@ export default async function ForumThreadRoute({ params }: Props) {
     isDemoThread = true;
     openingAuthorUsername = demo.replies[0]?.username ?? "demo-preview";
     openingAuthorInitials = demo.replies[0]?.avatar ?? "DP";
-    openingMemberSince = demo.replies[0]?.memberSince ?? "Development preview";
+    openingMemberSince = demo.replies[0]?.memberSince ?? "Förhandsvisning";
     openingTimestamp = demo.replies[0]?.timestamp ?? "Preview";
   } else {
     const threadRecord = await getForumThreadBySlugFromDatabase(threadId);

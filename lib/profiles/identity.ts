@@ -10,7 +10,7 @@ export type UserDisplayIdentity = {
   avatarUrl: string | null;
 };
 
-const PUBLIC_IDENTITY_FALLBACK = "Dividend Lab Member";
+const PUBLIC_IDENTITY_FALLBACK = "Dividend Lab-medlem";
 
 export function getAvatarPublicUrl(
   avatarPath: string | null | undefined,

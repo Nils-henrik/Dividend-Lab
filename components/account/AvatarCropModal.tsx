@@ -100,7 +100,7 @@ export default function AvatarCropModal({
     <div className="fixed inset-0 z-[100] flex min-h-dvh items-center justify-center overflow-y-auto bg-black/75 px-6 py-8 backdrop-blur-sm">
       <button
         type="button"
-        aria-label="Cancel avatar positioning"
+        aria-label="Avbryt placering av profilbild"
         onClick={onCancel}
         className="absolute inset-0 cursor-default"
       />
@@ -108,13 +108,13 @@ export default function AvatarCropModal({
       <section className="relative w-full max-w-2xl rounded-3xl border border-white/10 bg-[#111111] p-6 shadow-[0_40px_120px_rgba(0,0,0,0.6)]">
         <div className="mb-5">
           <p className="mb-3 text-xs font-medium uppercase tracking-[0.25em] text-[#D4AF37]">
-            Profile Image
+            Profilbild
           </p>
           <h2 className="text-2xl font-semibold tracking-[-0.03em] text-white">
-            Position your avatar
+            Placera din profilbild
           </h2>
           <p className="mt-3 text-sm leading-6 text-gray-400">
-            Drag and zoom to center your profile image.
+            Dra och zooma för att centrera din profilbild.
           </p>
         </div>
 
@@ -164,7 +164,7 @@ export default function AvatarCropModal({
             onClick={centerImage}
             className="rounded-xl border border-white/10 px-6 py-3 text-sm font-medium text-gray-400 transition hover:border-white/20 hover:text-white"
           >
-            Center image
+            Centrera bild
           </button>
 
           <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
@@ -173,7 +173,7 @@ export default function AvatarCropModal({
               onClick={onCancel}
               className="rounded-xl border border-white/10 px-6 py-3 text-sm font-medium text-gray-400 transition hover:border-white/20 hover:text-white"
             >
-              Cancel
+              Avbryt
             </button>
             <button
               type="button"
@@ -181,7 +181,7 @@ export default function AvatarCropModal({
               disabled={!croppedAreaPixels || isSaving}
               className="rounded-xl border border-[#D4AF37] bg-[#D4AF37] px-6 py-3 text-sm font-semibold text-black shadow-[0_0_30px_rgba(212,175,55,0.16)] transition hover:bg-[#F9D976] disabled:cursor-not-allowed disabled:opacity-70"
             >
-              {isSaving ? "Saving..." : "Save photo"}
+              {isSaving ? "Sparar..." : "Spara bild"}
             </button>
           </div>
         </div>

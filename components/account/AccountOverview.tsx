@@ -12,16 +12,16 @@ type Props = {
 
 function formatMemberSince(createdAt: string | null) {
   if (!createdAt) {
-    return "Account creation date unavailable";
+    return "Kontots skapelsedatum är inte tillgängligt";
   }
 
   const createdDate = new Date(createdAt);
 
   if (Number.isNaN(createdDate.getTime())) {
-    return "Account creation date unavailable";
+    return "Kontots skapelsedatum är inte tillgängligt";
   }
 
-  return new Intl.DateTimeFormat("en", {
+  return new Intl.DateTimeFormat("sv", {
     month: "long",
     year: "numeric",
   }).format(createdDate);
@@ -64,13 +64,13 @@ export default function AccountOverview({ user, profile, identity }: Props) {
                 href="/account/edit"
                 className="rounded-xl border border-[#D4AF37] bg-[#D4AF37] px-5 py-2.5 text-sm font-semibold text-black shadow-[0_0_30px_rgba(212,175,55,0.16)] transition-all duration-300 hover:bg-[#F9D976] hover:shadow-[0_0_34px_rgba(212,175,55,0.22)]"
               >
-                Edit Profile
+                Redigera profil
               </Link>
             </div>
 
             <div>
               <p className="mb-3 text-xs font-medium uppercase tracking-[0.25em] text-[#D4AF37]">
-                Investor Identity
+                Investeraridentitet
               </p>
               <h2 className="text-4xl font-semibold tracking-[-0.04em] text-white">
                 {identity.name}
@@ -79,26 +79,26 @@ export default function AccountOverview({ user, profile, identity }: Props) {
                 <span>
                   {identity.username
                     ? `@${identity.username}`
-                    : "No public handle selected yet"}
+                    : "Inget offentligt användarnamn valt ännu"}
                 </span>
                 <span className="h-1 w-1 rounded-full bg-gray-600" />
-                <span>Member since {memberSince}</span>
+                <span>Medlem sedan {memberSince}</span>
               </div>
               <div className="mt-7 max-w-3xl rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4">
                 <p className="text-xs font-medium uppercase tracking-[0.2em] text-gray-500">
-                  Profile Status
+                  Profilstatus
                 </p>
                 <p className="mt-3 text-base leading-7 text-gray-300">
                   {hasPublicProfile
-                    ? "Your Dividend Lab profile is ready for the next community features."
-                    : "Your investor profile is not completed yet. Complete your investor identity to personalize your Dividend Lab profile."}
+                    ? "Din Dividend Lab-profil är redo för kommande community-funktioner."
+                    : "Din investerarprofil är inte färdig ännu. Fyll i din investeraridentitet för att anpassa din Dividend Lab-profil."}
                 </p>
               </div>
             </div>
           </div>
 
           <div className="w-fit rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-xs font-medium text-gray-400">
-            Authenticated account
+            Verifierat konto
           </div>
         </div>
       </section>
@@ -106,15 +106,15 @@ export default function AccountOverview({ user, profile, identity }: Props) {
       <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <article className="rounded-2xl border border-white/10 bg-[#161616] p-6">
           <p className="mb-3 text-xs font-medium uppercase tracking-[0.2em] text-[#D4AF37]">
-            Account Details
+            Kontouppgifter
           </p>
           <h3 className="text-lg font-semibold text-white">
-            Account and public profile
+            Konto och offentlig profil
           </h3>
           <div className="mt-6 space-y-4">
             <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
               <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-gray-500">
-                Private Account Email
+                Privat e-postadress
               </p>
               <p className="mt-2 break-all text-sm text-gray-300">
                 {user.email}
@@ -122,21 +122,22 @@ export default function AccountOverview({ user, profile, identity }: Props) {
             </div>
             <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
               <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-gray-500">
-                Public Handle
+                Offentligt användarnamn
               </p>
               <p className="mt-2 text-sm text-gray-300">
                 {profile.username ? (
                   `@${profile.username}`
                 ) : (
                   <EmptyField>
-                    Choose a public handle before joining discussions.
+                    Välj ett offentligt användarnamn innan du deltar i
+                    diskussioner.
                   </EmptyField>
                 )}
               </p>
             </div>
             <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
               <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-gray-500">
-                Account Created
+                Konto skapat
               </p>
               <p className="mt-2 text-sm text-gray-300">{memberSince}</p>
             </div>
@@ -145,19 +146,19 @@ export default function AccountOverview({ user, profile, identity }: Props) {
 
         <article className="rounded-2xl border border-white/10 bg-[#161616] p-6">
           <p className="mb-3 text-xs font-medium uppercase tracking-[0.2em] text-[#D4AF37]">
-            Profile Setup
+            Profilinställning
           </p>
           <h3 className="text-lg font-semibold text-white">
-            Investor identity
+            Investeraridentitet
           </h3>
           <div className="mt-6 space-y-4">
             <div>
               <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-gray-500">
-                Display Name
+                Visningsnamn
               </p>
               <p className="mt-2 text-sm leading-6 text-gray-300">
                 {profile.displayName ?? (
-                  <EmptyField>Add a display name for your profile.</EmptyField>
+                  <EmptyField>Lägg till ett visningsnamn för din profil.</EmptyField>
                 )}
               </p>
             </div>
@@ -168,29 +169,29 @@ export default function AccountOverview({ user, profile, identity }: Props) {
               <p className="mt-2 text-sm leading-6 text-gray-300">
                 {profile.bio ?? (
                   <EmptyField>
-                    Add a short investor bio to personalize your Dividend Lab
-                    identity.
+                    Lägg till en kort bio för att anpassa din Dividend
+                    Lab-identitet.
                   </EmptyField>
                 )}
               </p>
             </div>
             <div>
               <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-gray-500">
-                Favorite Sector
+                Favoritsektor
               </p>
               <p className="mt-2 text-sm leading-6 text-gray-300">
                 {profile.favoriteSector ?? (
-                  <EmptyField>No favorite sector selected yet.</EmptyField>
+                  <EmptyField>Ingen favoritsektor vald ännu.</EmptyField>
                 )}
               </p>
             </div>
             <div>
               <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-gray-500">
-                Investor Goal
+                Investeringsmål
               </p>
               <p className="mt-2 text-sm leading-6 text-gray-300">
                 {profile.investorGoal ?? (
-                  <EmptyField>No investor goal added yet.</EmptyField>
+                  <EmptyField>Inget investeringsmål tillagt ännu.</EmptyField>
                 )}
               </p>
             </div>

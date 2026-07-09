@@ -3,8 +3,8 @@ import PlaceholderPage from "@/components/dashboard/PlaceholderPage";
 export default function PortfolioPage() {
   return (
     <PlaceholderPage
-      title="Portfolio"
-      description="Portfolio tracking will organize holdings, allocations and dividend quality in one calm workspace."
+      title="Portfölj"
+      description="Portföljspårning samlar innehav, allokering och utdelningskvalitet i en lugn översikt."
     />
   );
 }

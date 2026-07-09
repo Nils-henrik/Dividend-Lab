@@ -44,12 +44,12 @@ export default function ForumReplyForm({
         onChange={(event) => onBodyChange(event.target.value)}
         rows={5}
         maxLength={FORUM_BODY_MAX_LENGTH}
-        placeholder="Write a calm, useful reply..."
+        placeholder="Skriv ett lugnt, användbart svar..."
         className="w-full resize-none rounded-xl border border-white/10 bg-[#111111] px-3 py-2 text-sm leading-6 text-gray-300 outline-none transition placeholder:text-gray-600 focus:border-[#D4AF37]/60"
       />
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-xs text-gray-500">
-          {body.length}/{FORUM_BODY_MAX_LENGTH} characters
+          {body.length}/{FORUM_BODY_MAX_LENGTH} tecken
         </p>
         <div className="flex flex-wrap gap-2">
           <button
@@ -57,14 +57,14 @@ export default function ForumReplyForm({
             onClick={onCancel}
             className="rounded-xl border border-white/10 px-4 py-2 text-xs font-medium text-gray-400 transition hover:border-white/20 hover:text-white"
           >
-            Cancel
+            Avbryt
           </button>
           <button
             type="submit"
             disabled={isPending}
             className="rounded-xl border border-[#D4AF37]/40 px-4 py-2 text-xs font-semibold text-[#D4AF37] transition hover:border-[#D4AF37] hover:bg-[#D4AF37]/10 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isPending ? "Posting..." : "Post reply"}
+            {isPending ? "Publicerar..." : "Publicera svar"}
           </button>
         </div>
       </div>

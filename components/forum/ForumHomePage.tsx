@@ -98,23 +98,23 @@ export default function ForumHomePage({
 
           {filteredThreads.length === 0 ? (
             <section className="rounded-lg border border-white/10 bg-[#111111]/85 p-8 text-center">
-              <p className="text-sm font-medium text-white">No discussions yet</p>
+              <p className="text-sm font-medium text-white">Inga diskussioner än</p>
               <p className="mt-2 text-sm text-gray-500">
-                Start the first discussion in {activeCategory.name}.
+                Starta den första diskussionen i {activeCategory.name}.
               </p>
               {isAuthenticated ? (
                 <Link
                   href={newDiscussionHref}
                   className="mt-6 inline-flex rounded-xl border border-[#D4AF37]/40 px-5 py-2.5 text-sm font-semibold text-[#D4AF37] transition hover:border-[#D4AF37] hover:bg-[#D4AF37]/10"
                 >
-                  Start discussion
+                  Starta diskussion
                 </Link>
               ) : (
                 <Link
                   href={loginHref}
                   className="mt-6 inline-flex rounded-xl border border-white/10 px-5 py-2.5 text-sm font-medium text-gray-300 transition hover:border-[#D4AF37]/40 hover:text-[#D4AF37]"
                 >
-                  Log in to start a discussion
+                  Logga in för att starta en diskussion
                 </Link>
               )}
             </section>
@@ -124,7 +124,7 @@ export default function ForumHomePage({
                 <div className="mb-2 flex items-center justify-between gap-4">
                   <div>
                     <h2 className="text-sm font-medium text-white">
-                      Featured Discussion
+                      Utvald diskussion
                     </h2>
                   </div>
                 </div>
@@ -135,10 +135,10 @@ export default function ForumHomePage({
               </section>
 
               <ForumThreadList
-                title={`${activeCategory.name} Discussions`}
-                description={`${filteredThreads.length} discussion${
-                  filteredThreads.length === 1 ? "" : "s"
-                } in ${activeCategory.groupName}.`}
+                title={`Diskussioner i ${activeCategory.name}`}
+                description={`${filteredThreads.length} diskussion${
+                  filteredThreads.length === 1 ? "" : "er"
+                } i ${activeCategory.groupName}.`}
                 threads={filteredThreads}
               />
             </>

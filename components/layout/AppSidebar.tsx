@@ -104,10 +104,10 @@ export default function AppSidebar({
           }`}
         >
           <p className="text-xs font-medium uppercase tracking-[0.18em] text-gray-500">
-            Focus
+            Fokus
           </p>
           <p className="mt-3 text-sm leading-6 text-gray-300">
-            Build long-term income with data, discipline and calm decisions.
+            Bygg långsiktig inkomst med data, disciplin och lugna beslut.
           </p>
         </div>
       </div>

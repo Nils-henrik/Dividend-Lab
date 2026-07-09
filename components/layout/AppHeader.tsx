@@ -28,7 +28,7 @@ export default function AppHeader({
     Object.entries(pageTitles).find(
       ([path]) => path !== "/dashboard" && pathname.startsWith(`${path}/`),
     )?.[1] ??
-    "Dashboard";
+    "Start";
 
   return (
     <header

@@ -7,16 +7,37 @@ import {
   calendarEventTypeLabels,
 } from "@/lib/events";
 import {
-  formatDayHeading,
-  formatMonthYear,
-  formatShortDate,
   getMonthMatrix,
   getWeekDays,
-  getWeekdayLabels,
   isSameDay,
   parseISODate,
   toISODate,
 } from "@/lib/utils/calendar";
+
+const WEEKDAY_LABELS = ["Mån", "Tis", "Ons", "Tor", "Fre", "Lör", "Sön"] as const;
+
+function formatDayHeading(date: Date): string {
+  return date.toLocaleDateString("sv-SE", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+function formatMonthYear(date: Date): string {
+  return date.toLocaleDateString("sv-SE", {
+    month: "long",
+    year: "numeric",
+  });
+}
+
+function formatShortDate(date: Date): string {
+  return date.toLocaleDateString("sv-SE", {
+    day: "numeric",
+    month: "short",
+  });
+}
 
 type Props = {
   events: CalendarEvent[];
@@ -27,7 +48,11 @@ type Props = {
   onEventSelect: (eventId: string) => void;
 };
 
-const viewOptions: CalendarView[] = ["day", "week", "month"];
+const viewOptions: { value: CalendarView; label: string }[] = [
+  { value: "day", label: "Dag" },
+  { value: "week", label: "Vecka" },
+  { value: "month", label: "Månad" },
+];
 
 function EventDensityIndicator({ count }: { count: number }) {
   const visibleBars = Math.min(count, 4);
@@ -79,13 +104,13 @@ export default function PortfolioCalendar({
       <div className="mb-3 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]">
-            Portfolio Calendar
+            Portföljkalender
           </p>
           <h2 className="mt-1.5 text-lg font-semibold text-white">
             {view === "day"
               ? formatDayHeading(activeDate)
               : view === "week"
-                ? `Week of ${formatShortDate(weekDays[0])}`
+                ? `Vecka från ${formatShortDate(weekDays[0])}`
                 : formatMonthYear(activeDate)}
           </h2>
         </div>
@@ -93,16 +118,16 @@ export default function PortfolioCalendar({
         <div className="flex rounded-xl border border-white/10 bg-[#111111] p-1">
           {viewOptions.map((option) => (
             <button
-              key={option}
+              key={option.value}
               type="button"
-              onClick={() => onViewChange(option)}
-              className={`rounded-lg px-3.5 py-1.5 text-xs font-medium capitalize transition-all duration-300 ${
-                view === option
+              onClick={() => onViewChange(option.value)}
+              className={`rounded-lg px-3.5 py-1.5 text-xs font-medium transition-all duration-300 ${
+                view === option.value
                   ? "bg-[#D4AF37]/15 text-[#F9D976]"
                   : "text-gray-400 hover:text-gray-300"
               }`}
             >
-              {option}
+              {option.label}
             </button>
           ))}
         </div>
@@ -112,7 +137,7 @@ export default function PortfolioCalendar({
         {view === "month" && (
           <div className="overflow-hidden rounded-xl border border-white/10">
             <div className="grid grid-cols-7 border-b border-white/10 bg-white/[0.03]">
-              {getWeekdayLabels().map((label) => (
+              {WEEKDAY_LABELS.map((label) => (
                 <div
                   key={label}
                   className="px-2 py-2 text-center text-[10px] font-medium uppercase tracking-[0.16em] text-gray-500"
@@ -174,7 +199,7 @@ export default function PortfolioCalendar({
                         ))}
                         {dayEventsForCell.length > 2 && (
                           <p className="text-[9px] text-gray-600">
-                            +{dayEventsForCell.length - 2} more
+                            +{dayEventsForCell.length - 2} till
                           </p>
                         )}
                       </div>
@@ -208,7 +233,7 @@ export default function PortfolioCalendar({
                     className="mb-2.5 text-left"
                   >
                     <p className="text-[10px] uppercase tracking-[0.14em] text-gray-500">
-                      {date.toLocaleDateString("en-GB", { weekday: "short" })}
+                      {date.toLocaleDateString("sv-SE", { weekday: "short" })}
                     </p>
                     <p className="mt-1 text-sm font-medium text-white tabular-nums">
                       {formatShortDate(date)}
@@ -217,7 +242,7 @@ export default function PortfolioCalendar({
 
                   <div className="space-y-1.5">
                     {dayEventsForCell.length === 0 ? (
-                      <p className="text-[11px] text-gray-600">No events</p>
+                      <p className="text-[11px] text-gray-600">Inga händelser</p>
                     ) : (
                       dayEventsForCell.map((event) => (
                         <button
@@ -249,7 +274,7 @@ export default function PortfolioCalendar({
           <div className="space-y-2">
             {dayEvents.length === 0 ? (
               <p className="rounded-xl border border-white/10 bg-white/[0.02] px-4 py-5 text-sm text-gray-500">
-                No portfolio events scheduled for this day.
+                Inga portföljhändelser planerade denna dag.
               </p>
             ) : (
               dayEvents.map((event) => (

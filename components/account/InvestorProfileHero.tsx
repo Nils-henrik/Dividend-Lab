@@ -18,7 +18,7 @@ export default function InvestorProfileHero() {
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={investorIdentity.avatarUrl}
-                    alt={`${investorIdentity.fullName} avatar`}
+                    alt={`Profilbild för ${investorIdentity.fullName}`}
                     className="h-full w-full object-cover"
                   />
                 ) : (
@@ -37,13 +37,13 @@ export default function InvestorProfileHero() {
               href="/account/edit"
               className="rounded-xl border border-[#D4AF37] bg-[#D4AF37] px-5 py-2.5 text-sm font-semibold text-black shadow-[0_0_30px_rgba(212,175,55,0.16)] transition-all duration-300 hover:bg-[#F9D976] hover:shadow-[0_0_34px_rgba(212,175,55,0.22)]"
             >
-              Edit Profile
+              Redigera profil
             </Link>
           </div>
 
           <div>
             <p className="mb-3 text-xs font-medium uppercase tracking-[0.25em] text-[#D4AF37]">
-              Investor Identity
+              Investeraridentitet
             </p>
             <h2 className="text-4xl font-semibold tracking-[-0.04em] text-white">
               {investorIdentity.fullName}
@@ -55,7 +55,7 @@ export default function InvestorProfileHero() {
             </div>
             <div className="mt-7 max-w-3xl rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4">
               <p className="text-xs font-medium uppercase tracking-[0.2em] text-gray-500">
-                Biography
+                Biografi
               </p>
               <p className="mt-3 text-base leading-7 text-gray-300">
                 {investorIdentity.bio}
@@ -65,7 +65,7 @@ export default function InvestorProfileHero() {
         </div>
 
         <div className="w-fit rounded-full border border-green-400/20 bg-green-400/10 px-3 py-1 text-xs font-medium text-green-400">
-          Verified long-term investor
+          Verifierad långsiktig investerare
         </div>
       </div>
     </section>

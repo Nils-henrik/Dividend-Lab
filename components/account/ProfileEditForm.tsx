@@ -61,14 +61,14 @@ export default function ProfileEditForm({
     }
 
     if (!ALLOWED_AVATAR_TYPES.includes(file.type)) {
-      setAvatarError("Unsupported image type. Please upload JPG, PNG or WebP.");
+      setAvatarError("Filformatet stöds inte. Ladda upp JPG, PNG eller WebP.");
       event.target.value = "";
       setSelectedImageUrl(null);
       return;
     }
 
     if (file.size > MAX_SOURCE_AVATAR_SIZE_BYTES) {
-      setAvatarError("Choose an image under 10 MB.");
+      setAvatarError("Välj en bild under 10 MB.");
       event.target.value = "";
       setSelectedImageUrl(null);
       return;
@@ -96,14 +96,14 @@ export default function ProfileEditForm({
     <div className="space-y-8">
       <section className="rounded-3xl border border-white/10 bg-[#111111]/85 p-6 shadow-[0_0_80px_rgba(212,175,55,0.06)]">
         <p className="mb-3 text-xs font-medium uppercase tracking-[0.25em] text-[#D4AF37]">
-          Investor Identity
+          Investeraridentitet
         </p>
         <h2 className="text-4xl font-semibold tracking-[-0.04em] text-white">
-          Edit Profile
+          Redigera profil
         </h2>
         <p className="mt-4 max-w-3xl text-base leading-7 text-gray-400">
-          Manage the public profile fields Dividend Lab will use for community
-          identity.
+          Hantera de offentliga profilfält som Dividend Lab använder för din
+          community-identitet.
         </p>
       </section>
 
@@ -117,7 +117,7 @@ export default function ProfileEditForm({
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={avatarPreviewUrl ?? avatarUrl ?? undefined}
-                    alt="Profile avatar preview"
+                    alt="Förhandsvisning av profilbild"
                     className="h-full w-full object-cover"
                   />
                 ) : (
@@ -126,7 +126,7 @@ export default function ProfileEditForm({
               </div>
               <label className="block flex-1">
                 <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-gray-500">
-                  Profile Image
+                  Profilbild
                 </span>
                 <input
                   type="file"
@@ -135,8 +135,8 @@ export default function ProfileEditForm({
                   className="w-full rounded-xl border border-white/10 bg-[#111111] px-4 py-3 text-sm text-gray-300 outline-none transition file:mr-4 file:rounded-lg file:border-0 file:bg-[#D4AF37] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-black focus:border-[#D4AF37]/70"
                 />
                 <span className="mt-2 block text-xs leading-5 text-gray-600">
-                  JPEG, PNG or WebP up to 10 MB. You will position and crop the
-                  image before saving.
+                  JPEG, PNG eller WebP upp till 10 MB. Du placerar och beskär
+                  bilden innan du sparar.
                 </span>
                 {avatarError && (
                   <span className="mt-2 block text-xs leading-5 text-gray-300">
@@ -150,7 +150,7 @@ export default function ProfileEditForm({
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
             <label className="block">
               <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-gray-500">
-                Display Name
+                Visningsnamn
               </span>
               <input
                 name="displayName"
@@ -160,13 +160,13 @@ export default function ProfileEditForm({
                 className="w-full rounded-xl border border-white/10 bg-[#111111] px-4 py-3 text-white outline-none transition focus:border-[#D4AF37]/70"
               />
               <span className="mt-2 block text-xs text-gray-600">
-                Up to {PROFILE_LIMITS.displayNameMax} characters.
+                Upp till {PROFILE_LIMITS.displayNameMax} tecken.
               </span>
             </label>
 
             <label className="block">
               <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-gray-500">
-                Username
+                Användarnamn
               </span>
               <input
                 name="username"
@@ -178,8 +178,9 @@ export default function ProfileEditForm({
                 className="w-full rounded-xl border border-white/10 bg-[#111111] px-4 py-3 text-white outline-none transition focus:border-[#D4AF37]/70"
               />
               <span className="mt-2 block text-xs text-gray-600">
-                Public handles are saved in lowercase. Use 3 to{" "}
-                {PROFILE_LIMITS.usernameMax} letters, numbers or underscores.
+                Offentliga användarnamn sparas med gemener. Använd{" "}
+                {PROFILE_LIMITS.usernameMin} till {PROFILE_LIMITS.usernameMax}{" "}
+                bokstäver, siffror eller understreck.
               </span>
             </label>
           </div>
@@ -196,14 +197,14 @@ export default function ProfileEditForm({
               className="w-full resize-none rounded-xl border border-white/10 bg-[#111111] px-4 py-3 text-white outline-none transition focus:border-[#D4AF37]/70"
             />
             <span className="mt-2 block text-xs text-gray-600">
-              Up to {PROFILE_LIMITS.bioMax} characters.
+              Upp till {PROFILE_LIMITS.bioMax} tecken.
             </span>
           </label>
 
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
             <label className="block">
               <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-gray-500">
-                Favorite Sector
+                Favoritsektor
               </span>
               <input
                 name="favoriteSector"
@@ -213,13 +214,13 @@ export default function ProfileEditForm({
                 className="w-full rounded-xl border border-white/10 bg-[#111111] px-4 py-3 text-white outline-none transition focus:border-[#D4AF37]/70"
               />
               <span className="mt-2 block text-xs text-gray-600">
-                Up to {PROFILE_LIMITS.favoriteSectorMax} characters.
+                Upp till {PROFILE_LIMITS.favoriteSectorMax} tecken.
               </span>
             </label>
 
             <label className="block">
               <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-gray-500">
-                Investor Goal
+                Investeringsmål
               </span>
               <input
                 name="investorGoal"
@@ -229,7 +230,7 @@ export default function ProfileEditForm({
                 className="w-full rounded-xl border border-white/10 bg-[#111111] px-4 py-3 text-white outline-none transition focus:border-[#D4AF37]/70"
               />
               <span className="mt-2 block text-xs text-gray-600">
-                Up to {PROFILE_LIMITS.investorGoalMax} characters.
+                Upp till {PROFILE_LIMITS.investorGoalMax} tecken.
               </span>
             </label>
           </div>
@@ -252,7 +253,7 @@ export default function ProfileEditForm({
               disabled={isPending}
               className="rounded-xl border border-[#D4AF37] bg-[#D4AF37] px-8 py-3 text-sm font-semibold text-black shadow-[0_0_30px_rgba(212,175,55,0.16)] transition-all duration-300 hover:bg-[#F9D976] hover:shadow-[0_0_34px_rgba(212,175,55,0.22)] disabled:cursor-not-allowed disabled:opacity-70"
             >
-              {isPending ? "Saving..." : "Save Profile"}
+              {isPending ? "Sparar..." : "Spara profil"}
             </button>
           </div>
         </form>

@@ -25,12 +25,12 @@ export default function LoginForm({ redirectTo, resetSuccess = false }: Props) {
     const normalizedEmail = email.trim().toLowerCase();
 
     if (!normalizedEmail || !password) {
-      setError("Enter your email and password to continue.");
+      setError("Ange e-post och lösenord för att fortsätta.");
       return;
     }
 
     if (!normalizedEmail.includes("@")) {
-      setError("Enter a valid email address.");
+      setError("Ange en giltig e-postadress.");
       return;
     }
 
@@ -60,11 +60,10 @@ export default function LoginForm({ redirectTo, resetSuccess = false }: Props) {
           Dividend Lab
         </p>
         <h1 className="text-3xl font-semibold tracking-[-0.03em] text-white">
-          Log in
+          Logga in
         </h1>
         <p className="mt-3 text-sm leading-6 text-gray-400">
-          Access your portfolio workspace, account settings and authenticated
-          community actions.
+          Få åtkomst till din portfölj, kontoinställningar och community-funktioner.
         </p>
       </div>
 
@@ -77,7 +76,7 @@ export default function LoginForm({ redirectTo, resetSuccess = false }: Props) {
       <form onSubmit={handleSubmit} className="space-y-5">
         <label className="block">
           <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-gray-500">
-            Email
+            E-post
           </span>
           <input
             type="email"
@@ -95,7 +94,7 @@ export default function LoginForm({ redirectTo, resetSuccess = false }: Props) {
         <div className="space-y-3">
           <label className="block">
             <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-gray-500">
-              Password
+              Lösenord
             </span>
             <input
               type="password"
@@ -127,17 +126,17 @@ export default function LoginForm({ redirectTo, resetSuccess = false }: Props) {
         )}
 
         <PrimaryButton type="submit" disabled={isLoading} className="w-full">
-          {isLoading ? "Signing in..." : "Sign in"}
+          {isLoading ? "Loggar in..." : "Logga in"}
         </PrimaryButton>
       </form>
 
       <p className="mt-6 text-center text-sm text-gray-500">
-        New to Dividend Lab?{" "}
+        Ny på Dividend Lab?{" "}
         <Link
           href="/register"
           className="font-medium text-[#D4AF37] transition hover:text-[#F9D976]"
         >
-          Create an account
+          Skapa konto
         </Link>
       </p>
     </section>

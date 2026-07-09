@@ -43,7 +43,7 @@ export default function ForumRecognitionBar({
           href={loginHref}
           className="ml-1 text-[10px] font-medium text-[#D4AF37] transition hover:text-[#F9D976]"
         >
-          Log in to join the discussion.
+          Logga in för att delta i diskussionen.
         </Link>
       )}
     </div>

@@ -31,7 +31,7 @@ export default function NavbarAuthActions({ user }: Props) {
           href="/dashboard"
           className="rounded-xl border border-[#D4AF37]/70 px-6 py-3 text-[#D4AF37] transition duration-300 hover:border-[#D4AF37] hover:bg-[#D4AF37] hover:text-black"
         >
-          Dashboard
+          Start
         </Link>
         <button
           type="button"
@@ -39,7 +39,7 @@ export default function NavbarAuthActions({ user }: Props) {
           disabled={isLoggingOut}
           className="rounded-xl border border-white/10 px-6 py-3 text-gray-300 transition duration-300 hover:border-white/20 hover:text-white"
         >
-          {isLoggingOut ? "Logging out..." : "Logout"}
+          {isLoggingOut ? "Loggar ut..." : "Logga ut"}
         </button>
       </div>
     );
@@ -51,13 +51,13 @@ export default function NavbarAuthActions({ user }: Props) {
         href="/login"
         className="rounded-xl border border-[#D4AF37]/70 px-6 py-3 text-[#D4AF37] transition duration-300 hover:border-[#D4AF37] hover:bg-[#D4AF37] hover:text-black"
       >
-        Log in
+        Logga in
       </Link>
       <Link
         href="/register"
         className="rounded-xl border border-white/10 px-6 py-3 text-gray-300 transition duration-300 hover:border-white/20 hover:text-white"
       >
-        Register
+        Skapa konto
       </Link>
     </div>
   );

@@ -1,11 +1,11 @@
 export const dividendBrainInsights = [
-  "Your annual dividend income is ahead of last year's pace by 12.4%.",
-  "Monthly income is becoming more consistent across the next quarter.",
-  "Portfolio concentration remains balanced across your largest holdings.",
+  "Din årliga utdelningsinkomst ligger 12,4 % före förra årets takt.",
+  "Månadsinkomsten blir mer jämn över nästa kvartal.",
+  "Portföljkoncentrationen är fortsatt balanserad bland dina största innehav.",
 ];
 
 export const dividendBrainGoal = {
   progress: "72%",
   observation:
-    "You are building a stronger income base. Keep tracking consistency, quality and payout durability.",
+    "Du bygger en starkare inkomstbas. Fortsätt följa konsekvens, kvalitet och utdelningens hållbarhet.",
 };

@@ -35,14 +35,14 @@ export default function ForumThreadCard({ thread, featured = false }: Props) {
 
         <div className="hidden text-right text-sm md:block">
           <p className="text-[11px] uppercase tracking-[0.16em] text-gray-600">
-            Replies
+            Svar
           </p>
           <p className="mt-1 text-white tabular-nums">{thread.replies}</p>
         </div>
       </div>
 
       <div className="mt-2.5 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-2.5 text-xs text-gray-500">
-        <span>Started by {thread.author}</span>
+        <span>Startad av {thread.author}</span>
         <div className="flex items-center gap-3">
           <span>{thread.lastActivity}</span>
           <ForumShareButton

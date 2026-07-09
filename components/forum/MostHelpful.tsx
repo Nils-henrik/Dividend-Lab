@@ -3,14 +3,14 @@ import { mostHelpfulMembers } from "@/data/forum";
 export default function MostHelpful() {
   return (
     <section className="rounded-md border border-white/10 bg-[#161616] px-2.5 py-2">
-      <h2 className="text-xs font-semibold text-white">Most Helpful This Week</h2>
+      <h2 className="text-xs font-semibold text-white">Mest hjälpsamma denna vecka</h2>
       <p className="mt-1 text-[11px] leading-4 text-gray-500">
-        Recognition is based on quality contributions, not popularity.
+        Utmärkelser baseras på kvalitativa bidrag, inte popularitet.
       </p>
 
       {mostHelpfulMembers.length === 0 ? (
         <p className="mt-2 text-[11px] leading-4 text-gray-500">
-          No recognition activity yet.
+          Ingen utmärkelsesaktivitet än.
         </p>
       ) : (
         <div className="mt-2 space-y-2">

@@ -18,10 +18,10 @@ export const forumDiscussions = [
 
 /** @deprecated Used only by legacy dashboard components not shown on DivLab Start. */
 export const overviewStats = [
-  { title: "Portfolio Value", value: "—", change: "—" },
-  { title: "Annual Dividends", value: "—", change: "—" },
-  { title: "Dividend Yield", value: "—", change: "—" },
-  { title: "Monthly Income", value: "—", change: "—" },
+  { title: "Portföljvärde", value: "—", change: "—" },
+  { title: "Årliga utdelningar", value: "—", change: "—" },
+  { title: "Direktavkastning", value: "—", change: "—" },
+  { title: "Månadsinkomst", value: "—", change: "—" },
 ];
 
 /** @deprecated Used only by legacy dashboard components not shown on DivLab Start. */

@@ -85,7 +85,7 @@ export default function ForumQualityReactions({
           <Link
             key={summary.type}
             href={loginHref}
-            aria-label={`${summary.label}: log in to react`}
+            aria-label={`${summary.label}: logga in för att reagera`}
             className="rounded border border-white/10 bg-white/[0.03] px-1.5 py-0.5 text-[10px] leading-4 text-gray-500 transition hover:border-[#D4AF37]/30 hover:text-[#D4AF37]"
           >
             <span aria-hidden="true">{summary.icon}</span>

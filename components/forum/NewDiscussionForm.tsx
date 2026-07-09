@@ -30,7 +30,7 @@ export default function NewDiscussionForm({ initialCategorySlug }: Props) {
     <form action={formAction} className="space-y-5">
       <label className="block">
         <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-gray-500">
-          Category
+          Kategori
         </span>
         <select
           name="categorySlug"
@@ -52,7 +52,7 @@ export default function NewDiscussionForm({ initialCategorySlug }: Props) {
 
       <label className="block">
         <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-gray-500">
-          Title
+          Rubrik
         </span>
         <input
           name="title"
@@ -60,17 +60,17 @@ export default function NewDiscussionForm({ initialCategorySlug }: Props) {
           value={title}
           onChange={(event) => setTitle(event.target.value)}
           maxLength={FORUM_TITLE_MAX_LENGTH}
-          placeholder="What would you like to discuss?"
+          placeholder="Vad vill du diskutera?"
           className="w-full rounded-xl border border-white/10 bg-[#111111] px-4 py-3 text-sm text-white outline-none transition placeholder:text-gray-600 focus:border-[#D4AF37]/70"
         />
         <span className="mt-2 block text-xs text-gray-500">
-          {title.length}/{FORUM_TITLE_MAX_LENGTH} characters
+          {title.length}/{FORUM_TITLE_MAX_LENGTH} tecken
         </span>
       </label>
 
       <label className="block">
         <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-gray-500">
-          Discussion
+          Diskussion
         </span>
         <textarea
           name="body"
@@ -78,11 +78,11 @@ export default function NewDiscussionForm({ initialCategorySlug }: Props) {
           onChange={(event) => setBody(event.target.value)}
           maxLength={FORUM_BODY_MAX_LENGTH}
           rows={8}
-          placeholder="Share your question, insight or portfolio thinking..."
+          placeholder="Dela din fråga, insikt eller portföljtänkande..."
           className="w-full resize-none rounded-xl border border-white/10 bg-[#111111] px-4 py-3 text-sm leading-6 text-white outline-none transition placeholder:text-gray-600 focus:border-[#D4AF37]/70"
         />
         <span className="mt-2 block text-xs text-gray-500">
-          {body.length}/{FORUM_BODY_MAX_LENGTH} characters
+          {body.length}/{FORUM_BODY_MAX_LENGTH} tecken
         </span>
       </label>
 
@@ -92,7 +92,7 @@ export default function NewDiscussionForm({ initialCategorySlug }: Props) {
           disabled={isPending}
           className="rounded-xl border border-[#D4AF37] bg-[#D4AF37] px-5 py-2.5 text-sm font-semibold text-black shadow-[0_0_30px_rgba(212,175,55,0.14)] transition hover:bg-[#F9D976] disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {isPending ? "Creating..." : "Create discussion"}
+          {isPending ? "Skapar..." : "Skapa diskussion"}
         </button>
       </div>
 

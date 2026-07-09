@@ -6,7 +6,7 @@ export default function PremiumMembershipCard() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="mb-3 text-xs font-medium uppercase tracking-[0.2em] text-[#D4AF37]">
-            Premium Membership
+            Premium-medlemskap
           </p>
           <h3 className="text-lg font-semibold text-white">
             {premiumMembership.status}
@@ -24,8 +24,8 @@ export default function PremiumMembershipCard() {
 
       <div className="mt-7 rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/[0.06] px-4 py-3">
         <p className="text-sm leading-6 text-gray-300">
-          A Beginner can be PRO. A Dividend Master can be Free. Membership and
-          investor level are independent systems.
+          En nybörjare kan vara PRO. En utdelningsmästare kan vara Free.
+          Medlemskap och investerarnivå är oberoende system.
         </p>
       </div>
     </article>

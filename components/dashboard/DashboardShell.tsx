@@ -32,7 +32,7 @@ export default function DashboardShell({ profile }: Props) {
           </div>
 
           <div className="inline-flex w-fit items-center rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-xs font-medium text-gray-400">
-            Planering · Utbildning · Community
+            Planering · Utbildning · Gemenskap
           </div>
         </div>
       </section>

@@ -33,7 +33,7 @@ function parseAvatarDataUrl(value: string) {
     return {
       data: null,
       mimeType: null,
-      error: "Use the avatar positioning tool before saving the image.",
+      error: "Använd verktyget för profilbild innan du sparar bilden.",
     };
   }
 
@@ -44,7 +44,7 @@ function parseAvatarDataUrl(value: string) {
     return {
       data: null,
       mimeType: null,
-      error: "Cropped avatar must be 1 MB or smaller.",
+      error: "Den beskurna profilbilden får vara högst 1 MB.",
     };
   }
 
@@ -70,7 +70,7 @@ async function uploadAvatar(userId: string, avatarDataUrl: string) {
   if (!extension) {
     return {
       avatarPath: null,
-      error: "Upload a JPEG, PNG or WebP image.",
+      error: "Ladda upp en JPEG-, PNG- eller WebP-bild.",
     };
   }
 

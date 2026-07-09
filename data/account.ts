@@ -60,126 +60,126 @@ export type ProfileHighlight = {
 export const investorIdentity = {
   fullName: "Erik Holm",
   username: "dividendholm",
-  memberSince: "Member since January 2024",
+  memberSince: "Medlem sedan januari 2024",
   initials: "EH",
   avatarUrl: "",
-  bio: "Dividend growth investor focused on long-term cash flow, resilient companies and financial independence through disciplined monthly investing.",
+  bio: "Utdelningsinvesterare med fokus på långsiktigt kassaflöde, robusta bolag och ekonomisk frihet genom disciplinerat månadssparande.",
 };
 
 export const investorStatistics: InvestorStatistic[] = [
   {
-    label: "Dividend Yield",
-    value: "4.83%",
+    label: "Utdelningsavkastning",
+    value: "4,83 %",
     visibility: "Public",
-    detail: "Weighted portfolio yield",
+    detail: "Viktad portföljavkastning",
     icon: "chart",
   },
   {
-    label: "Years Investing",
+    label: "Investeringsår",
     value: "8",
     visibility: "Public",
-    detail: "Dividend-focused since 2018",
+    detail: "Utdelningsfokus sedan 2018",
     icon: "timer",
   },
   {
-    label: "Investment Strategy",
-    value: "Dividend Growth",
+    label: "Investeringsstrategi",
+    value: "Utdelningstillväxt",
     visibility: "Public",
-    detail: "Quality income and reinvestment",
+    detail: "Kvalitetsinkomst och återinvestering",
     icon: "compass",
   },
   {
-    label: "Country",
-    value: "Sweden",
+    label: "Land",
+    value: "Sverige",
     visibility: "Friends",
-    detail: "Primary investor region",
+    detail: "Primär investeringsregion",
     icon: "globe",
   },
 ];
 
 export const portfolioDisclosure: PortfolioDisclosure[] = [
   {
-    label: "Portfolio Range",
+    label: "Portföljstorlek",
     range: "1M-5M",
-    detail: "Approximate range shared instead of exact portfolio value.",
+    detail: "Ungefärligt intervall i stället för exakt portföljvärde.",
     icon: "briefcase",
   },
   {
-    label: "Annual Dividend Income",
+    label: "Årlig utdelningsinkomst",
     range: "50k-100k/year",
-    detail: "Optional income band selected for privacy-conscious sharing.",
+    detail: "Valfritt inkomstintervall för mer integritetsmedveten delning.",
     icon: "cashflow",
   },
 ];
 
 export const portfolioPrivacyMessage =
-  "Portfolio information is optional. Dividend Lab encourages sharing knowledge, consistency and thoughtful contribution rather than wealth.";
+  "Portföljinformation är valfri. Dividend Lab uppmuntrar att dela kunskap, konsekvens och genomtänkt bidrag snarare än förmögenhet.";
 
 export const profileHighlights: Record<
   "currentGoal" | "favoriteQuote" | "favoriteSector" | "philosophy",
   ProfileHighlight
 > = {
   philosophy: {
-    title: "Investment Philosophy",
-    value: "I buy businesses, not stock prices.",
-    detail: "A patient framework for quality, cash flow and resilience.",
+    title: "Investeringsfilosofi",
+    value: "Jag köper verksamheter, inte aktiekurser.",
+    detail: "Ett tålmodigt ramverk för kvalitet, kassaflöde och motståndskraft.",
     icon: "quote",
   },
   favoriteSector: {
-    title: "Favorite Sector",
+    title: "Favoritsektor",
     value: "REITs",
-    detail: "Income-producing assets with long-term compounding potential.",
+    detail: "Inkomstgenererande tillgångar med långsiktig sammansatt avkastning.",
     icon: "shield",
   },
   currentGoal: {
-    title: "Current Goal",
-    value: "Financial Independence by 2038",
-    detail: "Build durable annual dividend income through disciplined investing.",
+    title: "Nuvarande mål",
+    value: "Ekonomisk frihet till 2038",
+    detail: "Bygga hållbar årlig utdelningsinkomst genom disciplinerat investerande.",
     icon: "target",
   },
   favoriteQuote: {
-    title: "Favorite Quote",
+    title: "Favoritcitat",
     value:
-      "The stock market is a device for transferring money from the impatient to the patient.",
+      "Börsen är en mekanism för att flytta pengar från otåliga till tålmodiga.",
     detail: "Warren Buffett",
     icon: "flag",
   },
 };
 
 export const investorLevel = {
-  current: "Analyst",
+  current: "Analytiker",
   next: "Veteran",
   progress: 68,
   contributionSummary:
-    "Earned through thoughtful forum contributions, durable portfolio tracking and consistent educational activity.",
-  hierarchy: ["Beginner", "Investor", "Analyst", "Veteran", "Dividend Master"],
+    "Intjänat genom genomtänkta forumbidrag, långsiktig portföljuppföljning och konsekvent utbildningsaktivitet.",
+  hierarchy: ["Nybörjare", "Investerare", "Analytiker", "Veteran", "Utdelningsmästare"],
 };
 
 export const premiumMembership = {
-  status: "PRO Member",
+  status: "PRO-medlem",
   description:
-    "Premium analytics, deeper Dividend Brain usage and exclusive educational tools. Membership is separate from investor level.",
+    "Premiumanalys, djupare användning av Dividend Brain och exklusiva utbildningsverktyg. Medlemskap är separat från investerarnivå.",
 };
 
 export const forumReputation: ReputationMetric[] = [
   {
-    label: "Reputation Score",
+    label: "Ryktespoäng",
     value: "4 820",
-    detail: "Community credibility",
+    detail: "Trovärdighet i gemenskapen",
   },
   {
-    label: "Likes Received",
+    label: "Mottagna gillningar",
     value: "1 284",
-    detail: "Signals from members",
+    detail: "Signal från medlemmar",
   },
   {
-    label: "Upvotes",
+    label: "Uppröster",
     value: "936",
-    detail: "High-signal contributions",
+    detail: "Bidrag med hög signal",
   },
   {
-    label: "Helpful Answers",
+    label: "Hjälpsamma svar",
     value: "148",
-    detail: "Accepted by the community",
+    detail: "Accepterade av gemenskapen",
   },
 ];
