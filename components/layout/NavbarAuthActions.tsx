@@ -31,7 +31,7 @@ export default function NavbarAuthActions({ user }: Props) {
           href="/dashboard"
           className="rounded-xl border border-[#D4AF37]/70 px-6 py-3 text-[#D4AF37] transition duration-300 hover:border-[#D4AF37] hover:bg-[#D4AF37] hover:text-black"
         >
-          Start
+          Logga in
         </Link>
         <button
           type="button"
