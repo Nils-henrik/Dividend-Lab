@@ -15,6 +15,7 @@ export const DEMO_NEWS_ARTICLES: NewsArticle[] = [
     publishedAt: "2026-07-10T07:45:00+02:00",
     url: null,
     featured: true,
+    imageUrl: "/news-demo/market-overview.svg",
   },
   {
     id: "demo-market-2",
@@ -26,6 +27,7 @@ export const DEMO_NEWS_ARTICLES: NewsArticle[] = [
     publishedAt: "2026-07-09T16:20:00+02:00",
     url: null,
     featured: false,
+    imageUrl: "/news-demo/global-markets.svg",
   },
   {
     id: "demo-company-1",
@@ -37,6 +39,7 @@ export const DEMO_NEWS_ARTICLES: NewsArticle[] = [
     publishedAt: "2026-07-10T06:30:00+02:00",
     url: null,
     featured: false,
+    imageUrl: "/news-demo/company-report.svg",
   },
   {
     id: "demo-company-2",
@@ -48,6 +51,7 @@ export const DEMO_NEWS_ARTICLES: NewsArticle[] = [
     publishedAt: "2026-07-08T11:10:00+02:00",
     url: null,
     featured: false,
+    imageUrl: "/news-demo/company-report.svg",
   },
   {
     id: "demo-macro-1",
@@ -59,6 +63,7 @@ export const DEMO_NEWS_ARTICLES: NewsArticle[] = [
     publishedAt: "2026-07-09T09:05:00+02:00",
     url: null,
     featured: false,
+    imageUrl: "/news-demo/macro-economics.svg",
   },
   {
     id: "demo-macro-2",
@@ -70,6 +75,7 @@ export const DEMO_NEWS_ARTICLES: NewsArticle[] = [
     publishedAt: "2026-07-07T14:40:00+02:00",
     url: null,
     featured: false,
+    imageUrl: "/news-demo/macro-economics.svg",
   },
   {
     id: "demo-funds-1",
@@ -81,6 +87,7 @@ export const DEMO_NEWS_ARTICLES: NewsArticle[] = [
     publishedAt: "2026-07-09T12:15:00+02:00",
     url: null,
     featured: false,
+    imageUrl: "/news-demo/funds-etfs.svg",
   },
   {
     id: "demo-funds-2",
@@ -92,6 +99,7 @@ export const DEMO_NEWS_ARTICLES: NewsArticle[] = [
     publishedAt: "2026-07-06T08:55:00+02:00",
     url: null,
     featured: false,
+    imageUrl: "/news-demo/funds-etfs.svg",
   },
   {
     id: "demo-dividends-1",
@@ -103,6 +111,7 @@ export const DEMO_NEWS_ARTICLES: NewsArticle[] = [
     publishedAt: "2026-07-10T05:50:00+02:00",
     url: null,
     featured: false,
+    imageUrl: "/news-demo/dividends.svg",
   },
   {
     id: "demo-dividends-2",
@@ -114,5 +123,6 @@ export const DEMO_NEWS_ARTICLES: NewsArticle[] = [
     publishedAt: "2026-07-05T10:25:00+02:00",
     url: null,
     featured: false,
+    imageUrl: "/news-demo/dividends.svg",
   },
 ];
