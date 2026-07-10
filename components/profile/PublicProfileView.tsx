@@ -1,12 +1,14 @@
 import Link from "next/link";
 import ForumReputationBadge from "@/components/account/ForumReputationBadge";
 import ProfileAvatar from "@/components/account/ProfileAvatar";
+import StaffRoleBadges from "@/components/profile/StaffRoleBadges";
 import {
   formatForumMemberSince,
   formatForumTimestamp,
   getForumExcerpt,
 } from "@/lib/forum/format";
 import type { ForumAuthorActivityItem } from "@/lib/forum/types";
+import type { StaffRole } from "@/lib/profiles/staff-roles";
 import type { UserProfile } from "@/lib/profiles/types";
 
 type Props = {
@@ -14,6 +16,7 @@ type Props = {
   avatarUrl: string | null;
   totalReceivedReactions: number;
   recentActivity: ForumAuthorActivityItem[];
+  staffRoles: StaffRole[];
   isSelf: boolean;
   isAuthenticated: boolean;
 };
@@ -49,6 +52,7 @@ export default function PublicProfileView({
   avatarUrl,
   totalReceivedReactions,
   recentActivity,
+  staffRoles,
   isSelf,
   isAuthenticated,
 }: Props) {
@@ -88,6 +92,7 @@ export default function PublicProfileView({
                   @{profile.username}
                 </p>
               )}
+              <StaffRoleBadges roles={staffRoles} className="mt-3" />
               <p className="mt-2 text-sm text-divlab-text-muted">{memberLabel}</p>
               <ForumReputationBadge
                 className="mt-5"

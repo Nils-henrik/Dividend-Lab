@@ -1,13 +1,16 @@
 import Link from "next/link";
 import type { AuthenticatedUser } from "@/lib/auth/user";
 import type { UserDisplayIdentity } from "@/lib/profiles/identity";
+import type { StaffRole } from "@/lib/profiles/staff-roles";
 import type { UserProfile } from "@/lib/profiles/types";
+import StaffRoleBadges from "@/components/profile/StaffRoleBadges";
 import ProfileAvatar from "./ProfileAvatar";
 
 type Props = {
   user: AuthenticatedUser;
   profile: UserProfile;
   identity: UserDisplayIdentity;
+  staffRoles: StaffRole[];
 };
 
 function formatMemberSince(createdAt: string | null) {
@@ -46,7 +49,12 @@ function DefinitionRow({
   );
 }
 
-export default function AccountOverview({ user, profile, identity }: Props) {
+export default function AccountOverview({
+  user,
+  profile,
+  identity,
+  staffRoles,
+}: Props) {
   const memberSince = formatMemberSince(user.createdAt);
   const hasPublicProfile =
     profile.displayName ||
@@ -82,6 +90,7 @@ export default function AccountOverview({ user, profile, identity }: Props) {
                 <span className="h-1 w-1 rounded-full bg-divlab-text-subtle" />
                 <span>Medlem sedan {memberSince}</span>
               </div>
+              <StaffRoleBadges roles={staffRoles} className="mt-3" />
               <p className="mt-5 max-w-3xl text-sm leading-7 text-divlab-text-secondary">
                 {hasPublicProfile
                   ? "Din Dividend Lab-profil är redo för kommande community-funktioner."
