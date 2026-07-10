@@ -113,6 +113,11 @@ export default function ResetPasswordPage() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (isLoading) {
+      return;
+    }
+
     setError("");
 
     if (!password) {
@@ -157,7 +162,17 @@ export default function ResetPasswordPage() {
     }
 
     clearRecoveryPendingCookie();
-    await supabase.auth.signOut();
+
+    const { error: signOutError } = await supabase.auth.signOut();
+
+    if (signOutError) {
+      setIsLoading(false);
+      setError(
+        "Lösenordet uppdaterades, men det gick inte att avsluta sessionen. Logga in med ditt nya lösenord.",
+      );
+      return;
+    }
+
     router.replace("/login?reset=success");
     router.refresh();
   }

@@ -16,6 +16,7 @@ export async function updateSession(request: NextRequest) {
   if (
     recoveryPending &&
     pathname !== "/reset-password" &&
+    pathname !== "/login" &&
     !pathname.startsWith("/auth/")
   ) {
     const redirectUrl = request.nextUrl.clone();

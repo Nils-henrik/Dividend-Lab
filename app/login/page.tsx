@@ -17,13 +17,18 @@ type Props = {
 
 export default async function LoginPage({ searchParams }: Props) {
   const { redirect: redirectParam, reset } = await searchParams;
+  const resetSuccess = reset === "success";
   const redirectTo = getSafeRedirectPath(redirectParam);
   const user = await getAuthenticatedUser();
   const cookieStore = await cookies();
   const recoveryPending =
     cookieStore.get(RECOVERY_PENDING_COOKIE)?.value === "1";
 
-  if (user) {
+  if (resetSuccess) {
+    cookieStore.delete(RECOVERY_PENDING_COOKIE);
+  }
+
+  if (user && !resetSuccess) {
     if (recoveryPending) {
       redirect("/reset-password");
     }
@@ -33,7 +38,7 @@ export default async function LoginPage({ searchParams }: Props) {
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-divlab-bg px-6 py-12 text-divlab-text">
-      <LoginForm redirectTo={redirectTo} resetSuccess={reset === "success"} />
+      <LoginForm redirectTo={redirectTo} resetSuccess={resetSuccess} />
     </main>
   );
 }
