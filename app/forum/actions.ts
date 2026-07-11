@@ -13,7 +13,7 @@ import {
   isForumReactionType,
 } from "@/lib/forum/reactions";
 import { isSelfForumReactionTarget } from "@/lib/forum/reactions.server";
-import type { ForumActionState } from "@/lib/forum/types";
+import type { ForumActionState, ForumReactionActionResult } from "@/lib/forum/types";
 import {
   validateForumBody,
   validateForumTitle,
@@ -132,7 +132,19 @@ export async function createForumReplyAction(
   redirect(`/forum/${threadSlug}#forum-replies`);
 }
 
-export async function toggleForumReactionAction(formData: FormData) {
+export async function toggleForumReactionAction(
+  formData: FormData,
+): Promise<void> {
+  const result = await applyForumReactionToggle(formData);
+
+  if (!result.ok) {
+    console.error("[forum] reaction action failed:", result.message);
+  }
+}
+
+async function applyForumReactionToggle(
+  formData: FormData,
+): Promise<ForumReactionActionResult> {
   const user = await requireAuthenticatedUser();
   const targetType = getFormString(formData, "targetType").trim();
   const targetId = getFormString(formData, "targetId").trim();
@@ -145,40 +157,31 @@ export async function toggleForumReactionAction(formData: FormData) {
     !isForumReactionTargetType(targetType) ||
     !isForumReactionType(reactionType)
   ) {
-    return;
+    return {
+      ok: false,
+      message: "Reaktionen kunde inte sparas.",
+    };
   }
 
   const supabase = await createClient();
 
-  let existingQuery = supabase
+  const { data: existingReaction, error: existingError } = await supabase
     .from("forum_reactions")
     .select("id")
     .eq("user_id", user.id)
-    .eq("reaction_type", reactionType);
-
-  existingQuery =
-    targetType === "thread"
-      ? existingQuery.eq("thread_id", targetId).eq("target_type", "thread")
-      : existingQuery.eq("reply_id", targetId).eq("target_type", "reply");
-
-  const { data: existingReaction, error: existingError } =
-    await existingQuery.maybeSingle();
+    .eq("target_type", targetType)
+    .eq(targetType === "thread" ? "thread_id" : "reply_id", targetId)
+    .maybeSingle();
 
   if (existingError) {
-    return;
+    console.error("[forum] reaction lookup failed", existingError);
+    return {
+      ok: false,
+      message: "Reaktionen kunde inte sparas. Försök igen.",
+    };
   }
 
-  if (existingReaction) {
-    const { error: deleteError } = await supabase
-      .from("forum_reactions")
-      .delete()
-      .eq("id", existingReaction.id)
-      .eq("user_id", user.id);
-
-    if (deleteError) {
-      return;
-    }
-  } else {
+  if (!existingReaction) {
     const isSelfReaction = await isSelfForumReactionTarget(
       user.id,
       targetType,
@@ -186,33 +189,39 @@ export async function toggleForumReactionAction(formData: FormData) {
     );
 
     if (isSelfReaction) {
-      return;
-    }
-
-    if (targetType === "thread") {
-      const { error: insertError } = await supabase.from("forum_reactions").insert({
-        user_id: user.id,
-        target_type: "thread",
-        thread_id: targetId,
-        reaction_type: reactionType,
-      });
-
-      if (insertError) {
-        return;
-      }
-    } else {
-      const { error: insertError } = await supabase.from("forum_reactions").insert({
-        user_id: user.id,
-        target_type: "reply",
-        reply_id: targetId,
-        reaction_type: reactionType,
-      });
-
-      if (insertError) {
-        return;
-      }
+      return {
+        ok: false,
+        message: "Du kan inte reagera på ditt eget inlägg.",
+      };
     }
   }
 
+  const { error } = await supabase.rpc("toggle_forum_reaction", {
+    p_target_type: targetType,
+    p_target_id: targetId,
+    p_reaction_type: reactionType,
+  });
+
+  if (error) {
+    console.error("[forum] toggle reaction failed", error);
+
+    if (
+      error.message.includes("SELF_REACTION") ||
+      error.message.includes("row-level security") ||
+      error.code === "42501"
+    ) {
+      return {
+        ok: false,
+        message: "Du kan inte reagera på ditt eget inlägg.",
+      };
+    }
+
+    return {
+      ok: false,
+      message: "Reaktionen kunde inte sparas. Försök igen.",
+    };
+  }
+
   revalidatePath(`/forum/${threadSlug}`);
+  return { ok: true };
 }

@@ -6,6 +6,11 @@ export type ForumActionState = {
   message: string;
 };
 
+export type ForumReactionActionResult = {
+  ok: boolean;
+  message?: string;
+};
+
 export type ForumThreadRecord = {
   id: string;
   slug: string;
