@@ -31,13 +31,7 @@ export default function ForumCompanyDetailPage({ company }: Props) {
       />
 
       <section className="divlab-surface-panel p-5">
-        <div className="flex items-start gap-4">
-          <ForumCompanyAvatar
-            name={company.name}
-            logoPath={company.logoPath}
-            sizeClassName="h-14 w-14"
-          />
-
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-4 gap-y-3">
           <div className="min-w-0">
             <h1 className="text-2xl font-semibold tracking-[-0.04em] text-divlab-text">
               {company.name}
@@ -45,6 +39,11 @@ export default function ForumCompanyDetailPage({ company }: Props) {
             <p className="mt-2 text-sm text-divlab-text-secondary">{metadata}</p>
             <p className="mt-1 text-sm text-divlab-text-muted">{countryLabel}</p>
           </div>
+
+          <ForumCompanyAvatar
+            name={company.name}
+            logoPath={company.logoPath}
+          />
         </div>
 
         {company.collections.length > 0 && (
