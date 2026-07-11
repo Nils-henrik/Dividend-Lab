@@ -95,9 +95,18 @@ export default function AppShellClient({
     setIsLoggingOut(true);
 
     const supabase = createClient();
-    await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
 
-    router.push("/login");
+    if (error) {
+      console.error("Failed to sign out", {
+        message: error.message,
+        status: error.status,
+      });
+      setIsLoggingOut(false);
+      return;
+    }
+
+    router.replace("/");
     router.refresh();
   }
 
