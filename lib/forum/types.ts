@@ -28,6 +28,9 @@ export type ForumThreadRecord = {
   authorAvatarPath: string | null;
   authorProfileUpdatedAt: string | null;
   replyCount: number;
+  lastActivityAt?: string;
+  reactionCount?: number;
+  popularityScore?: number;
 };
 
 export type ForumReplyRecord = {

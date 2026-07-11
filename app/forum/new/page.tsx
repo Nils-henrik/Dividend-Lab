@@ -41,7 +41,7 @@ export default async function NewForumDiscussionPage({ searchParams }: Props) {
             { label: "Forum", href: "/forum" },
             {
               label: activeCategory.name,
-              href: `/forum?category=${activeCategory.slug}`,
+              href: `/forum/kategorier/${activeCategory.slug}`,
             },
             { label: "Ny diskussion" },
           ]}

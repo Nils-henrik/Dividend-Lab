@@ -29,7 +29,10 @@ export default function ForumCategoryItem({
 
   if (!onSelect) {
     return (
-      <Link href={`/forum?category=${category.slug}`} className={className}>
+      <Link
+        href={`/forum/kategorier/${category.slug}`}
+        className={className}
+      >
         {content}
       </Link>
     );

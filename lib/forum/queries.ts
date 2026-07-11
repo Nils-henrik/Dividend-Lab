@@ -3,12 +3,18 @@ import {
   forumCategoryGroups,
   getForumCategory,
 } from "@/data/forum";
+import { getThreadLastActivityAt } from "@/lib/forum/activity";
 import {
   formatForumRelativeActivity,
   getForumAuthorLabel,
   getForumAuthorUsername,
   getForumExcerpt,
 } from "@/lib/forum/format";
+import {
+  calculateForumThreadPopularityScore,
+  compareForumThreadsByPopularity,
+  isWithinForumPopularityWindow,
+} from "@/lib/forum/popularity";
 import type {
   ForumAuthorActivityItem,
   ForumCategoryCounts,
@@ -117,6 +123,153 @@ function mapReplyRow(row: ReplyRow): ForumReplyRecord {
   };
 }
 
+async function getLatestReplyTimestampsByThreadIds(threadIds: string[]) {
+  if (threadIds.length === 0) {
+    return new Map<string, string>();
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("forum_replies")
+    .select("thread_id, created_at")
+    .in("thread_id", threadIds);
+
+  if (error) {
+    if (isMissingForumTableError(error)) {
+      return new Map<string, string>();
+    }
+
+    throw new Error(error.message);
+  }
+
+  const latestByThread = new Map<string, string>();
+
+  for (const row of data ?? []) {
+    const current = latestByThread.get(row.thread_id);
+
+    if (
+      !current ||
+      new Date(row.created_at).getTime() > new Date(current).getTime()
+    ) {
+      latestByThread.set(row.thread_id, row.created_at);
+    }
+  }
+
+  return latestByThread;
+}
+
+async function getReactionCountsByThreadIds(threadIds: string[]) {
+  if (threadIds.length === 0) {
+    return new Map<string, number>();
+  }
+
+  const supabase = await createClient();
+  const counts = new Map<string, number>();
+
+  const { data: threadReactions, error: threadReactionError } = await supabase
+    .from("forum_reactions")
+    .select("thread_id")
+    .in("thread_id", threadIds);
+
+  if (threadReactionError) {
+    if (
+      !isMissingForumTableError(threadReactionError) &&
+      !threadReactionError.message?.includes("forum_reactions")
+    ) {
+      throw new Error(threadReactionError.message);
+    }
+  } else {
+    for (const row of threadReactions ?? []) {
+      if (!row.thread_id) {
+        continue;
+      }
+
+      counts.set(row.thread_id, (counts.get(row.thread_id) ?? 0) + 1);
+    }
+  }
+
+  const { data: replies, error: repliesError } = await supabase
+    .from("forum_replies")
+    .select("id, thread_id")
+    .in("thread_id", threadIds);
+
+  if (repliesError) {
+    if (isMissingForumTableError(repliesError)) {
+      return counts;
+    }
+
+    throw new Error(repliesError.message);
+  }
+
+  const replyIds = (replies ?? []).map((reply) => reply.id);
+
+  if (replyIds.length === 0) {
+    return counts;
+  }
+
+  const replyThreadById = new Map<string, string>();
+
+  for (const reply of replies ?? []) {
+    replyThreadById.set(reply.id, reply.thread_id);
+  }
+
+  const { data: replyReactions, error: replyReactionError } = await supabase
+    .from("forum_reactions")
+    .select("reply_id")
+    .in("reply_id", replyIds);
+
+  if (replyReactionError) {
+    if (
+      !isMissingForumTableError(replyReactionError) &&
+      !replyReactionError.message?.includes("forum_reactions")
+    ) {
+      throw new Error(replyReactionError.message);
+    }
+
+    return counts;
+  }
+
+  for (const row of replyReactions ?? []) {
+    if (!row.reply_id) {
+      continue;
+    }
+
+    const threadId = replyThreadById.get(row.reply_id);
+
+    if (!threadId) {
+      continue;
+    }
+
+    counts.set(threadId, (counts.get(threadId) ?? 0) + 1);
+  }
+
+  return counts;
+}
+
+async function enrichThreadRecordsWithActivity(
+  records: ForumThreadRecord[],
+): Promise<ForumThreadRecord[]> {
+  if (records.length === 0) {
+    return records;
+  }
+
+  const threadIds = records.map((record) => record.id);
+  const latestReplies = await getLatestReplyTimestampsByThreadIds(threadIds);
+
+  return records.map((record) => {
+    const latestReplyAt = latestReplies.get(record.id) ?? null;
+    const lastActivityAt = getThreadLastActivityAt(
+      record.createdAt,
+      latestReplyAt,
+    );
+
+    return {
+      ...record,
+      lastActivityAt,
+    };
+  });
+}
+
 async function getReplyCountsByThreadIds(threadIds: string[]) {
   if (threadIds.length === 0) {
     return new Map<string, number>();
@@ -149,6 +302,7 @@ export function mapThreadRecordToForumThread(
   record: ForumThreadRecord,
 ): ForumThread {
   const category = getForumCategory(record.categorySlug);
+  const activityTimestamp = record.lastActivityAt ?? record.updatedAt;
 
   return {
     id: record.id,
@@ -170,7 +324,7 @@ export function mapThreadRecordToForumThread(
       record.authorProfileUpdatedAt,
     ),
     replies: record.replyCount,
-    lastActivity: formatForumRelativeActivity(record.updatedAt),
+    lastActivity: formatForumRelativeActivity(activityTimestamp),
     createdAt: record.createdAt,
     excerpt: getForumExcerpt(record.body),
     tags: [],
@@ -236,7 +390,54 @@ export async function getForumThreadsFromDatabase() {
   const rows = (data ?? []) as ThreadRow[];
   const replyCounts = await getReplyCountsByThreadIds(rows.map((row) => row.id));
 
-  return rows.map((row) => mapThreadRow(row, replyCounts.get(row.id) ?? 0));
+  return enrichThreadRecordsWithActivity(
+    rows.map((row) => mapThreadRow(row, replyCounts.get(row.id) ?? 0)),
+  );
+}
+
+export async function getForumThreadsByLatestActivity(limit?: number) {
+  const records = await getForumThreadsFromDatabase();
+  const sorted = [...records].sort(
+    (first, second) =>
+      new Date(second.lastActivityAt ?? second.createdAt).getTime() -
+      new Date(first.lastActivityAt ?? first.createdAt).getTime(),
+  );
+
+  return limit ? sorted.slice(0, limit) : sorted;
+}
+
+export async function getForumPopularThreads(limit?: number) {
+  const records = await getForumThreadsFromDatabase();
+
+  if (records.length === 0) {
+    return [];
+  }
+
+  const threadIds = records.map((record) => record.id);
+  const reactionCounts = await getReactionCountsByThreadIds(threadIds);
+
+  const scored = records
+    .map((record) => {
+      const lastActivityAt = record.lastActivityAt ?? record.createdAt;
+      const reactionCount = reactionCounts.get(record.id) ?? 0;
+      const popularityScore = calculateForumThreadPopularityScore(
+        record.replyCount,
+        reactionCount,
+      );
+
+      return {
+        ...record,
+        lastActivityAt,
+        reactionCount,
+        popularityScore,
+      };
+    })
+    .filter((record) =>
+      isWithinForumPopularityWindow(record.lastActivityAt ?? record.createdAt),
+    )
+    .sort(compareForumThreadsByPopularity);
+
+  return limit ? scored.slice(0, limit) : scored;
 }
 
 export async function getForumThreadBySlugFromDatabase(slug: string) {

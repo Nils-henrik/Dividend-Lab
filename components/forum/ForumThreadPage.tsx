@@ -188,7 +188,7 @@ export default function ForumThreadPage({
           { label: "Forum", href: "/forum" },
           {
             label: category.name,
-            href: `/forum?category=${category.slug}`,
+            href: `/forum/kategorier/${category.slug}`,
           },
           { label: activeThread.title },
         ]}

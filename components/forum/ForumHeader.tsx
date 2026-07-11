@@ -36,7 +36,8 @@ export default function ForumHeader({
           <ForumSearch
             value={searchQuery}
             onChange={onSearchChange}
-            activeCategoryName={activeCategoryName}
+            placeholder={`Sök diskussioner i ${activeCategoryName}...`}
+            hint={`Söker bland inlästa diskussioner i ${activeCategoryName}.`}
           />
           {isAuthenticated ? (
             <Link href={newDiscussionHref} className="divlab-btn-primary block w-full px-4 py-3">

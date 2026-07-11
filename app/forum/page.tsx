@@ -1,15 +1,16 @@
 import ForumVisitTracker from "@/components/dashboard/ForumVisitTracker";
-import ForumHomePage from "@/components/forum/ForumHomePage";
-import ForumWelcomePage from "@/components/forum/ForumWelcomePage";
-import AppShell from "@/components/layout/AppShell";
-import { forumCategories } from "@/data/forum";
+import ForumOverviewPage from "@/components/forum/ForumOverviewPage";
+import ForumRouteShell from "@/components/forum/ForumRouteShell";
 import { getAuthenticatedUser } from "@/lib/auth/session";
 import {
   buildForumCategoryCounts,
   getForumCategoriesWithCounts,
+  getForumPopularThreads,
   getForumThreadsFromDatabase,
+  isForumCategorySlug,
   mapThreadRecordToForumThread,
 } from "@/lib/forum/queries";
+import { redirect } from "next/navigation";
 
 type Props = {
   searchParams: Promise<{
@@ -19,49 +20,39 @@ type Props = {
 
 export default async function ForumPage({ searchParams }: Props) {
   const { category } = await searchParams;
-  const user = await getAuthenticatedUser();
-  const threadRecords = await getForumThreadsFromDatabase();
-  const threads = threadRecords.map(mapThreadRecordToForumThread);
-  const categoryCounts = buildForumCategoryCounts(threadRecords);
-  const categoryGroups = getForumCategoriesWithCounts(categoryCounts);
-  const hasCategoryFilter =
-    Boolean(category) && forumCategories.some((item) => item.slug === category);
 
-  if (user) {
-    return (
-      <AppShell user={user}>
-        <ForumVisitTracker />
-        {hasCategoryFilter ? (
-          <ForumHomePage
-            initialCategorySlug={category}
-            isAuthenticated
-            threads={threads}
-            categoryGroups={categoryGroups}
-          />
-        ) : (
-          <ForumWelcomePage
-            isAuthenticated
-            categoryGroups={categoryGroups}
-          />
-        )}
-      </AppShell>
-    );
+  if (category && isForumCategorySlug(category)) {
+    redirect(`/forum/kategorier/${category}`);
   }
 
+  const user = await getAuthenticatedUser();
+  const [allRecords, popularRecords] = await Promise.all([
+    getForumThreadsFromDatabase(),
+    getForumPopularThreads(5),
+  ]);
+  const categoryCounts = buildForumCategoryCounts(allRecords);
+  const categoryGroups = getForumCategoriesWithCounts(categoryCounts);
+  const threads = allRecords.map(mapThreadRecordToForumThread);
+  const latestRecords = [...allRecords]
+    .sort(
+      (first, second) =>
+        new Date(second.lastActivityAt ?? second.createdAt).getTime() -
+        new Date(first.lastActivityAt ?? first.createdAt).getTime(),
+    )
+    .slice(0, 5);
+  const latestThreads = latestRecords.map(mapThreadRecordToForumThread);
+  const popularThreads = popularRecords.map(mapThreadRecordToForumThread);
+
   return (
-    <main className="min-h-screen bg-divlab-bg text-divlab-text">
-      <div className="px-8 py-8">
-        <ForumVisitTracker />
-        {hasCategoryFilter ? (
-          <ForumHomePage
-            initialCategorySlug={category}
-            threads={threads}
-            categoryGroups={categoryGroups}
-          />
-        ) : (
-          <ForumWelcomePage categoryGroups={categoryGroups} />
-        )}
-      </div>
-    </main>
+    <ForumRouteShell user={user}>
+      <ForumVisitTracker />
+      <ForumOverviewPage
+        isAuthenticated={Boolean(user)}
+        latestThreads={latestThreads}
+        popularThreads={popularThreads}
+        allThreads={threads}
+        categoryGroups={categoryGroups}
+      />
+    </ForumRouteShell>
   );
 }
