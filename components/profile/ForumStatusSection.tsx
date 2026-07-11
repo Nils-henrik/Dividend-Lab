@@ -6,11 +6,21 @@ type Props = {
   forumStats: ForumAuthorStats;
 };
 
-function StatRow({ label, value }: { label: string; value: number }) {
+function StatCell({ label, value }: { label: string; value: number }) {
   return (
-    <div className="divlab-definition-row">
+    <div className="px-0 py-3 sm:px-4 sm:py-2 first:sm:pl-0 last:sm:pr-0">
       <p className="divlab-definition-label">{label}</p>
-      <p className="divlab-definition-value tabular-nums">{value}</p>
+      <p className="mt-1 text-base font-medium leading-none tabular-nums text-divlab-text">
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function StatGrid({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="grid grid-cols-1 divide-y divide-white/[0.06] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+      {children}
     </div>
   );
 }
@@ -38,27 +48,31 @@ export default function ForumStatusSection({ forumStats }: Props) {
         </div>
       </div>
 
-      <div className="divlab-definition-list mt-6 border-t divlab-border-neutral pt-6">
-        <StatRow label="Trådar" value={forumStats.threadCount} />
-        <StatRow label="Svar" value={forumStats.replyCount} />
-        <StatRow
-          label="Mottagna reaktioner"
-          value={forumStats.totalReceivedReactions}
-        />
+      <div className="mt-5 border-t divlab-border-neutral pt-5">
+        <StatGrid>
+          <StatCell label="Trådar" value={forumStats.threadCount} />
+          <StatCell label="Svar" value={forumStats.replyCount} />
+          <StatCell
+            label="Mottagna reaktioner"
+            value={forumStats.totalReceivedReactions}
+          />
+        </StatGrid>
       </div>
 
-      <div className="mt-6 border-t divlab-border-neutral pt-6">
+      <div className="mt-5 border-t divlab-border-neutral pt-5">
         <p className="text-[10px] font-medium uppercase leading-[1.35] tracking-[0.18em] text-divlab-text-muted">
           Reaktioner efter typ
         </p>
-        <div className="divlab-definition-list mt-4">
-          {FORUM_REACTION_OPTIONS.map((option) => (
-            <StatRow
-              key={option.type}
-              label={option.label}
-              value={forumStats.reactionsByType[option.type]}
-            />
-          ))}
+        <div className="mt-3">
+          <StatGrid>
+            {FORUM_REACTION_OPTIONS.map((option) => (
+              <StatCell
+                key={option.type}
+                label={option.label}
+                value={forumStats.reactionsByType[option.type]}
+              />
+            ))}
+          </StatGrid>
         </div>
       </div>
     </section>
