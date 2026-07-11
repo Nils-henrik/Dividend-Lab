@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Dividend Lab | Plattform för långsiktiga utdelningsinvesterare",
+  title: "DivLab | Marknad, verktyg och community",
   description:
-    "Analysera utdelningar, förstå din portfölj och bygg långsiktig passiv inkomst med Dividend Lab.",
+    "Följ marknaden, förstå din portfölj och delta i diskussioner med DivLab.",
 };
 
 export default function RootLayout({

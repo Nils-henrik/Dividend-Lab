@@ -22,10 +22,10 @@ export default function NavbarAuthActions({ user }: Props) {
 
   return (
     <div className="flex items-center gap-3">
-      <Link href="/login" className={primaryActionClassName}>
+      <Link href="/login" className={secondaryActionClassName}>
         Logga in
       </Link>
-      <Link href="/register" className={secondaryActionClassName}>
+      <Link href="/register" className={primaryActionClassName}>
         Skapa konto
       </Link>
     </div>

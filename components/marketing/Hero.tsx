@@ -1,59 +1,75 @@
 import Link from "next/link";
 import Dashboard from "./DashboardComponent";
 
+const valuePoints = [
+  {
+    title: "Marknaden i fokus",
+    description: "Data, nyheter och överblick.",
+  },
+  {
+    title: "Din portfölj",
+    description: "Verktyg som hjälper dig förstå innehaven.",
+  },
+  {
+    title: "Community",
+    description: "Diskussioner med andra marknadsintresserade.",
+  },
+] as const;
+
 export default function Hero() {
   return (
-    <section className="relative min-h-screen overflow-hidden bg-divlab-bg">
-      <div className="pointer-events-none absolute left-[-250px] top-[300px] h-[600px] w-[600px] rounded-full bg-divlab-blue/5 blur-[180px]" />
-
-      <div className="relative z-10 mx-auto grid min-h-screen max-w-7xl grid-cols-1 items-center gap-16 px-6 pb-20 pt-32 md:px-8 lg:grid-cols-2 lg:pb-0 lg:pt-24">
+    <section className="relative bg-divlab-bg">
+      <div className="relative z-10 mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 px-6 pb-16 pt-28 md:px-8 lg:grid-cols-2 lg:gap-16 lg:pb-24 lg:pt-24">
         <div>
-          <p className="mb-8 inline-flex items-center gap-3 rounded-full border divlab-border-neutral divlab-inset px-4 py-2 text-xs font-medium uppercase tracking-[0.25em] text-divlab-text-muted">
-            <span className="h-2 w-2 rounded-full bg-divlab-blue" />
-            Plattformen för seriösa investerare
+          <p className="text-xs font-medium uppercase tracking-[0.18em] text-divlab-text-muted">
+            MARKNAD · VERKTYG · COMMUNITY
           </p>
 
-          <h1 className="text-5xl font-extrabold leading-none text-divlab-text md:text-7xl lg:text-8xl">
-            <span className="block">Investera för</span>
-            <span className="block text-divlab-text">framtiden.</span>
+          <h1 className="mt-6 text-4xl font-bold leading-tight tracking-[-0.03em] text-divlab-text sm:text-5xl lg:text-6xl">
+            <span className="block">Följ marknaden.</span>
+            <span className="block">Förstå mer.</span>
           </h1>
 
-          <p className="mt-10 max-w-xl text-xl leading-9 text-divlab-text-secondary">
-            Bygg ett stabilt kassaflöde genom långsiktiga investeringar
-            i kvalitetsbolag som delar ut till sina ägare.
+          <p className="mt-6 max-w-xl text-lg leading-8 text-divlab-text-secondary">
+            Samla marknadsdata, portföljverktyg, börsnyheter, analyser och
+            diskussioner på ett ställe.
           </p>
 
-          <div className="relative z-10 mt-12 flex w-full max-w-sm flex-col items-stretch gap-3 sm:max-w-none sm:items-start">
-            <Link href="/login" className="divlab-btn-primary w-full px-8 py-4 text-lg sm:w-auto">
-              Logga in
-            </Link>
-
+          <div className="mt-8 flex w-full max-w-sm flex-col items-stretch gap-3 sm:max-w-none sm:flex-row sm:items-center">
             <Link
               href="/register"
-              className="py-1 text-center text-sm font-medium text-divlab-text-muted transition hover:text-divlab-blue-muted sm:text-left"
+              className="divlab-btn-primary w-full px-8 py-3.5 text-base sm:w-auto"
             >
               Skapa konto
             </Link>
+
+            <Link
+              href="/login"
+              className="rounded-xl border divlab-border-neutral px-6 py-3.5 text-center text-sm font-medium text-divlab-text-secondary transition hover:border-divlab-border-strong hover:text-divlab-text sm:text-left"
+            >
+              Logga in
+            </Link>
           </div>
 
-          <div className="mt-10 grid max-w-xl grid-cols-1 gap-4 border-t divlab-border-neutral pt-8 text-sm text-divlab-text-secondary sm:grid-cols-3">
-            <div>
-              <p className="text-lg font-semibold text-divlab-text">10+ år</p>
-              <p>Långsiktigt fokus</p>
-            </div>
-            <div>
-              <p className="text-lg font-semibold text-divlab-text">Data först</p>
-              <p>Analys utan brus</p>
-            </div>
-            <div>
-              <p className="text-lg font-semibold text-divlab-text">AI-stöd</p>
-              <p>Förstå portföljen</p>
-            </div>
+          <div className="mt-10 grid max-w-xl grid-cols-1 gap-5 border-t divlab-border-neutral pt-8 sm:grid-cols-3">
+            {valuePoints.map((point) => (
+              <div key={point.title}>
+                <p className="text-sm font-semibold text-divlab-text">
+                  {point.title}
+                </p>
+                <p className="mt-1 text-sm text-divlab-text-secondary">
+                  {point.description}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
 
         <div className="hidden justify-end lg:flex">
-          <div className="flex h-[650px] w-[650px] items-center justify-center rounded-3xl divlab-card p-5">
+          <div
+            className="flex w-full max-w-[560px] items-center justify-center rounded-2xl divlab-card p-5"
+            aria-hidden="true"
+          >
             <Dashboard />
           </div>
         </div>

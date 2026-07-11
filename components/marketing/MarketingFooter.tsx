@@ -1,4 +1,5 @@
 import Link from "next/link";
+import DivLabWordmark from "@/components/brand/DivLabWordmark";
 
 const linkGroups = [
   {
@@ -32,9 +33,7 @@ export default function MarketingFooter() {
       <div className="mx-auto max-w-7xl px-6 py-12 md:px-8">
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
           <div className="lg:col-span-1">
-            <p className="divlab-brand-wordmark text-sm">
-              DIVIDEND <span className="text-divlab-text-muted">LAB</span>
-            </p>
+            <DivLabWordmark asLink={false} logoClassName="text-2xl" textClassName="text-base" />
           </div>
 
           {linkGroups.map((group) => (
@@ -67,8 +66,7 @@ export default function MarketingFooter() {
             för framtida resultat.
           </p>
           <p className="mt-6 text-xs text-gray-600">
-            © {new Date().getFullYear()} Dividend Lab. Alla rättigheter
-            förbehållna.
+            © {new Date().getFullYear()} DivLab. Alla rättigheter förbehållna.
           </p>
         </div>
       </div>
