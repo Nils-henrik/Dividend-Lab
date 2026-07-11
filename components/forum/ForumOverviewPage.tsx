@@ -117,7 +117,7 @@ export default function ForumOverviewPage({
             <div className="mt-4 space-y-4">
               {categoryGroups.map((group) => (
                 <div key={group.slug}>
-                  <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-gray-500">
+                  <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-gray-400">
                     {group.name}
                   </p>
                   <div className="mt-2 grid gap-1 sm:grid-cols-2">
@@ -126,6 +126,7 @@ export default function ForumOverviewPage({
                         key={category.slug}
                         category={category}
                         isActive={false}
+                        enhancedContrast
                       />
                     ))}
                   </div>

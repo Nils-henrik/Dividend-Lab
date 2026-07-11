@@ -41,7 +41,7 @@ export default function ForumCategoriesIndexPage({
         <div className="space-y-5">
           {categoryGroups.map((group) => (
             <div key={group.slug}>
-              <h2 className="text-[10px] font-medium uppercase tracking-[0.18em] text-gray-500">
+              <h2 className="text-[10px] font-medium uppercase tracking-[0.18em] text-gray-400">
                 {group.name}
               </h2>
               <div className="mt-2 grid gap-1 sm:grid-cols-2">
@@ -50,6 +50,7 @@ export default function ForumCategoriesIndexPage({
                     key={category.slug}
                     category={category}
                     isActive={false}
+                    enhancedContrast
                   />
                 ))}
               </div>
