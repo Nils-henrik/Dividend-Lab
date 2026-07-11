@@ -1,5 +1,6 @@
 import Link from "next/link";
-import ForumReputationBadge from "@/components/account/ForumReputationBadge";
+import ForumStatusBadge from "@/components/profile/ForumStatusBadge";
+import ForumStatusSection from "@/components/profile/ForumStatusSection";
 import ProfileAvatar from "@/components/account/ProfileAvatar";
 import StaffRoleBadges from "@/components/profile/StaffRoleBadges";
 import {
@@ -7,14 +8,17 @@ import {
   formatForumTimestamp,
   getForumExcerpt,
 } from "@/lib/forum/format";
-import type { ForumAuthorActivityItem } from "@/lib/forum/types";
+import type {
+  ForumAuthorActivityItem,
+  ForumAuthorStats,
+} from "@/lib/forum/types";
 import type { StaffRole } from "@/lib/profiles/staff-roles";
 import type { UserProfile } from "@/lib/profiles/types";
 
 type Props = {
   profile: UserProfile;
   avatarUrl: string | null;
-  totalReceivedReactions: number;
+  forumStats: ForumAuthorStats;
   recentActivity: ForumAuthorActivityItem[];
   staffRoles: StaffRole[];
   isSelf: boolean;
@@ -50,7 +54,7 @@ function ProfileInfoCard({
 export default function PublicProfileView({
   profile,
   avatarUrl,
-  totalReceivedReactions,
+  forumStats,
   recentActivity,
   staffRoles,
   isSelf,
@@ -94,11 +98,7 @@ export default function PublicProfileView({
               )}
               <StaffRoleBadges roles={staffRoles} className="mt-3" />
               <p className="mt-2 text-sm text-divlab-text-muted">{memberLabel}</p>
-              <ForumReputationBadge
-                className="mt-5"
-                totalReceivedReactions={totalReceivedReactions}
-                showDescription
-              />
+              <ForumStatusBadge className="mt-5" forumStats={forumStats} />
             </div>
           </div>
 
@@ -139,6 +139,8 @@ export default function PublicProfileView({
           </div>
         </ProfileInfoCard>
       </section>
+
+      <ForumStatusSection forumStats={forumStats} />
 
       <section className="divlab-card p-5">
         <div>

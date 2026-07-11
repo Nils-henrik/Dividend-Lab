@@ -6,7 +6,7 @@ import {
   requireAuthenticatedUserWithProfile,
 } from "@/lib/auth/session";
 import { getRecentForumActivityByAuthorId } from "@/lib/forum/queries";
-import { getForumReputationReceivedTotal } from "@/lib/forum/reputation.server";
+import { getForumAuthorStats } from "@/lib/forum/forum-status.server";
 import { getAvatarPublicUrl } from "@/lib/profiles/identity";
 import { getPublicProfileByUsername } from "@/lib/profiles/profile";
 import { getStaffRolesForUser } from "@/lib/profiles/staff-roles.server";
@@ -59,8 +59,8 @@ export default async function PublicProfilePage({ params }: Props) {
 
   const currentUser = await getAuthenticatedUser();
   const avatarUrl = getAvatarPublicUrl(profile.avatarPath, profile.updatedAt);
-  const [totalReceivedReactions, recentActivity, staffRoles] = await Promise.all([
-    getForumReputationReceivedTotal(profile.id),
+  const [forumStats, recentActivity, staffRoles] = await Promise.all([
+    getForumAuthorStats(profile.id),
     getRecentForumActivityByAuthorId(profile.id, 5),
     getStaffRolesForUser(profile.id),
   ]);
@@ -69,7 +69,7 @@ export default async function PublicProfilePage({ params }: Props) {
     <PublicProfileView
       profile={profile}
       avatarUrl={avatarUrl}
-      totalReceivedReactions={totalReceivedReactions}
+      forumStats={forumStats}
       recentActivity={recentActivity}
       staffRoles={staffRoles}
       isSelf={currentUser?.id === profile.id}
