@@ -33,6 +33,7 @@ export type ForumThread = {
   author: string;
   authorUsername?: string | null;
   authorUserId?: string;
+  authorAvatarUrl?: string | null;
   replies: number;
   lastActivity: string;
   createdAt?: string;
@@ -46,6 +47,7 @@ export type ForumPost = {
   username: string;
   displayName?: string | null;
   avatar: string;
+  avatarUrl?: string | null;
   memberSince: string;
   joinDate: string;
   timestamp: string;

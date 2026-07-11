@@ -247,6 +247,7 @@ export default function ForumThreadPage({
                 thread={activeThread}
                 authorUsername={openingAuthorUsername}
                 authorInitials={openingAuthorInitials}
+                authorAvatarUrl={activeThread.authorAvatarUrl ?? null}
                 memberSince={openingMemberSince}
                 timestamp={openingTimestamp}
                 threadSlug={activeThread.slug}

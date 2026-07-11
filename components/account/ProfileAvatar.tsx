@@ -1,9 +1,15 @@
+"use client";
+
+import { useState } from "react";
+
 type Props = {
   avatarUrl: string | null;
   initials: string;
   sizeClassName?: string;
   textClassName?: string;
   highlighted?: boolean;
+  imageAlt?: string;
+  fallbackClassName?: string;
 };
 
 export default function ProfileAvatar({
@@ -12,22 +18,32 @@ export default function ProfileAvatar({
   sizeClassName = "h-11 w-11",
   textClassName = "text-sm",
   highlighted = false,
+  imageAlt = "",
+  fallbackClassName,
 }: Props) {
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const showImage = Boolean(avatarUrl) && avatarUrl !== failedUrl;
+
+  const defaultSurfaceClassName = highlighted
+    ? "divlab-avatar-highlight-ring"
+    : "border border-divlab-border-strong bg-gradient-to-br from-divlab-elevated via-divlab-card to-divlab-bg";
+
+  const surfaceClassName =
+    showImage || !fallbackClassName
+      ? defaultSurfaceClassName
+      : fallbackClassName;
+
   const avatarContent = (
     <span
-      className={`relative flex h-full w-full items-center justify-center overflow-hidden rounded-full font-semibold text-divlab-text-secondary ${
-        highlighted
-          ? "divlab-avatar-highlight-ring"
-          : "border border-divlab-border-strong bg-gradient-to-br from-divlab-elevated via-divlab-card to-divlab-bg"
-      } ${textClassName}`}
+      className={`relative flex h-full w-full items-center justify-center overflow-hidden rounded-full font-semibold text-divlab-text-secondary ${surfaceClassName} ${textClassName}`}
     >
-      {avatarUrl ? (
+      {showImage ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={avatarUrl}
-          alt=""
+          src={avatarUrl ?? undefined}
+          alt={imageAlt}
           className="h-full w-full object-cover"
-          aria-hidden="true"
+          onError={() => setFailedUrl(avatarUrl)}
         />
       ) : (
         initials

@@ -23,6 +23,8 @@ export type ForumThreadRecord = {
   authorUsername: string | null;
   authorDisplayName: string | null;
   authorProfileCreatedAt: string | null;
+  authorAvatarPath: string | null;
+  authorProfileUpdatedAt: string | null;
   replyCount: number;
 };
 
@@ -35,6 +37,8 @@ export type ForumReplyRecord = {
   authorUsername: string | null;
   authorDisplayName: string | null;
   authorProfileCreatedAt: string | null;
+  authorAvatarPath: string | null;
+  authorProfileUpdatedAt: string | null;
 };
 
 export type ForumCategoryCounts = Record<

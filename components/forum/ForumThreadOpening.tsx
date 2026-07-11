@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import ProfileAvatar from "@/components/account/ProfileAvatar";
 import type { ForumThread } from "@/types/forum";
 import type { ForumReactionSummary } from "@/lib/forum/reactions";
 import ForumPostActionRow from "./ForumPostActionRow";
@@ -11,6 +12,7 @@ type Props = {
   thread: ForumThread;
   authorUsername: string;
   authorInitials: string;
+  authorAvatarUrl?: string | null;
   memberSince: string;
   timestamp: string;
   threadSlug: string;
@@ -27,6 +29,7 @@ export default function ForumThreadOpening({
   thread,
   authorUsername,
   authorInitials,
+  authorAvatarUrl = null,
   memberSince,
   timestamp,
   threadSlug,
@@ -51,9 +54,14 @@ export default function ForumThreadOpening({
         <aside className="border-b divlab-border-neutral pb-3 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-4">
           <div className="group/forum-author relative">
             <div className="flex items-center gap-2.5 lg:block">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full border border-divlab-blue/25 bg-divlab-blue/10 text-[11px] font-semibold text-divlab-blue">
-                {authorInitials}
-              </div>
+              <ProfileAvatar
+                avatarUrl={authorAvatarUrl}
+                initials={authorInitials}
+                sizeClassName="h-9 w-9"
+                textClassName="text-[11px] text-divlab-blue"
+                fallbackClassName="border border-divlab-blue/25 bg-divlab-blue/10 font-semibold"
+                imageAlt={`${authorUsername} profilbild`}
+              />
               <div className="min-w-0 lg:mt-2">
                 <Link
                   href={profileHref}

@@ -16,6 +16,7 @@ import type {
   ForumThreadRecord,
 } from "@/lib/forum/types";
 import { createClient } from "@/lib/supabase/server";
+import { getAvatarPublicUrl } from "@/lib/profiles/identity";
 import type { ForumPost, ForumThread } from "@/types/forum";
 import {
   getForumAuthorInitials,
@@ -35,7 +36,17 @@ type ThreadProfileRow = {
   username: string | null;
   display_name: string | null;
   created_at: string | null;
+  avatar_path: string | null;
+  updated_at: string | null;
 };
+
+const forumAuthorProfileSelect = `
+  username,
+  display_name,
+  created_at,
+  avatar_path,
+  updated_at
+`;
 
 type ThreadRow = {
   id: string;
@@ -83,6 +94,8 @@ function mapThreadRow(row: ThreadRow, replyCount = 0): ForumThreadRecord {
     authorUsername: profile?.username ?? null,
     authorDisplayName: profile?.display_name ?? null,
     authorProfileCreatedAt: profile?.created_at ?? null,
+    authorAvatarPath: profile?.avatar_path ?? null,
+    authorProfileUpdatedAt: profile?.updated_at ?? null,
     replyCount,
   };
 }
@@ -99,6 +112,8 @@ function mapReplyRow(row: ReplyRow): ForumReplyRecord {
     authorUsername: profile?.username ?? null,
     authorDisplayName: profile?.display_name ?? null,
     authorProfileCreatedAt: profile?.created_at ?? null,
+    authorAvatarPath: profile?.avatar_path ?? null,
+    authorProfileUpdatedAt: profile?.updated_at ?? null,
   };
 }
 
@@ -150,6 +165,10 @@ export function mapThreadRecordToForumThread(
     ),
     authorUsername: record.authorUsername,
     authorUserId: record.authorId,
+    authorAvatarUrl: getAvatarPublicUrl(
+      record.authorAvatarPath,
+      record.authorProfileUpdatedAt,
+    ),
     replies: record.replyCount,
     lastActivity: formatForumRelativeActivity(record.updatedAt),
     createdAt: record.createdAt,
@@ -171,6 +190,10 @@ export function mapReplyRecordToForumPost(record: ForumReplyRecord): ForumPost {
     avatar: getForumAuthorInitials(
       record.authorUsername,
       record.authorDisplayName,
+    ),
+    avatarUrl: getAvatarPublicUrl(
+      record.authorAvatarPath,
+      record.authorProfileUpdatedAt,
     ),
     memberSince: formatForumMemberSince(record.authorProfileCreatedAt),
     joinDate: formatForumMemberSince(record.authorProfileCreatedAt),
@@ -196,9 +219,7 @@ export async function getForumThreadsFromDatabase() {
       created_at,
       updated_at,
       profiles:author_id (
-        username,
-        display_name,
-        created_at
+        ${forumAuthorProfileSelect}
       )
     `,
     )
@@ -233,9 +254,7 @@ export async function getForumThreadBySlugFromDatabase(slug: string) {
       created_at,
       updated_at,
       profiles:author_id (
-        username,
-        display_name,
-        created_at
+        ${forumAuthorProfileSelect}
       )
     `,
     )
@@ -271,9 +290,7 @@ export async function getForumRepliesByThreadIdFromDatabase(threadId: string) {
       body,
       created_at,
       profiles:author_id (
-        username,
-        display_name,
-        created_at
+        ${forumAuthorProfileSelect}
       )
     `,
     )

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import ProfileAvatar from "@/components/account/ProfileAvatar";
 import type { ForumPost as ForumPostType } from "@/types/forum";
 import type { ForumReactionSummary } from "@/lib/forum/reactions";
 import ForumPostActionRow from "./ForumPostActionRow";
@@ -48,9 +49,13 @@ export default function ForumPost({
         <aside className="lg:pr-4">
           <div className="group/forum-author relative">
             <div className="flex items-center gap-2.5 lg:block">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full border border-divlab-border-neutral bg-divlab-surface text-[11px] font-semibold text-divlab-text-secondary">
-                {post.avatar}
-              </div>
+              <ProfileAvatar
+                avatarUrl={post.avatarUrl ?? null}
+                initials={post.avatar}
+                sizeClassName="h-9 w-9"
+                textClassName="text-[11px]"
+                imageAlt={`${username} profilbild`}
+              />
               <div className="min-w-0 lg:mt-2">
                 <Link
                   href={profileHref}
