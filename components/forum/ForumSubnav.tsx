@@ -35,13 +35,6 @@ export default function ForumSubnav() {
             </li>
           );
         })}
-        <li
-          aria-hidden="true"
-          className="ml-1 h-5 w-px shrink-0 bg-white/10"
-        />
-        <li className="shrink-0 px-2 py-2 text-[11px] text-divlab-text-subtle">
-          {/* Reserved for future online indicator */}
-        </li>
       </ul>
     </nav>
   );

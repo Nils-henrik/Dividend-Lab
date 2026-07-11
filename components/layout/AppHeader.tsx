@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import type { UserDisplayIdentity } from "@/lib/profiles/identity";
-import { pageTitles } from "@/lib/constants/navigation";
+import { getPageTitle } from "@/lib/constants/navigation";
 import NotificationBell from "./NotificationBell";
 import ProfileDropdown from "./ProfileDropdown";
 import SearchBar from "./SearchBar";
@@ -25,12 +25,7 @@ export default function AppHeader({
   isGuest = false,
 }: Props) {
   const pathname = usePathname();
-  const pageTitle =
-    pageTitles[pathname] ??
-    Object.entries(pageTitles).find(
-      ([path]) => path !== "/dashboard" && pathname.startsWith(`${path}/`),
-    )?.[1] ??
-    "Start";
+  const pageTitle = getPageTitle(pathname);
 
   return (
     <header

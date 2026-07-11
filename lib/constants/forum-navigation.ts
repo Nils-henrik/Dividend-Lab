@@ -14,7 +14,7 @@ export const forumNavigationItems: ForumNavItem[] = [
     href: "/forum/kategorier",
     matchPrefix: true,
   },
-  { label: "Bolag", href: "/forum/bolag" },
+  { label: "Bolag", href: "/forum/bolag", matchPrefix: true },
 ];
 
 export function isForumNavItemActive(pathname: string, item: ForumNavItem) {

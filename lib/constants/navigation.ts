@@ -52,3 +52,17 @@ export const pageTitles: Record<string, string> = {
   "/dashboard/settings": "Inställningar",
   "/dashboard/watchlist": "Bevakningslista",
 };
+
+export function getPageTitle(pathname: string) {
+  if (pageTitles[pathname]) {
+    return pageTitles[pathname];
+  }
+
+  const prefixMatch = Object.entries(pageTitles)
+    .filter(
+      ([path]) => path !== "/dashboard" && pathname.startsWith(`${path}/`),
+    )
+    .sort(([firstPath], [secondPath]) => secondPath.length - firstPath.length)[0];
+
+  return prefixMatch?.[1] ?? "Start";
+}

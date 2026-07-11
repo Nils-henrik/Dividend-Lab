@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import GlobalSearch from "@/components/search/GlobalSearch";
 import type { UserDisplayIdentity } from "@/lib/profiles/identity";
-import { pageTitles } from "@/lib/constants/navigation";
+import { getPageTitle } from "@/lib/constants/navigation";
 import ProfileDropdown from "./ProfileDropdown";
 
 type Props = {
@@ -27,12 +27,7 @@ export default function MobileAppHeader({
 }: Props) {
   const pathname = usePathname();
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
-  const pageTitle =
-    pageTitles[pathname] ??
-    Object.entries(pageTitles).find(
-      ([path]) => path !== "/dashboard" && pathname.startsWith(`${path}/`),
-    )?.[1] ??
-    "Start";
+  const pageTitle = getPageTitle(pathname);
 
   return (
     <header className="fixed inset-x-0 top-0 z-40 divlab-shell-header lg:hidden">
