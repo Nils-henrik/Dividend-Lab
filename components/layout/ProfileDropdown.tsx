@@ -21,6 +21,9 @@ export default function ProfileDropdown({
 }: Props) {
   const pathname = usePathname();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const publicProfileHref = user.username
+    ? `/profile/${encodeURIComponent(user.username.trim().toLowerCase())}`
+    : "/account/edit";
 
   if (isGuest) {
     return (
@@ -64,7 +67,7 @@ export default function ProfileDropdown({
 
           <div className="py-2">
             <Link
-              href="/account"
+              href={publicProfileHref}
               className="block rounded-xl px-3 py-2 text-sm text-divlab-text-secondary transition hover:bg-white/[0.03] hover:text-divlab-text"
             >
               Profil
