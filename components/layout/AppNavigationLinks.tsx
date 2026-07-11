@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { appNavigation } from "@/lib/constants/navigation";
+import type { NavigationItem } from "@/types/navigation";
 import AppIcon from "./AppIcon";
 
 type Props = {
@@ -10,23 +11,41 @@ type Props = {
   unreadMessageCount: number;
   onNavigate?: () => void;
   className?: string;
+  navigationSurface?: "desktop" | "mobile";
 };
+
+function getNavigationItems(navigationSurface: "desktop" | "mobile") {
+  return appNavigation.filter((item) => {
+    if (item.visibility === "mobile-only") {
+      return navigationSurface === "mobile";
+    }
+
+    return true;
+  });
+}
+
+function isNavigationItemActive(pathname: string, item: NavigationItem) {
+  if (item.href === "/dashboard") {
+    return pathname === item.href;
+  }
+
+  return pathname.startsWith(item.href);
+}
 
 export default function AppNavigationLinks({
   isCollapsed = false,
   unreadMessageCount,
   onNavigate,
   className = "",
+  navigationSurface = "desktop",
 }: Props) {
   const pathname = usePathname();
+  const navigationItems = getNavigationItems(navigationSurface);
 
   return (
     <nav className={`space-y-1 ${className}`}>
-      {appNavigation.map((item) => {
-        const isActive =
-          item.href === "/dashboard"
-            ? pathname === item.href
-            : pathname.startsWith(item.href);
+      {navigationItems.map((item) => {
+        const isActive = isNavigationItemActive(pathname, item);
         const showUnreadIndicator =
           item.href === "/messages" && unreadMessageCount > 0;
 

@@ -218,6 +218,24 @@ export default function FreedomPlanCard() {
                   </span>
                 </p>
                 <p>
+                  Uppskattad månadsutdelning idag:{" "}
+                  <span className="font-medium text-white tabular-nums">
+                    {formatSek(result.estimatedMonthlyDividend)}
+                  </span>
+                </p>
+                <p>
+                  Uppskattad årsutdelning idag:{" "}
+                  <span className="font-medium text-white tabular-nums">
+                    {formatSek(result.estimatedAnnualDividend)}
+                  </span>
+                </p>
+                <p>
+                  Framsteg mot månadsutdelning:{" "}
+                  <span className="font-medium text-white tabular-nums">
+                    {Math.round(result.monthlyDividendProgressPercent)}%
+                  </span>
+                </p>
+                <p>
                   Beräknad månadsutdelning vid målet:{" "}
                   <span className="font-medium text-white tabular-nums">
                     {formatSek(result.monthlyDividendAtGoal)}
@@ -290,7 +308,7 @@ export default function FreedomPlanCard() {
             onChange={setExpectedYieldPercent}
           />
           <SliderField
-            label="Förväntad årlig tillväxt"
+            label="Förväntad kursutveckling"
             value={expectedGrowthPercent}
             min={0}
             max={15}

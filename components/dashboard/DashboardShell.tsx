@@ -33,7 +33,7 @@ export default function DashboardShell({ profile }: Props) {
       </section>
 
       <section className="grid grid-cols-1 gap-6 xl:grid-cols-3 xl:items-start">
-        <div className="min-w-0 xl:col-span-2">
+        <div className="hidden min-w-0 lg:block xl:col-span-2">
           <FreedomPlanCard />
         </div>
         <div className="space-y-6">

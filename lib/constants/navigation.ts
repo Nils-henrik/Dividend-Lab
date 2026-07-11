@@ -2,6 +2,12 @@ import type { NavigationItem } from "@/types/navigation";
 
 export const appNavigation: NavigationItem[] = [
   { label: "Start", href: "/dashboard", icon: "dashboard" },
+  {
+    label: "Frihetsmaskinen",
+    href: "/frihetsmaskinen",
+    icon: "goals",
+    visibility: "mobile-only",
+  },
   { label: "Portfölj", href: "/portfolio", icon: "portfolio" },
   { label: "Dividend Brain", href: "/brain", icon: "brain" },
   { label: "Bevakningslista", href: "/watchlist", icon: "watchlist" },
@@ -21,6 +27,7 @@ export const pageTitles: Record<string, string> = {
   "/brain": "Dividend Brain",
   "/calendar": "Kalender",
   "/dashboard": "Start",
+  "/frihetsmaskinen": "Frihetsmaskinen",
   "/forum": "Forum",
   "/goals": "Mål",
   "/learning": "Utbildning",

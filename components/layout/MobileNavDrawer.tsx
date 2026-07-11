@@ -86,6 +86,7 @@ export default function MobileNavDrawer({
           <AppNavigationLinks
             unreadMessageCount={unreadMessageCount}
             onNavigate={onClose}
+            navigationSurface="mobile"
           />
         </div>
       </aside>

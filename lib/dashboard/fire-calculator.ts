@@ -13,6 +13,9 @@ export type FreedomPlanInput = {
 export type FreedomPlanResult = {
   capitalGoal: number;
   monthlyDividendAtGoal: number;
+  estimatedMonthlyDividend: number;
+  estimatedAnnualDividend: number;
+  monthlyDividendProgressPercent: number;
   yearsToGoal: number | null;
   targetReachYear: number | null;
   exceedsHorizon: boolean;
@@ -31,6 +34,11 @@ export type CapitalProjectionSeries = {
   exceedsHorizon: boolean;
 };
 
+export type MonthAdvanceResult = {
+  capital: number;
+  monthlyDividend: number;
+};
+
 const MAX_HORIZON_YEARS = 50;
 const MAX_MONTHS = MAX_HORIZON_YEARS * 12;
 
@@ -42,7 +50,7 @@ function clampNonNegative(value: number) {
   return value;
 }
 
-function getMonthlyRate(expectedGrowthPercent: number) {
+function getMonthlyGrowthRate(expectedGrowthPercent: number) {
   const growth = clampNonNegative(expectedGrowthPercent);
 
   if (growth <= 0) {
@@ -50,6 +58,55 @@ function getMonthlyRate(expectedGrowthPercent: number) {
   }
 
   return (1 + growth / 100) ** (1 / 12) - 1;
+}
+
+export function getEstimatedMonthlyDividend(
+  capital: number,
+  expectedYieldPercent: number,
+) {
+  const yieldPercent = clampNonNegative(expectedYieldPercent);
+
+  if (yieldPercent <= 0 || capital <= 0) {
+    return 0;
+  }
+
+  return (capital * (yieldPercent / 100)) / 12;
+}
+
+export function getEstimatedAnnualDividend(
+  capital: number,
+  expectedYieldPercent: number,
+) {
+  return getEstimatedMonthlyDividend(capital, expectedYieldPercent) * 12;
+}
+
+/**
+ * Applies one month of accumulation with always-on dividend reinvestment.
+ * Contribution timing matches the existing convention: monthly growth on opening
+ * capital, then the monthly contribution, then dividend on that balance.
+ */
+export function advanceMonthCapital(
+  capital: number,
+  monthlySavings: number,
+  expectedGrowthPercent: number,
+  expectedYieldPercent: number,
+): MonthAdvanceResult {
+  const monthlyGrowthRate = getMonthlyGrowthRate(expectedGrowthPercent);
+  let nextCapital = clampNonNegative(capital);
+
+  nextCapital *= 1 + monthlyGrowthRate;
+  nextCapital += clampNonNegative(monthlySavings);
+
+  const monthlyDividend = getEstimatedMonthlyDividend(
+    nextCapital,
+    expectedYieldPercent,
+  );
+  nextCapital += monthlyDividend;
+
+  return {
+    capital: nextCapital,
+    monthlyDividend,
+  };
 }
 
 export function resolveCapitalGoal(input: FreedomPlanInput) {
@@ -60,10 +117,10 @@ export function resolveCapitalGoal(input: FreedomPlanInput) {
 
     return {
       capitalGoal,
-      monthlyDividendAtGoal:
-        expectedYieldPercent > 0
-          ? (capitalGoal * (expectedYieldPercent / 100)) / 12
-          : 0,
+      monthlyDividendAtGoal: getEstimatedMonthlyDividend(
+        capitalGoal,
+        expectedYieldPercent,
+      ),
     };
   }
 
@@ -80,31 +137,59 @@ export function resolveCapitalGoal(input: FreedomPlanInput) {
   };
 }
 
+function getMonthlyDividendProgressPercent(
+  estimatedMonthlyDividend: number,
+  targetMonthlyDividend: number,
+) {
+  if (targetMonthlyDividend <= 0) {
+    return 0;
+  }
+
+  return Math.min(
+    100,
+    (clampNonNegative(estimatedMonthlyDividend) / targetMonthlyDividend) * 100,
+  );
+}
+
 function simulateMonthsToGoal(
-  currentCapital: number,
-  monthlySavings: number,
+  input: FreedomPlanInput,
   capitalGoal: number,
-  monthlyRate: number,
 ) {
   if (capitalGoal <= 0) {
     return {
       months: null,
       exceedsHorizon: true,
+      endingMonthlyDividend: 0,
     };
   }
+
+  const currentCapital = clampNonNegative(input.currentCapital);
 
   if (currentCapital >= capitalGoal) {
     return {
       months: 0,
       exceedsHorizon: false,
+      endingMonthlyDividend: getEstimatedMonthlyDividend(
+        currentCapital,
+        input.expectedYieldPercent,
+      ),
     };
   }
 
   let capital = currentCapital;
   let months = 0;
+  let endingMonthlyDividend = 0;
 
   while (capital < capitalGoal && months < MAX_MONTHS) {
-    capital = capital * (1 + monthlyRate) + monthlySavings;
+    const monthResult = advanceMonthCapital(
+      capital,
+      input.monthlySavings,
+      input.expectedGrowthPercent,
+      input.expectedYieldPercent,
+    );
+
+    capital = monthResult.capital;
+    endingMonthlyDividend = monthResult.monthlyDividend;
     months += 1;
   }
 
@@ -112,36 +197,44 @@ function simulateMonthsToGoal(
     return {
       months: null,
       exceedsHorizon: true,
+      endingMonthlyDividend,
     };
   }
 
   return {
     months,
     exceedsHorizon: false,
+    endingMonthlyDividend,
   };
 }
 
 export function calculateFreedomPlan(input: FreedomPlanInput): FreedomPlanResult {
   const currentCapital = clampNonNegative(input.currentCapital);
-  const monthlySavings = clampNonNegative(input.monthlySavings);
   const { capitalGoal, monthlyDividendAtGoal } = resolveCapitalGoal(input);
+  const estimatedMonthlyDividend = getEstimatedMonthlyDividend(
+    currentCapital,
+    input.expectedYieldPercent,
+  );
+  const estimatedAnnualDividend = estimatedMonthlyDividend * 12;
+  const monthlyDividendProgressPercent = getMonthlyDividendProgressPercent(
+    estimatedMonthlyDividend,
+    monthlyDividendAtGoal,
+  );
 
   if (capitalGoal <= 0) {
     return {
       capitalGoal: 0,
       monthlyDividendAtGoal,
+      estimatedMonthlyDividend,
+      estimatedAnnualDividend,
+      monthlyDividendProgressPercent,
       yearsToGoal: null,
       targetReachYear: null,
       exceedsHorizon: true,
     };
   }
 
-  const { months, exceedsHorizon } = simulateMonthsToGoal(
-    currentCapital,
-    monthlySavings,
-    capitalGoal,
-    getMonthlyRate(input.expectedGrowthPercent),
-  );
+  const { months, exceedsHorizon } = simulateMonthsToGoal(input, capitalGoal);
 
   const yearsToGoal = months === null ? null : months / 12;
   const targetReachYear =
@@ -150,6 +243,9 @@ export function calculateFreedomPlan(input: FreedomPlanInput): FreedomPlanResult
   return {
     capitalGoal,
     monthlyDividendAtGoal,
+    estimatedMonthlyDividend,
+    estimatedAnnualDividend,
+    monthlyDividendProgressPercent,
     yearsToGoal,
     targetReachYear,
     exceedsHorizon,
@@ -160,8 +256,6 @@ export function getCapitalProjectionSeries(
   input: FreedomPlanInput,
 ): CapitalProjectionSeries {
   const currentCapital = clampNonNegative(input.currentCapital);
-  const monthlySavings = clampNonNegative(input.monthlySavings);
-  const monthlyRate = getMonthlyRate(input.expectedGrowthPercent);
   const plan = calculateFreedomPlan(input);
   const targetCapital = plan.capitalGoal;
 
@@ -177,7 +271,12 @@ export function getCapitalProjectionSeries(
 
   for (let year = 1; year <= horizonYears; year += 1) {
     for (let month = 0; month < 12; month += 1) {
-      capital = capital * (1 + monthlyRate) + monthlySavings;
+      capital = advanceMonthCapital(
+        capital,
+        input.monthlySavings,
+        input.expectedGrowthPercent,
+        input.expectedYieldPercent,
+      ).capital;
     }
 
     points.push({
