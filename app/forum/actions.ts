@@ -205,11 +205,7 @@ async function applyForumReactionToggle(
   if (error) {
     console.error("[forum] toggle reaction failed", error);
 
-    if (
-      error.message.includes("SELF_REACTION") ||
-      error.message.includes("row-level security") ||
-      error.code === "42501"
-    ) {
+    if (error.message.includes("SELF_REACTION_NOT_ALLOWED")) {
       return {
         ok: false,
         message: "Du kan inte reagera på ditt eget inlägg.",
