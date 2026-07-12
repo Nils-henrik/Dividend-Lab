@@ -2,7 +2,7 @@ import LegalPageLayout, { LegalSection } from "@/components/marketing/LegalPageL
 import { legalConfig } from "@/lib/legal/legal-config";
 
 export default function DisclaimerPageContent() {
-  const { serviceName, operatorName } = legalConfig;
+  const { serviceName } = legalConfig;
 
   return (
     <LegalPageLayout
@@ -72,8 +72,8 @@ export default function DisclaimerPageContent() {
 
       <LegalSection title="Användargenererat innehåll">
         <p>
-          Forumtrådar, svar och kommentarer speglar användarnas egna åsikter. {operatorName} och{" "}
-          {serviceName} verifierar, granskar eller stödjer inte inlägg som finansiell fakta eller
+          Forumtrådar, svar och kommentarer speglar användarnas egna åsikter. {serviceName}{" "}
+          verifierar, granskar eller stödjer inte inlägg som finansiell fakta eller
           rådgivning. Andra användares inlägg kan vara felaktiga, ofullständiga eller vilseledande.
         </p>
       </LegalSection>
@@ -95,7 +95,7 @@ export default function DisclaimerPageContent() {
 
       <LegalSection title="Ansvar">
         <p>
-          I den utsträckning lagen medger ansvarar {operatorName} inte för skada som följer av
+          I den utsträckning lagen medger ansvarar operatören inte för skada som följer av
           beslut baserade på information, verktyg eller community-innehåll i {serviceName}. Tvingande
           ansvarsregler enligt lag påverkas inte.
         </p>

@@ -13,9 +13,9 @@ export const legalConfig = {
   minAccountAge: 18,
 } as const;
 
-/** Standard operator wording for Terms and general legal references. */
+/** Terms introduction — defines DivLab and operatören. */
 export const LEGAL_OPERATOR_TERMS =
-  "DivLab tillhandahålls av Henrik Karlsson, privatperson i Sverige.";
+  "DivLab är namnet på tjänsten. Tjänsten tillhandahålls av Henrik Karlsson, privatperson i Sverige (”operatören”).";
 
 /** Standard operator wording for Privacy policy. */
 export const LEGAL_OPERATOR_PRIVACY =

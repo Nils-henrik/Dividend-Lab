@@ -5,7 +5,7 @@ import {
 } from "@/lib/legal/legal-config";
 
 export default function TermsPageContent() {
-  const { serviceName, operatorName, phaseLabel, minAccountAge } = legalConfig;
+  const { serviceName, phaseLabel, minAccountAge } = legalConfig;
 
   return (
     <LegalPageLayout
@@ -109,7 +109,7 @@ export default function TermsPageContent() {
       <LegalSection title="Licens för hostat innehåll">
         <p>
           Du behåller äganderätten till ditt innehåll. Genom att publicera eller skicka innehåll
-          i tjänsten ger du {operatorName} en begränsad, icke-exklusiv licens att lagra,
+          i tjänsten ger du operatören en begränsad, icke-exklusiv licens att lagra,
           tekniskt behandla, säkerhetskopiera, moderera och på annat sätt använda innehållet i
           den utsträckning som behövs för att driva {serviceName}.
         </p>
@@ -123,7 +123,7 @@ export default function TermsPageContent() {
 
       <LegalSection title="Moderering">
         <p>
-          {operatorName} kan granska, dölja eller ta bort innehåll som bryter mot dessa villkor
+          Operatören kan granska, dölja eller ta bort innehåll som bryter mot dessa villkor
           eller gällande rätt, samt begränsa eller avsluta konton i allvarliga fall. Det finns
           ingen garanti för att allt innehåll granskas innan publicering.
         </p>
@@ -145,7 +145,7 @@ export default function TermsPageContent() {
       <LegalSection title="Ansvar">
         <p>
           {serviceName} tillhandahålls i betaläge i befintligt skick. I den utsträckning lagen
-          medger ansvarar {operatorName} inte för indirekta skador, förlorad vinst eller förlust
+          medger ansvarar operatören inte för indirekta skador, förlorad vinst eller förlust
           som följer av användning av tjänsten, inklusive beslut baserade på information,
           beräkningar eller community-innehåll.
         </p>
@@ -173,8 +173,8 @@ export default function TermsPageContent() {
 
       <LegalSection title="Immateriella rättigheter">
         <p>
-          {serviceName}s varumärke, design, programvara och originalartiklar tillhör{" "}
-          {operatorName} eller licensgivare, om inte annat anges. Tredjepartsrättigheter
+          {serviceName}s varumärke, design, programvara och originalartiklar tillhör operatören
+          eller respektive rättighetsinnehavare, om inte annat anges. Tredjepartsrättigheter
           respekteras. Ditt eget användargenererade innehåll förblir ditt, med den begränsade
           licens som anges ovan.
         </p>

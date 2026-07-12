@@ -38,7 +38,7 @@ export default function ContactPageContent() {
   return (
     <LegalPageLayout
       title="Kontakt"
-      description={`Kontaktinformation för ${serviceName}. ${LEGAL_OPERATOR_TERMS}`}
+      description={`Kontaktinformation för ${serviceName} under betaperioden.`}
     >
       <LegalSection title="Operatör">
         <p>{LEGAL_OPERATOR_TERMS}</p>
