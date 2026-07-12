@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PUBLIC_NAV_LINKS } from "@/lib/constants/public-navigation";
 import { getAuthenticatedUser } from "@/lib/auth/session";
 import NavbarAuthActions from "./NavbarAuthActions";
 import NavbarMobileMenu from "./NavbarMobileMenu";
@@ -11,21 +12,15 @@ export default async function Navbar() {
       className="hidden items-center gap-10 text-sm font-medium text-divlab-text-secondary lg:flex"
       aria-label="Primär navigering"
     >
-      <a href="#" className="transition hover:text-divlab-blue-muted">
-        Funktioner
-      </a>
-
-      <a href="#" className="transition hover:text-divlab-blue-muted">
-        Så fungerar det
-      </a>
-
-      <a href="#" className="transition hover:text-divlab-blue-muted">
-        Om oss
-      </a>
-
-      <Link href="/forum" className="transition hover:text-divlab-blue-muted">
-        Forum
-      </Link>
+      {PUBLIC_NAV_LINKS.map((link) => (
+        <Link
+          key={link.href}
+          href={link.href}
+          className="transition hover:text-divlab-blue-muted"
+        >
+          {link.label}
+        </Link>
+      ))}
 
       <NavbarAuthActions user={user} />
     </nav>

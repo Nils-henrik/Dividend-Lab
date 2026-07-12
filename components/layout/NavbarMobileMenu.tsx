@@ -3,14 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 import DivLabWordmark from "@/components/brand/DivLabWordmark";
+import { PUBLIC_NAV_LINKS } from "@/lib/constants/public-navigation";
 import type { AuthenticatedUser } from "@/lib/auth/user";
-
-const navLinks = [
-  { href: "#", label: "Funktioner" },
-  { href: "#", label: "Så fungerar det" },
-  { href: "#", label: "Om oss" },
-  { href: "/forum", label: "Forum" },
-] as const;
 
 type Props = {
   user: AuthenticatedUser | null;
@@ -64,8 +58,8 @@ export default function NavbarMobileMenu({ user, desktopNav }: Props) {
         >
           <div className="mx-auto max-w-7xl px-6 pb-6 pt-4 md:px-8">
             <ul className="space-y-1">
-              {navLinks.map((link) => (
-                <li key={link.label}>
+              {PUBLIC_NAV_LINKS.map((link) => (
+                <li key={link.href}>
                   <Link
                     href={link.href}
                     onClick={closeMenu}
