@@ -7,6 +7,7 @@ import GlobalSearch from "@/components/search/GlobalSearch";
 import type { UserDisplayIdentity } from "@/lib/profiles/identity";
 import { getPageTitle } from "@/lib/constants/navigation";
 import ProfileDropdown from "./ProfileDropdown";
+import NotificationBell from "./NotificationBell";
 
 type Props = {
   user: UserDisplayIdentity;
@@ -71,12 +72,15 @@ export default function MobileAppHeader({
         />
 
         {!isSearchExpanded && (
-          <ProfileDropdown
-            user={user}
-            onLogout={onLogout}
-            isLoggingOut={isLoggingOut}
-            isGuest={isGuest}
-          />
+          <>
+            <NotificationBell />
+            <ProfileDropdown
+              user={user}
+              onLogout={onLogout}
+              isLoggingOut={isLoggingOut}
+              isGuest={isGuest}
+            />
+          </>
         )}
       </div>
     </header>

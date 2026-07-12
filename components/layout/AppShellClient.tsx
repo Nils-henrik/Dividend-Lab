@@ -142,7 +142,6 @@ export default function AppShellClient({
         onLogout={handleLogout}
         isLoggingOut={isLoggingOut}
         isSidebarCollapsed={isSidebarCollapsed}
-        unreadMessageCount={unreadMessageCount}
         isGuest={isGuest}
       />
       <div
