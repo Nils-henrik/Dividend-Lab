@@ -1,4 +1,3 @@
-import ForumVisitTracker from "@/components/dashboard/ForumVisitTracker";
 import ForumOverviewPage from "@/components/forum/ForumOverviewPage";
 import ForumRouteShell from "@/components/forum/ForumRouteShell";
 import { getAuthenticatedUser } from "@/lib/auth/session";
@@ -45,7 +44,6 @@ export default async function ForumPage({ searchParams }: Props) {
 
   return (
     <ForumRouteShell user={user}>
-      <ForumVisitTracker />
       <ForumOverviewPage
         isAuthenticated={Boolean(user)}
         latestThreads={latestThreads}

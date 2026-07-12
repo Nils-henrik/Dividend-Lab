@@ -3,8 +3,8 @@ import {
   LEGAL_OPERATOR_PRIVACY,
   LEGAL_PRIVACY_CONTACT_PENDING,
   LEGAL_PRIVACY_RIGHTS_REQUEST,
-  ONBOARDING_STORAGE_KEY,
   RECOVERY_COOKIE_NAME,
+  TRADINGVIEW_WIDGET_SCRIPT,
   legalConfig,
 } from "@/lib/legal/legal-config";
 
@@ -36,7 +36,6 @@ export default function PrivacyPageContent() {
             "sessions- och säkerhetsrelaterad teknisk data",
             "server- och felsökningsloggar hos driftleverantör",
             "data kopplad till lösenordsåterställning",
-            "lokal onboarding-inställning i webbläsaren (forum besökt)",
           ]}
         />
       </LegalSection>
@@ -103,7 +102,9 @@ export default function PrivacyPageContent() {
           items={[
             "Supabase — autentisering, databas, fillagring och relaterad infrastruktur",
             "Vercel — hosting och server-side rendering av webbapplikationen",
-            "TradingView — inbäddat marknadsdiagram i inloggad dashboard (besökarens webbläsare kan kontakta TradingView direkt)",
+            "TradingView — officiell Symbol Overview-widget i inloggad dashboard (skript: " +
+              TRADINGVIEW_WIDGET_SCRIPT +
+              "). Widgeten initierar nätverkskontakt med TradingView och kan ta emot IP-adress, inbäddande sidas URL, widgettyp, visat marknadssymbol och vanlig begärandemetadata. DivLabs kod sätter inte TradingView-cookies",
             "externa RSS-/nyhetskällor — server-side hämtning av rubriker och länkar, till exempel från svenska nyhetsflöden",
           ]}
         />
@@ -165,13 +166,9 @@ export default function PrivacyPageContent() {
 
       <LegalSection title="Cookies och webbläsarlagring">
         <p>
-          Tjänsten använder nödvändiga sessionscookies via Supabase Auth, kortlivad
-          återställningscookie ({RECOVERY_COOKIE_NAME}) och lokal lagring för onboarding (
-          {ONBOARDING_STORAGE_KEY}). TradingView kan sätta egen lagring när dashboard laddas.
-          Se cookiepolicyn för mer information.
-        </p>
-        <p>
-          Granulärt cookie-samtycke och preferenshantering är ännu inte implementerat.
+          Tjänsten använder nödvändiga Supabase Auth-sessionscookies via @supabase/ssr samt
+          återställningscookien {RECOVERY_COOKIE_NAME} (15 minuter). DivLab använder inte
+          localStorage eller sessionStorage i betan. Se cookiepolicyn för detaljer.
         </p>
       </LegalSection>
 

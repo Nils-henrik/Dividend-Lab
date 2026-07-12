@@ -38,4 +38,5 @@ export const LEGAL_PRIVACY_CONTACT_PENDING =
 
 export const RECOVERY_COOKIE_NAME = "sb-recovery-pending";
 
-export const ONBOARDING_STORAGE_KEY = "divlab_onboarding_forum_visited";
+export const TRADINGVIEW_WIDGET_SCRIPT =
+  "https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js";

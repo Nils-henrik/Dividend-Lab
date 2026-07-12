@@ -1,13 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useSyncExternalStore } from "react";
-import {
-  hasVisitedForum,
-  markForumVisited,
-  subscribeForumVisited,
-} from "@/lib/onboarding/forum-visited";
+import { useEffect } from "react";
 import type { UserProfile } from "@/lib/profiles/types";
+
+const LEGACY_FORUM_VISITED_KEY = "divlab_onboarding_forum_visited";
 
 type Props = {
   profile: UserProfile;
@@ -19,10 +16,9 @@ type Step = {
   description: string;
   href: string;
   completed: boolean;
-  isForumStep?: boolean;
 };
 
-function getProfileSteps(profile: UserProfile, forumVisited: boolean): Step[] {
+function getProfileSteps(profile: UserProfile): Step[] {
   const hasProfileBasics = Boolean(
     profile.displayName?.trim() ||
       profile.bio?.trim() ||
@@ -58,30 +54,28 @@ function getProfileSteps(profile: UserProfile, forumVisited: boolean): Step[] {
       label: "Utforska forumet",
       description: "Läs diskussioner i din egen takt.",
       href: "/forum",
-      completed: forumVisited,
-      isForumStep: true,
+      completed: false,
     },
   ];
 }
 
 export default function OnboardingCard({ profile }: Props) {
-  const forumVisited = useSyncExternalStore(
-    subscribeForumVisited,
-    hasVisitedForum,
-    () => false,
-  );
+  useEffect(() => {
+    try {
+      localStorage.removeItem(LEGACY_FORUM_VISITED_KEY);
+    } catch {
+      // Ignore cleanup failures in restricted storage contexts.
+    }
+  }, []);
 
-  const steps = getProfileSteps(profile, forumVisited);
+  const steps = getProfileSteps(profile);
+  const trackedSteps = steps.filter((step) => step.id !== "forum");
 
-  if (steps.every((step) => step.completed)) {
+  if (trackedSteps.every((step) => step.completed)) {
     return null;
   }
 
   const forumReady = Boolean(profile.username?.trim());
-
-  function handleForumStepClick() {
-    markForumVisited();
-  }
 
   return (
     <section className="divlab-card p-6">
@@ -97,7 +91,6 @@ export default function OnboardingCard({ profile }: Props) {
           <Link
             key={step.id}
             href={step.href}
-            onClick={step.isForumStep ? handleForumStepClick : undefined}
             className="flex items-start gap-3 rounded-xl border divlab-inset px-4 py-3 transition hover:border-divlab-blue/30 hover:bg-white/[0.05]"
           >
             <span
