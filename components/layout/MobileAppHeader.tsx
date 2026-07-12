@@ -16,6 +16,7 @@ type Props = {
   onOpenMenu: () => void;
   isMenuOpen?: boolean;
   isGuest?: boolean;
+  unreadMessageCount: number;
 };
 
 export default function MobileAppHeader({
@@ -25,6 +26,7 @@ export default function MobileAppHeader({
   onOpenMenu,
   isMenuOpen = false,
   isGuest = false,
+  unreadMessageCount,
 }: Props) {
   const pathname = usePathname();
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
@@ -73,7 +75,7 @@ export default function MobileAppHeader({
 
         {!isSearchExpanded && (
           <>
-            <NotificationBell />
+            <NotificationBell unreadMessageCount={unreadMessageCount} />
             <ProfileDropdown
               user={user}
               onLogout={onLogout}

@@ -131,6 +131,7 @@ export default function AppShellClient({
         onOpenMenu={() => setIsMobileNavOpen(true)}
         isMenuOpen={isMobileNavOpen}
         isGuest={isGuest}
+        unreadMessageCount={unreadMessageCount}
       />
       <MobileNavDrawer
         isOpen={isMobileNavOpen}
@@ -142,6 +143,7 @@ export default function AppShellClient({
         onLogout={handleLogout}
         isLoggingOut={isLoggingOut}
         isSidebarCollapsed={isSidebarCollapsed}
+        unreadMessageCount={unreadMessageCount}
         isGuest={isGuest}
       />
       <div
