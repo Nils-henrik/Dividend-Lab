@@ -19,7 +19,7 @@ const valuePoints = [
 export default function Hero() {
   return (
     <section className="relative bg-divlab-bg">
-      <div className="relative z-10 mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 px-6 pb-16 pt-28 md:px-8 lg:grid-cols-2 lg:gap-16 lg:pb-24 lg:pt-24">
+      <div className="relative z-10 mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 px-6 pb-16 pt-12 md:px-8 lg:grid-cols-2 lg:gap-16 lg:pb-24 lg:pt-24">
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.18em] text-divlab-text-muted">
             MARKNAD · VERKTYG · COMMUNITY
