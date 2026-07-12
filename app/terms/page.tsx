@@ -1,20 +1,17 @@
-import LegalPlaceholderPage from "@/components/marketing/LegalPlaceholderPage";
+import type { Metadata } from "next";
+import TermsPageContent from "@/components/marketing/legal/TermsPageContent";
 import MarketingPageShell from "@/components/marketing/MarketingPageShell";
+
+export const metadata: Metadata = {
+  title: "Användarvillkor | DivLab",
+  description:
+    "Användarvillkor för DivLab — kostnadsfri beta med verktyg, utbildning och community för dig som följer marknaden.",
+};
 
 export default function TermsPage() {
   return (
     <MarketingPageShell>
-      <LegalPlaceholderPage
-        title="Villkor"
-        description="Användarvillkor för Dividend Lab och hur plattformen får användas."
-      >
-        <p>
-          Här publiceras villkor för konton, innehåll, community och tillgång till
-          DivLabs verktyg. Tills dess gäller sunt förnuft, respektfullt
-          deltagande och att plattformen används som stöd för egen analys — inte
-          som ersättning för professionell rådgivning.
-        </p>
-      </LegalPlaceholderPage>
+      <TermsPageContent />
     </MarketingPageShell>
   );
 }

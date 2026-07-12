@@ -1,19 +1,17 @@
-import LegalPlaceholderPage from "@/components/marketing/LegalPlaceholderPage";
+import type { Metadata } from "next";
+import CookiesPageContent from "@/components/marketing/legal/CookiesPageContent";
 import MarketingPageShell from "@/components/marketing/MarketingPageShell";
+
+export const metadata: Metadata = {
+  title: "Cookiepolicy | DivLab",
+  description:
+    "Cookiepolicy för DivLab — cookies och webbläsarlagring i den kostnadsfria betan.",
+};
 
 export default function CookiesPage() {
   return (
     <MarketingPageShell>
-      <LegalPlaceholderPage
-        title="Cookiepolicy"
-        description="Information om cookies och liknande teknik på Dividend Lab."
-      >
-        <p>
-          DivLab använder i första hand teknik som behövs för inloggning, säkerhet
-          och grundläggande funktion. En tydlig cookiepolicy och eventuella val
-          publiceras här när det behövs för produkten.
-        </p>
-      </LegalPlaceholderPage>
+      <CookiesPageContent />
     </MarketingPageShell>
   );
 }

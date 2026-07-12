@@ -1,19 +1,17 @@
-import LegalPlaceholderPage from "@/components/marketing/LegalPlaceholderPage";
+import type { Metadata } from "next";
+import ContactPageContent from "@/components/marketing/legal/ContactPageContent";
 import MarketingPageShell from "@/components/marketing/MarketingPageShell";
+
+export const metadata: Metadata = {
+  title: "Kontakt | DivLab",
+  description:
+    "Kontaktinformation för DivLab — operatör och kontaktvägar under betaperioden.",
+};
 
 export default function ContactPage() {
   return (
     <MarketingPageShell>
-      <LegalPlaceholderPage
-        title="Kontakt"
-        description="Kontaktvägar för Dividend Lab."
-      >
-        <p>
-          För frågor om plattformen, kontot eller integritet publiceras tydliga
-          kontaktuppgifter här. Under MVP kan du nå oss via de kanaler som anges
-          vid lansering.
-        </p>
-      </LegalPlaceholderPage>
+      <ContactPageContent />
     </MarketingPageShell>
   );
 }
