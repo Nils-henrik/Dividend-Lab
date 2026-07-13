@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { type FormEvent, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { registerUser } from "@/app/register/actions";
 import PrimaryButton from "@/components/ui/Button";
+import { LEGAL_ACCEPTANCE_VALIDATION_MESSAGE } from "@/lib/legal/acceptance";
 
 type Props = {
   redirectTo: string;
@@ -12,6 +13,7 @@ type Props = {
 export default function RegisterForm({ redirectTo }: Props) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [legalAccepted, setLegalAccepted] = useState(false);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -33,36 +35,36 @@ export default function RegisterForm({ redirectTo }: Props) {
       return;
     }
 
+    if (!legalAccepted) {
+      setError(LEGAL_ACCEPTANCE_VALIDATION_MESSAGE);
+      return;
+    }
+
     setIsLoading(true);
 
-    const supabase = createClient();
-    const emailRedirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(
-      redirectTo,
-    )}`;
-    const { data, error: signUpError } = await supabase.auth.signUp({
+    const result = await registerUser({
       email: normalizedEmail,
       password,
-      options: {
-        emailRedirectTo,
-      },
+      legalAcceptanceConfirmed: legalAccepted,
+      redirectTo,
     });
 
     setIsLoading(false);
 
-    if (signUpError) {
-      setError(signUpError.message);
+    if (!result.ok) {
+      setError(result.message);
       return;
     }
 
-    if (data.session) {
+    if (result.needsEmailConfirmation) {
       setSuccessMessage(
-        "Ditt konto är klart. Du kan nu öppna din Dividend Lab-miljö.",
+        "Bekräfta ditt konto via e-post och logga sedan in på Dividend Lab.",
       );
       return;
     }
 
     setSuccessMessage(
-      "Bekräfta ditt konto via e-post och logga sedan in på Dividend Lab.",
+      "Ditt konto är klart. Du kan nu öppna din Dividend Lab-miljö.",
     );
   }
 
@@ -116,6 +118,44 @@ export default function RegisterForm({ redirectTo }: Props) {
             className="divlab-input w-full px-4 py-3"
           />
         </label>
+
+        <div className="flex items-start gap-3">
+          <input
+            id="legal-acceptance"
+            type="checkbox"
+            checked={legalAccepted}
+            onChange={(event) => {
+              setLegalAccepted(event.target.checked);
+              setError("");
+              setSuccessMessage("");
+            }}
+            className="mt-1 h-4 w-4 shrink-0 rounded border divlab-border-neutral bg-divlab-surface text-divlab-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/40"
+          />
+          <label
+            htmlFor="legal-acceptance"
+            className="text-sm leading-6 text-divlab-text-secondary"
+          >
+            Jag accepterar{" "}
+            <Link
+              href="/terms"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="divlab-link font-medium"
+            >
+              användarvillkoren
+            </Link>{" "}
+            och bekräftar att jag har läst{" "}
+            <Link
+              href="/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="divlab-link font-medium"
+            >
+              integritetspolicyn
+            </Link>
+            .
+          </label>
+        </div>
 
         {error && (
           <p className="rounded-xl border divlab-border-neutral divlab-inset px-4 py-3 text-sm leading-6 text-divlab-text-secondary">

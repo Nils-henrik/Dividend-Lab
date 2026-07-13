@@ -3,6 +3,10 @@ import { LEGAL_LAST_UPDATED } from "@/lib/legal/legal-config";
 type LayoutProps = {
   title: string;
   description: string;
+  publishedVersion?: {
+    version: string;
+    effectiveDateLabel: string;
+  };
   children: React.ReactNode;
 };
 
@@ -33,7 +37,12 @@ export function LegalList({ items }: { items: string[] }) {
   );
 }
 
-export default function LegalPageLayout({ title, description, children }: LayoutProps) {
+export default function LegalPageLayout({
+  title,
+  description,
+  publishedVersion,
+  children,
+}: LayoutProps) {
   return (
     <article className="mx-auto max-w-3xl px-6 py-16 md:px-8 md:py-20">
       <header>
@@ -44,6 +53,12 @@ export default function LegalPageLayout({ title, description, children }: Layout
         <p className="mt-4 text-base leading-7 text-divlab-text-secondary">
           {description}
         </p>
+        {publishedVersion && (
+          <p className="mt-3 text-xs text-divlab-text-muted">
+            Version {publishedVersion.version} – gäller från{" "}
+            {publishedVersion.effectiveDateLabel}
+          </p>
+        )}
         <p className="mt-4 text-xs text-divlab-text-muted">
           Senast uppdaterad: {LEGAL_LAST_UPDATED}
         </p>

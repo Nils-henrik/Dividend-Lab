@@ -1,4 +1,5 @@
 import LegalPageLayout, { LegalList, LegalSection } from "@/components/marketing/LegalPageLayout";
+import { LEGAL_PUBLISHED_VERSIONS } from "@/lib/legal/acceptance";
 import {
   LEGAL_OPERATOR_TERMS,
   legalConfig,
@@ -11,6 +12,7 @@ export default function TermsPageContent() {
     <LegalPageLayout
       title="Användarvillkor"
       description={`Villkor för användning av ${serviceName} under den kostnadsfria betaperioden. Dessa villkor beskriver hur tjänsten får användas och vilka begränsningar som gäller.`}
+      publishedVersion={LEGAL_PUBLISHED_VERSIONS.terms}
     >
       <LegalSection title="Om DivLab">
         <p>{LEGAL_OPERATOR_TERMS}</p>

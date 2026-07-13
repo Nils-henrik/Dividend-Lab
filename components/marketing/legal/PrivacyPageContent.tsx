@@ -1,4 +1,5 @@
 import LegalPageLayout, { LegalList, LegalSection } from "@/components/marketing/LegalPageLayout";
+import { LEGAL_PUBLISHED_VERSIONS } from "@/lib/legal/acceptance";
 import {
   LEGAL_OPERATOR_PRIVACY,
   LEGAL_PRIVACY_CONTACT_PENDING,
@@ -15,6 +16,7 @@ export default function PrivacyPageContent() {
     <LegalPageLayout
       title="Integritetspolicy"
       description={`Hur ${serviceName} behandlar personuppgifter under den kostnadsfria betaperioden. Policyn beskriver faktisk behandling i tjänsten — den utgör inte bevis på fullständig regelefterlevnad eller juridiskt slutgodkännande.`}
+      publishedVersion={LEGAL_PUBLISHED_VERSIONS.privacy}
     >
       <LegalSection title="Personuppgiftsansvarig">
         <p>{LEGAL_OPERATOR_PRIVACY}</p>
