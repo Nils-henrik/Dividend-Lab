@@ -1,8 +1,8 @@
+import ContactEmailLink from "@/components/marketing/ContactEmailLink";
 import LegalPageLayout, { LegalList, LegalSection } from "@/components/marketing/LegalPageLayout";
 import { LEGAL_PUBLISHED_VERSIONS } from "@/lib/legal/acceptance";
 import {
   LEGAL_OPERATOR_PRIVACY,
-  LEGAL_PRIVACY_CONTACT_PENDING,
   LEGAL_PRIVACY_RIGHTS_REQUEST,
   RECOVERY_COOKIE_NAME,
   TRADINGVIEW_WIDGET_SCRIPT,
@@ -20,7 +20,9 @@ export default function PrivacyPageContent() {
     >
       <LegalSection title="Personuppgiftsansvarig">
         <p>{LEGAL_OPERATOR_PRIVACY}</p>
-        <p>{LEGAL_PRIVACY_CONTACT_PENDING}</p>
+        <p>
+          Integritetskontakt: <ContactEmailLink kind="privacy" />
+        </p>
       </LegalSection>
 
       <LegalSection title="Vilka uppgifter som behandlas">
@@ -153,7 +155,9 @@ export default function PrivacyPageContent() {
           ännu saknas i tjänsten påverkar inte dessa rättigheter.
         </p>
         <p>{LEGAL_PRIVACY_RIGHTS_REQUEST}</p>
-        <p>{LEGAL_PRIVACY_CONTACT_PENDING}</p>
+        <p>
+          Integritetskontakt: <ContactEmailLink kind="privacy" />
+        </p>
         <p>
           Du kan även lämna klagomål till Integritetsskyddsmyndigheten (IMY) i Sverige.
         </p>
@@ -183,7 +187,9 @@ export default function PrivacyPageContent() {
 
       <LegalSection title="Kontakt och klagomål">
         <p>{LEGAL_PRIVACY_RIGHTS_REQUEST}</p>
-        <p>{LEGAL_PRIVACY_CONTACT_PENDING}</p>
+        <p>
+          Integritetskontakt: <ContactEmailLink kind="privacy" />
+        </p>
         <p>
           Klagomål kan även riktas till IMY.
         </p>

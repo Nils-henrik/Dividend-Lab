@@ -1,7 +1,9 @@
 /**
  * Verified operator and service facts for DivLab legal pages.
- * Do not add fictional contact or company details — null means Founder input pending.
+ * Contact emails are sourced from lib/site/contact.ts.
  */
+
+import { DIVLAB_CONTACT } from "@/lib/site/contact";
 
 export const LEGAL_LAST_UPDATED = "12 juli 2026";
 
@@ -24,17 +26,14 @@ export const LEGAL_OPERATOR_PRIVACY =
 /** Verified public postal address not yet provided. */
 export const LEGAL_POSTAL_ADDRESS: string | null = null;
 
-/** Verified support email not yet provided. */
-export const LEGAL_SUPPORT_EMAIL: string | null = null;
+/** General public contact email. */
+export const LEGAL_SUPPORT_EMAIL = DIVLAB_CONTACT.generalEmail;
 
-/** Verified privacy contact email not yet provided. */
-export const LEGAL_PRIVACY_EMAIL: string | null = null;
+/** Privacy, data-protection and user-rights contact email. */
+export const LEGAL_PRIVACY_EMAIL = DIVLAB_CONTACT.privacyEmail;
 
 export const LEGAL_PRIVACY_RIGHTS_REQUEST =
-  "Begäran om tillgång, rättelse, radering eller andra dataskyddsrättigheter kan lämnas genom DivLabs integritetskontakt. Begäran bedöms och hanteras enligt tillämpliga dataskyddsregler.";
-
-export const LEGAL_PRIVACY_CONTACT_PENDING =
-  "En verifierad kontaktadress publiceras före den bredare beta-lanseringen.";
+  `Begäran om tillgång, rättelse, radering eller andra dataskyddsrättigheter kan lämnas till DivLabs integritetskontakt på ${DIVLAB_CONTACT.privacyEmail}. Begäran bedöms och hanteras enligt tillämpliga dataskyddsregler.`;
 
 export const RECOVERY_COOKIE_NAME = "sb-recovery-pending";
 

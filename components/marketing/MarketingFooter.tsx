@@ -65,7 +65,15 @@ export default function MarketingFooter() {
             Investeringar innebär risk. Historisk avkastning är ingen garanti
             för framtida resultat.
           </p>
-          <p className="mt-6 text-xs text-gray-600">
+          <p className="mt-6 text-xs leading-5 text-gray-600">
+            <Link
+              href="/contact"
+              className="text-gray-500 transition hover:text-divlab-blue-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/40"
+            >
+              Kontakt
+            </Link>
+          </p>
+          <p className="mt-3 text-xs text-gray-600">
             © {new Date().getFullYear()} DivLab. Alla rättigheter förbehållna.
           </p>
         </div>

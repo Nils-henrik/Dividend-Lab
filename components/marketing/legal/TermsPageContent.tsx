@@ -1,3 +1,5 @@
+import Link from "next/link";
+import ContactEmailLink from "@/components/marketing/ContactEmailLink";
 import LegalPageLayout, { LegalList, LegalSection } from "@/components/marketing/LegalPageLayout";
 import { LEGAL_PUBLISHED_VERSIONS } from "@/lib/legal/acceptance";
 import {
@@ -200,8 +202,12 @@ export default function TermsPageContent() {
 
       <LegalSection title="Kontakt">
         <p>
-          Verifierade kontaktuppgifter publiceras på kontaktsidan innan registrering öppnas
-          brett. Frågor om dessa villkor kan då ställas via angivna kontaktvägar.
+          Frågor om dessa villkor kan ställas via{" "}
+          <ContactEmailLink kind="general" /> eller sidan{" "}
+          <Link href="/contact" className="divlab-link font-medium">
+            Kontakt
+          </Link>
+          .
         </p>
       </LegalSection>
     </LegalPageLayout>
