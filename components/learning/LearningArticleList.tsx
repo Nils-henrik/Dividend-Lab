@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { learningArticles } from "@/data/learning-articles";
+import LearningArticleCover from "@/components/learning/LearningArticleCover";
 
 export default function LearningArticleList() {
   return (
@@ -20,15 +21,24 @@ export default function LearningArticleList() {
           <Link
             key={article.slug}
             href={`/learning/${article.slug}`}
-            className="divlab-card p-6 transition hover:border-divlab-border-strong"
+            className="divlab-card overflow-hidden transition hover:border-divlab-border-strong"
           >
-            <h2 className="text-lg font-semibold text-divlab-text">{article.title}</h2>
-            <p className="mt-2 text-sm leading-6 text-divlab-text-secondary">
-              {article.description}
-            </p>
-            <p className="mt-4 text-xs font-medium text-divlab-blue-muted">
-              {article.readingMinutes} min läsning · Läs artikel
-            </p>
+            {article.coverImage && article.coverImageAlt && (
+              <LearningArticleCover
+                src={article.coverImage}
+                alt={article.coverImageAlt}
+                className="aspect-video w-full overflow-hidden border-0 border-b divlab-border-neutral rounded-none"
+              />
+            )}
+            <div className="p-6">
+              <h2 className="text-lg font-semibold text-divlab-text">{article.title}</h2>
+              <p className="mt-2 text-sm leading-6 text-divlab-text-secondary">
+                {article.description}
+              </p>
+              <p className="mt-4 text-xs font-medium text-divlab-blue-muted">
+                {article.readingMinutes} min läsning · Läs artikel
+              </p>
+            </div>
           </Link>
         ))}
       </div>

@@ -1,12 +1,18 @@
 export type LearningArticleSubsection = {
   subheading: string;
-  paragraphs: string[];
+  paragraphs?: string[];
+  bullets?: string[];
+  numberedItems?: string[];
+  paragraphsAfterLists?: string[];
 };
 
 export type LearningArticleSection = {
   heading?: string;
   intro?: string[];
   paragraphs?: string[];
+  bullets?: string[];
+  numberedItems?: string[];
+  paragraphsAfterLists?: string[];
   subsections?: LearningArticleSubsection[];
   callout?: string;
   calculation?: {
@@ -29,9 +35,14 @@ export type LearningArticle = {
   seoTitle?: string;
   description: string;
   excerpt: string;
-  intro: string;
+  intro: string | string[];
   category?: string;
   level?: string;
+  publishedAt?: string;
+  updatedAt?: string;
+  coverImage?: string;
+  coverImageAlt?: string;
+  showDefaultDisclaimer?: boolean;
   sections: LearningArticleSection[];
   takeaways: string[];
 };

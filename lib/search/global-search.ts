@@ -36,13 +36,22 @@ function isMissingSearchTableError(error: { code?: string; message?: string }) {
 }
 
 function getLearningArticleSearchText(article: (typeof learningArticles)[number]) {
+  const introText = Array.isArray(article.intro)
+    ? article.intro.join(" ")
+    : article.intro;
   const sectionText = article.sections.flatMap((section) => [
     section.heading ?? "",
     ...(section.intro ?? []),
     ...(section.paragraphs ?? []),
+    ...(section.bullets ?? []),
+    ...(section.numberedItems ?? []),
+    ...(section.paragraphsAfterLists ?? []),
     ...(section.subsections?.flatMap((subsection) => [
       subsection.subheading,
-      ...subsection.paragraphs,
+      ...(subsection.paragraphs ?? []),
+      ...(subsection.bullets ?? []),
+      ...(subsection.numberedItems ?? []),
+      ...(subsection.paragraphsAfterLists ?? []),
     ]) ?? []),
     section.callout ?? "",
     ...(section.calculation?.lines ?? []),
@@ -52,7 +61,7 @@ function getLearningArticleSearchText(article: (typeof learningArticles)[number]
     article.title,
     article.description,
     article.excerpt,
-    article.intro,
+    introText,
     ...sectionText,
   ]
     .join(" ")
