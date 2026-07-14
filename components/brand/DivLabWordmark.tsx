@@ -5,6 +5,8 @@ type Props = {
   asLink?: boolean;
   logoClassName?: string;
   textClassName?: string;
+  onClick?: () => void;
+  "aria-label"?: string;
 };
 
 export default function DivLabWordmark({
@@ -12,6 +14,8 @@ export default function DivLabWordmark({
   asLink = true,
   logoClassName = "text-3xl",
   textClassName = "text-lg md:text-xl",
+  onClick,
+  "aria-label": ariaLabel,
 }: Props) {
   const content = (
     <>
@@ -27,7 +31,12 @@ export default function DivLabWordmark({
   }
 
   return (
-    <Link href={href} className="flex items-center gap-2.5">
+    <Link
+      href={href}
+      onClick={onClick}
+      aria-label={ariaLabel}
+      className="flex items-center gap-2.5 transition hover:opacity-90"
+    >
       {content}
     </Link>
   );

@@ -1,32 +1,51 @@
 import type { NavigationItem } from "@/types/navigation";
 
 export const appNavigation: NavigationItem[] = [
-  { label: "Start", href: "/dashboard", icon: "dashboard" },
-  {
-    label: "Frihetsmaskinen",
-    href: "/frihetsmaskinen",
-    icon: "goals",
-    visibility: "mobile-only",
-  },
-  { label: "Portfölj", href: "/portfolio", icon: "portfolio" },
-  { label: "Dividend Brain", href: "/brain", icon: "brain" },
-  { label: "Bevakningslista", href: "/watchlist", icon: "watchlist" },
+  { label: "Översikt", href: "/dashboard", icon: "dashboard" },
   { label: "Börsnyheter", href: "/news", icon: "news" },
   { label: "Forum", href: "/forum", icon: "forum" },
-  { label: "Meddelanden", href: "/messages", icon: "messages" },
   { label: "Utbildning", href: "/learning", icon: "learning" },
-  { label: "Mål", href: "/goals", icon: "goals" },
-  { label: "Kalender", href: "/calendar", icon: "calendar" },
-  { label: "Konto", href: "/account", icon: "account" },
-  { label: "Inställningar", href: "/settings", icon: "settings" },
+  { label: "Frihetsmaskinen", href: "/frihetsmaskinen", icon: "goals" },
+  { label: "Meddelanden", href: "/messages", icon: "messages" },
+  {
+    label: "Portfölj",
+    href: "/portfolio",
+    icon: "portfolio",
+    statusLabel: "Kommer snart",
+  },
+  {
+    label: "Bevakningslista",
+    href: "/watchlist",
+    icon: "watchlist",
+    statusLabel: "Kommer snart",
+  },
+  {
+    label: "DivBrain",
+    href: "/brain",
+    icon: "brain",
+    statusLabel: "Under utveckling",
+  },
+  {
+    label: "Kalender",
+    href: "/calendar",
+    icon: "calendar",
+    statusLabel: "Tidig version",
+  },
+  { label: "Konto", href: "/account", icon: "account", section: "account" },
+  {
+    label: "Inställningar",
+    href: "/settings",
+    icon: "settings",
+    section: "account",
+  },
 ];
 
 export const pageTitles: Record<string, string> = {
   "/account": "Investeraridentitet",
   "/account/edit": "Redigera profil",
-  "/brain": "Dividend Brain",
+  "/brain": "DivBrain",
   "/calendar": "Kalender",
-  "/dashboard": "Start",
+  "/dashboard": "Översikt",
   "/frihetsmaskinen": "Frihetsmaskinen",
   "/forum": "Forum",
   "/forum/senaste": "Senaste",
@@ -44,7 +63,7 @@ export const pageTitles: Record<string, string> = {
   "/watchlist": "Bevakningslista",
   "/profile": "Profil",
   "/dashboard/account": "Investeraridentitet",
-  "/dashboard/brain": "Dividend Brain",
+  "/dashboard/brain": "DivBrain",
   "/dashboard/forum": "Forum",
   "/dashboard/goals": "Mål",
   "/dashboard/learning": "Utbildning",
@@ -64,5 +83,5 @@ export function getPageTitle(pathname: string) {
     )
     .sort(([firstPath], [secondPath]) => secondPath.length - firstPath.length)[0];
 
-  return prefixMatch?.[1] ?? "Start";
+  return prefixMatch?.[1] ?? "Översikt";
 }
