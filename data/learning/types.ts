@@ -17,14 +17,21 @@ export type LearningArticleSection = {
     slug: string;
     text: string;
   }[];
+  externalLinks?: {
+    href: string;
+    text: string;
+  }[];
 };
 
 export type LearningArticle = {
   slug: string;
   title: string;
+  seoTitle?: string;
   description: string;
   excerpt: string;
   intro: string;
+  category?: string;
+  level?: string;
   sections: LearningArticleSection[];
   takeaways: string[];
 };

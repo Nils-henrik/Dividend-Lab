@@ -97,6 +97,19 @@ export default function LearningArticleView({ article }: Props) {
                 </Link>
               </p>
             ))}
+
+            {section.externalLinks?.map((link) => (
+              <p key={link.href} className="text-sm leading-7 text-divlab-text-secondary">
+                <a
+                  href={link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="divlab-link font-medium"
+                >
+                  {link.text}
+                </a>
+              </p>
+            ))}
           </section>
         ))}
 

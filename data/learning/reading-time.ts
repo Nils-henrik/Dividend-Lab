@@ -42,6 +42,10 @@ function collectArticleText(article: LearningArticle) {
       chunks.push(...section.relatedLinks.map((link) => link.text));
     }
 
+    if (section.externalLinks) {
+      chunks.push(...section.externalLinks.map((link) => link.text));
+    }
+
     if (section.subsections) {
       for (const subsection of section.subsections) {
         chunks.push(subsection.subheading, ...subsection.paragraphs);
