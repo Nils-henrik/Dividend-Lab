@@ -29,13 +29,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return {};
   }
 
+  const pageTitle = article.seoTitle ?? article.title;
+
   return {
-    title: `${article.title} | Dividend Lab`,
+    title: `${pageTitle} | Dividend Lab`,
     description: article.description,
     openGraph: {
-      title: article.title,
+      title: pageTitle,
       description: article.description,
       type: "article",
+      ...(article.publishedAt ? { publishedTime: article.publishedAt } : {}),
+      ...(article.updatedAt ? { modifiedTime: article.updatedAt } : {}),
     },
   };
 }

@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" fill="none" role="img" aria-hidden="true">
+  <rect width="1280" height="720" fill="#0d1014"/>
+  <rect x="48" y="48" width="1184" height="624" rx="20" fill="#12161c" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+
+  <!-- Subtle pathway -->
+  <path d="M180 560 C 280 520, 360 500, 460 470 S 620 420, 720 390 S 900 340, 1040 300" stroke="rgba(10,132,255,0.22)" stroke-width="3" stroke-linecap="round" stroke-dasharray="8 10"/>
+  <circle cx="180" cy="560" r="10" fill="#0a84ff" fill-opacity="0.55"/>
+  <circle cx="1040" cy="300" r="10" fill="#60a5fa" fill-opacity="0.75"/>
+
+  <!-- Buffer / emergency reserve -->
+  <rect x="120" y="420" width="220" height="120" rx="14" fill="#181d24" stroke="rgba(255,255,255,0.1)"/>
+  <rect x="148" y="452" width="72" height="56" rx="8" fill="rgba(10,132,255,0.12)" stroke="rgba(10,132,255,0.28)"/>
+  <rect x="236" y="468" width="72" height="40" rx="8" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)"/>
+  <rect x="148" y="392" width="164" height="10" rx="5" fill="rgba(255,255,255,0.08)"/>
+
+  <!-- Diversified holdings -->
+  <rect x="520" y="360" width="280" height="180" rx="16" fill="#181d24" stroke="rgba(255,255,255,0.1)"/>
+  <rect x="548" y="392" width="56" height="56" rx="10" fill="rgba(10,132,255,0.14)" stroke="rgba(10,132,255,0.24)"/>
+  <rect x="620" y="404" width="56" height="44" rx="10" fill="rgba(96,165,250,0.12)" stroke="rgba(96,165,250,0.22)"/>
+  <rect x="692" y="396" width="56" height="52" rx="10" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.1)"/>
+  <rect x="548" y="468" width="84" height="44" rx="10" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)"/>
+  <rect x="648" y="468" width="100" height="44" rx="10" fill="rgba(10,132,255,0.08)" stroke="rgba(10,132,255,0.18)"/>
+
+  <!-- Restrained market chart -->
+  <rect x="860" y="180" width="300" height="180" rx="16" fill="#181d24" stroke="rgba(255,255,255,0.1)"/>
+  <path d="M892 300 L 948 286 L 1004 294 L 1060 268 L 1116 276 L 1140 250" stroke="#60a5fa" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M892 330 L 948 318 L 1004 324 L 1060 308 L 1116 314 L 1140 296" stroke="rgba(255,255,255,0.18)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <line x1="880" y1="340" x2="1148" y2="340" stroke="rgba(255,255,255,0.08)"/>
+  <line x1="880" y1="220" x2="880" y2="340" stroke="rgba(255,255,255,0.08)"/>
+
+  <!-- Abstract fund blocks along path -->
+  <rect x="390" y="470" width="88" height="64" rx="12" fill="rgba(10,132,255,0.1)" stroke="rgba(10,132,255,0.2)"/>
+  <rect x="760" y="330" width="88" height="64" rx="12" fill="rgba(96,165,250,0.1)" stroke="rgba(96,165,250,0.2)"/>
+
+  <!-- Foundation platform -->
+  <rect x="120" y="560" width="1040" height="12" rx="6" fill="rgba(255,255,255,0.06)"/>
+</svg>

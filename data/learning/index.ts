@@ -1,3 +1,4 @@
+import borjaInvestera from "./articles/borja-investera-pa-borsen";
 import direktavkastning from "./articles/direktavkastning-och-utdelningssakerhet";
 import sparande from "./articles/sparande-i-borjan";
 import tidTillFrihet from "./articles/tid-till-ekonomisk-frihet";
@@ -17,6 +18,7 @@ export {
 } from "./reading-time";
 
 const rawArticles: LearningArticle[] = [
+  borjaInvestera,
   tidTillFrihet,
   direktavkastning,
   sparande,

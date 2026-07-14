@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { learningArticles } from "@/data/learning-articles";
+import LearningArticleRow from "@/components/learning/LearningArticleRow";
 
 export default function LearningArticleList() {
   return (
@@ -7,29 +7,23 @@ export default function LearningArticleList() {
       <section className="divlab-hero">
         <p className="mb-3 divlab-section-label">Utbildning</p>
         <h1 className="text-3xl font-semibold tracking-[-0.04em] text-divlab-text">
-          Lär dig mer om utdelning och FIRE
+          Lär dig mer om börsen och investeringar
         </h1>
         <p className="mt-4 max-w-3xl text-sm leading-7 text-divlab-text-secondary">
-          Saklig, långsiktig utbildning för investerare som tänker i år — inte
-          dagar.
+          Pedagogiska och sakliga guider om aktier, fonder, ETF:er, portföljer,
+          risk och hur marknaden fungerar.
         </p>
+        <blockquote className="mt-5 max-w-3xl border-0 p-0 text-sm leading-6 text-divlab-text-muted">
+          <p>An investment in knowledge pays the best interest.</p>
+          <footer className="mt-1.5 text-xs text-divlab-text-subtle">
+            — Benjamin Franklin
+          </footer>
+        </blockquote>
       </section>
 
-      <div className="grid gap-4">
+      <div>
         {learningArticles.map((article) => (
-          <Link
-            key={article.slug}
-            href={`/learning/${article.slug}`}
-            className="divlab-card p-6 transition hover:border-divlab-border-strong"
-          >
-            <h2 className="text-lg font-semibold text-divlab-text">{article.title}</h2>
-            <p className="mt-2 text-sm leading-6 text-divlab-text-secondary">
-              {article.description}
-            </p>
-            <p className="mt-4 text-xs font-medium text-divlab-blue-muted">
-              {article.readingMinutes} min läsning · Läs artikel
-            </p>
-          </Link>
+          <LearningArticleRow key={article.slug} article={article} />
         ))}
       </div>
     </div>
