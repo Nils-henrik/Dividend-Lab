@@ -1,3 +1,4 @@
+import { DIVLAB_MEMBER_LABEL } from "@/lib/site/brand";
 import { getAvatarPublicUrl } from "@/lib/profiles/identity";
 import { createClient } from "@/lib/supabase/server";
 import type {
@@ -49,7 +50,7 @@ function getInitials(value: string) {
 
 function mapParticipantProfile(profile: ProfileRow | undefined, userId: string) {
   const username = profile?.username?.trim() || null;
-  const name = profile?.display_name?.trim() || username || "Dividend Lab-medlem";
+  const name = profile?.display_name?.trim() || username || DIVLAB_MEMBER_LABEL;
 
   return {
     id: userId,

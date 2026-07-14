@@ -64,7 +64,7 @@ export default function ForumOverviewPage({
 
       <ForumPageHeader
         title="Forum"
-        description="Utforska diskussioner, kategorier och senaste aktivitet i Dividend Lab-gemenskapen."
+        description="Utforska diskussioner, kategorier och senaste aktivitet i DivLab-gemenskapen."
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         searchPlaceholder="Sök bland inlästa diskussioner..."

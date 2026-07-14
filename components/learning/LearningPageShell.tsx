@@ -23,7 +23,7 @@ export default async function LearningPageShell({ children }: Props) {
       <header className="divlab-shell-header px-8 py-4">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-4">
           <Link href="/learning" className="divlab-link text-sm font-medium">
-            Dividend Lab · Utbildning
+            DivLab · Utbildning
           </Link>
           <Link
             href="/login?redirect=/learning"

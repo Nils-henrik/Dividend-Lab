@@ -78,7 +78,7 @@ export default async function ForumThreadRoute({ params }: Props) {
   let isDemoThread = false;
   let openingAuthorUsername = "";
   let openingAuthorInitials = "DL";
-  let openingMemberSince = "Dividend Lab member";
+  let openingMemberSince = "DivLab member";
   let openingTimestamp = "";
 
   if (isForumDemoThread(threadId)) {

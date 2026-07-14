@@ -102,7 +102,7 @@ export default function ProfileEditForm({
           Redigera profil
         </h2>
         <p className="mt-4 max-w-3xl text-base leading-7 text-divlab-text-secondary">
-          Hantera de offentliga profilfält som Dividend Lab använder för din
+          Hantera de offentliga profilfält som DivLab använder för din
           community-identitet.
         </p>
       </section>

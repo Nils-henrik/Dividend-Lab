@@ -8,6 +8,7 @@ import {
   MESSAGE_SUBJECT_MAX_LENGTH,
   type MessageParticipant,
 } from "@/lib/messages/types";
+import { DIVLAB_MEMBER_LABEL } from "@/lib/site/brand";
 
 const initialState = {
   status: "idle",
@@ -65,7 +66,7 @@ export default function NewConversationForm({
             <p className="mt-1 truncate text-xs text-gray-500">
               {targetParticipant.username
                 ? `@${targetParticipant.username}`
-                : "Dividend Lab-medlem"}
+                : DIVLAB_MEMBER_LABEL}
             </p>
           </div>
         </div>

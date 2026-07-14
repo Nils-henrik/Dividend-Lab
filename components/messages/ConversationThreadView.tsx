@@ -1,6 +1,7 @@
 import Link from "next/link";
 import ProfileAvatar from "@/components/account/ProfileAvatar";
 import { formatMessageTimestamp } from "@/lib/messages/format";
+import { DIVLAB_MEMBER_LABEL } from "@/lib/site/brand";
 import type { ConversationThread } from "@/lib/messages/types";
 import MessageComposer from "./MessageComposer";
 import MessageListAutoScroll from "./MessageListAutoScroll";
@@ -18,7 +19,7 @@ export default function ConversationThreadView({
   const subject = conversation.subject?.trim() || "Ingen ämnesrad";
   const receivedSenderLabel = otherParticipant?.username
     ? `@${otherParticipant.username.replace(/^@/, "")}`
-    : (otherParticipant?.name ?? "Dividend Lab-medlem");
+    : (otherParticipant?.name ?? DIVLAB_MEMBER_LABEL);
   const lastMessageId =
     conversation.messages[conversation.messages.length - 1]?.id ?? "empty";
 
@@ -37,7 +38,7 @@ export default function ConversationThreadView({
               {subject}
             </h2>
             <p className="mt-1 truncate text-sm text-divlab-text-muted">
-              {otherParticipant?.name ?? "Dividend Lab-medlem"}
+              {otherParticipant?.name ?? DIVLAB_MEMBER_LABEL}
               {otherParticipant?.username ? ` · @${otherParticipant.username}` : ""}
             </p>
           </div>

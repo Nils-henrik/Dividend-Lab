@@ -5,6 +5,7 @@ import { type FormEvent, useState } from "react";
 import { registerUser } from "@/app/register/actions";
 import PrimaryButton from "@/components/ui/Button";
 import { LEGAL_ACCEPTANCE_VALIDATION_MESSAGE } from "@/lib/legal/acceptance";
+import { DIVLAB_BRAND_NAME } from "@/lib/site/brand";
 
 type Props = {
   redirectTo: string;
@@ -58,20 +59,20 @@ export default function RegisterForm({ redirectTo }: Props) {
 
     if (result.needsEmailConfirmation) {
       setSuccessMessage(
-        "Bekräfta ditt konto via e-post och logga sedan in på Dividend Lab.",
+        "Bekräfta ditt konto via e-post och logga sedan in på DivLab.",
       );
       return;
     }
 
     setSuccessMessage(
-      "Ditt konto är klart. Du kan nu öppna din Dividend Lab-miljö.",
+      "Ditt konto är klart. Du kan nu öppna din DivLab-miljö.",
     );
   }
 
   return (
     <section className="divlab-card w-full max-w-md rounded-3xl p-8 shadow-[0_40px_120px_rgba(0,0,0,0.45)]">
       <div className="mb-8">
-        <p className="mb-3 divlab-section-label">Dividend Lab</p>
+        <p className="mb-3 divlab-section-label">{DIVLAB_BRAND_NAME}</p>
         <h1 className="text-3xl font-semibold tracking-[-0.03em] text-divlab-text">
           Skapa konto
         </h1>

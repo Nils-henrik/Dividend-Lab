@@ -4,6 +4,7 @@ import Link from "next/link";
 import { type FormEvent, useState } from "react";
 import { requestPasswordReset } from "@/app/forgot-password/actions";
 import PrimaryButton from "@/components/ui/Button";
+import { DIVLAB_BRAND_NAME } from "@/lib/site/brand";
 
 const GENERIC_RESET_ERROR =
   "Det gick inte att skicka instruktionerna just nu. Försök igen om en stund.";
@@ -61,7 +62,7 @@ export default function ForgotPasswordPage() {
     <main className="flex min-h-screen items-center justify-center bg-divlab-bg px-6 py-12 text-divlab-text">
       <section className="divlab-card w-full max-w-md rounded-3xl p-8 shadow-[0_40px_120px_rgba(0,0,0,0.45)]">
         <div className="mb-8">
-          <p className="mb-3 divlab-section-label">Dividend Lab</p>
+          <p className="mb-3 divlab-section-label">{DIVLAB_BRAND_NAME}</p>
           <h1 className="text-3xl font-semibold tracking-[-0.03em] text-divlab-text">
             Återställ lösenord
           </h1>

@@ -10,20 +10,12 @@ function LearningArticleList({ items, ordered = false }: ListProps) {
     <ListTag
       className={
         ordered
-          ? "list-decimal space-y-2 pl-5 text-sm leading-7 text-divlab-text-secondary"
-          : "space-y-2 text-sm leading-7 text-divlab-text-secondary"
+          ? "list-decimal space-y-2 pl-5 text-base leading-7 text-divlab-text-secondary"
+          : "list-disc space-y-2 pl-5 text-base leading-7 text-divlab-text-secondary marker:text-divlab-blue/70"
       }
     >
       {items.map((item) => (
-        <li
-          key={item}
-          className={ordered ? undefined : "flex gap-3"}
-        >
-          {!ordered && (
-            <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-divlab-blue/70" />
-          )}
-          <span>{item}</span>
-        </li>
+        <li key={item}>{item}</li>
       ))}
     </ListTag>
   );
@@ -47,13 +39,13 @@ export function LearningArticleSectionContent({
   return (
     <>
       {intro?.map((paragraph) => (
-        <p key={paragraph} className="text-sm leading-7 text-divlab-text-secondary">
+        <p key={paragraph} className="text-base leading-7 text-divlab-text-secondary">
           {paragraph}
         </p>
       ))}
 
       {paragraphs?.map((paragraph) => (
-        <p key={paragraph} className="text-sm leading-7 text-divlab-text-secondary">
+        <p key={paragraph} className="text-base leading-7 text-divlab-text-secondary">
           {paragraph}
         </p>
       ))}
@@ -65,7 +57,7 @@ export function LearningArticleSectionContent({
       )}
 
       {paragraphsAfterLists?.map((paragraph) => (
-        <p key={paragraph} className="text-sm leading-7 text-divlab-text-secondary">
+        <p key={paragraph} className="text-base leading-7 text-divlab-text-secondary">
           {paragraph}
         </p>
       ))}
@@ -90,7 +82,7 @@ export function LearningArticleSubsectionContent({
 }: SubsectionProps) {
   return (
     <div className="space-y-3">
-      <h3 className="text-base font-semibold text-divlab-text">{subheading}</h3>
+      <h3 className="text-lg font-semibold text-divlab-text">{subheading}</h3>
       <LearningArticleSectionContent
         paragraphs={paragraphs}
         bullets={bullets}

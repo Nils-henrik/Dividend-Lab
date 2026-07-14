@@ -2,6 +2,7 @@ export {
   getArticleReadingMinutes,
   getDashboardLearningInsights,
   getLearningArticle,
+  getRelatedLearningArticles,
   learningArticles,
   learningDisclaimer,
   withReadingTime,

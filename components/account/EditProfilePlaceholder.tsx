@@ -23,7 +23,7 @@ export default function EditProfilePlaceholder() {
             </h3>
             <div className="mx-auto mt-5 max-w-2xl space-y-4 text-sm leading-7 text-divlab-text-secondary">
               <p>
-                Dividend Lab kommer snart att låta dig anpassa din offentliga
+                DivLab kommer snart att låta dig anpassa din offentliga
                 investerarprofil, profilbild, biografi och synlighetsinställningar.
               </p>
               <p>

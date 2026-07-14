@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PrimaryButton from "@/components/ui/Button";
+import { DIVLAB_BRAND_NAME } from "@/lib/site/brand";
 
 type Props = {
   redirectTo: string;
@@ -56,7 +57,7 @@ export default function LoginForm({ redirectTo, resetSuccess = false }: Props) {
   return (
     <section className="divlab-card w-full max-w-md rounded-3xl p-8 shadow-[0_40px_120px_rgba(0,0,0,0.45)]">
       <div className="mb-8">
-        <p className="mb-3 divlab-section-label">Dividend Lab</p>
+        <p className="mb-3 divlab-section-label">{DIVLAB_BRAND_NAME}</p>
         <h1 className="text-3xl font-semibold tracking-[-0.03em] text-divlab-text">
           Logga in
         </h1>
@@ -126,7 +127,7 @@ export default function LoginForm({ redirectTo, resetSuccess = false }: Props) {
       </form>
 
       <p className="mt-6 text-center text-sm text-divlab-text-muted">
-        Ny på Dividend Lab?{" "}
+        Ny på {DIVLAB_BRAND_NAME}?{" "}
         <Link href="/register" className="divlab-link font-medium">
           Skapa konto
         </Link>

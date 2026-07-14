@@ -1,4 +1,5 @@
 import borjaInvestera from "./articles/borja-investera-pa-borsen";
+import vadArEnAktie from "./articles/vad-ar-en-aktie";
 import direktavkastning from "./articles/direktavkastning-och-utdelningssakerhet";
 import sparande from "./articles/sparande-i-borjan";
 import tidTillFrihet from "./articles/tid-till-ekonomisk-frihet";
@@ -18,6 +19,7 @@ export {
 } from "./reading-time";
 
 const rawArticles: LearningArticle[] = [
+  vadArEnAktie,
   borjaInvestera,
   tidTillFrihet,
   direktavkastning,
@@ -29,6 +31,28 @@ export const learningArticles: LearningArticleWithReadingTime[] =
 
 export function getLearningArticle(slug: string) {
   return learningArticles.find((article) => article.slug === slug) ?? null;
+}
+
+export function getRelatedLearningArticles(
+  currentSlug: string,
+  relatedSlugs?: string[],
+) {
+  if (!relatedSlugs?.length) {
+    return [];
+  }
+
+  const seen = new Set<string>();
+
+  return relatedSlugs
+    .map((slug) => getLearningArticle(slug))
+    .filter((article): article is LearningArticleWithReadingTime => {
+      if (!article || article.slug === currentSlug || seen.has(article.slug)) {
+        return false;
+      }
+
+      seen.add(article.slug);
+      return true;
+    });
 }
 
 export function getDashboardLearningInsights() {

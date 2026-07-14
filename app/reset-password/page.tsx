@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useEffect, useState } from "react";
 import PrimaryButton from "@/components/ui/Button";
+import { DIVLAB_BRAND_NAME } from "@/lib/site/brand";
 import { clearRecoveryPendingCookie, markRecoveryPendingCookie } from "@/lib/auth/recovery";
 import { createClient } from "@/lib/supabase/client";
 
@@ -181,7 +182,7 @@ export default function ResetPasswordPage() {
     <main className="flex min-h-screen items-center justify-center bg-divlab-bg px-6 py-12 text-divlab-text">
       <section className="divlab-card w-full max-w-md rounded-3xl p-8 shadow-[0_40px_120px_rgba(0,0,0,0.45)]">
         <div className="mb-8">
-          <p className="mb-3 divlab-section-label">Dividend Lab</p>
+          <p className="mb-3 divlab-section-label">{DIVLAB_BRAND_NAME}</p>
           <h1 className="text-3xl font-semibold tracking-[-0.03em] text-divlab-text">
             Välj nytt lösenord
           </h1>

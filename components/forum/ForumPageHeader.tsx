@@ -34,7 +34,7 @@ export default function ForumPageHeader({
         className={`grid gap-4 ${showSearch ? "xl:grid-cols-[1fr_420px] xl:items-center" : ""}`}
       >
         <div>
-          <p className="mb-1.5 divlab-section-label">Dividend Lab Forum</p>
+          <p className="mb-1.5 divlab-section-label">DivLab Forum</p>
           <h1 className="text-2xl font-semibold tracking-[-0.04em] text-divlab-text">
             {title}
           </h1>

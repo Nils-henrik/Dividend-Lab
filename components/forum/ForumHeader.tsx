@@ -22,7 +22,7 @@ export default function ForumHeader({
     <section className="divlab-surface-panel p-3.5">
       <div className="grid gap-4 xl:grid-cols-[1fr_420px] xl:items-center">
         <div>
-          <p className="mb-1.5 divlab-section-label">Dividend Lab Forum</p>
+          <p className="mb-1.5 divlab-section-label">DivLab Forum</p>
           <h2 className="text-2xl font-semibold tracking-[-0.04em] text-divlab-text">
             {activeCategoryName}
           </h2>

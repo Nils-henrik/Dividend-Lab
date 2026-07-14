@@ -1,3 +1,4 @@
+import { DIVLAB_MEMBER_LABEL } from "@/lib/site/brand";
 import type { AuthenticatedUser } from "@/lib/auth/user";
 import type { UserProfile } from "./types";
 
@@ -23,7 +24,7 @@ export function isGuestDisplayIdentity(identity: UserDisplayIdentity) {
   return identity.id === GUEST_DISPLAY_IDENTITY.id;
 }
 
-const PUBLIC_IDENTITY_FALLBACK = "Dividend Lab-medlem";
+const PUBLIC_IDENTITY_FALLBACK = DIVLAB_MEMBER_LABEL;
 
 export function getAvatarPublicUrl(
   avatarPath: string | null | undefined,

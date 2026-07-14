@@ -8,6 +8,7 @@ import {
   formatForumTimestamp,
   getForumExcerpt,
 } from "@/lib/forum/format";
+import { DIVLAB_MEMBER_LABEL } from "@/lib/site/brand";
 import type {
   ForumAuthorActivityItem,
   ForumAuthorStats,
@@ -61,7 +62,7 @@ export default function PublicProfileView({
   isAuthenticated,
 }: Props) {
   const displayName =
-    profile.displayName?.trim() || profile.username || "Dividend Lab-medlem";
+    profile.displayName?.trim() || profile.username || DIVLAB_MEMBER_LABEL;
   const normalizedUsername = profile.username?.trim().toLowerCase() ?? "";
   const memberLabel = formatForumMemberSince(profile.createdAt);
   const messageHref = normalizedUsername
@@ -86,7 +87,7 @@ export default function PublicProfileView({
 
             <div className="min-w-0">
               <p className="mb-3 divlab-section-label">
-                Dividend Lab-medlem
+                {DIVLAB_MEMBER_LABEL}
               </p>
               <h1 className="text-3xl font-semibold tracking-[-0.04em] text-divlab-text md:text-4xl">
                 {displayName}

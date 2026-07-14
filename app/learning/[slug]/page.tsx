@@ -8,6 +8,7 @@ import LearningArticleView, {
 import { getLearningArticle, learningArticles } from "@/data/learning-articles";
 import { getAuthenticatedUser } from "@/lib/auth/session";
 import { getProfileForUser } from "@/lib/profiles/profile";
+import { DIVLAB_BRAND_NAME } from "@/lib/site/brand";
 
 type Props = {
   params: Promise<{
@@ -32,7 +33,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const pageTitle = article.seoTitle ?? article.title;
 
   return {
-    title: `${pageTitle} | Dividend Lab`,
+    title: `${pageTitle} | ${DIVLAB_BRAND_NAME}`,
     description: article.description,
     openGraph: {
       title: pageTitle,
@@ -59,11 +60,13 @@ export default async function LearningArticlePage({ params }: Props) {
     <LearningPageShell>
       <div className="space-y-6">
         <LearningArticleView article={article} />
-        <LearningArticleComments
-          articleSlug={article.slug}
-          user={user}
-          profile={profile}
-        />
+        <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8">
+          <LearningArticleComments
+            articleSlug={article.slug}
+            user={user}
+            profile={profile}
+          />
+        </div>
       </div>
     </LearningPageShell>
   );

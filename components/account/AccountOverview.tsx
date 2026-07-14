@@ -93,8 +93,8 @@ export default function AccountOverview({
               <StaffRoleBadges roles={staffRoles} className="mt-3" />
               <p className="mt-5 max-w-3xl text-sm leading-7 text-divlab-text-secondary">
                 {hasPublicProfile
-                  ? "Din Dividend Lab-profil är redo för kommande community-funktioner."
-                  : "Din investerarprofil är inte färdig ännu. Fyll i din investeraridentitet för att anpassa din Dividend Lab-profil."}
+                  ? "Din DivLab-profil är redo för kommande community-funktioner."
+                  : "Din investerarprofil är inte färdig ännu. Fyll i din investeraridentitet för att anpassa din DivLab-profil."}
               </p>
             </div>
           </div>
@@ -147,7 +147,7 @@ export default function AccountOverview({
             <DefinitionRow label="Bio">
               {profile.bio ?? (
                 <EmptyField>
-                  Lägg till en kort bio för att anpassa din Dividend Lab-identitet.
+                  Lägg till en kort bio för att anpassa din DivLab-identitet.
                 </EmptyField>
               )}
             </DefinitionRow>

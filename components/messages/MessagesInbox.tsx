@@ -1,6 +1,7 @@
 import Link from "next/link";
 import ProfileAvatar from "@/components/account/ProfileAvatar";
 import { formatMessageTimestamp } from "@/lib/messages/format";
+import { DIVLAB_MEMBER_LABEL } from "@/lib/site/brand";
 import type { ConversationSummary } from "@/lib/messages/types";
 
 type Props = {
@@ -19,7 +20,7 @@ export default function MessagesInbox({ conversations, errorMessage }: Props) {
               Inkorg
             </h2>
             <p className="mt-4 max-w-2xl text-base leading-7 text-divlab-text-secondary">
-              Privata konversationer mellan Dividend Lab-medlemmar. Håll
+              Privata konversationer mellan DivLab-medlemmar. Håll
               tonen tydlig, respektfull och långsiktig.
             </p>
           </div>
@@ -99,7 +100,7 @@ export default function MessagesInbox({ conversations, errorMessage }: Props) {
                           )}
                           <span className="truncate text-sm font-semibold text-divlab-text">
                             {conversation.otherParticipant?.name ??
-                              "Dividend Lab-medlem"}
+                              DIVLAB_MEMBER_LABEL}
                           </span>
                         </div>
                         {conversation.otherParticipant?.username && (

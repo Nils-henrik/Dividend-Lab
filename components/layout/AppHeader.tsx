@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import type { UserDisplayIdentity } from "@/lib/profiles/identity";
 import { getPageTitle } from "@/lib/constants/navigation";
+import { DIVLAB_BRAND_NAME } from "@/lib/site/brand";
 import NotificationBell from "./NotificationBell";
 import ProfileDropdown from "./ProfileDropdown";
 import SearchBar from "./SearchBar";
@@ -36,7 +37,7 @@ export default function AppHeader({
       <div className="flex h-full items-center justify-between px-8">
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.22em] text-divlab-text-muted">
-            Dividend Lab
+            {DIVLAB_BRAND_NAME}
           </p>
           <h1 className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-divlab-text">
             {pageTitle}

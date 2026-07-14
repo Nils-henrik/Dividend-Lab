@@ -1,3 +1,4 @@
+import { DIVLAB_MEMBER_LABEL } from "@/lib/site/brand";
 import {
   formatStockholmDateTime,
   formatStockholmTime,
@@ -23,7 +24,7 @@ export function getForumAuthorLabel(
     return normalizedDisplayName;
   }
 
-  return "Dividend Lab-medlem";
+  return DIVLAB_MEMBER_LABEL;
 }
 
 export function getForumAuthorUsername(
@@ -117,13 +118,13 @@ export function formatForumRelativeActivity(value: string | null) {
 
 export function formatForumMemberSince(profileCreatedAt: string | null) {
   if (!profileCreatedAt) {
-    return "Dividend Lab-medlem";
+    return DIVLAB_MEMBER_LABEL;
   }
 
   const date = parseDate(profileCreatedAt);
 
   if (!date) {
-    return "Dividend Lab-medlem";
+    return DIVLAB_MEMBER_LABEL;
   }
 
   const year = formatStockholmDateTime(date, {

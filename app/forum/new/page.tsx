@@ -53,7 +53,7 @@ export default async function NewForumDiscussionPage({ searchParams }: Props) {
             Ny diskussion i {activeCategory.name}
           </h1>
           <p className="mt-2 text-sm leading-6 text-gray-500">
-            Dela en genomtänkt fråga eller insikt med Dividend Lab-gemenskapen.
+            Dela en genomtänkt fråga eller insikt med DivLab-gemenskapen.
           </p>
 
           <div className="mt-6">

@@ -44,10 +44,17 @@ export type LearningArticle = {
   updatedAt?: string;
   coverImage?: string;
   coverImageAlt?: string;
+  /** Slugs of other published Learning articles to show in "Relaterade ämnen". */
+  relatedArticleSlugs?: string[];
+  /** Compact source list rendered near the end of the article. */
+  sources?: {
+    href: string;
+    text: string;
+  }[];
   showDefaultDisclaimer?: boolean;
   sections: LearningArticleSection[];
   takeaways: string[];
 };
 
 export const learningDisclaimer =
-  "Endast utbildande innehåll. Inte finansiell rådgivning.";
+  "Innehållet är endast avsett för utbildning och allmän information. Det utgör inte personlig finansiell rådgivning eller en rekommendation att köpa eller sälja ett visst värdepapper. Investeringar innebär risk och du kan förlora hela eller delar av ditt kapital.";

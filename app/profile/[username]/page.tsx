@@ -23,7 +23,7 @@ function ProfileNotFound() {
       <section className="divlab-card p-8">
         <p className="text-lg font-semibold text-divlab-text">Profilen hittades inte</p>
         <p className="mt-3 text-sm leading-6 text-divlab-text-secondary">
-          Denna Dividend Lab-medlemsprofil är inte tillgänglig.
+          Denna DivLab-medlemsprofil är inte tillgänglig.
         </p>
         <Link href="/forum" className="divlab-btn-ghost mt-6 inline-flex px-5 py-2.5 text-sm">
           Tillbaka till forumet

@@ -113,7 +113,7 @@ export const portfolioDisclosure: PortfolioDisclosure[] = [
 ];
 
 export const portfolioPrivacyMessage =
-  "Portföljinformation är valfri. Dividend Lab uppmuntrar att dela kunskap, konsekvens och genomtänkt bidrag snarare än förmögenhet.";
+  "Portföljinformation är valfri. DivLab uppmuntrar att dela kunskap, konsekvens och genomtänkt bidrag snarare än förmögenhet.";
 
 export const profileHighlights: Record<
   "currentGoal" | "favoriteQuote" | "favoriteSector" | "philosophy",

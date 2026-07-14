@@ -12,7 +12,7 @@ const article: LearningArticle = {
   level: "Nybörjare",
   publishedAt: "2026-07-14",
   updatedAt: "2026-07-14",
-  coverImage: "/learning/borja-investera-pa-borsen.svg",
+  coverImage: "/learning/borja-investera-pa-borsen.webp",
   coverImageAlt:
     "Illustration av vägen från ekonomisk grund till ett enkelt och riskspritt börssparande.",
   showDefaultDisclaimer: false,
@@ -22,26 +22,37 @@ const article: LearningArticle = {
     "Du behöver inte kunna analysera årsredovisningar, följa börsen varje dag eller börja med ett stort kapital. Däremot behöver du förstå vad du investerar i, varför du gör det och vilka risker du tar.",
     "Den här guiden går igenom hela vägen från privatekonomisk grund till ditt första köp.",
   ],
-  sections: [
+  takeaways: [
+    "Bygg en buffert innan du börjar investera.",
+    "Bestäm vad pengarna ska användas till och när de kan behövas.",
+    "Förstå skillnaden mellan sparande och investeringar.",
+    "Sprid riskerna mellan flera innehav eller genom breda fonder.",
+    "Håll avgifterna under kontroll.",
+    "Investera bara pengar som du har råd att låta vara placerade.",
+  ],
+  sources: [
     {
-      heading: "Det viktigaste i korthet",
-      intro: [
-        "Innan du börjar bör du:",
-      ],
-      numberedItems: [
-        "skapa en buffert för oväntade utgifter",
-        "bestämma vad pengarna ska användas till",
-        "välja en rimlig tidshorisont",
-        "förstå att värdet kan både stiga och falla",
-        "välja konto och handelsplattform",
-        "välja en enkel och riskspridd start",
-        "automatisera sparandet där det är möjligt",
-        "undvika att fatta beslut utifrån rädsla, stress eller sociala medier",
-      ],
-      paragraphsAfterLists: [
-        "Det finns ingen investering som passar alla. Ett bra upplägg utgår från din ekonomi, din tidshorisont och hur stora värdeförändringar du faktiskt klarar av.",
-      ],
+      href: "https://www.skatteverket.se/privat/skatter/vardepapper/investeringssparkontoisk",
+      text: "Skatteverket — Skatt på investeringssparkonto",
     },
+    {
+      href: "https://www.fi.se/sv/vara-register/foretagsregistret/",
+      text: "Finansinspektionen — Företagsregistret",
+    },
+    {
+      href: "https://www.fi.se/sv/vara-register/fis-varningslista/",
+      text: "Finansinspektionen — FI:s varningslista",
+    },
+    {
+      href: "https://www.fi.se/sv/publicerat/statistik/jamforelsetal-for-fondavgifter/",
+      text: "Finansinspektionen — Jämförelsetal för fondavgifter",
+    },
+    {
+      href: "https://www.riksgalden.se/var-verksamhet/insattningsgarantin-och-investerarskyddet/sa-fungerar-insattningsgarantin/",
+      text: "Riksgälden — Så fungerar insättningsgarantin",
+    },
+  ],
+  sections: [
     {
       heading: "1. Vad innebär det att investera?",
       paragraphs: [
@@ -639,33 +650,7 @@ const article: LearningArticle = {
         "Skatteregler och produktvillkor kan förändras. Kontrollera alltid aktuella uppgifter hos berörd myndighet och leverantör.",
       ],
     },
-    {
-      heading: "Källor och vidare läsning",
-      externalLinks: [
-        {
-          href: "https://www.skatteverket.se/privat/skatter/vardepapper/investeringssparkontoisk",
-          text: "Skatteverket — Skatt på investeringssparkonto",
-        },
-        {
-          href: "https://www.fi.se/sv/vara-register/foretagsregistret/",
-          text: "Finansinspektionen — Företagsregistret",
-        },
-        {
-          href: "https://www.fi.se/sv/vara-register/fis-varningslista/",
-          text: "Finansinspektionen — FI:s varningslista",
-        },
-        {
-          href: "https://www.fi.se/sv/publicerat/statistik/jamforelsetal-for-fondavgifter/",
-          text: "Finansinspektionen — Jämförelsetal för fondavgifter",
-        },
-        {
-          href: "https://www.riksgalden.se/var-verksamhet/insattningsgarantin-och-investerarskyddet/sa-fungerar-insattningsgarantin/",
-          text: "Riksgälden — Så fungerar insättningsgarantin",
-        },
-      ],
-    },
   ],
-  takeaways: [],
 };
 
 export default article;
