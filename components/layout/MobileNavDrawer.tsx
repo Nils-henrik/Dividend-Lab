@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useRef } from "react";
 import AppNavigationLinks from "./AppNavigationLinks";
+import DivLabWordmark from "@/components/brand/DivLabWordmark";
 
 type Props = {
   isOpen: boolean;
@@ -59,18 +59,13 @@ export default function MobileNavDrawer({
         className="relative flex h-full w-[min(18rem,85vw)] flex-col border-r divlab-border-neutral bg-divlab-shell shadow-[0_0_60px_rgba(0,0,0,0.45)] transition-transform duration-200 ease-out"
       >
         <div className="flex h-16 items-center justify-between border-b divlab-border-neutral px-4">
-          <Link
+          <DivLabWordmark
             href="/dashboard"
             onClick={onClose}
-            className="flex items-center gap-3 transition hover:opacity-90"
-            aria-label="DivLab Start"
-          >
-            <span className="divlab-brand-logo text-2xl">DL</span>
-            <div>
-              <p className="divlab-brand-wordmark text-xs">DIVIDEND</p>
-              <p className="divlab-brand-wordmark-sub text-[11px]">LAB</p>
-            </div>
-          </Link>
+            logoClassName="text-2xl"
+            textClassName="text-sm"
+            aria-label="DivLab Översikt"
+          />
 
           <button
             type="button"

@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import AppNavigationLinks from "./AppNavigationLinks";
+import DivLabWordmark from "@/components/brand/DivLabWordmark";
 
 type Props = {
   isCollapsed: boolean;
@@ -29,17 +29,12 @@ export default function AppSidebar({
           isCollapsed ? "justify-center px-3" : "px-6"
         }`}
       >
-        <Link
+        <DivLabWordmark
           href="/dashboard"
-          className="flex min-w-0 items-center gap-3 transition hover:opacity-90"
-          aria-label="DivLab Start"
-        >
-          <span className="divlab-brand-logo text-3xl">DL</span>
-          <div className={isCollapsed ? "hidden" : "block"}>
-            <p className="divlab-brand-wordmark text-sm">DIVIDEND</p>
-            <p className="divlab-brand-wordmark-sub text-xs">LAB</p>
-          </div>
-        </Link>
+          logoClassName="text-3xl"
+          textClassName={isCollapsed ? "sr-only" : "text-sm"}
+          aria-label="DivLab Översikt"
+        />
       </div>
 
       <AppNavigationLinks
