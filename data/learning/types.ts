@@ -38,7 +38,9 @@ export type LearningArticle = {
   intro: string | string[];
   category?: string;
   level?: string;
+  /** ISO date string (YYYY-MM-DD) */
   publishedAt?: string;
+  /** ISO date string (YYYY-MM-DD) */
   updatedAt?: string;
   coverImage?: string;
   coverImageAlt?: string;

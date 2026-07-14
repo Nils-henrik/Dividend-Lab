@@ -9,6 +9,7 @@ import {
   LearningArticleSectionContent,
   LearningArticleSubsectionContent,
 } from "@/components/learning/LearningArticleSectionContent";
+import { formatLearningArticleDate } from "@/data/learning/dates";
 
 type Props = {
   article: LearningArticleWithReadingTime;
@@ -21,6 +22,9 @@ function getIntroParagraphs(intro: string | string[]) {
 export default function LearningArticleView({ article }: Props) {
   const introParagraphs = getIntroParagraphs(article.intro);
   const showDefaultDisclaimer = article.showDefaultDisclaimer ?? true;
+  const formattedUpdatedAt = article.updatedAt
+    ? formatLearningArticleDate(article.updatedAt)
+    : null;
 
   return (
     <article className="space-y-6">
@@ -50,7 +54,7 @@ export default function LearningArticleView({ article }: Props) {
         </div>
         <p className="mt-3 text-xs text-divlab-text-muted">
           {article.readingMinutes} min läsning
-          {article.updatedAt ? ` · Uppdaterad ${article.updatedAt}` : null}
+          {formattedUpdatedAt ? ` · Uppdaterad ${formattedUpdatedAt}` : null}
         </p>
       </header>
 

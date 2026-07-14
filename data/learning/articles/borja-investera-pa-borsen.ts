@@ -10,8 +10,8 @@ const article: LearningArticle = {
     "Att börja investera behöver inte vara komplicerat. Med ett tydligt mål, en stabil privatekonomisk grund och ett enkelt upplägg kan du komma igång utan att försöka förutse börsens nästa rörelse.",
   category: "Börsen från grunden",
   level: "Nybörjare",
-  publishedAt: "14 juli 2026",
-  updatedAt: "14 juli 2026",
+  publishedAt: "2026-07-14",
+  updatedAt: "2026-07-14",
   coverImage: "/learning/borja-investera-pa-borsen.svg",
   coverImageAlt:
     "Illustration av vägen från ekonomisk grund till ett enkelt och riskspritt börssparande.",

@@ -38,6 +38,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: pageTitle,
       description: article.description,
       type: "article",
+      ...(article.publishedAt ? { publishedTime: article.publishedAt } : {}),
+      ...(article.updatedAt ? { modifiedTime: article.updatedAt } : {}),
     },
   };
 }
