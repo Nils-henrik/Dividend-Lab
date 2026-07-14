@@ -16,18 +16,19 @@ export default function DashboardShell({ profile }: Props) {
       <section className="divlab-hero">
         <div className="relative flex flex-col justify-between gap-6 xl:flex-row xl:items-end">
           <div>
-            <p className="mb-3 divlab-section-label">DivLab Start</p>
+            <p className="mb-3 divlab-section-label">DivLab</p>
             <h1 className="text-4xl font-semibold tracking-[-0.04em] text-divlab-text">
-              Bygg din frihetsplan med utdelningar
+              Bättre koll på marknaden. Djupare förståelse.
             </h1>
             <p className="mt-4 max-w-3xl text-base leading-7 text-divlab-text-secondary">
-              Planera långsiktigt, lär dig mer om utdelning och FIRE, och hitta
-              stöd i communityn — innan portföljintegrationer finns på plats.
+              Följ marknaden, upptäck relevanta nyheter, använd smarta verktyg
+              och utveckla din kunskap tillsammans med andra – allt samlat på
+              ett ställe.
             </p>
           </div>
 
           <div className="inline-flex w-fit items-center rounded-full border divlab-border-neutral divlab-inset px-3 py-1 text-xs font-medium text-divlab-text-secondary">
-            Planering · Utbildning · Gemenskap
+            Marknad · Börsnyheter · Verktyg · Kunskap · Community
           </div>
         </div>
       </section>
