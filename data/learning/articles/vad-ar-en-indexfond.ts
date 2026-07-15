@@ -11,6 +11,9 @@ const article: LearningArticle = {
   category: "Fonder",
   publishedAt: "2026-07-15",
   updatedAt: "2026-07-15",
+  coverImage: "/learning/vad-ar-en-indexfond.png",
+  coverImageAlt:
+    "Illustration som förklarar hur en indexfond sprider investeringar mellan flera bolag",
   showDefaultDisclaimer: true,
   relatedArticleSlugs: ["vad-ar-en-aktie", "borja-investera-pa-borsen"],
   intro: [
