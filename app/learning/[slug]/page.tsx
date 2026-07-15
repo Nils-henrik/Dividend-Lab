@@ -7,6 +7,7 @@ import LearningArticleView, {
 } from "@/components/learning/LearningArticleView";
 import { getLearningArticle, learningArticles } from "@/data/learning-articles";
 import { getAuthenticatedUser } from "@/lib/auth/session";
+import { getSiteUrlFromEnv } from "@/lib/auth/site-url";
 import { getProfileForUser } from "@/lib/profiles/profile";
 import { DIVLAB_BRAND_NAME } from "@/lib/site/brand";
 
@@ -35,6 +36,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: `${pageTitle} | ${DIVLAB_BRAND_NAME}`,
     description: article.description,
+    alternates: {
+      canonical: `${getSiteUrlFromEnv()}/learning/${article.slug}`,
+    },
     openGraph: {
       title: pageTitle,
       description: article.description,
