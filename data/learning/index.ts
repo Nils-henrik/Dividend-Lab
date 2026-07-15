@@ -1,5 +1,6 @@
 import borjaInvestera from "./articles/borja-investera-pa-borsen";
 import vadArEnAktie from "./articles/vad-ar-en-aktie";
+import vadArEnIndexfond from "./articles/vad-ar-en-indexfond";
 import direktavkastning from "./articles/direktavkastning-och-utdelningssakerhet";
 import sparande from "./articles/sparande-i-borjan";
 import tidTillFrihet from "./articles/tid-till-ekonomisk-frihet";
@@ -21,6 +22,7 @@ export {
 const rawArticles: LearningArticle[] = [
   vadArEnAktie,
   borjaInvestera,
+  vadArEnIndexfond,
   tidTillFrihet,
   direktavkastning,
   sparande,
