@@ -8,13 +8,13 @@ export default function EducationalInsightsCard() {
     <section className="divlab-card p-6">
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
-          <p className="mb-3 divlab-section-label">Lär dig mer</p>
+          <p className="mb-3 divlab-section-label">UTBILDNING</p>
           <h2 className="text-lg font-semibold text-divlab-text">
-            Insikter om utdelning och FIRE
+            Förstå börsen – steg för steg
           </h2>
           <p className="mt-2 text-sm leading-6 text-divlab-text-secondary">
-            Generella perspektiv för långsiktiga utdelningsinvesterare — utan att
-            utgå från din portfölj.
+            Pedagogiska guider om aktier, fonder, risk och långsiktigt sparande.
+            Börja med grunderna och bygg vidare i din egen takt.
           </p>
         </div>
         <Link href="/learning" className="divlab-btn-secondary shrink-0 px-3 py-2 text-xs">
