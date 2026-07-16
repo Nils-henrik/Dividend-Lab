@@ -21,6 +21,37 @@ export default function LearningArticleList() {
         </blockquote>
       </section>
 
+      <aside
+        aria-label="Utvecklingsinformation"
+        className="flex gap-3 rounded-xl border divlab-border-neutral bg-divlab-surface px-4 py-3.5"
+      >
+        <span
+          className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-divlab-blue/30 bg-divlab-blue/10 text-divlab-blue"
+          aria-hidden="true"
+        >
+          <svg
+            viewBox="0 0 16 16"
+            className="h-3.5 w-3.5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+          >
+            <circle cx="8" cy="8" r="6.25" />
+            <path d="M8 7.25v3.5" strokeLinecap="round" />
+            <circle cx="8" cy="5.25" r="0.75" fill="currentColor" stroke="none" />
+          </svg>
+        </span>
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-divlab-text">
+            DivLab är under utveckling
+          </p>
+          <p className="mt-1 text-sm leading-6 text-divlab-text-muted">
+            Utbildningsbiblioteket byggs ut och uppdateras löpande med nya
+            guider om börsen, investeringar och marknaden.
+          </p>
+        </div>
+      </aside>
+
       <div>
         {learningArticles.map((article) => (
           <LearningArticleRow key={article.slug} article={article} />
