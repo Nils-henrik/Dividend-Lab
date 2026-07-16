@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { normalizeUsername } from "./username";
 import type {
   ProfileFormValues,
   ProfileRow,
@@ -74,7 +75,9 @@ export async function getProfileForUser(userId: string) {
 }
 
 export async function getPublicProfileByUsername(username: string) {
-  const normalizedUsername = username.trim().replace(/^@/, "").toLowerCase();
+  const normalizedUsername = normalizeUsername(
+    username.trim().replace(/^@/, ""),
+  );
 
   if (!normalizedUsername) {
     return null;

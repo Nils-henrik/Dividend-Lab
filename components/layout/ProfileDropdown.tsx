@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import ProfileAvatar from "@/components/account/ProfileAvatar";
 import type { UserDisplayIdentity } from "@/lib/profiles/identity";
+import { DIVLAB_MEMBER_LABEL } from "@/lib/site/brand";
 
 type Props = {
   user: UserDisplayIdentity;
@@ -60,7 +61,7 @@ export default function ProfileDropdown({
                 {user.name}
               </p>
               <p className="mt-1 truncate text-xs text-divlab-text-muted">
-                {user.username ? `@${user.username}` : user.email}
+                {user.username ? `@${user.username}` : DIVLAB_MEMBER_LABEL}
               </p>
             </div>
           </div>

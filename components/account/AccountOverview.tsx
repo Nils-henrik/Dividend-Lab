@@ -117,9 +117,6 @@ export default function AccountOverview({
             Konto och offentlig profil
           </h3>
           <div className="divlab-definition-list mt-6">
-            <DefinitionRow label="Privat e-postadress">
-              <span className="break-all">{user.email}</span>
-            </DefinitionRow>
             <DefinitionRow label="Offentligt användarnamn">
               {profile.username ? (
                 `@${profile.username}`
