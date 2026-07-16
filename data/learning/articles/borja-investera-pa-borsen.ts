@@ -12,7 +12,7 @@ const article: LearningArticle = {
   level: "Nybörjare",
   publishedAt: "2026-07-14",
   updatedAt: "2026-07-14",
-  coverImage: "/learning/borja-investera-pa-borsen.webp",
+  coverImage: "/learning/borja-investera-pa-borsen.png",
   coverImageAlt:
     "Illustration av vägen från ekonomisk grund till ett enkelt och riskspritt börssparande.",
   showDefaultDisclaimer: false,
