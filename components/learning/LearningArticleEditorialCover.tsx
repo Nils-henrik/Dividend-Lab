@@ -12,14 +12,15 @@ export default function LearningArticleEditorialCover({
   priority = false,
 }: Props) {
   return (
-    <div className="relative aspect-[13/8] w-full max-h-[360px] overflow-hidden rounded-xl border divlab-border-neutral sm:max-h-[420px] lg:max-h-[500px]">
+    <div className="overflow-hidden rounded-xl border divlab-border-neutral bg-divlab-surface">
       <Image
         src={src}
         alt={alt}
-        fill
+        width={0}
+        height={0}
         priority={priority}
         sizes="(max-width: 768px) 100vw, 896px"
-        className="object-cover"
+        className="h-auto w-full"
       />
     </div>
   );
