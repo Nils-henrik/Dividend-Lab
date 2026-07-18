@@ -50,6 +50,11 @@ docs/
   ai/
     AI_RULES.md
     DIVIDEND_BRAIN.md
+
+  divbrain/
+    product-blueprint.md
+    technical-blueprint.md
+    implementation-roadmap.md
 ```
 
 ---
@@ -61,7 +66,8 @@ Documentation is organized by responsibility:
 - `project/` explains what Dividend Lab is and where the product is going.
 - `design/` defines how Dividend Lab should feel and look.
 - `standards/` defines how the product should be built and reviewed.
-- `ai/` defines how AI-assisted development and Dividend Brain should behave.
+- `ai/` contains AI-assisted development rules and **legacy** Brain behavior notes. It is not the current DivBrain product source of truth.
+- `divbrain/` is the **canonical** source for current DivBrain product scope, architecture and implementation roadmap.
 
 Avoid placing the same rule in multiple documents. If a concept belongs in several places, keep the core rule in the most specific document and reference that document from elsewhere.
 
