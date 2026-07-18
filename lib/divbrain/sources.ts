@@ -113,7 +113,12 @@ export type DivBrainSource = {
    * - UTC instant `YYYY-MM-DDTHH:mm:ss(.sss)?Z`
    */
   publishedAt?: string;
-  /** When DivBrain retrieved/attached the source — full UTC instant (`...Z`) only. */
+  /**
+   * When DivBrain retrieved/attached the source — full UTC instant (`...Z`) only.
+   * Attachment/retrieval metadata only: not source identity, provenance identity,
+   * verification, freshness, publication time, or data-as-of. First-seen value is
+   * retained on the canonical source during dedupe; later timestamps do not replace it.
+   */
   retrievedAt?: string;
   /**
    * As-of time of the underlying data:
@@ -718,7 +723,10 @@ function omitUndefinedFields<T extends Record<string, unknown>>(
   return output;
 }
 
-/** Material fields only — excludes `id` so compatible aliases can be detected. */
+/**
+ * Material identity/trust fields for compatibility.
+ * Excludes `id` (aliasing) and `retrievedAt` (attachment metadata only).
+ */
 function sourceMaterialSnapshot(source: DivBrainSource): string {
   return JSON.stringify(
     omitUndefinedFields({
@@ -729,7 +737,6 @@ function sourceMaterialSnapshot(source: DivBrainSource): string {
       publisher: source.publisher,
       canonicalUrl: source.canonicalUrl,
       publishedAt: source.publishedAt,
-      retrievedAt: source.retrievedAt,
       dataAsOf: source.dataAsOf,
       attribution: source.attribution,
       excerpt: source.excerpt,

@@ -24,6 +24,7 @@ Shared DivBrain domain language for server and client.
 - Citation builders: one entry per source, or multiple appearances sharing one number per `sourceId`.
 - Citation validation requires contiguous numbers `1..N` and a stable one-number-per-sourceId mapping.
 - `retrievedAt` requires a full UTC instant (`...Z`); `publishedAt` / `dataAsOf` allow calendar date or UTC instant.
+- `retrievedAt` is attachment/retrieval metadata only — not source identity, provenance, verification, freshness, publication time, or data-as-of. Compatible duplicates keep the first-seen `retrievedAt`.
 - Grounded answers remap citation IDs through aliases, preserve citation numbers, and fail on numbering conflicts after alias resolution.
 - Orphan citations and unused final sources are rejected.
 - Final grounded-answer payloads contain only retained cited sources (aliases are not retained in the payload).
