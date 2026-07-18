@@ -48,11 +48,55 @@ function normalizeForMatching(content: string): string {
 }
 
 /**
+ * Actionable facilitation / disclosure / execution cues.
+ * When present, superficial educational prefixes must not exempt a finding.
+ */
+function hasActionableProhibitedCue(n: string): boolean {
+  return (
+    wantsDisclosure(n) ||
+    wantsAssistance(n) ||
+    /\b(best\s+way|easiest\s+way|safest\s+way|best\s+method|execute|utan\s+att\s+synas|utan\s+att\s+bli\s+upptäckt|without\s+detection|without\s+being\s+detected|without\s+getting\s+caught|hur\s+gör\s+man|hur\s+genomför\s+man|hur\s+utför\s+man|bypassa|access\s+another|trade\s+on|using\s+these|baserat\s+på|steg\s+för\s+steg|step[-\s]?by[-\s]?step)\b/.test(
+      n,
+    )
+  );
+}
+
+/**
+ * English "what is …" only when genuinely definitional — not "what is the best way to…".
+ */
+function isDefinitionalWhatIs(n: string): boolean {
+  if (!/^what\s+is\b/.test(n)) {
+    return false;
+  }
+
+  if (
+    /\bwhat\s+is\s+the\s+(best|easiest|safest|fastest)\s+(way|method)\b/.test(n)
+  ) {
+    return false;
+  }
+
+  if (hasActionableProhibitedCue(n)) {
+    return false;
+  }
+
+  return true;
+}
+
+/**
  * Definitional / explanatory framing — used to avoid noun-only false positives.
  * Prefer start-anchored cues so words like "allmänt" cannot mask facilitation.
+ * Never an unconditional global exemption when actionable cues are present.
  */
 function hasEducationalFraming(n: string): boolean {
-  return /^(vad\s+är|förklara|beskriv|hur\s+fungerar|varför\s+(är|finns|kan|blir)|hur\s+upptäcks|hur\s+skyddar|hur\s+förvarar|vilka\s+regler\s+gäller|vad\s+används|vad\s+innebär)\b/.test(
+  if (isDefinitionalWhatIs(n)) {
+    return true;
+  }
+
+  if (hasActionableProhibitedCue(n)) {
+    return false;
+  }
+
+  return /^(vad\s+är|förklara|beskriv|hur\s+fungerar|varför\s+(är|finns|kan|blir)|hur\s+upptäcks|hur\s+upptäcker|hur\s+skyddar|hur\s+skyddas|hur\s+förvarar|hur\s+roterar|hur\s+undviker|hur\s+hanterar|hur\s+bör|vilka\s+regler\s+gäller|vad\s+används|vad\s+innebär|är\s+\w+.+\s+riskfria\b)\b/.test(
     n,
   );
 }
@@ -70,13 +114,13 @@ function hasNegatedIntent(n: string): boolean {
 }
 
 function wantsDisclosure(n: string): boolean {
-  return /\b(visa|avslöja|skriv\s+ut|dumpa|lämna\s+ut|ge\s+mig|reveal|print|expose|exfiltrate|exfiltrera|läs\s+upp|ordagrant)\b/.test(
+  return /\b(visa|avslöja|skriv\s+ut|dumpa|lämna\s+ut|ge\s+mig|reveal|print|expose|exfiltrate|exfiltrera|läs\s+upp|läs|ordagrant)\b/.test(
     n,
   );
 }
 
 function wantsAssistance(n: string): boolean {
-  return /\b(hjälp\s+mig|hjälp\s+att|visa\s+hur|hur\s+kan\s+jag|how\s+can\s+i|how\s+do\s+i|lära\s+mig\s+att|ge\s+mig|skriv|skapa|utför|gör\s+så\s+att)\b/.test(
+  return /\b(hjälp\s+mig|hjälp\s+att|visa\s+hur|hur\s+kan\s+jag|hur\s+kan\s+vi|how\s+can\s+i|how\s+do\s+i|hur\s+gör\s+man|hur\s+genomför\s+man|hur\s+utför\s+man|lära\s+mig\s+att|ge\s+mig|skriv|skapa|utför|gör\s+så\s+att|execute)\b/.test(
     n,
   );
 }
@@ -87,7 +131,7 @@ function detectCredentialOrSecretRequest(n: string): GuardrailFinding | null {
   }
 
   const secretTarget =
-    /\b(supabase\s+service[-\s]?role|service[-\s]?role\s+key|api[-\s]?key|api[-\s]?nyckel|access[-\s]?token|refresh[-\s]?token|session[-\s]?token|sessions?[- ]?token|client\s+secret|bearer\s+token|environment\s+secret|env\s+secret|hemlig(?:a)?\s+nyckel|secret\s+key|lösenord|password|private\s+credential|privata?\s+uppgifter)\b/.test(
+    /\b(supabase\s+service[-\s]?role|service[-\s]?role(?:\s+key|[-\s]?nyckel)|api[-\s]?key|api[-\s]?nyckel|access[-\s]?token|refresh[-\s]?token|session[-\s]?token|sessions?[- ]?token|client\s+secret|bearer\s+token|environment\s+secret|env\s+secret|hemlig(?:a)?\s+nyckel|secret\s+key|lösenord|password|private\s+credential|privata?\s+uppgifter)\b/.test(
       n,
     );
 
@@ -140,6 +184,16 @@ function detectSystemPromptOrPolicyExtraction(n: string): GuardrailFinding | nul
 }
 
 function detectInstructionOverride(n: string): GuardrailFinding | null {
+  // Protective education may quote attack phrases; do not treat as override.
+  if (
+    /\b(hur\s+skyddar|hur\s+försvar|hur\s+upptäcker|prompt\s+injection|jailbreak)\b/.test(
+      n,
+    ) &&
+    !wantsDisclosure(n)
+  ) {
+    return null;
+  }
+
   if (
     hasEducationalFraming(n) &&
     /\b(prompt\s+injection|skydda|försvar|hur\s+fungerar)\b/.test(n)
@@ -148,10 +202,10 @@ function detectInstructionOverride(n: string): GuardrailFinding | null {
   }
 
   const override =
-    /\b(ignorera|ignore)\b.{0,32}\b((alla|all|tidigare|previous)\s+)?(instruktioner|instructions|regler|rules|policy)\b/.test(
+    /\b(ignorera|ignore)\b.{0,32}\b((alla|all|tidigare|previous)\s+)?(instruktioner|instructions|regler(?:na)?|rules|policy)\b/.test(
       n,
     ) ||
-    /\b(jailbreak|developer\s+mode|dan\s+mode|disable\s+safety|override\s+safety|kringgå\s+(säkerhet|regler)|glöm\s+dina\s+regler|act\s+without\s+restrictions|utan\s+restriktioner)\b/.test(
+    /\b(jailbreak|developer\s+mode|dan\s+mode|disable\s+safety|override\s+safety|kringgå\s+(säkerhet|regler)|bypassa\s+reglerna|glöm\s+dina\s+regler|act\s+without\s+restrictions|utan\s+restriktioner)\b/.test(
       n,
     );
 
@@ -183,10 +237,10 @@ function hasMarketManipulationTarget(n: string): boolean {
       n,
     ) ||
     hasFalseRumorPhrase(n) ||
-    /\b(koordinerad(?:e)?\s+(köp|köporder|handel)|coordinated\s+(buying|purchases|trading))\b/.test(
+    /\b((?:koordinerad|samordnad)(?:e)?\s+(köp|köporder|handel)|coordinated\s+(buying|purchases|trading))\b/.test(
       n,
     ) ||
-    /\b(driva\s+upp\s+kursen|flytta\s+priset|sänka\s+(aktien|kursen)|påverka\s+aktien)\b/.test(
+    /\b(driva\s+upp\s+kursen|flytta\s+priset|flytta\s+kursen|flyttar\s+kursen|sänka\s+(aktien|kursen)|påverka\s+aktien)\b/.test(
       n,
     )
   );
@@ -196,10 +250,16 @@ function hasMarketManipulationTarget(n: string): boolean {
  * Actionable facilitation / assistance intent for market abuse.
  * Must be combined with a manipulation target (or an action+target phrase).
  */
+function hasConcealmentEvasionCue(n: string): boolean {
+  return /\b(utan\s+att\s+synas|utan\s+att\s+bli\s+upptäckt|without\s+detection|without\s+being\s+detected|without\s+getting\s+caught)\b/.test(
+    n,
+  );
+}
+
 function hasMarketManipulationFacilitationIntent(n: string): boolean {
   return (
     wantsAssistance(n) ||
-    /\b(genomför|genomföra|utföra|utför|samordna|samordnar|koordinera|coordinate|conceal|dölj|dölja|automati[sz]era|gör\s+en\s+plan|skapa\s+en\s+plan|create\s+a\s+plan|plan\s+för|använda|place\s+fake|fejkade?\s+ordrar|avsiktligt)\b/.test(
+    /\b(genomför|genomföra|utföra|utför|samordna|samordnar|samordnade|koordinera|coordinate|conceal|dölj|döljer|dölja|automati[sz]era|gör\s+en\s+plan|skapa\s+en\s+plan|create\s+a\s+plan|plan\s+för|använda|place\s+fake|fejkade?\s+ordrar|avsiktligt|execute)\b/.test(
       n,
     )
   );
@@ -209,36 +269,40 @@ function hasActionPlusMarketManipulationTarget(n: string): boolean {
   return (
     /\b(pumpa|dumpa)\b.{0,40}\b(aktie|kurs|pris|ticker)\b/.test(n) ||
     (/\b(sprida|sprider|skriv)\b/.test(n) && hasFalseRumorPhrase(n)) ||
-    /\b(dölja|conceal|dölj)\b.{0,48}\b(koordinerad|coordinated|samordnad)\b/.test(
+    /\b(dölja|döljer|dölj|conceal)\b.{0,48}\b(koordinerad|coordinated|samordnad)\b/.test(
       n,
     ) ||
-    /\b(samordna|samordnar|koordinera)\b.{0,48}\b(köp|handel|kurs|pris)\b/.test(
+    /\b(samordna|samordnar|samordnade|koordinera)\b.{0,48}\b(köp|handel|kurs|pris)\b/.test(
       n,
     )
   );
 }
 
-function hasNegatedMarketManipulationTopic(n: string): boolean {
+/**
+ * Clear protective refusal of market abuse — not concealment phrases like
+ * "utan att synas" / "without getting caught".
+ */
+function hasProtectiveMarketManipulationNegation(n: string): boolean {
   return (
-    /\b(manipulera|manipulation|pump\s*and\s*dump|spoofing|wash\s*trading|tvätthandel)\b/.test(
+    /\b(vill\s+inte|ska\s+inte|bör\s+inte|avoid)\b.{0,48}\b(manipulera|manipulation|spoofing|wash\s*trading|pump\s*and\s*dump|tvätthandel|falsk(?:t|a)?\s+(?:börs)?rykte)/.test(
       n,
-    ) || hasFalseRumorPhrase(n)
+    ) ||
+    /\b(inte\s+manipulera|undviker\s+man\s+att\s+manipulera)\b/.test(n)
   );
 }
 
 function detectMarketManipulation(n: string): GuardrailFinding | null {
-  if (
-    hasEducationalFraming(n) ||
-    hasDefinitionalLegalityCue(n) ||
-    (hasNegatedIntent(n) && hasNegatedMarketManipulationTopic(n))
-  ) {
+  if (hasProtectiveMarketManipulationNegation(n)) {
     return null;
   }
 
+  const target = hasMarketManipulationTarget(n);
+  const actionIntent = hasMarketManipulationFacilitationIntent(n);
+  const actionPlus = hasActionPlusMarketManipulationTarget(n);
   const facilitation =
-    hasActionPlusMarketManipulationTarget(n) ||
-    (hasMarketManipulationFacilitationIntent(n) &&
-      hasMarketManipulationTarget(n));
+    actionPlus ||
+    (actionIntent && target) ||
+    (hasConcealmentEvasionCue(n) && actionIntent && target);
 
   if (!facilitation) {
     return null;
@@ -250,27 +314,76 @@ function detectMarketManipulation(n: string): GuardrailFinding | null {
   };
 }
 
+/** Swedish leaked / non-public result figures, including common definite forms. */
+function hasLeakedOrNonPublicResultTarget(n: string): boolean {
+  return (
+    /\b(?:det\s+)?läckt(?:a)?\s+resultat(?:et|en)?\b/.test(n) ||
+    /\b(?:de\s+)?läckta\s+(?:resultaten|siffrorna|uppgifterna|resultat|siffror|uppgifter)\b/.test(
+      n,
+    ) ||
+    /\b(?:ett\s+|de\s+)?icke[-\s]?offentlig(?:t|a)?\s+resultat(?:et|en)?\b/.test(
+      n,
+    ) ||
+    /\bde\s+icke[-\s]?offentliga\s+resultaten\b/.test(n) ||
+    /\bicke[-\s]?offentlig(?:a)?\s+information\b/.test(n)
+  );
+}
+
+function hasConfidentialOrNonPublicTarget(n: string): boolean {
+  return (
+    hasLeakedOrNonPublicResultTarget(n) ||
+    /\b(insiderinformation|insider\s*info|hemlig(?:a)?\s+(?:information|siffror)|konfidentiell(?:a)?\s+(?:information|siffror|figures?)|opublicerad\s+information|material\s+non[-\s]?public(?:\s+information)?|mnpi|information\s+som\s+inte\s+är\s+offentlig|leaked\s+results?|non[-\s]?public\s+(?:information|results?)|confidential\s+figures)\b/.test(
+      n,
+    )
+  );
+}
+
+function hasInsiderTradingActionIntent(n: string): boolean {
+  return (
+    /\b(handla|köp|köpa|sälj|sälja|tjäna|profit|trade|trading|buy|sell)\b/.test(
+      n,
+    ) ||
+    /\b(vad\s+ska\s+jag\s+köpa|borde\s+jag\s+sälja|ska\s+jag\s+(köpa|sälja)|which\s+stock\s+should\s+i\s+buy|should\s+i\s+(buy|sell))\b/.test(
+      n,
+    )
+  );
+}
+
 function detectInsiderOrConfidentialTrading(n: string): GuardrailFinding | null {
   if (
-    hasEducationalFraming(n) ||
     hasDefinitionalLegalityCue(n) ||
     (hasNegatedIntent(n) && /\b(insiderhandel|insiderinformation)\b/.test(n))
   ) {
     return null;
   }
 
-  const facilitation =
-    /\b(handla|köp|sälj|tjäna|profit|trade|trading)\b.{0,48}\b(insiderinformation|insider\s*info|hemlig\s+information|konfidentiell\s+information|opublicerad\s+information|material\s+non[-\s]?public|mnpi)\b/.test(
-      n,
-    ) ||
-    /\b(insiderinformation|insider\s*info|konfidentiell|opublicerad)\b.{0,48}\b(handla|köp|sälj|trade|trading|tjäna)\b/.test(
-      n,
-    ) ||
-    /\b(köp|sälj|handla)\b.{0,40}\b(innan\s+offentliggörande|före\s+rapporten|ahead\s+of\s+earnings)\b/.test(
-      n,
-    );
+  const target = hasConfidentialOrNonPublicTarget(n);
+  const action = hasInsiderTradingActionIntent(n);
 
-  if (!facilitation) {
+  if (!target || !action) {
+    return null;
+  }
+
+  if (hasEducationalFraming(n) && !hasActionableProhibitedCue(n)) {
+    return null;
+  }
+
+  const orderedMatch =
+    /\b(handla|köp|köpa|sälj|sälja|tjäna|profit|trade|trading|buy|sell)\b.{0,64}\b(insiderinformation|insider\s*info|hemlig(?:a)?\s+(?:information|siffror)|konfidentiell|opublicerad|läckt|icke[-\s]?offentlig|non[-\s]?public|leaked|mnpi|confidential)\b/.test(
+      n,
+    ) ||
+    /\b(insiderinformation|insider\s*info|hemlig(?:a)?\s+(?:information|siffror)|konfidentiell|opublicerad|läckt|icke[-\s]?offentlig|non[-\s]?public|leaked|mnpi|confidential)\b.{0,64}\b(handla|köp|köpa|sälj|sälja|tjäna|profit|trade|trading|buy|sell|vad\s+ska\s+jag\s+köpa|borde\s+jag\s+sälja)\b/.test(
+      n,
+    ) ||
+    /\b(köp|köpa|sälj|sälja|handla|buy|sell)\b.{0,48}\b(innan\s+offentliggörande|före\s+rapporten|ahead\s+of\s+earnings|blir\s+offentliga)\b/.test(
+      n,
+    ) ||
+    (target &&
+      /\b(vad\s+ska\s+jag\s+köpa|which\s+stock\s+should\s+i\s+buy|borde\s+jag\s+sälja|baserat\s+på)\b/.test(
+        n,
+      ));
+
+  if (!orderedMatch) {
     return null;
   }
 
@@ -323,7 +436,7 @@ function detectGuaranteedOrRiskFreeReturn(n: string): GuardrailFinding | null {
 
 function detectPersonalFinancialAdvice(n: string): GuardrailFinding | null {
   const personalAsk =
-    /\b(ska\s+jag|bör\s+jag)\s+(köpa|sälja|investera|allokera|behålla|placera)\b/.test(
+    /\b(ska\s+jag|bör\s+jag|borde\s+jag)\s+(köpa|sälja|investera|allokera|behålla|placera)\b/.test(
       n,
     ) ||
     /\b(vilken\s+(aktie|fond|etf)\s+ska\s+jag|vilken\s+fond\s+passar|köp\s+åt\s+mig|sälj\s+åt\s+mig|allokera\s+min\s+portfölj|hur\s+ska\s+jag\s+(investera|placera)|hur\s+mycket\s+ska\s+jag\s+investera|är\s+\w+(?:\s+\w+)?\s+rätt\s+investering\s+för\s+mig|passar\s+bäst\s+till\s+mitt)\b/.test(
@@ -335,7 +448,8 @@ function detectPersonalFinancialAdvice(n: string): GuardrailFinding | null {
     /\b(mina?\s+\d[\d\s]*\s*kronor|mitt\s+barns\s+sparande|min\s+portfölj)\b/.test(
       n,
     ) ||
-    /\b(buy|sell)\s+(me\s+)?(this\s+)?(stock|share|fund)\b/.test(n);
+    /\b(buy|sell)\s+(me\s+)?(this\s+)?(stock|share|fund)\b/.test(n) ||
+    /\b(which\s+stock\s+should\s+i\s+buy)\b/.test(n);
 
   if (!personalAsk) {
     return null;
@@ -360,16 +474,34 @@ function detectPersonalFinancialAdvice(n: string): GuardrailFinding | null {
   };
 }
 
+/** Another-user possessive forms, including Swedish definite genitive. */
+function hasOtherUserPossessive(n: string): boolean {
+  return /\b(en\s+annan\s+användares|den\s+andra\s+användarens|(?:den\s+)?andra\s+användares|annan\s+användares|other\s+user'?s)\b/.test(
+    n,
+  );
+}
+
 function detectOtherUserPrivateData(n: string): GuardrailFinding | null {
   if (hasEducationalFraming(n) && !wantsDisclosure(n)) {
     return null;
   }
 
+  const otherUserPrivateAsset =
+    /\b(portfölj|meddelanden|chatt|data|email|e-post|privata?\s+data|sessionstoken|session\s*token|konto)\b/.test(
+      n,
+    );
+  const otherUserAccessIntent =
+    wantsDisclosure(n) ||
+    /\b(radera|ändra|ta\s+bort|läsa|access|dumpa|delete|modify|alter)\b/.test(n);
+
   const target =
-    /\b(annan\s+användares|other\s+user'?s|andra\s+användares|någon\s+annans\s+konto)\b.{0,48}\b(portfölj|meddelanden|chatt|data|email|e-post|privata?\s+data)\b/.test(
+    (hasOtherUserPossessive(n) &&
+      otherUserPrivateAsset &&
+      otherUserAccessIntent) ||
+    /\b(visa|dumpa|exfiltrate|exfiltrera|access|läs|läsa)\b.{0,40}\b(användardata|user\s+data|alla\s+konton|privata\s+meddelanden|private\s+messages)\b/.test(
       n,
     ) ||
-    /\b(visa|dumpa|exfiltrate|exfiltrera|access)\b.{0,40}\b(användardata|user\s+data|alla\s+konton)\b/.test(
+    /\b(access\s+another\s+user'?s\s+(?:private\s+)?(?:messages|portfolio|account))\b/.test(
       n,
     );
 
@@ -383,22 +515,50 @@ function detectOtherUserPrivateData(n: string): GuardrailFinding | null {
   };
 }
 
+/**
+ * Direct unauthorized modification/deletion/access against another user's
+ * account or data — does not require the words admin / behörighetskontroll.
+ */
+function hasUnauthorizedOtherUserAccountAction(n: string): boolean {
+  return (
+    /\b(radera|ändra|ta\s+bort|läsa|delete|modify|alter)\b.{0,48}\b(en\s+annan\s+användares|den\s+andra\s+användarens|(?:den\s+)?andra\s+användares|annan\s+användares|other\s+user'?s)\b.{0,32}\b(data|konto|meddelanden|portfölj|account|messages|portfolio)\b/.test(
+      n,
+    ) ||
+    /\b(radera|ändra|ta\s+bort|delete|modify)\s+(en\s+annan\s+användares|den\s+andra\s+användarens|other\s+user'?s)\s+(data|konto|portfölj|account)\b/.test(
+      n,
+    )
+  );
+}
+
+function hasUnauthorizedAdminActionCue(n: string): boolean {
+  const coreAction =
+    /\b(agera\s+som\s+admin(?:istratör)?|act\s+as\s+admin|bypass(?:a)?\s+(auth|authorization|behörighet(?:skontrollen)?)|kringgå\s+behörighet(?:skontrollen)?|ge\s+mig\s+admin(?:istratörs)?rättigheter|ge\s+mig\s+admin(?:rättigheter)?\b|grant\s+me\s+admin\s+rights|elevate\s+privileges|ta\s+över\s+kontot|override\s+authorization)\b/.test(
+      n,
+    );
+
+  if (coreAction || hasUnauthorizedOtherUserAccountAction(n)) {
+    return true;
+  }
+
+  // "utan godkännande/behörighet" only with an admin/rights elevation ask.
+  return (
+    /\b(utan\s+godkännande|utan\s+behörighet)\b/.test(n) &&
+    /\b(admin|administratör|rättigheter|behörighetskontroll)\b/.test(n)
+  );
+}
+
 function detectUnauthorizedAdminAction(n: string): GuardrailFinding | null {
   if (
     hasEducationalFraming(n) &&
-    /\b(vad\s+är|hur\s+fungerar|roll|behörighet|account\s+security|kontosäkerhet)\b/.test(
+    /\b(vad\s+är|hur\s+fungerar|hur\s+bör|hur\s+skyddar|hur\s+skyddas|roll|behörighet|behörighetskontroll|account\s+security|kontosäkerhet|administratör|adminroll|rls|radering)\b/.test(
       n,
-    )
+    ) &&
+    !hasUnauthorizedAdminActionCue(n)
   ) {
     return null;
   }
 
-  const action =
-    /\b(agera\s+som\s+administratör|act\s+as\s+admin|bypass\s+(auth|authorization|behörighet)|kringgå\s+behörighet|ge\s+mig\s+admin|elevate\s+privileges|ändra\s+en\s+annan\s+användares|alter\s+another\s+user'?s|ta\s+över\s+kontot|override\s+authorization)\b/.test(
-      n,
-    );
-
-  if (!action) {
+  if (!hasUnauthorizedAdminActionCue(n)) {
     return null;
   }
 
