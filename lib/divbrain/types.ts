@@ -6,7 +6,7 @@
  * Intentionally omitted: hidden reasoning / chain-of-thought, emails,
  * auth tokens, owner/user ids on inputs, provider objects, DB row shapes.
  * Source/citation models live in `sources.ts` / `citations.ts`.
- * Safety classification remains a later-ticket extension point.
+ * Guardrail vocabulary lives in `guardrails.ts`; evaluation stays under `server/`.
  */
 
 import {
