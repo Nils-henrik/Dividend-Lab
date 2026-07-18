@@ -10,11 +10,12 @@ Shared DivBrain domain language for server and client.
 - Browser-safe modules must never import server-only DivBrain code.
 - Never expose secrets, tokens, emails, raw provider/DB errors, stack traces, or hidden reasoning across the browser boundary.
 
-## Guardrails (Ticket 1A-3a)
+## Guardrails (Tickets 1A-3a / 1A-3b)
 
 - `guardrails.ts` — canonical decisions, reason codes, enforceable constraints, public-message catalog, assessment builders.
 - `server/guardrails.ts` — deterministic normalization + multi-finding evaluation + `evaluateDivBrainGuardrails`.
-- `server/guardrail-evals.ts` — 28 Swedish seed fixtures, pure deterministic runner, safe reports (no raw prompts).
+- `server/guardrail-evals.ts` — pure deterministic runner and safe reports (no raw prompts).
+- `server/guardrail-eval-fixtures/` — static fixtures. Ticket **1A-3b** expanded the suite from the approved **28** baseline cases by adding **44** new cases (**72** total). The original 28 remain first, in original order, as the regression baseline.
 
 ### Canonical decisions
 
@@ -59,11 +60,20 @@ Assessments never include raw prompts, matched text, regexes, rule ids, secrets,
 - Findings are aggregated from named predicates; first-match-wins single-reason models are not used.
 - This is an initial deterministic filter — **not** complete semantic safety. Provider-side policy and later eval expansion remain required.
 
-### Seed evals
+### Expanded evals (1A-3b)
 
-Fixtures and the pure runner live in `server/guardrail-evals.ts` (`DIVBRAIN_GUARDRAIL_EVAL_CASES`, `runDivBrainGuardrailEvals`). The runner asserts decision, reasonCodes, constraints, policyVersion, and `publicMessageKey`. Executable CI tests are deferred until an approved test-foundation ticket.
+Fixtures live under `server/guardrail-eval-fixtures/` and are aggregated as `DIVBRAIN_GUARDRAIL_EVAL_CASES`. The pure runner (`runDivBrainGuardrailEvals` in `server/guardrail-evals.ts`) asserts decision, reasonCodes, constraints, policyVersion, and `publicMessageKey`.
 
-1A-3b should grow the fixture list without changing assessment/report contracts.
+Coverage focus in the expanded suite:
+
+- broader Swedish variants plus a small set of straightforward English cases
+- educational / protective near-misses and clear negation
+- multi-finding combinations and decision / public-message precedence
+- spacing, punctuation, and casing normalization already supported by the matcher
+
+The runner remains pure and non-automatic: it does not run on import or build, access the network, filesystem, environment, current time, or randomness. **No approved runtime test foundation exists yet**, so this ticket does **not** claim that the **28** baseline, **44** new, or **72** total fixtures have been executed at runtime or in CI.
+
+Deterministic pattern matching still has known false positives and false negatives. Semantic and provider-side safety remain later work. Assessment/report contracts are unchanged from 1A-3a.
 
 ## Sources and citations
 
