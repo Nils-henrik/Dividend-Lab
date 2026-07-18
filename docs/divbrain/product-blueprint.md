@@ -225,15 +225,26 @@ Every request should be classified into one of these product modes. UX and polic
 
 ## 12. Capabilities by maturity level
 
-### Internal Alpha (smallest meaningful product)
+### Phase 1A versus Internal Alpha (product milestone)
+
+- **Phase 1A** is only the **non-generating technical foundation** (domain modules, guardrails, persistence, UnconfiguredProvider, honest `/brain` shell, Henrik allowlist, eval seed). It does **not** constitute the complete product milestone called **Internal Alpha**.
+- The meaningful **Internal Alpha** product milestone is reached after at least:
+  - **Phase 1A** — foundation
+  - **Phase 1B** — first real provider (selected via benchmark)
+  - **Phase 1C** — Learning retrieval and numbered citations
+- **Phase 1D** adds evaluation hardening (toward 100–300 cases) and cost controls before broader controlled use (Phase 2).
+- **Cost measurement:** Phase 1A introduces usage/cost **interfaces and hooks** only. Actual provider token usage and cost logging begin when a real provider is connected in **Phase 1B**. Do not imply that real provider costs can be logged before a provider exists.
+
+### Internal Alpha (smallest meaningful product milestone)
 
 - Swedish DivBrain identity and policy
-- Authenticated conversations + saved history
-- Educational Q&A over **curated DivLab Learning**
-- Transparent citations
+- Authenticated conversations + saved history (permanent owner delete; archive optional)
+- Educational Q&A over **curated DivLab Learning** (via Phase 1C retrieval)
+- Transparent numbered citations
 - Deterministic financial guardrails
 - Honest provider / data unavailable states
-- Eval fixture ≈ **60–80** cases + cost logging
+- Eval fixture ≈ **60–80** cases (seeded in 1A; exercised with a live provider from 1B)
+- Cost **hooks** in 1A; live token/cost logging from **1B**
 - **Access: Henrik only** via cheap server-only allowlist (see §12.1)
 - **Not paid** — no billing or paywall work
 
@@ -282,9 +293,10 @@ Every request should be classified into one of these product modes. UX and polic
 
 **Conversation retention:**
 
-- Internal Alpha conversations remain until the **user deletes** them.
+- Internal Alpha conversations remain until the **owner permanently deletes** them.
 - Conversation deletion **cascades** to messages.
 - Account deletion **must remove** the user’s DivBrain data.
+- Soft archive is optional UX and **does not** replace permanent deletion.
 - Before any **external Beta**, DivLab must define transcript retention, export and deletion behavior in product and privacy documentation.
 - Do **not** build automatic retention jobs during Phase 1A.
 
@@ -372,18 +384,20 @@ See §16. Paid launch is blocked until security, evals, cost controls and honest
 
 ## 16. Launch criteria
 
-### Internal Alpha “go”
+### Internal Alpha “go” (after Phases 1A–1C at minimum)
 
 - Authenticated + **Henrik-only allowlist**
-- Conversations persisted with RLS ownership (allowed turns only)
+- Conversations persisted with RLS ownership (allowed turns only); permanent owner delete cascades to messages
 - Guardrails cover advice, fabrication, injection, privacy
 - Blocked requests: **no full content persistence**; safe reason codes only
-- Learning retrieval OR explicit educational mode with citations when retrieval ships
-- Provider responses never fake when unconfigured (**no provider selected in 1A**)
+- Real provider connected after Phase 1B benchmark (never fake answers)
+- Learning retrieval with numbered citations (Phase 1C)
 - Eval fixture ≈ **60–80** cases with deterministic guardrail tests
-- Cost fields prepared / logged when a provider exists
+- Cost measurement hooks from 1A; live token/cost logging from 1B
 - No production secrets in client
 - No billing
+
+Phase 1A alone is **not** an Internal Alpha “go”.
 
 ### Paid / premium Beta “go” (Founder approval gate — later)
 
@@ -402,9 +416,11 @@ See §16. Paid launch is blocked until security, evals, cost controls and honest
 
 ## 17. Internal Alpha recommendation (product)
 
-**Smallest meaningful Alpha:**
+**Smallest meaningful Internal Alpha milestone** (Phases **1A + 1B + 1C**):
 
-Swedish DivBrain identity + Henrik-only allowlist + authenticated saved chats + educational answers grounded in DivLab Learning + citations + deterministic guardrails + honest unavailable states + ≈60–80 evals + cost measurement hooks + **no paid gate**.
+Swedish DivBrain identity + Henrik-only allowlist + authenticated saved chats + educational answers grounded in DivLab Learning + numbered citations + deterministic guardrails + honest unavailable states + ≈60–80 evals + cost hooks (1A) with live token/cost logging (1B) + **no paid gate**.
+
+Phase **1A** alone delivers the non-generating foundation only. Phase **1D** hardens evals/cost controls before broader controlled use.
 
 **Why this is the right minimum (repository-informed):**
 
@@ -427,6 +443,6 @@ Swedish DivBrain identity + Henrik-only allowlist + authenticated saved chats + 
 
 | Field | Value |
 |-------|-------|
-| Version | 1.1 |
+| Version | 1.2 |
 | Date | 2026-07-18 |
-| Changes | Founder decisions: naming, Henrik-only Alpha, blocked-request non-persistence, retention, monetization timing |
+| Changes | Clarify Internal Alpha vs Phase 1A, cost-hook timing, permanent delete vs archive |

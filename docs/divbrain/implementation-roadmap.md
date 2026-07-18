@@ -14,28 +14,32 @@ Each phase is independently reviewable. Tickets are sized for roughly **one focu
 
 | Phase | Name | Objective |
 |-------|------|-----------|
-| **1A** | Internal Alpha foundation | Domain, safety, persistence, Henrik allowlist, provider stub, honest `/brain` shell, ≈60–80 evals, tests — **no live provider** |
-| **1B** | Provider benchmark + selection | Benchmark a small provider set on the Swedish eval suite; wire the lowest-cost winner that meets quality/safety/latency/source bars |
-| **1C** | DivLab Learning retrieval | Structured retrieval + numbered citations from Learning corpus |
-| **1D** | Sources, evals, cost controls | Harden sources UI, grow evals to 100–300, budgets/limits |
+| **1A** | Technical foundation only | Domain, safety, persistence, Henrik allowlist, UnconfiguredProvider, honest `/brain` shell, eval seed, cost **hooks** — **no live provider**. Not the full Internal Alpha milestone. |
+| **1B** | Provider benchmark + selection | Benchmark a small provider set on the Swedish eval suite; wire the lowest-cost winner; begin live token/cost logging |
+| **1C** | DivLab Learning retrieval | Structured retrieval + numbered citations — completes the meaningful **Internal Alpha** product loop with 1A+1B |
+| **1D** | Sources, evals, cost controls | Harden sources UI, grow evals to 100–300, budgets/limits before broader controlled use |
 | **2** | Controlled internal usage | Ops metrics + UX polish under Henrik (then carefully expanded) real use — **still unpaid** |
 | **3** | Verified financial tools | First read-only tools with freshness + RLS |
 | **4** | Later premium Beta prep | **Deferred** — not early roadmap; entitlements/billing only after demand + readiness gates |
 | **Later** | Premium capabilities | Portfolio interpretation, news/events, Börsdata & Analys |
 
+**Internal Alpha product milestone** = Phases **1A + 1B + 1C** (at minimum). Phase 1A alone is the non-generating foundation.
+
 **Early roadmap exclusion (Founder):** no billing, paywall, entitlement database, admin panel, vectors, streaming, multi-agent, portfolio AI, or production migration apply in Phases 1A–1D.
 
 ---
 
-## Phase 1A — Internal Alpha foundation
+## Phase 1A — Technical foundation (not full Internal Alpha)
 
 ### Objective
 
-Ship a durable foundation: architecture modules, RLS-ready migration (created in code; apply only via env progression), server repository/service, deterministic guardrails, **Henrik-only allowlist**, unconfigured provider, ≈60–80 eval fixture, honest `/brain` shell — **without** selecting or connecting a live model.
+Ship a durable **non-generating** foundation: architecture modules, RLS-ready migration (created in code; apply only via env progression), server repository/service, deterministic guardrails, **Henrik-only allowlist**, unconfigured provider, eval seed (expanded to ≈60–80 across 1A-3a/1A-3b), usage/cost **hooks**, honest `/brain` shell — **without** selecting or connecting a live model.
+
+Phase 1A does **not** complete the Internal Alpha product milestone.
 
 ### Exact user value
 
-Henrik sees a credible DivBrain surface that explains what works / does not work, can create conversations (once migration applied in a safe env), and never receives fake AI answers.
+Henrik sees a credible DivBrain surface that explains what works / does not work, can create and **permanently delete** conversations (once migration applied in a safe env), and never receives fake AI answers.
 
 ### Dependencies
 
@@ -59,14 +63,16 @@ Henrik sees a credible DivBrain surface that explains what works / does not work
 ### Database work
 
 - Create `divbrain_conversations`, `divbrain_messages` + indexes + RLS
-- Cascade: conversation delete → messages; user delete → conversations
-- User-initiated delete supported; **no automatic retention jobs**
+- Owner **permanent DELETE** of conversation cascades to messages; account delete cascades to conversations
+- Soft archive optional and never a substitute for delete; no direct message DELETE required
+- **No automatic retention jobs**
 - Env progression: code → **dev** → Preview/staging → production only with separate approval
 - **Do not apply to production** as part of 1A unless explicitly approved as a release
 
 ### Security requirements
 
 - RLS owner-only; no anon access
+- Owner-only conversation DELETE; another user must never archive/restore/delete others’ conversations
 - No service role in user paths
 - `server-only` on policy/identity/provider/repository/service/allowlist
 - Henrik-only allowlist via non-public env
@@ -75,12 +81,13 @@ Henrik sees a credible DivBrain surface that explains what works / does not work
 
 ### Tests
 
-- Guardrails vs fixture subset (≈60–80 cases)
+- Guardrails vs fixture (seed in 1A-3a; full ≈60–80 in 1A-3b)
 - Source validation/serialization
 - Context ordering + delimiters
 - Provider unavailable
 - Allowlist reject path
 - Blocked-request non-persistence behavior
+- Owner delete cascade behavior (where testable without prod apply)
 - Error mapping
 - Eval fixture integrity
 
@@ -93,20 +100,22 @@ Henrik sees a credible DivBrain surface that explains what works / does not work
 
 - [ ] Architecture modules exist and are typed; product name **DivBrain** in new UI copy
 - [ ] Migration present, reviewed; applied at most in dev/preview per process — not casually to prod
-- [ ] `/brain` honest Internal Alpha shell (no fake answers)
+- [ ] Owner permanent conversation delete supported in schema/RLS; archive optional only
+- [ ] `/brain` honest foundation shell (no fake answers)
 - [ ] Unconfigured provider returns `provider_unavailable`
 - [ ] Allowlist enforces Henrik-only access
 - [ ] Blocked requests do not persist full prompt bodies
+- [ ] Cost/usage **hooks** present; no claim of live provider cost logging
 - [ ] Lint + build pass; deterministic tests pass
 - [ ] No AI SDK / no provider keys / no provider selection
 
 ### Explicit exclusions
 
-Live provider selection, vectors, tools, portfolio AI, streaming, billing, admin, entitlement DB, auto-retention jobs
+Live provider selection, Learning retrieval (1C), vectors, tools, portfolio AI, streaming, billing, admin, entitlement DB, auto-retention jobs
 
 ### Complexity
 
-**L** (multi-session; split via tickets 1A-1…1A-10)
+**L** (multi-session; split via tickets below — each ticket one focused session)
 
 ### Cost risks
 
@@ -458,35 +467,47 @@ Tickets are independently reviewable. Stack on `feature/divbrain-*` from `origin
 - **Tests:** URL safety, HTML rejection, JSON round-trip
 - **Exclude:** UI
 
-### 1A-3 — Deterministic guardrails + eval fixture (~60–80)
+### 1A-3a — Deterministic guardrail engine + seed evals
 
-- **Goal:** `safety.ts` + Swedish fixture covering required categories
-- **Tests:** Fixture-driven decision assertions; unique IDs
-- **Exclude:** Model calls
+- **Goal:** `safety.ts` decision model + approximately **20–30** representative Swedish eval cases across critical categories (advice, fabrication, injection, privacy, education sample)
+- **Accept:** Deterministic classifications; unique case IDs; tests pass for the seed set
+- **Exclude:** Full 60–80 fixture; model calls
+
+### 1A-3b — Expand Swedish eval fixture to ≈60–80
+
+- **Goal:** Grow fixture to approximately **60–80** cases with required category coverage; fixture integrity tests (no duplicate IDs)
+- **Accept:** Category checklist green; guardrail assertions for new cases
+- **Exclude:** Model calls; Learning retrieval cases (those land in 1C-3)
 
 ### 1A-4 — Identity, policy, context assembly (server-only)
 
-- **Goal:** `identity.ts`, `policy.ts`, `context.ts` with ordering + delimiters + budgets
+- **Goal:** `identity.ts`, `policy.ts`, `context.ts` with ordering + delimiters + budgets; usage/cost **hook** types only
 - **Tests:** Order + delimiter presence; size truncation
-- **Exclude:** Retrieval implementation
+- **Exclude:** Retrieval implementation; live cost logging
 
 ### 1A-5 — Provider interface + UnconfiguredProvider
 
 - **Goal:** `provider.ts` contract; unavailable result; no fake text
 - **Tests:** Unconfigured behavior
-- **Exclude:** Real SDK
+- **Exclude:** Real SDK; vendor selection
 
 ### 1A-6 — Supabase migration + RLS
 
-- **Goal:** Chronological migration for `divbrain_*` tables, constraints, indexes, RLS
-- **Review:** Anon deny; owner checks; no collision with `messages`
+- **Goal:** Chronological migration for `divbrain_*` tables, constraints, indexes, RLS including **owner conversation DELETE** cascade; no direct message DELETE required
+- **Review:** Anon deny; owner checks; cross-user archive/delete denied; no collision with `messages`
 - **Exclude:** Apply to production
 
-### 1A-7 — Repository + application service
+### 1A-7a — Repository CRUD and ownership-safe data access
 
-- **Goal:** CRUD conversations/messages; lifecycle with guardrails + unconfigured provider; **blocked turns do not persist full content**; user delete cascades
-- **Accept:** Ownership from session only; safe errors; account delete removes DivBrain data via FK cascade
-- **Exclude:** Streaming; safety-event analytics store
+- **Goal:** Typed server-only repository: list/read/create/rename/archive/restore/**delete** conversations; list/add messages; explicit column selection; session-derived owner only
+- **Accept:** Safe result/error types; delete cascades via FK; no raw Supabase errors to UI layer
+- **Exclude:** Full request lifecycle orchestration; streaming
+
+### 1A-7b — Application-service orchestration and request lifecycle
+
+- **Goal:** Service layer: auth → allowlist → validate → guardrails → branch blocked (no persist) vs allowed (persist → context → UnconfiguredProvider → persist safe result)
+- **Accept:** Blocked content never persisted; provider_unavailable honest; no fake answers
+- **Exclude:** Real provider; Learning retrieval; safety-event analytics store
 
 ### 1A-8 — Henrik-only Alpha allowlist (server-only)
 
@@ -494,11 +515,17 @@ Tickets are independently reviewable. Stack on `feature/divbrain-*` from `origin
 - **Accept:** No admin panel; no entitlement DB
 - **Exclude:** Multi-tenant plan system
 
-### 1A-9 — `/brain` Internal Alpha UI shell
+### 1A-9a — `/brain` shell, layout and honest empty states
 
-- **Goal:** Replace placeholder with honest shell; history/composer/states; **DivBrain** naming; remove fake insights from this route
-- **Browser:** Desktop/tablet/mobile checklist
-- **Exclude:** Live generation beyond unavailable state
+- **Goal:** Replace placeholder with DivBrain shell + history area + empty + provider-unavailable states; remove fake insights from this route
+- **Browser:** Desktop/tablet/mobile layout checklist
+- **Exclude:** Composer interaction polish; live generation; provider connection
+
+### 1A-9b — Composer, message states and responsive interaction
+
+- **Goal:** Composer usability, loading/blocked/failed presentation, keyboard focus, responsive interaction
+- **Browser:** 1440×900, 768×1024, 390×844; a11y focus
+- **Exclude:** Live provider connection; fabricated assistant answers
 
 ### 1A-10 — Test runner + CI scripts
 
@@ -506,9 +533,17 @@ Tickets are independently reviewable. Stack on `feature/divbrain-*` from `origin
 - **Note:** Prefer smallest dependency; avoid lockfile churn beyond necessity
 - **Exclude:** E2E Playwright suites unless already standard
 
-### 1B-1 — Provider benchmark harness
+### 1B-1a — Provider benchmark contract, scorecard and first thin adapter
 
-- Thin adapters for a small candidate set; same Swedish eval suite; cost/quality/safety/latency/source scorecard
+- **Goal:** Benchmark harness + cost/quality/safety/latency/source scorecard + **one** thin candidate adapter against the Swedish eval suite
+- **Accept:** Scorecard filled for candidate A; secrets server-only; small candidate set planned (not expanded)
+- **Exclude:** Multiple complete adapters in one session; production selection
+
+### 1B-1b — Additional candidate adapter(s) and comparative evaluation
+
+- **Goal:** Add remaining thin adapter(s) in the **same small** candidate set; run comparative eval; recommend lowest-cost winner meeting bars
+- **Accept:** Documented comparison; no permanent multi-provider production routing
+- **Exclude:** Expanding beyond the planned small candidate set
 
 ### 1B-2 — Select winner + wire factory
 
@@ -520,7 +555,7 @@ Tickets are independently reviewable. Stack on `feature/divbrain-*` from `origin
 
 ### 1B-4 — Cost persistence + internal logging
 
-- Safe `provider_meta` / usage fields (allowed turns only)
+- Safe `provider_meta` / usage fields (allowed turns only) — **live** token/cost logging begins here
 
 ### 1C-1 — Learning retriever
 
@@ -566,27 +601,27 @@ Tickets are independently reviewable. Stack on `feature/divbrain-*` from `origin
 
 ## Recommended first five implementation tickets
 
-Execute in this dependency order:
+Execute in this dependency order (unchanged parent IDs; 1A-3 starts with **1A-3a**):
 
 1. **1A-1** — Package boundaries, types and safe error taxonomy
 2. **1A-2** — Source and citation model
-3. **1A-3** — Deterministic guardrails and Swedish eval fixture (≈60–80)
+3. **1A-3** — Guardrails and Swedish eval fixture — begin with **1A-3a** (engine + 20–30 cases), then **1A-3b** (expand to ≈60–80)
 4. **1A-5** — Provider interface and UnconfiguredProvider (**no vendor selection** in 1A)
-5. **1A-6** — Database migration and RLS (create in code; apply via env progression)
+5. **1A-6** — Database migration and RLS (create in code; apply via env progression; owner DELETE cascade)
 
 Then continue with:
 
-6. **1A-4** — Context assembly (identity, policy, budgets, delimiters)
-7. **1A-7** — Repository and application service
+6. **1A-4** — Context assembly (identity, policy, budgets, delimiters; cost hooks only)
+7. **1A-7a** → **1A-7b** — Repository CRUD, then application-service lifecycle
 8. **1A-8** — Henrik-only allowlist
-9. **1A-9** — Honest `/brain` UI shell
+9. **1A-9a** → **1A-9b** — `/brain` shell/empty states, then composer/message interaction
 10. **1A-10** — Focused tests and validation
 
 ---
 
 ## Documentation convention note
 
-Blueprints live under `docs/divbrain/` rather than only `docs/ai/`, because DivBrain is a **product + security + data** domain, not merely an AI tone guide. Legacy `docs/ai/DIVIDEND_BRAIN.md` remains superseded for scope; a later cleanup may turn it into a short pointer.
+Blueprints live under `docs/divbrain/` rather than only `docs/ai/`, because DivBrain is a **product + security + data** domain. `docs/ai/` holds legacy Brain notes; `docs/divbrain/` is the canonical current source. A later cleanup may turn `DIVIDEND_BRAIN.md` into a short pointer.
 
 ---
 
@@ -594,6 +629,6 @@ Blueprints live under `docs/divbrain/` rather than only `docs/ai/`, because DivB
 
 | Field | Value |
 |-------|-------|
-| Version | 1.1 |
+| Version | 1.2 |
 | Date | 2026-07-18 |
-| Changes | Founder decisions: Henrik allowlist in 1A, 1B provider benchmark, blocked non-persistence, deferred billing, migration env progression |
+| Changes | Clarify Alpha vs 1A; permanent delete; ticket splits 1A-3/7/9 and 1B-1; cost-hook timing |

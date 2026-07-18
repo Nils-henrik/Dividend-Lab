@@ -69,8 +69,27 @@ Browser (/brain UI)
   │  server actions / route handlers (authenticated)
   ▼
 Application service (lib/divbrain/service.*)
-  │  auth → validate → guardrails → persist user msg
-  │  → assemble context → provider → validate → persist assistant
+  │
+  │  authenticate
+  │  → verify Internal Alpha allowlist
+  │  → validate and normalize input
+  │  → run deterministic guardrails
+  │
+  │     ┌─ BLOCKED ──────────────────────────────────────────┐
+  │     │  return safe classification / reason               │
+  │     │  do NOT persist full blocked prompt content        │
+  │     │  do NOT call provider                              │
+  │     └────────────────────────────────────────────────────┘
+  │
+  │     ┌─ ALLOWED ──────────────────────────────────────────┐
+  │     │  create / select owned conversation                │
+  │     │  → persist user message                            │
+  │     │  → assemble trusted context                        │
+  │     │  → call provider (Unconfigured in 1A; real in 1B+) │
+  │     │  → validate output                                 │
+  │     │  → persist safe assistant result                   │
+  │     │  → return safe UI response                         │
+  │     └────────────────────────────────────────────────────┘
   ▼
 ┌───────────────┬──────────────────┬────────────────────┐
 │ Repository    │ Context assembly │ Provider adapter   │
@@ -175,12 +194,21 @@ When provider is unconfigured: return typed `provider_unavailable`; **never** fa
 - Messages belong to a conversation; access only via ownership join/policy
 - Client may pass `conversationId` but **never** owner id
 - Application layer re-checks ownership even though RLS also enforces it
-- Conversation deletion **cascades** to messages
-- User / account deletion **cascades** DivBrain conversations → messages
-- Internal Alpha: conversations remain until the **user deletes** them
+
+**Deletion (required for Internal Alpha):**
+
+Internal Alpha must support **permanent owner deletion** of a conversation, which cascades to its messages. Soft archive is an optional organizational feature and does not replace deletion. Direct message deletion is not required; messages are removed through conversation or account deletion.
+
+- The authenticated owner must be able to **permanently delete** a DivBrain conversation
+- Deleting a conversation **cascades** to all messages in that conversation (`ON DELETE CASCADE`)
+- Account deletion **cascades** to all of the user’s DivBrain conversations and messages
+- Soft **archive** (`archived_at`) is optional UX only and **must never** replace permanent owner deletion
+- Direct individual-message deletion is **not required** for Internal Alpha
+- Another user must never be able to archive, restore or delete someone else’s conversation
+- Internal Alpha: conversations remain until the **owner permanently deletes** them
 - **No automatic retention jobs** in Phase 1A
 - Before external Beta: define transcript retention, export and deletion in product + privacy docs
-- Archived conversations: readable by owner; recommend allow restore, block new messages while archived
+- If archive is implemented: readable by owner; allow restore; block new messages while archived
 
 ---
 
@@ -254,10 +282,11 @@ Enable RLS on **every** DivBrain table.
 
 **Authenticated:**
 
-- Conversations: `user_id = auth.uid()` for SELECT/INSERT/UPDATE (archive/rename). INSERT `with check` forces `user_id = auth.uid()`.
+- Conversations: `user_id = auth.uid()` for SELECT/INSERT/UPDATE (archive/rename when implemented). INSERT `with check` forces `user_id = auth.uid()`.
+- Conversations: **DELETE** only when `user_id = auth.uid()` — permanent owner deletion is required; another user must never delete, archive or restore someone else’s conversation.
 - Messages: SELECT/INSERT only when parent conversation owned by `auth.uid()`.
 - UPDATE of `conversation_id` or `user_id` must be impossible via policy `with check`.
-- Prefer no DELETE for messages in Alpha (soft archive conversations instead); if DELETE allowed, ownership required.
+- Messages: **no direct DELETE** policy required for Internal Alpha — messages are removed via conversation DELETE cascade or account deletion cascade. Soft archive must not substitute for conversation DELETE.
 
 **Never** use service role in normal repository paths.
 
@@ -494,7 +523,9 @@ History strategy: **recent-first truncation**, keep system/policy always, keep a
 
 ## 18. Cost tracking
 
-Per completed/failed provider call, persist safe usage:
+Phase **1A** introduces usage/cost **interfaces and hooks** only. Actual provider token usage and estimated-cost logging begin when a real provider is connected in Phase **1B**. Do not claim live provider costs before a provider exists.
+
+Per completed/failed provider call (1B+), persist safe usage:
 
 - input/output tokens
 - estimated cost (server-side price table constant)
@@ -587,7 +618,7 @@ Categories must include education (stocks/funds/ETFs/dividends/risk/diversificat
 
 | | |
 |--|--|
-| **Recommendation** | **Yes** — persist allowed turns from Internal Alpha; user-deletes until then; cascade on conversation/account delete |
+| **Recommendation** | **Yes** — persist allowed turns from Phase 1A onward; owner permanent delete until then; cascade on conversation/account delete; archive optional and never a substitute for delete |
 | **Reasoning** | Ownership/RLS patterns must be proven early; history is core product value; matches Messages-domain maturity in stack |
 | **Cheaper alternative** | Ephemeral session-only chat — cheaper short-term, throws away retention proof and security practice |
 | **Upgrade** | Pre-Beta: retention/export/deletion product+privacy docs; later summaries; no auto-retention jobs in 1A |
@@ -766,6 +797,6 @@ Remaining complexity that **earns its keep:** RLS ownership, source model, guard
 
 | Field | Value |
 |-------|-------|
-| Version | 1.1 |
+| Version | 1.2 |
 | Date | 2026-07-18 |
-| Changes | Founder decisions: Henrik allowlist, blocked non-persistence, retention, 1B provider benchmark, migration environments |
+| Changes | Clarify permanent delete vs archive, request-lifecycle diagram, Alpha vs Phase 1A boundaries |
