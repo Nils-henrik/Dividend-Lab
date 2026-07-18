@@ -5,7 +5,8 @@
  *
  * Intentionally omitted: hidden reasoning / chain-of-thought, emails,
  * auth tokens, owner/user ids on inputs, provider objects, DB row shapes.
- * Source and safety models are extension points for later tickets.
+ * Source/citation models live in `sources.ts` / `citations.ts`.
+ * Safety classification remains a later-ticket extension point.
  */
 
 import {
@@ -41,8 +42,9 @@ export type DivBrainConversation = {
 };
 
 /**
- * Domain message. Later tickets may attach source/safety metadata via
- * dedicated types — do not store hidden reasoning here.
+ * Domain message. Grounded assistant payloads use
+ * `DivBrainGroundedAnswer` in `citations.ts` rather than forcing sources
+ * onto every message instance. Do not store hidden reasoning here.
  */
 export type DivBrainMessage = {
   id: DivBrainMessageId;
