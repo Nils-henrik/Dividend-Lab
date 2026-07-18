@@ -27,7 +27,10 @@ export function divBrainSuccess<T>(data: T): DivBrainSuccess<T> {
 }
 
 export function divBrainFailure(error: DivBrainError): DivBrainFailure {
-  return { ok: false, error };
+  return {
+    ok: false,
+    error: createDivBrainError(error.code),
+  };
 }
 
 export function divBrainFailureFromCode(
