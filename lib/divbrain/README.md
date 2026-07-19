@@ -5,8 +5,8 @@ Shared DivBrain domain language for server and client.
 ## Boundaries
 
 - **Shared (this folder today):** `constants`, `types`, `errors`, `results`, `validation`, `sources`, `citations`, `guardrails` — safe to import from server or client.
-- **Server-only by convention:** `server/guardrails`, `server/guardrail-evals` — detection logic and eval fixtures. These modules live under `lib/divbrain/server/` and **must never be imported by client components** or other browser-safe UI. Package-level `import "server-only"` is deferred until an approved dependency/foundation ticket; folder placement and this README are the current boundary.
-- Later tickets add identity, policy/context assembly, provider adapters, repositories, services, allowlists, Learning retrieval under the same server-only rule.
+- **Server-only by convention:** `server/guardrails`, `server/guardrail-evals`, `server/providers` — detection logic, eval fixtures, and the provider boundary. These modules live under `lib/divbrain/server/` and **must never be imported by client components** or other browser-safe UI. Package-level `import "server-only"` is deferred until an approved dependency/foundation ticket; folder placement and this README are the current boundary.
+- Later tickets add identity, policy/context assembly, real provider adapters, repositories, services, allowlists, Learning retrieval under the same server-only rule.
 - Browser-safe modules must never import server-only DivBrain code.
 - Never expose secrets, tokens, emails, raw provider/DB errors, stack traces, or hidden reasoning across the browser boundary.
 
@@ -74,6 +74,34 @@ Coverage focus in the expanded suite:
 The runner remains pure and non-automatic: it does not run on import or build, access the network, filesystem, environment, current time, or randomness. **No approved runtime test foundation exists yet**, so this ticket does **not** claim that the **28** baseline, **44** new, or **72** total fixtures have been executed at runtime or in CI.
 
 Deterministic pattern matching still has known false positives and false negatives. Semantic and provider-side safety remain later work. Assessment/report contracts are unchanged from 1A-3a.
+
+## Provider interface (Ticket 1A-5)
+
+Server-owned, provider-neutral generation boundary under `server/providers/`:
+
+- `types.ts` — request/response shapes, context-block kinds, optional token-usage hooks (no cost math)
+- `provider.ts` — `DivBrainProvider` contract + safe unknown-error mapping
+- `validation.ts` — deterministic request validation / usage normalization
+- `unconfigured-provider.ts` — `UnconfiguredProvider` (explicit unconfigured state)
+
+### Contract
+
+```ts
+generate(request) →
+  | { status: "completed"; text; usage; sources? }
+  | { status: "cancelled" }
+  | { status: "provider_unavailable"; error }
+  | { status: "failed"; error }
+```
+
+### Rules
+
+- No real AI SDK, API keys, environment reads, network calls, streaming, or tool calls in 1A-5.
+- `UnconfiguredProvider` returns catalog `provider_unavailable` for valid requests and **never** fabricates assistant text.
+- Invalid requests map to `failed` + `invalid_request`; already-aborted signals map to `cancelled`.
+- Later adapters catch SDK exceptions and map via `mapUnknownToDivBrainProviderResult` — raw vendor payloads must not cross this boundary.
+- Token-usage fields are optional normalized integer hooks only; pricing/billing remain later work.
+- No provider registry, factory framework, or selection logic in this ticket.
 
 ## Sources and citations
 
