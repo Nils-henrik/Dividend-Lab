@@ -103,6 +103,23 @@ generate(request) →
 - Token-usage fields are optional normalized integer hooks only; pricing/billing remain later work.
 - No provider registry, factory framework, or selection logic in this ticket.
 
+## Persistence schema (Ticket 1A-6)
+
+Repository-only Supabase migration (not applied by this ticket):
+
+`supabase/migrations/20260719110800_create_divbrain_conversations_and_messages.sql`
+
+- `divbrain_conversations` — owner via `auth.users`, title/summary, optional `archived_at`, `schema_version`, timestamps
+- `divbrain_messages` — conversation cascade, roles `user`/`assistant`/`system`, completion statuses, optional safety classification, JSONB `sources` (array shape only), optional catalog `error_code`
+- No `provider_meta` or other provider/SDK metadata columns (deferred to a later explicit ticket if needed)
+- RLS: authenticated owner-only on conversations; anon denied; conversation DELETE cascades messages; account delete cascades conversations
+- Conversation INSERT is column-restricted (`user_id`, `title`, `summary`, `archived_at`); system-owned `id` / `schema_version` / timestamps use database defaults
+- Messages (**Model A**): authenticated **SELECT only** via parent ownership. No authenticated INSERT/UPDATE/DELETE. Message creation is server-owned and deferred to Tickets 1A-7a / 1A-7b
+- Transcript ordering for later repositories: `ORDER BY created_at ASC, id ASC` (index `(conversation_id, created_at, id)`)
+- Soft archive never replaces permanent owner DELETE
+- No `divbrain_usage_events` in 1A-6 (deferred)
+- RLS and privileges were reviewed statically in this ticket; they were **not** runtime-tested against a live database
+
 ## Sources and citations
 
 - `sources.ts` — categories, verification/freshness, source validation, URL/route policy, serialization, deduplication.
