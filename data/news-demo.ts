@@ -1,10 +1,12 @@
 import type { NewsArticle } from "@/types/news";
+import { IRAN_OLJEPRIS_HORMUZ_BORSEN_ARTICLE } from "@/data/news-articles/iran-oljepris-hormuz-borsen";
 
 /**
  * Temporary demo content for Börsnyheter UI development.
  * Not live or verified financial news — replace via a provider adapter later.
  */
 export const DEMO_NEWS_ARTICLES: NewsArticle[] = [
+  IRAN_OLJEPRIS_HORMUZ_BORSEN_ARTICLE,
   {
     id: "demo-market-1",
     title: "Stockholmsbörsen öppnade försiktigt upp efter makrosignalerna från USA",

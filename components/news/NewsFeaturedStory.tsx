@@ -1,6 +1,11 @@
+import Link from "next/link";
 import type { NewsArticle } from "@/types/news";
 import { getNewsCategoryLabel } from "@/lib/news/categories";
 import { formatNewsPublishedAt } from "@/lib/news/format";
+import {
+  getNewsArticleHref,
+  isInternalNewsArticleHref,
+} from "@/lib/news/get-articles";
 import NewsArticleThumbnail from "./NewsArticleThumbnail";
 
 type Props = {
@@ -8,6 +13,8 @@ type Props = {
 };
 
 export default function NewsFeaturedStory({ article }: Props) {
+  const href = getNewsArticleHref(article);
+
   return (
     <section
       aria-labelledby={`news-featured-${article.id}`}
@@ -35,7 +42,16 @@ export default function NewsFeaturedStory({ article }: Props) {
             id={`news-featured-${article.id}`}
             className="mt-3 text-lg font-semibold leading-snug tracking-[-0.02em] text-divlab-text sm:text-xl"
           >
-            {article.title}
+            {href && isInternalNewsArticleHref(href) ? (
+              <Link
+                href={href}
+                className="transition hover:text-divlab-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/40"
+              >
+                {article.title}
+              </Link>
+            ) : (
+              article.title
+            )}
           </h2>
 
           <p className="mt-2 max-w-3xl text-sm leading-6 text-divlab-text-secondary">
@@ -51,15 +67,24 @@ export default function NewsFeaturedStory({ article }: Props) {
           </div>
 
           <div className="mt-4">
-            {article.url ? (
-              <a
-                href={article.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="divlab-btn-ghost inline-flex px-3 py-1.5 text-xs"
-              >
-                Läs mer
-              </a>
+            {href ? (
+              isInternalNewsArticleHref(href) ? (
+                <Link
+                  href={href}
+                  className="divlab-btn-ghost inline-flex px-3 py-1.5 text-xs"
+                >
+                  Läs mer
+                </Link>
+              ) : (
+                <a
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="divlab-btn-ghost inline-flex px-3 py-1.5 text-xs"
+                >
+                  Läs mer
+                </a>
+              )
             ) : (
               <span className="text-xs text-divlab-text-muted">
                 Extern länk kommer snart
