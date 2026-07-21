@@ -5,7 +5,17 @@
 
 import { DIVLAB_CONTACT } from "@/lib/site/contact";
 
+/** Shared fallback shown on legal pages that have not been updated individually. */
 export const LEGAL_LAST_UPDATED = "12 juli 2026";
+
+/**
+ * Page-specific “Senast uppdaterad” labels.
+ * Does not affect LEGAL_PUBLISHED_VERSIONS or legal acceptance.
+ */
+export const LEGAL_PAGE_LAST_UPDATED = {
+  privacy: "21 juli 2026",
+  cookies: "21 juli 2026",
+} as const;
 
 export const legalConfig = {
   serviceName: "DivLab",

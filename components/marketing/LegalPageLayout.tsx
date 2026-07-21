@@ -3,6 +3,8 @@ import { LEGAL_LAST_UPDATED } from "@/lib/legal/legal-config";
 type LayoutProps = {
   title: string;
   description: string;
+  /** Overrides the shared LEGAL_LAST_UPDATED display for this page only. */
+  lastUpdated?: string;
   publishedVersion?: {
     version: string;
     effectiveDateLabel: string;
@@ -40,6 +42,7 @@ export function LegalList({ items }: { items: string[] }) {
 export default function LegalPageLayout({
   title,
   description,
+  lastUpdated = LEGAL_LAST_UPDATED,
   publishedVersion,
   children,
 }: LayoutProps) {
@@ -60,7 +63,7 @@ export default function LegalPageLayout({
           </p>
         )}
         <p className="mt-4 text-xs text-divlab-text-muted">
-          Senast uppdaterad: {LEGAL_LAST_UPDATED}
+          Senast uppdaterad: {lastUpdated}
         </p>
       </header>
 
