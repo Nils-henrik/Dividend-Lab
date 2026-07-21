@@ -39,6 +39,7 @@ export default function PrivacyPageContent() {
             "läst/oläst-status i meddelanden",
             "sessions- och säkerhetsrelaterad teknisk data",
             "server- och felsökningsloggar hos driftleverantör",
+            "anonymiserad, aggregerad trafik- och sidvisningsdata via Vercel Web Analytics (utan cookies)",
             "data kopplad till lösenordsåterställning",
           ]}
         />
@@ -49,7 +50,7 @@ export default function PrivacyPageContent() {
           Uppgifter samlas in när du registrerar konto, loggar in, redigerar profil, deltar i
           forum, skickar meddelanden, kommenterar artiklar eller använder andra funktioner som
           kräver konto. Vissa tekniska uppgifter skapas automatiskt vid användning, till exempel
-          sessionscookies och loggar.
+          sessionscookies, loggar och anonymiserad trafikstatistik via Vercel Web Analytics.
         </p>
       </LegalSection>
 
@@ -63,6 +64,7 @@ export default function PrivacyPageContent() {
             "möjliggöra privata meddelanden och kommentarer",
             "visa reaktioner och reputation",
             "driva, utveckla och felsöka tjänsten",
+            "förstå aggregerad användning av webbplatsen via anonym trafikstatistik",
             "hantera support och rättsliga skyldigheter",
             "förebygga missbruk och otillåten användning",
           ]}
@@ -105,7 +107,7 @@ export default function PrivacyPageContent() {
         <LegalList
           items={[
             "Supabase — autentisering, databas, fillagring och relaterad infrastruktur",
-            "Vercel — hosting och server-side rendering av webbapplikationen",
+            "Vercel — hosting, server-side rendering och Vercel Web Analytics (anonym, aggregerad trafikstatistik utan cookies)",
             "TradingView — officiell Symbol Overview-widget i inloggad dashboard (skript: " +
               TRADINGVIEW_WIDGET_SCRIPT +
               "). Widgeten initierar nätverkskontakt med TradingView och kan ta emot IP-adress, inbäddande sidas URL, widgettyp, visat marknadssymbol och vanlig begärandemetadata. DivLabs kod sätter inte TradingView-cookies",
@@ -174,7 +176,9 @@ export default function PrivacyPageContent() {
         <p>
           Tjänsten använder nödvändiga Supabase Auth-sessionscookies via @supabase/ssr samt
           återställningscookien {RECOVERY_COOKIE_NAME} (15 minuter). DivLab använder inte
-          localStorage eller sessionStorage i betan. Se cookiepolicyn för detaljer.
+          localStorage eller sessionStorage i betan. Vercel Web Analytics använder inte cookies;
+          den behandlar anonymiserad, aggregerad trafikdata. Se cookiepolicyn för detaljer om
+          cookies.
         </p>
       </LegalSection>
 
