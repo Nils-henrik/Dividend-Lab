@@ -13,7 +13,7 @@ export default function NewsPage() {
   const articles = getNewsArticles();
 
   return (
-    <AppShell>
+    <AppShell allowGuest>
       <NewsPageContent articles={articles} />
     </AppShell>
   );

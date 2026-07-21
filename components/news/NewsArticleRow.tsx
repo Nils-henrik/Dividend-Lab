@@ -1,6 +1,11 @@
+import Link from "next/link";
 import type { NewsArticle } from "@/types/news";
 import { getNewsCategoryLabel } from "@/lib/news/categories";
 import { formatNewsPublishedAt } from "@/lib/news/format";
+import {
+  getNewsArticleHref,
+  isInternalNewsArticleHref,
+} from "@/lib/news/get-articles";
 import NewsArticleThumbnail from "./NewsArticleThumbnail";
 
 type Props = {
@@ -8,6 +13,8 @@ type Props = {
 };
 
 export default function NewsArticleRow({ article }: Props) {
+  const href = getNewsArticleHref(article);
+
   return (
     <article className="border-b divlab-border-neutral py-4 last:border-0">
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:gap-4">
@@ -23,7 +30,16 @@ export default function NewsArticleRow({ article }: Props) {
           </div>
 
           <h3 className="mt-2 text-[15px] font-medium leading-snug text-divlab-text">
-            {article.title}
+            {href && isInternalNewsArticleHref(href) ? (
+              <Link
+                href={href}
+                className="transition hover:text-divlab-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/40"
+              >
+                {article.title}
+              </Link>
+            ) : (
+              article.title
+            )}
           </h3>
 
           <p className="mt-1.5 line-clamp-2 text-sm leading-6 text-divlab-text-secondary">
@@ -39,15 +55,24 @@ export default function NewsArticleRow({ article }: Props) {
               </time>
             </div>
 
-            {article.url ? (
-              <a
-                href={article.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="divlab-btn-ghost shrink-0 px-2.5 py-1 text-[11px]"
-              >
-                Läs mer
-              </a>
+            {href ? (
+              isInternalNewsArticleHref(href) ? (
+                <Link
+                  href={href}
+                  className="divlab-btn-ghost shrink-0 px-2.5 py-1 text-[11px]"
+                >
+                  Läs mer
+                </Link>
+              ) : (
+                <a
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="divlab-btn-ghost shrink-0 px-2.5 py-1 text-[11px]"
+                >
+                  Läs mer
+                </a>
+              )
             ) : (
               <span className="shrink-0 text-[11px] text-divlab-text-subtle">
                 Extern länk kommer snart

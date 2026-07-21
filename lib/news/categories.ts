@@ -6,6 +6,7 @@ export const NEWS_CATEGORY_LABELS: Record<NewsCategory, string> = {
   macro: "Makro",
   "funds-etfs": "Fonder & ETF:er",
   dividends: "Utdelningar",
+  "world-economy": "Världsekonomi",
 };
 
 export const NEWS_CATEGORY_FILTERS: {
@@ -18,6 +19,7 @@ export const NEWS_CATEGORY_FILTERS: {
   { value: "macro", label: NEWS_CATEGORY_LABELS.macro },
   { value: "funds-etfs", label: NEWS_CATEGORY_LABELS["funds-etfs"] },
   { value: "dividends", label: NEWS_CATEGORY_LABELS.dividends },
+  { value: "world-economy", label: NEWS_CATEGORY_LABELS["world-economy"] },
 ];
 
 export function getNewsCategoryLabel(category: NewsCategory) {
