@@ -1,5 +1,6 @@
 import LegalPageLayout, { LegalList, LegalSection } from "@/components/marketing/LegalPageLayout";
 import {
+  LEGAL_PAGE_LAST_UPDATED,
   RECOVERY_COOKIE_NAME,
   TRADINGVIEW_WIDGET_SCRIPT,
   legalConfig,
@@ -73,6 +74,7 @@ export default function CookiesPageContent() {
     <LegalPageLayout
       title="Cookiepolicy"
       description={`Aktiv cookie- och lagringsteknik i ${serviceName} under den kostnadsfria betan.`}
+      lastUpdated={LEGAL_PAGE_LAST_UPDATED.cookies}
     >
       <LegalSection title="Översikt">
         <p>

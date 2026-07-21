@@ -3,6 +3,7 @@ import LegalPageLayout, { LegalList, LegalSection } from "@/components/marketing
 import { LEGAL_PUBLISHED_VERSIONS } from "@/lib/legal/acceptance";
 import {
   LEGAL_OPERATOR_PRIVACY,
+  LEGAL_PAGE_LAST_UPDATED,
   LEGAL_PRIVACY_RIGHTS_REQUEST,
   RECOVERY_COOKIE_NAME,
   TRADINGVIEW_WIDGET_SCRIPT,
@@ -16,6 +17,7 @@ export default function PrivacyPageContent() {
     <LegalPageLayout
       title="Integritetspolicy"
       description={`Hur ${serviceName} behandlar personuppgifter under den kostnadsfria betaperioden. Policyn beskriver faktisk behandling i tjänsten — den utgör inte bevis på fullständig regelefterlevnad eller juridiskt slutgodkännande.`}
+      lastUpdated={LEGAL_PAGE_LAST_UPDATED.privacy}
       publishedVersion={LEGAL_PUBLISHED_VERSIONS.privacy}
     >
       <LegalSection title="Personuppgiftsansvarig">
