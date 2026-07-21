@@ -1,11 +1,13 @@
 import type { NewsArticle } from "@/types/news";
 import { IRAN_OLJEPRIS_HORMUZ_BORSEN_ARTICLE } from "@/data/news-articles/iran-oljepris-hormuz-borsen";
+import { ONSDAGENS_RAPPORTER_TESLA_IBM_ARTICLE } from "@/data/news-articles/onsdagens-rapporter-tesla-ibm";
 
 /**
  * Temporary demo content for Börsnyheter UI development.
  * Not live or verified financial news — replace via a provider adapter later.
  */
 export const DEMO_NEWS_ARTICLES: NewsArticle[] = [
+  ONSDAGENS_RAPPORTER_TESLA_IBM_ARTICLE,
   IRAN_OLJEPRIS_HORMUZ_BORSEN_ARTICLE,
   {
     id: "demo-market-1",
