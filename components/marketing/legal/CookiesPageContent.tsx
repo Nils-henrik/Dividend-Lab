@@ -153,6 +153,10 @@ export default function CookiesPageContent() {
           ]}
         />
         <p>
+          Vercel Web Analytics används för anonym, aggregerad trafikstatistik och sätter inte
+          cookies. Den tekniken beskrivs i integritetspolicyn, inte som cookie i tabellen ovan.
+        </p>
+        <p>
           DivLab visar därför ingen cookie-banner i den nuvarande betan. En mekanism för samtycke
           införs innan teknik som kräver samtycke aktiveras.
         </p>
