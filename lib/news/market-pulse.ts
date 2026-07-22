@@ -308,5 +308,6 @@ export function formatMarketPulseTime(publishedAt?: string) {
   return new Intl.DateTimeFormat("sv-SE", {
     dateStyle: "medium",
     timeStyle: "short",
+    timeZone: "Europe/Stockholm",
   }).format(date);
 }

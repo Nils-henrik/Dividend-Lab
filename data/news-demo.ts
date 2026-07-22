@@ -1,12 +1,14 @@
 import type { NewsArticle } from "@/types/news";
 import { IRAN_OLJEPRIS_HORMUZ_BORSEN_ARTICLE } from "@/data/news-articles/iran-oljepris-hormuz-borsen";
 import { ONSDAGENS_RAPPORTER_TESLA_IBM_ARTICLE } from "@/data/news-articles/onsdagens-rapporter-tesla-ibm";
+import { SINCH_RASAR_EFTER_Q2_RAPPORTEN_2026_ARTICLE } from "@/data/news-articles/sinch-rasar-efter-q2-rapporten-2026";
 
 /**
  * Temporary demo content for Börsnyheter UI development.
  * Not live or verified financial news — replace via a provider adapter later.
  */
 export const DEMO_NEWS_ARTICLES: NewsArticle[] = [
+  SINCH_RASAR_EFTER_Q2_RAPPORTEN_2026_ARTICLE,
   ONSDAGENS_RAPPORTER_TESLA_IBM_ARTICLE,
   IRAN_OLJEPRIS_HORMUZ_BORSEN_ARTICLE,
   {
