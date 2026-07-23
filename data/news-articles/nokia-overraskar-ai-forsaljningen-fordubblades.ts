@@ -4,6 +4,11 @@ import type { NewsArticle } from "@/types/news";
  * Approved Börsnyheter article — do not rewrite body copy.
  * Stock reaction verified against Yahoo Finance (NOKIA.HE) at publication.
  * Outlook wording: technical range revision only; operational outlook unchanged.
+ *
+ * Cover image: official Nokia Media Library asset “Nokia Cloud Design Center”.
+ * Source page: https://www.nokia.com/about-us/newsroom/media-resources/media-library/nokia-offices-and-facilities/
+ * Original file: https://www.nokia.com/sites/default/files/media/Nokia_Cloud_Design_Center_2.jpg
+ * Local optimized copy: public/news-demo/nokia-q2-ai-moln-2026.webp
  */
 export const NOKIA_OVERRASKAR_AI_FORSALJNINGEN_FORDUBBLADES_ARTICLE: NewsArticle =
   {
@@ -18,10 +23,10 @@ export const NOKIA_OVERRASKAR_AI_FORSALJNINGEN_FORDUBBLADES_ARTICLE: NewsArticle
     publishedAt: "2026-07-23T09:35:00+02:00",
     url: "/news/nokia-overraskar-ai-forsaljningen-fordubblades",
     featured: true,
-    imageUrl: "/news-demo/nokia-q2-ai-moln-2026.svg",
+    imageUrl: "/news-demo/nokia-q2-ai-moln-2026.webp",
     imageAlt:
-      "Illustration av datacenter och sammankopplade nätverk i samband med Nokias rapport för andra kvartalet 2026.",
-    imageCaption: "Illustration: DivLab.",
+      "Nokias Cloud Design Center, en del av bolagets verksamhet inom moln- och nätverksteknik.",
+    imageCaption: "Bild: Nokia / Nokia Media Library",
     readingMinutes: 2,
     seoTitle: "Nokia överraskar med starkare vinst i Q2 2026",
     seoDescription:
