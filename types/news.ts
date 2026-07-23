@@ -28,6 +28,12 @@ export interface NewsArticle {
   url: string | null;
   featured: boolean;
   imageUrl?: string | null;
+  /**
+   * Optional list-card image. When set, `/news` cards use this instead of
+   * `imageUrl` (e.g. a crop without embedded cover headline). Article pages
+   * continue to use `imageUrl`.
+   */
+  thumbnailImageUrl?: string | null;
   /** When set, the article has an internal detail page at `/news/[slug]`. */
   slug?: string;
   /** Opening body paragraphs on the detail page (after the list ingress/summary). */

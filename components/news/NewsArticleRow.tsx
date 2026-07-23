@@ -14,12 +14,13 @@ type Props = {
 
 export default function NewsArticleRow({ article }: Props) {
   const href = getNewsArticleHref(article);
+  const listImageUrl = article.thumbnailImageUrl ?? article.imageUrl;
 
   return (
     <article className="border-b divlab-border-neutral py-4 last:border-0">
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:gap-4">
-        {article.imageUrl && (
-          <NewsArticleThumbnail imageUrl={article.imageUrl} variant="row" />
+        {listImageUrl && (
+          <NewsArticleThumbnail imageUrl={listImageUrl} variant="row" />
         )}
 
         <div className="min-w-0 flex-1">

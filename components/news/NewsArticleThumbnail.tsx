@@ -1,11 +1,14 @@
 type Props = {
   imageUrl: string;
   variant?: "row" | "featured";
+  /** CSS object-position for object-cover crops. */
+  objectPosition?: string;
 };
 
 export default function NewsArticleThumbnail({
   imageUrl,
   variant = "row",
+  objectPosition = "center",
 }: Props) {
   const isFeatured = variant === "featured";
 
@@ -13,7 +16,7 @@ export default function NewsArticleThumbnail({
     <div
       className={`shrink-0 overflow-hidden rounded-lg border divlab-border-neutral bg-divlab-surface ${
         isFeatured
-          ? "h-[104px] w-full sm:h-[100px] md:h-[104px] md:w-[168px]"
+          ? "aspect-video w-full md:w-[288px]"
           : "h-[96px] w-full md:h-[96px] md:w-[156px]"
       }`}
     >
@@ -23,6 +26,7 @@ export default function NewsArticleThumbnail({
         alt=""
         aria-hidden="true"
         className="h-full w-full object-cover"
+        style={{ objectPosition }}
       />
     </div>
   );
