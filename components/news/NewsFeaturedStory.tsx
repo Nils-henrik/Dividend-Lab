@@ -14,6 +14,7 @@ type Props = {
 
 export default function NewsFeaturedStory({ article }: Props) {
   const href = getNewsArticleHref(article);
+  const listImageUrl = article.thumbnailImageUrl ?? article.imageUrl;
 
   return (
     <section
@@ -21,10 +22,11 @@ export default function NewsFeaturedStory({ article }: Props) {
       className="border-b divlab-border-neutral pb-6"
     >
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:gap-5">
-        {article.imageUrl && (
+        {listImageUrl && (
           <NewsArticleThumbnail
-            imageUrl={article.imageUrl}
+            imageUrl={listImageUrl}
             variant="featured"
+            objectPosition="center 40%"
           />
         )}
 

@@ -18,6 +18,8 @@ export const USA_BORSEN_FALLER_ALPHABET_TESLA_OLJA_ARTICLE: NewsArticle = {
   url: "/news/usa-borsen-faller-alphabet-tesla-olja",
   featured: true,
   imageUrl: "/news-demo/usa-borsen-faller-efter-oppningen.png",
+  thumbnailImageUrl:
+    "/news-demo/usa-borsen-faller-efter-oppningen-thumbnail.png",
   imageAlt:
     "Illustration av fallande amerikanska börsindex med symboler för AI-investeringar, elbilar och ett stigande oljepris.",
   imageCaption: "AI-genererad illustration.",
