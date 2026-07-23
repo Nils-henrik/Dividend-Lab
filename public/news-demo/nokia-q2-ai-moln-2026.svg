@@ -1,0 +1,134 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">Nokia Q2 2026 editorial illustration</title>
+  <desc id="desc">Abstract data-center racks and connected network nodes with a restrained upward data motif</desc>
+
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1600" y2="900" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0B0F14"/>
+      <stop offset="55%" stop-color="#12161C"/>
+      <stop offset="100%" stop-color="#0E1520"/>
+    </linearGradient>
+    <linearGradient id="panelGlow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0A84FF" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#0A84FF" stop-opacity="0.04"/>
+    </linearGradient>
+    <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#0A84FF" stop-opacity="0.15"/>
+      <stop offset="50%" stop-color="#0A84FF" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#0A84FF" stop-opacity="0.18"/>
+    </linearGradient>
+    <radialGradient id="vignette" cx="50%" cy="45%" r="70%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.45"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1600" height="900" fill="url(#bg)"/>
+
+  <!-- subtle grid -->
+  <g opacity="0.08" stroke="#8BA3BF" stroke-width="1">
+    <path d="M80 120 H1520"/>
+    <path d="M80 220 H1520"/>
+    <path d="M80 320 H1520"/>
+    <path d="M80 420 H1520"/>
+    <path d="M80 520 H1520"/>
+    <path d="M80 620 H1520"/>
+    <path d="M80 720 H1520"/>
+    <path d="M200 80 V820"/>
+    <path d="M400 80 V820"/>
+    <path d="M600 80 V820"/>
+    <path d="M800 80 V820"/>
+    <path d="M1000 80 V820"/>
+    <path d="M1200 80 V820"/>
+    <path d="M1400 80 V820"/>
+  </g>
+
+  <!-- left data-center racks -->
+  <g>
+    <rect x="120" y="210" width="118" height="460" rx="10" fill="#181D24" stroke="rgba(255,255,255,0.10)"/>
+    <rect x="136" y="232" width="86" height="26" rx="4" fill="url(#panelGlow)" stroke="rgba(10,132,255,0.35)"/>
+    <rect x="136" y="274" width="86" height="26" rx="4" fill="#1C232C" stroke="rgba(255,255,255,0.08)"/>
+    <rect x="136" y="316" width="86" height="26" rx="4" fill="url(#panelGlow)" stroke="rgba(10,132,255,0.28)"/>
+    <rect x="136" y="358" width="86" height="26" rx="4" fill="#1C232C" stroke="rgba(255,255,255,0.08)"/>
+    <rect x="136" y="400" width="86" height="26" rx="4" fill="url(#panelGlow)" stroke="rgba(10,132,255,0.28)"/>
+    <rect x="136" y="442" width="86" height="26" rx="4" fill="#1C232C" stroke="rgba(255,255,255,0.08)"/>
+    <rect x="136" y="484" width="86" height="26" rx="4" fill="url(#panelGlow)" stroke="rgba(10,132,255,0.22)"/>
+    <rect x="136" y="526" width="86" height="26" rx="4" fill="#1C232C" stroke="rgba(255,255,255,0.08)"/>
+    <rect x="136" y="568" width="86" height="26" rx="4" fill="#1C232C" stroke="rgba(255,255,255,0.08)"/>
+    <circle cx="150" cy="648" r="4" fill="#0A84FF" opacity="0.8"/>
+    <circle cx="168" cy="648" r="4" fill="#34C759" opacity="0.55"/>
+    <circle cx="186" cy="648" r="4" fill="rgba(255,255,255,0.25)"/>
+
+    <rect x="268" y="250" width="118" height="420" rx="10" fill="#181D24" stroke="rgba(255,255,255,0.10)"/>
+    <rect x="284" y="272" width="86" height="26" rx="4" fill="#1C232C" stroke="rgba(255,255,255,0.08)"/>
+    <rect x="284" y="314" width="86" height="26" rx="4" fill="url(#panelGlow)" stroke="rgba(10,132,255,0.30)"/>
+    <rect x="284" y="356" width="86" height="26" rx="4" fill="#1C232C" stroke="rgba(255,255,255,0.08)"/>
+    <rect x="284" y="398" width="86" height="26" rx="4" fill="url(#panelGlow)" stroke="rgba(10,132,255,0.28)"/>
+    <rect x="284" y="440" width="86" height="26" rx="4" fill="#1C232C" stroke="rgba(255,255,255,0.08)"/>
+    <rect x="284" y="482" width="86" height="26" rx="4" fill="url(#panelGlow)" stroke="rgba(10,132,255,0.24)"/>
+    <rect x="284" y="524" width="86" height="26" rx="4" fill="#1C232C" stroke="rgba(255,255,255,0.08)"/>
+    <rect x="284" y="566" width="86" height="26" rx="4" fill="#1C232C" stroke="rgba(255,255,255,0.08)"/>
+    <circle cx="298" cy="648" r="4" fill="#0A84FF" opacity="0.7"/>
+    <circle cx="316" cy="648" r="4" fill="#0A84FF" opacity="0.45"/>
+    <circle cx="334" cy="648" r="4" fill="rgba(255,255,255,0.22)"/>
+
+    <rect x="416" y="290" width="118" height="380" rx="10" fill="#181D24" stroke="rgba(255,255,255,0.10)"/>
+    <rect x="432" y="312" width="86" height="26" rx="4" fill="url(#panelGlow)" stroke="rgba(10,132,255,0.32)"/>
+    <rect x="432" y="354" width="86" height="26" rx="4" fill="#1C232C" stroke="rgba(255,255,255,0.08)"/>
+    <rect x="432" y="396" width="86" height="26" rx="4" fill="url(#panelGlow)" stroke="rgba(10,132,255,0.26)"/>
+    <rect x="432" y="438" width="86" height="26" rx="4" fill="#1C232C" stroke="rgba(255,255,255,0.08)"/>
+    <rect x="432" y="480" width="86" height="26" rx="4" fill="url(#panelGlow)" stroke="rgba(10,132,255,0.22)"/>
+    <rect x="432" y="522" width="86" height="26" rx="4" fill="#1C232C" stroke="rgba(255,255,255,0.08)"/>
+    <rect x="432" y="564" width="86" height="26" rx="4" fill="#1C232C" stroke="rgba(255,255,255,0.08)"/>
+  </g>
+
+  <!-- optical / network connection lines -->
+  <g fill="none" stroke="url(#lineGrad)" stroke-width="2.5" stroke-linecap="round">
+    <path d="M534 380 C680 340, 760 300, 900 280"/>
+    <path d="M534 460 C700 430, 820 390, 980 360"/>
+    <path d="M534 540 C720 560, 860 500, 1040 470"/>
+    <path d="M900 280 C1040 250, 1180 260, 1320 310"/>
+    <path d="M980 360 C1120 340, 1240 360, 1360 420"/>
+    <path d="M1040 470 C1160 500, 1260 520, 1380 540"/>
+  </g>
+
+  <!-- connected nodes -->
+  <g>
+    <circle cx="900" cy="280" r="10" fill="#0A84FF" opacity="0.85"/>
+    <circle cx="900" cy="280" r="18" fill="none" stroke="#0A84FF" stroke-opacity="0.28" stroke-width="2"/>
+    <circle cx="980" cy="360" r="8" fill="#0A84FF" opacity="0.7"/>
+    <circle cx="1040" cy="470" r="9" fill="#0A84FF" opacity="0.75"/>
+    <circle cx="1180" cy="320" r="7" fill="#8EC7FF" opacity="0.55"/>
+    <circle cx="1260" cy="420" r="8" fill="#0A84FF" opacity="0.65"/>
+    <circle cx="1360" cy="420" r="11" fill="#0A84FF" opacity="0.8"/>
+    <circle cx="1360" cy="420" r="20" fill="none" stroke="#0A84FF" stroke-opacity="0.22" stroke-width="2"/>
+    <circle cx="1380" cy="540" r="7" fill="#8EC7FF" opacity="0.5"/>
+  </g>
+
+  <!-- right-side financial / upward data motif -->
+  <g>
+    <rect x="1080" y="560" width="360" height="180" rx="14" fill="#181D24" stroke="rgba(255,255,255,0.10)"/>
+    <rect x="1104" y="584" width="120" height="10" rx="5" fill="rgba(255,255,255,0.16)"/>
+    <rect x="1104" y="606" width="80" height="7" rx="3.5" fill="rgba(255,255,255,0.08)"/>
+
+    <!-- bars -->
+    <rect x="1118" y="688" width="28" height="28" rx="4" fill="rgba(10,132,255,0.25)"/>
+    <rect x="1162" y="666" width="28" height="50" rx="4" fill="rgba(10,132,255,0.32)"/>
+    <rect x="1206" y="646" width="28" height="70" rx="4" fill="rgba(10,132,255,0.40)"/>
+    <rect x="1250" y="624" width="28" height="92" rx="4" fill="rgba(10,132,255,0.52)"/>
+    <rect x="1294" y="602" width="28" height="114" rx="4" fill="#0A84FF" opacity="0.72"/>
+
+    <!-- sparkline -->
+    <path d="M1348 700 L1370 676 L1392 684 L1414 648 L1436 656" fill="none" stroke="#0A84FF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="1436" cy="656" r="5" fill="#8EC7FF"/>
+  </g>
+
+  <!-- editorial labels in generic system font -->
+  <g font-family="system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif" fill="#E8EEF6">
+    <text x="120" y="150" font-size="42" font-weight="600" letter-spacing="0.5">Nokia</text>
+    <text x="120" y="188" font-size="22" fill="#9BB0C7" font-weight="500">Q2 2026</text>
+    <text x="280" y="188" font-size="22" fill="#0A84FF" font-weight="600" opacity="0.9">AI &amp; moln</text>
+  </g>
+
+  <rect width="1600" height="900" fill="url(#vignette)"/>
+</svg>
