@@ -3,12 +3,14 @@ import { IRAN_OLJEPRIS_HORMUZ_BORSEN_ARTICLE } from "@/data/news-articles/iran-o
 import { NOKIA_OVERRASKAR_AI_FORSALJNINGEN_FORDUBBLADES_ARTICLE } from "@/data/news-articles/nokia-overraskar-ai-forsaljningen-fordubblades";
 import { ONSDAGENS_RAPPORTER_TESLA_IBM_ARTICLE } from "@/data/news-articles/onsdagens-rapporter-tesla-ibm";
 import { SINCH_RASAR_EFTER_Q2_RAPPORTEN_2026_ARTICLE } from "@/data/news-articles/sinch-rasar-efter-q2-rapporten-2026";
+import { USA_BORSEN_FALLER_ALPHABET_TESLA_OLJA_ARTICLE } from "@/data/news-articles/usa-borsen-faller-alphabet-tesla-olja";
 
 /**
  * Temporary demo content for Börsnyheter UI development.
  * Not live or verified financial news — replace via a provider adapter later.
  */
 export const DEMO_NEWS_ARTICLES: NewsArticle[] = [
+  USA_BORSEN_FALLER_ALPHABET_TESLA_OLJA_ARTICLE,
   NOKIA_OVERRASKAR_AI_FORSALJNINGEN_FORDUBBLADES_ARTICLE,
   SINCH_RASAR_EFTER_Q2_RAPPORTEN_2026_ARTICLE,
   ONSDAGENS_RAPPORTER_TESLA_IBM_ARTICLE,
