@@ -3,7 +3,14 @@ import type { NewsArticle } from "@/types/news";
 /**
  * Approved Börsnyheter article — do not rewrite body copy.
  * Intraday figures are a 15.54 Swedish-time snapshot on 2026-07-23, not closing prices.
- * Cover: AI-generated illustration (ASCII-safe local copy).
+ *
+ * Cover image: Wikimedia Commons photograph of the New York Stock Exchange exterior.
+ * Source page: https://commons.wikimedia.org/wiki/File:NYC_-_New_York_Stock_Exchange.JPG
+ * Direct asset: https://commons.wikimedia.org/wiki/Special:FilePath/NYC_-_New_York_Stock_Exchange.JPG
+ * Author: Jean-Christophe BENOIST
+ * Licence: Creative Commons Attribution 3.0 Unported (CC BY 3.0)
+ * Attribution required; cropping and resizing allowed with notice of changes.
+ * Local optimized copy: public/news-demo/usa-borsen-faller-alphabet-tesla-olja.webp
  */
 export const USA_BORSEN_FALLER_ALPHABET_TESLA_OLJA_ARTICLE: NewsArticle = {
   id: "usa-borsen-faller-alphabet-tesla-olja",
@@ -17,12 +24,11 @@ export const USA_BORSEN_FALLER_ALPHABET_TESLA_OLJA_ARTICLE: NewsArticle = {
   publishedAt: "2026-07-23T18:50:00+02:00",
   url: "/news/usa-borsen-faller-alphabet-tesla-olja",
   featured: true,
-  imageUrl: "/news-demo/usa-borsen-faller-efter-oppningen.png",
-  thumbnailImageUrl:
-    "/news-demo/usa-borsen-faller-efter-oppningen-thumbnail.png",
+  imageUrl: "/news-demo/usa-borsen-faller-alphabet-tesla-olja.webp",
   imageAlt:
-    "Illustration av fallande amerikanska börsindex med symboler för AI-investeringar, elbilar och ett stigande oljepris.",
-  imageCaption: "AI-genererad illustration.",
+    "Exteriör av New York Stock Exchange-byggnaden på Wall Street i New York.",
+  imageCaption:
+    "Foto: Jean-Christophe BENOIST / Wikimedia Commons (CC BY 3.0).",
   readingMinutes: 3,
   seoTitle: "USA-börsen faller – Alphabet och Tesla pressar tekniken",
   seoDescription:
