@@ -1,20 +1,77 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import AppShell from "@/components/layout/AppShell";
 import NewsPageContent from "@/components/news/NewsPageContent";
+import { getSiteUrlFromEnv } from "@/lib/auth/site-url";
 import { getNewsArticles } from "@/lib/news/get-articles";
+import {
+  buildNewsListHref,
+  getNewsListPage,
+  parseNewsCategoryParam,
+  parseNewsPageParam,
+} from "@/lib/news/list";
+import { DIVLAB_BRAND_NAME } from "@/lib/site/brand";
 
-export const metadata: Metadata = {
-  title: "Börsnyheter | DivLab",
-  description:
-    "Följ aktuella händelser från börsen och finansmarknaden i DivLab.",
+type Props = {
+  searchParams: Promise<{
+    page?: string | string[];
+    category?: string | string[];
+  }>;
 };
 
-export default function NewsPage() {
-  const articles = getNewsArticles();
+export async function generateMetadata({
+  searchParams,
+}: Props): Promise<Metadata> {
+  const resolvedSearchParams = await searchParams;
+  const category = parseNewsCategoryParam(resolvedSearchParams.category);
+  const requestedPage = parseNewsPageParam(resolvedSearchParams.page);
+  const listing = getNewsListPage(getNewsArticles(), {
+    category,
+    page: requestedPage,
+  });
+  const page = listing.page;
+  const siteUrl = getSiteUrlFromEnv();
+  const canonicalPath = buildNewsListHref({ category, page });
+  const title =
+    page > 1
+      ? `Börsnyheter – sida ${page} | ${DIVLAB_BRAND_NAME}`
+      : `Börsnyheter | ${DIVLAB_BRAND_NAME}`;
+
+  return {
+    title: {
+      absolute: title,
+    },
+    description:
+      "Följ aktuella händelser från börsen och finansmarknaden i DivLab.",
+    alternates: {
+      canonical: `${siteUrl}${canonicalPath}`,
+    },
+  };
+}
+
+export default async function NewsPage({ searchParams }: Props) {
+  const resolvedSearchParams = await searchParams;
+  const category = parseNewsCategoryParam(resolvedSearchParams.category);
+  const requestedPage = parseNewsPageParam(resolvedSearchParams.page);
+  const listing = getNewsListPage(getNewsArticles(), {
+    category,
+    page: requestedPage,
+  });
+
+  if (requestedPage !== listing.page) {
+    redirect(buildNewsListHref({ category, page: listing.page }));
+  }
 
   return (
     <AppShell allowGuest>
-      <NewsPageContent articles={articles} />
+      <NewsPageContent
+        category={listing.category}
+        page={listing.page}
+        totalCount={listing.totalCount}
+        totalPages={listing.totalPages}
+        featuredArticle={listing.featuredArticle}
+        rowArticles={listing.rowArticles}
+      />
     </AppShell>
   );
 }

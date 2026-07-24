@@ -36,7 +36,7 @@ export default function NewsFeaturedStory({ article }: Props) {
               {getNewsCategoryLabel(article.category)}
             </span>
             <span className="text-[11px] text-divlab-text-subtle">
-              Utvald artikel
+              Senaste artikeln
             </span>
           </div>
 

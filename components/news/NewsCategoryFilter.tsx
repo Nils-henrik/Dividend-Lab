@@ -1,14 +1,13 @@
-"use client";
-
+import Link from "next/link";
 import type { NewsCategoryFilter } from "@/types/news";
 import { NEWS_CATEGORY_FILTERS } from "@/lib/news/categories";
+import { buildNewsListHref } from "@/lib/news/list";
 
 type Props = {
   value: NewsCategoryFilter;
-  onChange: (value: NewsCategoryFilter) => void;
 };
 
-export default function NewsCategoryFilter({ value, onChange }: Props) {
+export default function NewsCategoryFilter({ value }: Props) {
   return (
     <div
       className="-mx-4 overflow-x-auto px-4 lg:mx-0 lg:px-0"
@@ -17,14 +16,14 @@ export default function NewsCategoryFilter({ value, onChange }: Props) {
       <div className="flex w-max gap-2 pb-0.5" role="tablist">
         {NEWS_CATEGORY_FILTERS.map((option) => {
           const isActive = value === option.value;
+          const href = buildNewsListHref({ category: option.value, page: 1 });
 
           return (
-            <button
+            <Link
               key={option.value}
-              type="button"
+              href={href}
               role="tab"
               aria-selected={isActive}
-              onClick={() => onChange(option.value)}
               className={`shrink-0 rounded-xl border px-3 py-1.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/40 ${
                 isActive
                   ? "divlab-selected"
@@ -32,7 +31,7 @@ export default function NewsCategoryFilter({ value, onChange }: Props) {
               }`}
             >
               {option.label}
-            </button>
+            </Link>
           );
         })}
       </div>
