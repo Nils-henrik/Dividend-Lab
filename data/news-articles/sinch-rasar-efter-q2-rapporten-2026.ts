@@ -2,7 +2,16 @@ import type { NewsArticle } from "@/types/news";
 
 /**
  * Approved Börsnyheter article — do not rewrite body copy.
- * Published without cover image; imageUrl intentionally omitted.
+ *
+ * Cover image: Pexels photograph of business messaging / mobile communication.
+ * Official Sinch Brandfolder requires access request; press-material page did not
+ * expose a downloadable office/product still with an explicit reusable licence text.
+ * Source page: https://www.pexels.com/photo/crop-ethnic-businesswoman-chatting-on-smartphone-near-laptop-on-table-5239740/
+ * Direct asset: https://images.pexels.com/photos/5239740/pexels-photo-5239740.jpeg
+ * Photographer: Anete Lusina
+ * Licence: Pexels Licence (free editorial/commercial use; attribution not required;
+ * cropping and resizing allowed)
+ * Local optimized copy: public/news-demo/sinch-rasar-efter-q2-rapporten-2026.webp
  */
 export const SINCH_RASAR_EFTER_Q2_RAPPORTEN_2026_ARTICLE: NewsArticle = {
   id: "sinch-rasar-efter-q2-rapporten-2026",
@@ -15,6 +24,10 @@ export const SINCH_RASAR_EFTER_Q2_RAPPORTEN_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-07-22T09:40:00+02:00",
   url: "/news/sinch-rasar-efter-q2-rapporten-2026",
   featured: true,
+  imageUrl: "/news-demo/sinch-rasar-efter-q2-rapporten-2026.webp",
+  imageAlt:
+    "Person som skriver på en smartphone vid en laptop, som illustrerar molnbaserad affärskommunikation.",
+  imageCaption: "Foto: Anete Lusina / Pexels",
   readingMinutes: 6,
   seoTitle: "Sinch rasar efter Q2-rapporten – aktien ned 13 procent",
   seoDescription:
