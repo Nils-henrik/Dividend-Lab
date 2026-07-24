@@ -1,4 +1,5 @@
 import type { NewsArticle } from "@/types/news";
+import { AKTIEREKAR_INFOR_NASTA_VECKA_MICROSOFT_META_AMAZON_SINCH_ARTICLE } from "@/data/news-articles/aktierekar-infor-nasta-vecka-microsoft-meta-amazon-sinch";
 import { IRAN_OLJEPRIS_HORMUZ_BORSEN_ARTICLE } from "@/data/news-articles/iran-oljepris-hormuz-borsen";
 import { NOKIA_OVERRASKAR_AI_FORSALJNINGEN_FORDUBBLADES_ARTICLE } from "@/data/news-articles/nokia-overraskar-ai-forsaljningen-fordubblades";
 import { ONSDAGENS_RAPPORTER_TESLA_IBM_ARTICLE } from "@/data/news-articles/onsdagens-rapporter-tesla-ibm";
@@ -10,6 +11,7 @@ import { USA_BORSEN_FALLER_ALPHABET_TESLA_OLJA_ARTICLE } from "@/data/news-artic
  * Not live or verified financial news — replace via a provider adapter later.
  */
 export const DEMO_NEWS_ARTICLES: NewsArticle[] = [
+  AKTIEREKAR_INFOR_NASTA_VECKA_MICROSOFT_META_AMAZON_SINCH_ARTICLE,
   USA_BORSEN_FALLER_ALPHABET_TESLA_OLJA_ARTICLE,
   NOKIA_OVERRASKAR_AI_FORSALJNINGEN_FORDUBBLADES_ARTICLE,
   SINCH_RASAR_EFTER_Q2_RAPPORTEN_2026_ARTICLE,
