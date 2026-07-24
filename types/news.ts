@@ -13,6 +13,12 @@ export type NewsArticleSource = {
   href?: string;
 };
 
+/** Caption segment under the cover image; optional href for credit/licence links. */
+export type NewsImageCaptionPart = {
+  text: string;
+  href?: string;
+};
+
 export type NewsArticleSection = {
   heading: string;
   paragraphs: string[];
@@ -42,6 +48,11 @@ export interface NewsArticle {
   imageAlt?: string;
   /** Shown only when set — e.g. AI-illustration disclosure under the cover. */
   imageCaption?: string;
+  /**
+   * Rich caption segments with optional links. When set, rendered instead of
+   * `imageCaption` (e.g. photographer credit + licence URL).
+   */
+  imageCaptionParts?: NewsImageCaptionPart[];
   seoTitle?: string;
   seoDescription?: string;
   seoKeywords?: string[];
