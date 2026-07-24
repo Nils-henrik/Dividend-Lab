@@ -1,58 +1,28 @@
-"use client";
-
-import { useMemo, useState } from "react";
 import type { NewsArticle, NewsCategoryFilter as NewsCategoryFilterValue } from "@/types/news";
 import NewsArticleRow from "./NewsArticleRow";
 import NewsCategoryFilter from "./NewsCategoryFilter";
 import NewsEmptyState from "./NewsEmptyState";
 import NewsFeaturedStory from "./NewsFeaturedStory";
+import NewsPagination from "./NewsPagination";
 
 type Props = {
-  articles: NewsArticle[];
+  category: NewsCategoryFilterValue;
+  page: number;
+  totalCount: number;
+  totalPages: number;
+  featuredArticle: NewsArticle | null;
+  rowArticles: NewsArticle[];
 };
 
-function sortArticlesByDate(articles: NewsArticle[]) {
-  return [...articles].sort(
-    (left, right) =>
-      new Date(right.publishedAt).getTime() -
-      new Date(left.publishedAt).getTime(),
-  );
-}
-
-export default function NewsPageContent({ articles }: Props) {
-  const [category, setCategory] = useState<NewsCategoryFilterValue>("all");
-
-  const filteredArticles = useMemo(() => {
-    const scoped =
-      category === "all"
-        ? articles
-        : articles.filter((article) => article.category === category);
-
-    return sortArticlesByDate(scoped);
-  }, [articles, category]);
-
-  const leadStory = useMemo(() => {
-    if (filteredArticles.length === 0) {
-      return null;
-    }
-
-    if (category === "all") {
-      return (
-        filteredArticles.find((article) => article.featured) ??
-        filteredArticles[0]
-      );
-    }
-
-    return filteredArticles[0];
-  }, [category, filteredArticles]);
-
-  const feedArticles = useMemo(() => {
-    if (!leadStory) {
-      return [];
-    }
-
-    return filteredArticles.filter((article) => article.id !== leadStory.id);
-  }, [filteredArticles, leadStory]);
+export default function NewsPageContent({
+  category,
+  page,
+  totalCount,
+  totalPages,
+  featuredArticle,
+  rowArticles,
+}: Props) {
+  const hasArticles = totalCount > 0;
 
   return (
     <div className="mx-auto max-w-4xl space-y-5">
@@ -78,38 +48,44 @@ export default function NewsPageContent({ articles }: Props) {
           </p>
         </div>
 
-        <NewsCategoryFilter value={category} onChange={setCategory} />
+        <NewsCategoryFilter value={category} />
       </header>
 
-      {filteredArticles.length === 0 ? (
+      {!hasArticles ? (
         <NewsEmptyState />
       ) : (
         <div className="space-y-6">
-          {leadStory && (
+          {featuredArticle && (
             <div className="mb-2">
-              <NewsFeaturedStory article={leadStory} />
+              <NewsFeaturedStory article={featuredArticle} />
             </div>
           )}
 
-          {feedArticles.length > 0 && (
+          {rowArticles.length > 0 && (
             <section aria-label="Senaste nyheter">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <h2 className="text-xs font-medium uppercase tracking-[0.18em] text-divlab-text-muted">
                   Senaste nyheter
                 </h2>
                 <span className="text-xs text-divlab-text-subtle tabular-nums">
-                  {feedArticles.length} artikel
-                  {feedArticles.length === 1 ? "" : "r"}
+                  {totalCount} artikel
+                  {totalCount === 1 ? "" : "r"}
                 </span>
               </div>
 
               <div>
-                {feedArticles.map((article) => (
+                {rowArticles.map((article) => (
                   <NewsArticleRow key={article.id} article={article} />
                 ))}
               </div>
             </section>
           )}
+
+          <NewsPagination
+            category={category}
+            page={page}
+            totalPages={totalPages}
+          />
         </div>
       )}
     </div>
