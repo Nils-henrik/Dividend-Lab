@@ -64,9 +64,25 @@ export default function NewsArticleView({ article }: Props) {
               className="h-auto w-full object-cover"
             />
           </div>
-          {article.imageCaption && (
-            <figcaption className="text-sm text-divlab-text-muted">
-              {article.imageCaption}
+          {(article.imageCaptionParts?.length || article.imageCaption) && (
+            <figcaption className="text-sm leading-6 text-divlab-text-muted">
+              {article.imageCaptionParts?.length
+                ? article.imageCaptionParts.map((part, index) =>
+                    part.href ? (
+                      <a
+                        key={`${part.text}-${index}`}
+                        href={part.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="divlab-link underline decoration-divlab-blue/30 underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/40"
+                      >
+                        {part.text}
+                      </a>
+                    ) : (
+                      <span key={`${part.text}-${index}`}>{part.text}</span>
+                    ),
+                  )
+                : article.imageCaption}
             </figcaption>
           )}
         </figure>
