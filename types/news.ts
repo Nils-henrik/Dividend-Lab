@@ -35,6 +35,12 @@ export interface NewsArticle {
   featured: boolean;
   imageUrl?: string | null;
   /**
+   * Intrinsic cover dimensions for Next/Image aspect ratio. Defaults to
+   * 1600×900 when omitted.
+   */
+  imageWidth?: number;
+  imageHeight?: number;
+  /**
    * Optional list-card image. When set, `/news` cards use this instead of
    * `imageUrl` (e.g. a crop without embedded cover headline). Article pages
    * continue to use `imageUrl`.
