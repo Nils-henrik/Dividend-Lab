@@ -12,7 +12,7 @@ import type { NewsArticle } from "@/types/news";
  * Source page: https://commons.wikimedia.org/wiki/File:Пожар_на_складе_Wildberries_13.01.24_с_воздуха_02_(cropped).jpg
  * Photographer: Anastasiya Lvova
  * Licence: Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
- * Local optimized adaptation: public/news-demo/ukraina-wildberries-ryssland-bensin-inflation.webp
+ * Local file: public/news-demo/wildberries-lagerbrand.webp
  * Licence metadata: public/news-demo/ukraina-wildberries-ryssland-bensin-inflation.license.txt
  */
 export const UKRAINA_WILDBERRIES_RYSSLAND_BENSIN_INFLATION_ARTICLE: NewsArticle =
@@ -28,12 +28,10 @@ export const UKRAINA_WILDBERRIES_RYSSLAND_BENSIN_INFLATION_ARTICLE: NewsArticle 
     publishedAt: "2026-07-25T00:14:56+02:00",
     url: "/news/ukraina-wildberries-ryssland-bensin-inflation",
     featured: true,
-    imageUrl: "/news-demo/ukraina-wildberries-ryssland-bensin-inflation.webp",
-    thumbnailImageUrl:
-      "/news-demo/ukraina-wildberries-ryssland-bensin-inflation.webp",
+    imageUrl: "/news-demo/wildberries-lagerbrand.webp",
     imageAlt: "Arkivbild från en brand vid ett Wildberries-lager i januari 2024.",
     imageCaption:
-      "Arkivbild från en brand vid ett Wildberries-lager den 13 januari 2024. Bilden föreställer inte attackerna i juli 2026. Foto: Anastasiya Lvova/Wikimedia Commons, CC BY-SA 4.0. Beskuren och komprimerad av DivLab.",
+      "Arkivbild från en brand vid ett Wildberries-lager den 13 januari 2024. Bilden föreställer inte attackerna i juli 2026. Foto: Anastasiya Lvova/Wikimedia Commons, CC BY-SA 4.0.",
     imageCaptionParts: [
       {
         text: "Arkivbild från en brand vid ett Wildberries-lager den 13 januari 2024. Bilden föreställer inte attackerna i juli 2026. Foto: ",
@@ -47,7 +45,7 @@ export const UKRAINA_WILDBERRIES_RYSSLAND_BENSIN_INFLATION_ARTICLE: NewsArticle 
         text: "CC BY-SA 4.0",
         href: "https://creativecommons.org/licenses/by-sa/4.0/",
       },
-      { text: ". Beskuren och komprimerad av DivLab." },
+      { text: "." },
     ],
     readingMinutes: 6,
     seoTitle: "Ukraina slår mot Wildberries – Ryssland pressas",
