@@ -57,8 +57,8 @@ export default function NewsArticleView({ article }: Props) {
             <Image
               src={article.imageUrl}
               alt={article.imageAlt}
-              width={1600}
-              height={900}
+              width={article.imageWidth ?? 1600}
+              height={article.imageHeight ?? 900}
               priority
               sizes="(max-width: 768px) 100vw, 768px"
               className="h-auto w-full object-cover"
