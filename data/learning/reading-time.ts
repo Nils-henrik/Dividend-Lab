@@ -47,6 +47,10 @@ function collectArticleText(article: LearningArticle) {
       chunks.push(section.calculation.title, ...section.calculation.lines);
     }
 
+    if (section.table) {
+      chunks.push(...section.table.headers, ...section.table.rows.flat());
+    }
+
     if (section.relatedLinks) {
       chunks.push(...section.relatedLinks.map((link) => link.text));
     }

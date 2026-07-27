@@ -1,12 +1,14 @@
 import Link from "next/link";
 import type { LearningArticleWithReadingTime } from "@/data/learning-articles";
-import NewsArticleThumbnail from "@/components/news/NewsArticleThumbnail";
+import LearningArticleThumbnail from "@/components/learning/LearningArticleThumbnail";
 
 type Props = {
   article: LearningArticleWithReadingTime;
 };
 
 export default function LearningArticleRow({ article }: Props) {
+  const listImageUrl = article.thumbnailImageUrl ?? article.coverImage;
+
   return (
     <article className="border-b divlab-border-neutral last:border-0">
       <Link
@@ -14,9 +16,12 @@ export default function LearningArticleRow({ article }: Props) {
         className="group block cursor-pointer rounded-lg py-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/40"
       >
         <div className="flex flex-col gap-3 md:flex-row md:items-start md:gap-4">
-          {article.coverImage && (
+          {listImageUrl && (
             <div className="shrink-0 [&>div]:transition-colors [&>div]:group-hover:border-divlab-border-strong">
-              <NewsArticleThumbnail imageUrl={article.coverImage} variant="row" />
+              <LearningArticleThumbnail
+                imageUrl={listImageUrl}
+                objectPosition={article.thumbnailObjectPosition}
+              />
             </div>
           )}
 

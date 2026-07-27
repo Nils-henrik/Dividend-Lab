@@ -15,6 +15,7 @@ const article: LearningArticle = {
   coverImage: "/learning/borja-investera-pa-borsen.png",
   coverImageAlt:
     "Illustration av vägen från ekonomisk grund till ett enkelt och riskspritt börssparande.",
+  thumbnailObjectPosition: "center top",
   showDefaultDisclaimer: false,
   intro: [
     "Att börja investera kan kännas som att kliva in i en värld fylld av främmande ord, snabba kursrörelser och människor som verkar veta exakt vilka aktier som ska stiga. Verkligheten är mindre dramatisk.",

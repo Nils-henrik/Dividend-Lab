@@ -6,6 +6,11 @@ export type LearningArticleSubsection = {
   paragraphsAfterLists?: string[];
 };
 
+export type LearningArticleTable = {
+  headers: string[];
+  rows: string[][];
+};
+
 export type LearningArticleSection = {
   heading?: string;
   intro?: string[];
@@ -19,6 +24,7 @@ export type LearningArticleSection = {
     title: string;
     lines: string[];
   };
+  table?: LearningArticleTable;
   relatedLinks?: {
     slug: string;
     text: string;
@@ -44,6 +50,16 @@ export type LearningArticle = {
   updatedAt?: string;
   coverImage?: string;
   coverImageAlt?: string;
+  /**
+   * Optional list-card image. When set, `/learning` cards use this instead of
+   * `coverImage`. Article pages continue to use `coverImage`.
+   */
+  thumbnailImageUrl?: string;
+  /**
+   * CSS object-position for the Learning list-card crop (e.g. "center top").
+   * Falls back to centered cover when omitted.
+   */
+  thumbnailObjectPosition?: string;
   /** Slugs of other published Learning articles to show in "Relaterade ämnen". */
   relatedArticleSlugs?: string[];
   /** Compact source list rendered near the end of the article. */
