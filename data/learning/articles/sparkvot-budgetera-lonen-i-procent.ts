@@ -11,6 +11,9 @@ const article: LearningArticle = {
   category: "Privatekonomi",
   publishedAt: "2026-07-27",
   updatedAt: "2026-07-27",
+  coverImage: "/learning/sparkvot-budgetera-lonen-i-procent.png",
+  coverImageAlt:
+    "Skrivbord med budgetanteckningar, kalkylator och DivLab-mugg som illustrerar sparkvot och procentbudgetering av lönen.",
   showDefaultDisclaimer: false,
   relatedArticleSlugs: [
     "sparande-i-borjan",
