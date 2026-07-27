@@ -9,5 +9,6 @@ export {
   type LearningArticle,
   type LearningArticleSection,
   type LearningArticleSubsection,
+  type LearningArticleTable,
   type LearningArticleWithReadingTime,
 } from "./learning";

@@ -3,6 +3,7 @@ import vadArEnAktie from "./articles/vad-ar-en-aktie";
 import vadArEnIndexfond from "./articles/vad-ar-en-indexfond";
 import direktavkastning from "./articles/direktavkastning-och-utdelningssakerhet";
 import sparande from "./articles/sparande-i-borjan";
+import sparkvot from "./articles/sparkvot-budgetera-lonen-i-procent";
 import tidTillFrihet from "./articles/tid-till-ekonomisk-frihet";
 import { withReadingTime, type LearningArticleWithReadingTime } from "./reading-time";
 import type { LearningArticle } from "./types";
@@ -11,6 +12,7 @@ export type {
   LearningArticle,
   LearningArticleSection,
   LearningArticleSubsection,
+  LearningArticleTable,
 } from "./types";
 export { learningDisclaimer } from "./types";
 export {
@@ -20,6 +22,7 @@ export {
 } from "./reading-time";
 
 const rawArticles: LearningArticle[] = [
+  sparkvot,
   vadArEnAktie,
   borjaInvestera,
   vadArEnIndexfond,

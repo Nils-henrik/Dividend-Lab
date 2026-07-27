@@ -6,6 +6,11 @@ export type LearningArticleSubsection = {
   paragraphsAfterLists?: string[];
 };
 
+export type LearningArticleTable = {
+  headers: string[];
+  rows: string[][];
+};
+
 export type LearningArticleSection = {
   heading?: string;
   intro?: string[];
@@ -19,6 +24,7 @@ export type LearningArticleSection = {
     title: string;
     lines: string[];
   };
+  table?: LearningArticleTable;
   relatedLinks?: {
     slug: string;
     text: string;

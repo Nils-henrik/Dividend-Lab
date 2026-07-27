@@ -274,6 +274,46 @@ export default function LearningArticleView({ article }: Props) {
                 </div>
               )}
 
+              {section.table && (
+                <div className="overflow-x-auto rounded-xl border divlab-border-neutral divlab-inset">
+                  <table className="w-full min-w-[28rem] border-collapse text-left text-sm">
+                    <thead>
+                      <tr className="border-b divlab-border-neutral text-divlab-text-muted">
+                        {section.table.headers.map((header) => (
+                          <th
+                            key={header}
+                            className="px-4 py-3 font-medium first:pl-4 last:pr-4"
+                          >
+                            {header}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {section.table.rows.map((row) => (
+                        <tr
+                          key={row.join("|")}
+                          className="border-b divlab-border-neutral last:border-0 align-top"
+                        >
+                          {row.map((cell, cellIndex) => (
+                            <td
+                              key={`${row.join("|")}-${cellIndex}`}
+                              className={`px-4 py-3 leading-6 first:pl-4 last:pr-4 ${
+                                cellIndex === 0
+                                  ? "text-divlab-text"
+                                  : "text-divlab-text-secondary"
+                              }`}
+                            >
+                              {cell}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
               {section.relatedLinks?.map((link) => (
                 <p
                   key={link.slug}
