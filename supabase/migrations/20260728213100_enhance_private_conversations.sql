@@ -13,8 +13,8 @@ alter table public.conversations
 with pair_candidates as (
   select
     cp.conversation_id,
-    min(cp.user_id) as pair_low,
-    max(cp.user_id) as pair_high,
+    (array_agg(cp.user_id order by cp.user_id))[1] as pair_low,
+    (array_agg(cp.user_id order by cp.user_id desc))[1] as pair_high,
     count(*)::int as participant_count
   from public.conversation_participants cp
   group by cp.conversation_id
@@ -29,6 +29,7 @@ ranked_pairs as (
   from pair_candidates pc
   join public.conversations c on c.id = pc.conversation_id
   where pc.participant_count = 2
+    and pc.pair_low is distinct from pc.pair_high
 )
 update public.conversations c
 set
@@ -181,7 +182,7 @@ declare
   acting_user_id uuid := auth.uid();
   pair_low uuid;
   pair_high uuid;
-  conversation_id uuid;
+  result_conversation_id uuid;
   existing_status text;
   are_contacts boolean;
   normalized_body text := nullif(btrim(coalesce(p_initial_body, '')), '');
@@ -218,13 +219,13 @@ begin
   desired_status := case when are_contacts then 'active' else 'message_request' end;
 
   select c.id, c.status
-  into conversation_id, existing_status
+  into result_conversation_id, existing_status
   from public.conversations c
   where c.pair_user_low = pair_low
     and c.pair_user_high = pair_high
   for update;
 
-  if conversation_id is null then
+  if result_conversation_id is null then
     if not are_contacts and normalized_body is null then
       raise exception 'An initial message is required for message requests.';
     end if;
@@ -244,11 +245,11 @@ begin
         pair_low,
         pair_high
       )
-      returning id into conversation_id;
+      returning id into result_conversation_id;
     exception
       when unique_violation then
         select c.id, c.status
-        into conversation_id, existing_status
+        into result_conversation_id, existing_status
         from public.conversations c
         where c.pair_user_low = pair_low
           and c.pair_user_high = pair_high
@@ -257,9 +258,26 @@ begin
 
     insert into public.conversation_participants (conversation_id, user_id)
     values
-      (conversation_id, acting_user_id),
-      (conversation_id, p_target_user_id)
+      (result_conversation_id, acting_user_id),
+      (result_conversation_id, p_target_user_id)
     on conflict (conversation_id, user_id) do nothing;
+
+    -- If a concurrent reverse open created an empty message-request shell first,
+    -- claim initiation so the first successful message still has a clear requester.
+    if desired_status = 'message_request' and normalized_body is not null then
+      update public.conversations
+      set
+        initiated_by = acting_user_id,
+        updated_at = now()
+      where id = result_conversation_id
+        and status = 'message_request'
+        and initiated_by is distinct from acting_user_id
+        and not exists (
+          select 1
+          from public.messages m
+          where m.conversation_id = result_conversation_id
+        );
+    end if;
   else
     if are_contacts and existing_status = 'message_request' then
       update public.conversations
@@ -267,7 +285,7 @@ begin
         status = 'active',
         responded_at = coalesce(responded_at, now()),
         updated_at = now()
-      where id = conversation_id;
+      where id = result_conversation_id;
 
       existing_status := 'active';
     end if;
@@ -278,7 +296,7 @@ begin
         status = 'active',
         responded_at = coalesce(responded_at, now()),
         updated_at = now()
-      where id = conversation_id;
+      where id = result_conversation_id;
 
       existing_status := 'active';
     end if;
@@ -286,35 +304,41 @@ begin
     if normalized_subject is not null then
       update public.conversations
       set subject = coalesce(nullif(btrim(coalesce(subject, '')), ''), normalized_subject)
-      where id = conversation_id;
+      where id = result_conversation_id;
     end if;
   end if;
 
   if normalized_body is not null then
-    if not public.can_send_private_message(conversation_id, acting_user_id) then
+    if not public.can_send_private_message(result_conversation_id, acting_user_id) then
       -- Idempotent reopen for the original requester: do not create extra messages
       -- and do not reveal ignored/declined state as a distinct outcome.
       if (
         select c.initiated_by
         from public.conversations c
-        where c.id = conversation_id
+        where c.id = result_conversation_id
       ) = acting_user_id
          and coalesce(existing_status, desired_status) in (
            'message_request',
            'ignored',
            'declined'
          ) then
-        return conversation_id;
+        return result_conversation_id;
+      end if;
+
+      -- Other participant opening an existing request/active conversation should
+      -- reuse the canonical row without inserting another message.
+      if public.is_conversation_participant(result_conversation_id, acting_user_id) then
+        return result_conversation_id;
       end if;
 
       raise exception 'You cannot send a message in this conversation.';
     end if;
 
     insert into public.messages (conversation_id, sender_id, body)
-    values (conversation_id, acting_user_id, normalized_body);
+    values (result_conversation_id, acting_user_id, normalized_body);
   end if;
 
-  return conversation_id;
+  return result_conversation_id;
 end;
 $$;
 
@@ -610,7 +634,7 @@ begin
     updated_at = now()
   where pair_user_low = existing.user_low_id
     and pair_user_high = existing.user_high_id
-    and status = 'message_request';
+    and status in ('message_request', 'ignored', 'declined');
 
   return result_row;
 end;
@@ -620,4 +644,12 @@ revoke all on function public.accept_contact_request(uuid) from public;
 grant execute on function public.accept_contact_request(uuid) to authenticated;
 
 revoke update on table public.conversations from anon, authenticated;
+revoke insert, delete on table public.conversations from anon, authenticated;
 grant select on table public.conversations to authenticated;
+
+-- Keep message insert/select for authenticated; deny update/delete.
+revoke update, delete on table public.messages from anon, authenticated;
+grant select, insert on table public.messages to authenticated;
+
+-- Ensure public profile reads remain available for contact counts/identity.
+grant select on table public.profiles to anon, authenticated;

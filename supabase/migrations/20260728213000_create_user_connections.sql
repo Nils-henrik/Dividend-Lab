@@ -58,6 +58,7 @@ create policy "Users can read their own connections"
 -- No direct client inserts/updates/deletes. Mutations go through RPCs.
 revoke all on table public.user_connections from anon, authenticated;
 grant select on table public.user_connections to authenticated;
+revoke insert, update, delete on table public.user_connections from anon, authenticated;
 
 -- Public accepted-contact count without exposing relationship rows.
 create or replace function public.get_accepted_contact_count(p_user_id uuid)

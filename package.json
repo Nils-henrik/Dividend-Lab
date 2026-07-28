@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --experimental-strip-types --test tests/**/*.test.ts",
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "test:db": "node --experimental-strip-types --test tests/database/*.db.test.ts",
+    "test:all": "npm test && npm run test:db",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
