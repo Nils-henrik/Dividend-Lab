@@ -18,11 +18,13 @@ const initialState = {
 type Props = {
   targetParticipant?: MessageParticipant | null;
   initialUsername?: string;
+  isMessageRequest?: boolean;
 };
 
 export default function NewConversationForm({
   targetParticipant,
   initialUsername = "",
+  isMessageRequest = false,
 }: Props) {
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
@@ -72,9 +74,16 @@ export default function NewConversationForm({
         </div>
       )}
 
+      {isMessageRequest && (
+        <p className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm leading-6 text-divlab-text-secondary">
+          Eftersom ni inte är kontakter skickas detta som en meddelandeförfrågan.
+          Mottagaren behöver acceptera innan ni kan chatta vidare.
+        </p>
+      )}
+
       <label className="block">
         <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-gray-500">
-          Ämne
+          Ämne <span className="normal-case tracking-normal">(valfritt)</span>
         </span>
         <input
           name="subject"
@@ -82,7 +91,7 @@ export default function NewConversationForm({
           value={subject}
           onChange={(event) => setSubject(event.target.value)}
           maxLength={MESSAGE_SUBJECT_MAX_LENGTH}
-          placeholder="Vad handlar meddelandet om?"
+          placeholder="Valfritt ämne"
           className="w-full divlab-input px-4 py-3 text-sm text-divlab-text placeholder:text-divlab-text-subtle"
         />
         <span className="mt-2 block text-xs text-gray-500">
@@ -114,7 +123,11 @@ export default function NewConversationForm({
           disabled={isPending}
           className="divlab-btn-primary px-5 py-2.5 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {isPending ? "Skickar..." : "Skicka"}
+          {isPending
+            ? "Skickar..."
+            : isMessageRequest
+              ? "Skicka förfrågan"
+              : "Skicka"}
         </button>
       </div>
 

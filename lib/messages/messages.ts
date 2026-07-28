@@ -3,6 +3,7 @@ import { getAvatarPublicUrl } from "@/lib/profiles/identity";
 import { createClient } from "@/lib/supabase/server";
 import type {
   ConversationMessage,
+  ConversationStatus,
   ConversationSummary,
   ConversationThread,
   MessageParticipant,
@@ -17,6 +18,8 @@ type ParticipantRow = {
 type ConversationRow = {
   id: string;
   subject: string | null;
+  status: ConversationStatus | null;
+  initiated_by: string | null;
   updated_at: string;
   created_at: string;
 };
@@ -59,6 +62,19 @@ function mapParticipantProfile(profile: ProfileRow | undefined, userId: string) 
     initials: getInitials(name),
     avatarUrl: getAvatarPublicUrl(profile?.avatar_path, profile?.updated_at),
   } satisfies MessageParticipant;
+}
+
+function normalizeStatus(status: ConversationStatus | null | undefined): ConversationStatus {
+  if (
+    status === "message_request" ||
+    status === "ignored" ||
+    status === "declined" ||
+    status === "active"
+  ) {
+    return status;
+  }
+
+  return "active";
 }
 
 async function getProfilesByUserId(userIds: string[]) {
@@ -113,7 +129,47 @@ export async function getProfileByUsername(username: string) {
   return data ?? null;
 }
 
-export async function getConversationSummaries(userId: string) {
+export async function areAcceptedContacts(userA: string, userB: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("are_accepted_contacts", {
+    p_user_a: userA,
+    p_user_b: userB,
+  });
+
+  if (error) {
+    // Fallback before migration: treat as non-contacts.
+    return false;
+  }
+
+  return Boolean(data);
+}
+
+export async function findConversationIdBetweenUsers(
+  currentUserId: string,
+  otherUserId: string,
+) {
+  const supabase = await createClient();
+  const pairLow = currentUserId < otherUserId ? currentUserId : otherUserId;
+  const pairHigh = currentUserId < otherUserId ? otherUserId : currentUserId;
+
+  const { data, error } = await supabase
+    .from("conversations")
+    .select("id")
+    .eq("pair_user_low", pairLow)
+    .eq("pair_user_high", pairHigh)
+    .maybeSingle<{ id: string }>();
+
+  if (error) {
+    return null;
+  }
+
+  return data?.id ?? null;
+}
+
+async function buildConversationSummaries(
+  userId: string,
+  statuses: ConversationStatus[],
+) {
   const supabase = await createClient();
   const { data: ownParticipants, error: participantError } = await supabase
     .from("conversation_participants")
@@ -140,8 +196,9 @@ export async function getConversationSummaries(userId: string) {
   ] = await Promise.all([
     supabase
       .from("conversations")
-      .select("id, subject, updated_at, created_at")
+      .select("id, subject, status, initiated_by, updated_at, created_at")
       .in("id", conversationIds)
+      .in("status", statuses)
       .returns<ConversationRow[]>(),
     supabase
       .from("conversation_participants")
@@ -168,8 +225,13 @@ export async function getConversationSummaries(userId: string) {
     throw new Error(messagesError.message);
   }
 
+  const filteredConversationIds = new Set((conversations ?? []).map((item) => item.id));
   const userIds = Array.from(
-    new Set((participants ?? []).map((participant) => participant.user_id)),
+    new Set(
+      (participants ?? [])
+        .filter((participant) => filteredConversationIds.has(participant.conversation_id))
+        .map((participant) => participant.user_id),
+    ),
   );
   const profilesByUserId = await getProfilesByUserId(userIds);
   const ownParticipantByConversationId = new Map(
@@ -182,6 +244,10 @@ export async function getConversationSummaries(userId: string) {
   const lastMessageByConversationId = new Map<string, MessageRow>();
 
   for (const participant of participants ?? []) {
+    if (!filteredConversationIds.has(participant.conversation_id)) {
+      continue;
+    }
+
     const conversationParticipants =
       participantsByConversationId.get(participant.conversation_id) ?? [];
     conversationParticipants.push(participant);
@@ -192,6 +258,10 @@ export async function getConversationSummaries(userId: string) {
   }
 
   for (const message of messages ?? []) {
+    if (!filteredConversationIds.has(message.conversation_id)) {
+      continue;
+    }
+
     if (!lastMessageByConversationId.has(message.conversation_id)) {
       lastMessageByConversationId.set(message.conversation_id, message);
     }
@@ -217,6 +287,8 @@ export async function getConversationSummaries(userId: string) {
       return {
         id: conversation.id,
         subject: conversation.subject,
+        status: normalizeStatus(conversation.status),
+        initiatedBy: conversation.initiated_by,
         updatedAt: conversation.updated_at ?? conversation.created_at,
         otherParticipant: otherParticipant
           ? mapParticipantProfile(
@@ -233,6 +305,24 @@ export async function getConversationSummaries(userId: string) {
       (first, second) =>
         new Date(second.updatedAt).getTime() - new Date(first.updatedAt).getTime(),
     );
+}
+
+export async function getActiveConversationSummaries(userId: string) {
+  return buildConversationSummaries(userId, ["active"]);
+}
+
+export async function getMessageRequestSummaries(userId: string) {
+  const summaries = await buildConversationSummaries(userId, ["message_request"]);
+
+  return summaries.filter(
+    (conversation) =>
+      conversation.initiatedBy !== null && conversation.initiatedBy !== userId,
+  );
+}
+
+/** @deprecated Prefer getActiveConversationSummaries for inbox chats. */
+export async function getConversationSummaries(userId: string) {
+  return getActiveConversationSummaries(userId);
 }
 
 export async function getUnreadMessageCount(userId: string) {
@@ -255,10 +345,42 @@ export async function getUnreadMessageCount(userId: string) {
     return 0;
   }
 
+  const { data: conversations, error: conversationError } = await supabase
+    .from("conversations")
+    .select("id, status, initiated_by")
+    .in("id", conversationIds)
+    .returns<Pick<ConversationRow, "id" | "status" | "initiated_by">[]>();
+
+  if (conversationError) {
+    throw new Error(conversationError.message);
+  }
+
+  const countableConversationIds = new Set(
+    (conversations ?? [])
+      .filter((conversation) => {
+        const status = normalizeStatus(conversation.status);
+
+        if (status === "active") {
+          return true;
+        }
+
+        if (status === "message_request") {
+          return conversation.initiated_by !== userId;
+        }
+
+        return false;
+      })
+      .map((conversation) => conversation.id),
+  );
+
+  if (countableConversationIds.size === 0) {
+    return 0;
+  }
+
   const { data: messages, error: messagesError } = await supabase
     .from("messages")
     .select("conversation_id, sender_id, created_at")
-    .in("conversation_id", conversationIds)
+    .in("conversation_id", Array.from(countableConversationIds))
     .neq("sender_id", userId)
     .returns<Pick<MessageRow, "conversation_id" | "sender_id" | "created_at">[]>();
 
@@ -312,12 +434,16 @@ export async function getConversationThread(
 
   const { data: conversation, error: conversationError } = await supabase
     .from("conversations")
-    .select("id, subject, updated_at, created_at")
+    .select("id, subject, status, initiated_by, updated_at, created_at")
     .eq("id", conversationId)
     .maybeSingle<ConversationRow>();
 
   if (conversationError) {
     throw new Error(conversationError.message);
+  }
+
+  if (!conversation) {
+    return null;
   }
 
   const { data: messages, error: messagesError } = await supabase
@@ -331,16 +457,27 @@ export async function getConversationThread(
     throw new Error(messagesError.message);
   }
 
+  const status = normalizeStatus(conversation.status);
   const otherParticipant = participants.find(
     (participant) => participant.user_id !== userId,
   );
   const profilesByUserId = await getProfilesByUserId(
     participants.map((participant) => participant.user_id),
   );
+  const isMessageRequestRecipient =
+    status === "message_request" && conversation.initiated_by !== userId;
+  const isPendingRequestSender =
+    (status === "message_request" ||
+      status === "ignored" ||
+      status === "declined") &&
+    conversation.initiated_by === userId;
+  const canSend = status === "active";
 
   return {
     id: conversationId,
-    subject: conversation?.subject ?? null,
+    subject: conversation.subject ?? null,
+    status,
+    initiatedBy: conversation.initiated_by,
     otherParticipant: otherParticipant
       ? mapParticipantProfile(
           profilesByUserId.get(otherParticipant.user_id),
@@ -357,6 +494,9 @@ export async function getConversationThread(
           createdAt: message.created_at,
         }) satisfies ConversationMessage,
     ),
+    canSend,
+    isMessageRequestRecipient,
+    isPendingRequestSender,
   } satisfies ConversationThread;
 }
 

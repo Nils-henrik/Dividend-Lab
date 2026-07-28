@@ -7,6 +7,7 @@ export const appNavigation: NavigationItem[] = [
   { label: "Utbildning", href: "/learning", icon: "learning" },
   { label: "Frihetsmaskinen", href: "/frihetsmaskinen", icon: "goals" },
   { label: "Meddelanden", href: "/messages", icon: "messages" },
+  { label: "Kontakter", href: "/contacts", icon: "contacts" },
   {
     label: "Portfölj",
     href: "/portfolio",
@@ -57,6 +58,7 @@ export const pageTitles: Record<string, string> = {
   "/learning": "Utbildning",
   "/messages": "Meddelanden",
   "/messages/new": "Nytt meddelande",
+  "/contacts": "Kontakter",
   "/news": "Börsnyheter",
   "/portfolio": "Portfölj",
   "/settings": "Inställningar",

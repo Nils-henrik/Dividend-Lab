@@ -1,0 +1,23 @@
+-- Database validation checklist for contacts + private chat foundation.
+-- Apply migrations locally first, then exercise these scenarios with authenticated roles.
+-- This file is documentation for manual/CI database verification; it is not auto-executed.
+
+-- 1) Contact request to self must fail.
+-- 2) Duplicate same-direction pending request must reuse one row.
+-- 3) Reversed pending request must not create a second active pair row.
+-- 4) Concurrent send_contact_request calls must leave one unique pair.
+-- 5) Unrelated user cannot select another pair's user_connections row.
+-- 6) Only addressee can accept/decline pending request.
+-- 7) Only requester can cancel pending request.
+-- 8) Accepted count increments for both users; pending/rejected/cancelled/removed do not.
+-- 9) Either accepted participant can remove; chat remains active.
+-- 10) Reconnect after rejected/cancelled/removed recreates pending on same pair.
+-- 11) get_accepted_contact_count exposes count without exposing relationship rows.
+-- 12) Non-contact open_or_create creates message_request + one message.
+-- 13) Second message before acceptance fails via can_send_private_message / send_private_message.
+-- 14) Reversed participant order reuses same conversation via pair uniqueness.
+-- 15) Accept message request activates chat and does not create user_connections row.
+-- 16) Accept contact request activates existing message_request conversation.
+-- 17) Remove contact leaves conversations.status = active and preserves messages.
+-- 18) Ignored/declined requests stay out of active chats inbox for recipient.
+-- 19) DivBrain tables remain untouched.

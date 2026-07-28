@@ -1,16 +1,31 @@
 import AppShell from "@/components/layout/AppShell";
 import MessagesInbox from "@/components/messages/MessagesInbox";
 import { requireAuthenticatedUserWithProfile } from "@/lib/auth/session";
-import { getConversationSummaries } from "@/lib/messages/messages";
+import {
+  getActiveConversationSummaries,
+  getMessageRequestSummaries,
+} from "@/lib/messages/messages";
 import type { ConversationSummary } from "@/lib/messages/types";
 
-export default async function MessagesPage() {
+type Props = {
+  searchParams: Promise<{
+    tab?: string;
+  }>;
+};
+
+export default async function MessagesPage({ searchParams }: Props) {
+  const { tab } = await searchParams;
   const { user, identity } = await requireAuthenticatedUserWithProfile();
-  let conversations: ConversationSummary[] = [];
+  let chats: ConversationSummary[] = [];
+  let requests: ConversationSummary[] = [];
   let errorMessage: string | undefined;
+  const activeTab = tab === "requests" ? "requests" : "chats";
 
   try {
-    conversations = await getConversationSummaries(user.id);
+    [chats, requests] = await Promise.all([
+      getActiveConversationSummaries(user.id),
+      getMessageRequestSummaries(user.id),
+    ]);
   } catch {
     errorMessage =
       "Meddelanden är inte tillgängliga just nu. Kontrollera databasinställningarna och försök igen om en stund.";
@@ -18,7 +33,12 @@ export default async function MessagesPage() {
 
   return (
     <AppShell user={user} identity={identity}>
-      <MessagesInbox conversations={conversations} errorMessage={errorMessage} />
+      <MessagesInbox
+        chats={chats}
+        requests={requests}
+        activeTab={activeTab}
+        errorMessage={errorMessage}
+      />
     </AppShell>
   );
 }
