@@ -6,10 +6,12 @@ Do **not** apply remote migrations until each step below is completed and Produc
 
 **Decision: NOT READY — MANUAL ACTION REQUIRED**
 
-Agent environment can read public Production client config and GitHub/PR state, but cannot authenticate to Vercel or Supabase management APIs:
+A Product Owner preflight reply was received, but it contained **unfilled template placeholders** (`[REF]`, `[YES / NO]`, `[PLAN]`, etc.) rather than verified values. Those placeholders are treated as **not provided**. Do not invent mapping, backup, history, or aggregate numbers.
 
-- `VERCEL_TOKEN`: unset; `vercel whoami` → no credentials
-- `SUPABASE_ACCESS_TOKEN`: unset; `supabase projects list` → auth required
+Agent environment still cannot authenticate to Vercel or Supabase management APIs:
+
+- `VERCEL_TOKEN`: unset
+- `SUPABASE_ACCESS_TOKEN`: unset
 - Local repo is **not linked** to a remote Supabase project
 - Vercel Preview URLs are SSO-protected
 
@@ -23,18 +25,19 @@ Agent environment can read public Production client config and GitHub/PR state, 
 | Contacts/chat migrations applied? | **No** (PostgREST: `user_connections` absent; new RPCs absent; pair/status columns absent) |
 | Legacy messaging present? | **Yes** (`conversations`, `conversation_participants`, `messages`, `is_conversation_participant`, `create_private_conversation`) |
 
-### Still not determinable in this environment
+### Still blocking (awaiting real values)
 
 | Item | Status |
 |---|---|
-| Preview `NEXT_PUBLIC_SUPABASE_URL` project ref | not determinable |
-| Development `NEXT_PUBLIC_SUPABASE_URL` project ref | not determinable |
-| Preview shares Production project? | not determinable |
-| `dividend-lab-dev` ↔ `faaxloafogpsywfkpbrm` | not determinable from name alone |
-| Separate staging project | not determinable |
-| Migration history rows for `20260728213000` / `20260728213100` | not readable (no DB/management access) |
-| Backup / PITR latest recovery point | not confirmable |
-| Aggregate duplicate/message preflight counts | not runnable (private tables deny anon aggregates) |
+| Preview `NEXT_PUBLIC_SUPABASE_URL` project ref | not provided (placeholder) |
+| Development `NEXT_PUBLIC_SUPABASE_URL` project ref | not provided (placeholder) |
+| Preview == Production? | not provided (placeholder) |
+| Display name for `faaxloafogpsywfkpbrm` | not provided (placeholder) |
+| `dividend-lab-dev` relationship | not provided (placeholder) |
+| Plan / PITR / latest recovery point / retention / sufficient? | not provided (placeholders) |
+| Migration history `20260728213000` / `20260728213100` | not provided (placeholders) |
+| Aggregate duplicate/message preflight counts | not provided (placeholders) |
+| Selected release path | **not selectable** until Preview mapping is real |
 
 ## Henrik manual checklist (required)
 
@@ -105,36 +108,85 @@ Run the **Required read-only preflight SQL** section below on `faaxloafogpsywfkp
 
 Paste back **aggregate numbers only** (no UUIDs, emails, usernames, message bodies).
 
+Required numeric fields from the SQL above:
+
+```text
+conversation_count:
+participant_count:
+message_count:
+two_participant:
+fewer_than_two:
+more_than_two:
+duplicate_pair_groups:
+largest_duplicate_group_size:
+conversations_in_duplicate_groups:
+duplicate_conversations_to_remove:
+messages_to_move:
+duplicate_groups_with_conflicting_subjects:
+duplicate_participant_rows:
+orphaned_participants:
+orphaned_messages:
+conversations_without_participants:
+name_conflict_rows (count of rows from query 8; ideally 0):
+```
+
 ## Selected release path
 
-**Not selected yet** — depends on Preview vs Production mapping.
+**Not selected** — Preview/Production mapping was not provided as real values.
 
 - If Preview ref == Production ref `faaxloafogpsywfkpbrm` → **Path A (shared)**
-- If Preview ref is different → **Path B (separate Preview)**
+- If Preview ref is a different remote project → **Path B (separate Preview)**
+- If Preview has no Supabase URL / NONE → treat as **Path A risk for production** (no separate Preview DB to stage on); confirm before apply
 
 Until mapping is confirmed, operate under **Path A risk** (do not casually migrate from Preview).
 
-### Path A — Shared Preview/Production
+### Controlled migration plan (for Product Owner approval — not approved yet)
 
-1. Confirm backup/PITR on `faaxloafogpsywfkpbrm`
-2. Low-traffic migration window
-3. Apply both migrations together, in order
-4. Post-migration verification
-5. Preview smoke test against migrated DB
-6. Explicit Product Owner approval
-7. Mark Ready → merge → verify production deploy
+Do **not** execute until:
 
-### Path B — Separate Preview
+1. Real preflight values replace all placeholders
+2. Backup/PITR is marked sufficient
+3. Both migration versions are ABSENT (or already PRESENT — then skip apply and verify only)
+4. Aggregates show no hard blockers (see below)
+5. Product Owner replies with explicit text approving the selected path
 
-1. Apply + verify on Preview first
-2. Complete Preview smoke tests
-3. Confirm production backup/PITR
-4. Schedule production migration
-5. Production verification
-6. Explicit Product Owner approval
-7. Mark Ready → merge → verify production deploy
+**Hard blockers (stop):**
 
-**Do not execute either path until Product Owner approval after blockers clear.**
+- Preview mapping unknown
+- Backup/PITR not sufficient or unknown
+- Either migration PRESENT while objects absent (history drift) or objects partially present
+- `name_conflict_rows` > 0 before apply
+- Unexpected orphan volumes that break assumptions (investigate before apply)
+- `duplicate_groups_with_conflicting_subjects` > 0 → review impact (subjects discarded from non-canonical rows; messages still preserved) before approving
+
+**Soft caution (proceed only with awareness):**
+
+- Large `messages_to_move` / `duplicate_conversations_to_remove` → longer lock window; prefer low traffic
+- `fewer_than_two` / `more_than_two` conversations → migration leaves non-1:1 rows without pair uniqueness; confirm expected
+
+#### If Path A (shared Preview/Production = `faaxloafogpsywfkpbrm`)
+
+1. Freeze: no parallel schema changes; prefer low-traffic window
+2. Capture pre-apply aggregates (message_count, participant_count, duplicate_* )
+3. Apply **together, in order**, on `faaxloafogpsywfkpbrm` only:
+   - `20260728213000_create_user_connections.sql`
+   - `20260728213100_enhance_private_conversations.sql`
+4. Run post-migration verification SQL from this doc
+5. Confirm `message_count` unchanged; duplicate normalized pairs = 0
+6. Smoke Kontakter + private chat on Preview/production app against migrated DB
+7. Only then: Ready for Review → merge → watch production deploy
+8. Rollback if needed: **PITR/restore only** (no down migration)
+
+#### If Path B (Preview ref ≠ Production)
+
+1. Apply both migrations on **Preview project only**; verify + smoke there first
+2. Re-confirm Production backup/PITR
+3. Schedule Production apply of the same two files on `faaxloafogpsywfkpbrm`
+4. Production post-verify + smoke
+5. Only then: Ready → merge → deploy
+6. Rollback: PITR/restore on the affected project
+
+**Explicit hold:** Migration approval has **not** been given. Agent must not apply, merge, mark Ready, or deploy.
 
 ## Migration safety review (code vs known production shape)
 
