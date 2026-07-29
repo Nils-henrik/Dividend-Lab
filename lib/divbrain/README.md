@@ -5,8 +5,8 @@ Shared DivBrain domain language for server and client.
 ## Boundaries
 
 - **Shared (this folder today):** `constants`, `types`, `errors`, `results`, `validation`, `sources`, `citations`, `guardrails` — safe to import from server or client.
-- **Server-only by convention:** `server/guardrails`, `server/guardrail-evals`, `server/providers` — detection logic, eval fixtures, and the provider boundary. These modules live under `lib/divbrain/server/` and **must never be imported by client components** or other browser-safe UI. Package-level `import "server-only"` is deferred until an approved dependency/foundation ticket; folder placement and this README are the current boundary.
-- Later tickets add identity, policy/context assembly, real provider adapters, repositories, services, allowlists, Learning retrieval under the same server-only rule.
+- **Server-only by convention:** `server/guardrails`, `server/guardrail-evals`, `server/providers`, `server/identity`, `server/policy`, `server/context`, `server/context-evals` — detection logic, eval fixtures, identity/policy text, context assembly, and the provider boundary. These modules live under `lib/divbrain/server/` and **must never be imported by client components** or other browser-safe UI. Package-level `import "server-only"` is deferred until an approved dependency/foundation ticket; folder placement and this README are the current boundary.
+- Later tickets add real provider adapters, repositories, services, allowlists, Learning retrieval under the same server-only rule.
 - Browser-safe modules must never import server-only DivBrain code.
 - Never expose secrets, tokens, emails, raw provider/DB errors, stack traces, or hidden reasoning across the browser boundary.
 
@@ -74,6 +74,33 @@ Coverage focus in the expanded suite:
 The runner remains pure and non-automatic: it does not run on import or build, access the network, filesystem, environment, current time, or randomness. **No approved runtime test foundation exists yet**, so this ticket does **not** claim that the **28** baseline, **44** new, or **72** total fixtures have been executed at runtime or in CI.
 
 Deterministic pattern matching still has known false positives and false negatives. Semantic and provider-side safety remain later work. Assessment/report contracts are unchanged from 1A-3a.
+
+## Context assembly (Ticket 1A-4)
+
+Server-owned identity, policy, and context assembly under `server/`:
+
+- `identity.ts` — Swedish DivBrain persona (trusted system text)
+- `policy.ts` — financial-safety + response-format text; reuses guardrail constraints
+- `context/` — normalize, budget, assemble, delimiters, provider mapping
+- `context-eval-fixtures/` + `context-evals.ts` — focused behavioural evals
+
+Canonical documentation: [`docs/divbrain/context-assembly.md`](../../docs/divbrain/context-assembly.md).
+
+### Contract
+
+```ts
+assembleDivBrainContext(input) → DivBrainResult<DivBrainAssembledContext>
+mapAssembledContextToProviderRequest(assembled, { timeoutMs }) → DivBrainResult<DivBrainProviderRequest>
+```
+
+### Rules
+
+- Provider-neutral assembly; Ticket 1A-5 mapping is a separate adapter.
+- Blueprint priority: identity → policy → response_format → sources/knowledge → history → user → optional → tools → freshness.
+- Budgets use **estimated tokens** (`ceil(chars / 4)`), not an exact tokenizer.
+- Untrusted sources/history are delimited; they cannot replace trusted policy.
+- No database access inside the assemble core; no live provider calls in unit tests.
+- Minimal test runner: `npm run test:divbrain` (tsx + node:test). Full CI wiring remains Ticket 1A-10 scope.
 
 ## Provider interface (Ticket 1A-5)
 

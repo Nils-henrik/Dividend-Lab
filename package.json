@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "tsx --test \"lib/divbrain/**/*.test.ts\"",
+    "test:divbrain": "tsx --test \"lib/divbrain/**/*.test.ts\"",
+    "test:divbrain:context": "tsx --test \"lib/divbrain/server/context/**/*.test.ts\"",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",
@@ -26,6 +30,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
     "tailwindcss": "^4",
+    "tsx": "^4.19.4",
     "typescript": "^5"
   }
 }
