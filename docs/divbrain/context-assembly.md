@@ -138,7 +138,7 @@ the domain assembly object. Unit tests use `UnconfiguredProvider` only.
 - No semantic retrieval or re-ranking (Phase 1C+)
 - No live cost logging (hooks only until Phase 1B)
 - `import "server-only"` package still deferred; enforce via `server/` imports
-- Conversation repository mapping is deferred to Ticket 1A-7a/1A-7b
+- Conversation/message persistence lives in Ticket 1A-7a (`docs/divbrain/conversation-repository.md`); mapping persisted rows into assembly input remains Ticket 1A-7b
 
 ## Extending in later tickets
 

@@ -5,8 +5,8 @@ Shared DivBrain domain language for server and client.
 ## Boundaries
 
 - **Shared (this folder today):** `constants`, `types`, `errors`, `results`, `validation`, `sources`, `citations`, `guardrails` — safe to import from server or client.
-- **Server-only by convention:** `server/guardrails`, `server/guardrail-evals`, `server/providers`, `server/identity`, `server/policy`, `server/context`, `server/context-evals` — detection logic, eval fixtures, identity/policy text, context assembly, and the provider boundary. These modules live under `lib/divbrain/server/` and **must never be imported by client components** or other browser-safe UI. Package-level `import "server-only"` is deferred until an approved dependency/foundation ticket; folder placement and this README are the current boundary.
-- Later tickets add real provider adapters, repositories, services, allowlists, Learning retrieval under the same server-only rule.
+- **Server-only by convention:** `server/guardrails`, `server/guardrail-evals`, `server/providers`, `server/identity`, `server/policy`, `server/context`, `server/context-evals`, `server/repository` — detection logic, eval fixtures, identity/policy text, context assembly, provider boundary, and conversation persistence. These modules live under `lib/divbrain/server/` and **must never be imported by client components** or other browser-safe UI. Package-level `import "server-only"` is deferred until an approved dependency/foundation ticket; folder placement and this README are the current boundary.
+- Later tickets add real provider adapters, services, allowlists, Learning retrieval under the same server-only rule.
 - Browser-safe modules must never import server-only DivBrain code.
 - Never expose secrets, tokens, emails, raw provider/DB errors, stack traces, or hidden reasoning across the browser boundary.
 
@@ -146,6 +146,31 @@ Repository-only Supabase migration (not applied by this ticket):
 - Soft archive never replaces permanent owner DELETE
 - No `divbrain_usage_events` in 1A-6 (deferred)
 - RLS and privileges were reviewed statically in this ticket; they were **not** runtime-tested against a live database
+
+## Conversation repository (Ticket 1A-7a)
+
+Server-only persistence under `server/repository/`:
+
+- `repository.ts` — actor-scoped CRUD: create/get/list/update/archive/restore/delete conversations; list/create messages
+- `persistence.ts` + `supabase-persistence.ts` — injectable port + Supabase adapter
+- `service-role-client.ts` — privileged **port** factory for Model A message writes (raw admin client never exported)
+- `mapping.ts` / `pagination.ts` / `rows.ts` — row↔domain mapping and deterministic cursors
+
+Canonical documentation: [`docs/divbrain/conversation-repository.md`](../../docs/divbrain/conversation-repository.md).
+
+### Contract
+
+```ts
+createDivBrainConversationRepository({ persistence }) → DivBrainConversationRepository
+```
+
+Trusted `actorId` is required on every call. Ownership fields from callers are rejected. Missing and unowned resources both return `not_found`.
+
+### Rules
+
+- No live remote Supabase required for unit tests (`npm run test:divbrain`).
+- No schema/RLS/migration changes in this ticket.
+- No AI-provider calls, context orchestration, API routes, or chat UI (Ticket 1A-7b+).
 
 ## Sources and citations
 
