@@ -303,6 +303,27 @@ async function assertMeaningfulFocus(page) {
   return info;
 }
 
+async function waitForRest(retries = 40) {
+  for (let i = 0; i < retries; i += 1) {
+    try {
+      const response = await fetch(`${API}/rest/v1/profiles?select=id&limit=1`, {
+        headers: {
+          apikey: ANON,
+          Authorization: `Bearer ${ANON}`,
+        },
+      });
+      if (response.ok || response.status === 200 || response.status === 206) {
+        return;
+      }
+      // 503/PGRST002 during schema reload — keep waiting.
+    } catch {
+      // API still restarting
+    }
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+  throw new Error(`Supabase REST is not ready at ${API}/rest/v1`);
+}
+
 async function main() {
   console.log(
     JSON.stringify(
@@ -319,6 +340,7 @@ async function main() {
 
   const health = await fetch(`${API}/auth/v1/health`).catch(() => null);
   assert.ok(health?.ok, `Local Supabase Auth is not reachable at ${API}`);
+  await waitForRest();
   const app = await fetch(`${BASE}/login`).catch(() => null);
   assert.ok(app?.ok, `App is not reachable at ${BASE}/login`);
 
