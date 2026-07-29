@@ -825,8 +825,218 @@ describe("ignored and declined message-request lifecycle", () => {
   });
 });
 
+describe("privacy probes: contact graph and conversation membership", () => {
+  it("lets A and B check their own accepted-contact relationship", async () => {
+    const suffix = Date.now().toString(36);
+    const left = await createAuthedUser(`priv_a_${suffix}`, `priv_a_${suffix}`);
+    const right = await createAuthedUser(`priv_b_${suffix}`, `priv_b_${suffix}`);
+    const stranger = await createAuthedUser(
+      `priv_c_${suffix}`,
+      `priv_c_${suffix}`,
+    );
+
+    try {
+      const request = await left.client.rpc("send_contact_request", {
+        p_target_user_id: right.id,
+      });
+      assert.equal(request.error, null, request.error?.message);
+      const accept = await right.client.rpc("accept_contact_request", {
+        p_connection_id: request.data.id,
+      });
+      assert.equal(accept.error, null, accept.error?.message);
+
+      const fromA = await left.client.rpc("are_accepted_contacts", {
+        p_user_a: left.id,
+        p_user_b: right.id,
+      });
+      assert.equal(fromA.error, null, fromA.error?.message);
+      assert.equal(fromA.data, true);
+
+      const fromB = await right.client.rpc("are_accepted_contacts", {
+        p_user_a: left.id,
+        p_user_b: right.id,
+      });
+      assert.equal(fromB.error, null, fromB.error?.message);
+      assert.equal(fromB.data, true);
+
+      // Unrelated User C must not learn whether A and B are contacts.
+      const fromCTruePair = await stranger.client.rpc("are_accepted_contacts", {
+        p_user_a: left.id,
+        p_user_b: right.id,
+      });
+      assert.equal(fromCTruePair.error, null, fromCTruePair.error?.message);
+      assert.equal(fromCTruePair.data, false);
+
+      const fromCReversed = await stranger.client.rpc("are_accepted_contacts", {
+        p_user_a: right.id,
+        p_user_b: left.id,
+      });
+      assert.equal(fromCReversed.data, false);
+
+      // Counts remain public aggregates only (no relationship rows).
+      const count = await stranger.client.rpc("get_accepted_contact_count", {
+        p_user_id: left.id,
+      });
+      assert.equal(count.error, null, count.error?.message);
+      assert.equal(Number(count.data), 1);
+
+      const relationshipRows = await stranger.client
+        .from("user_connections")
+        .select("id, status, requester_id, addressee_id")
+        .or(
+          `requester_id.eq.${left.id},addressee_id.eq.${left.id},user_low_id.eq.${left.id},user_high_id.eq.${left.id}`,
+        );
+      assert.equal(relationshipRows.data?.length, 0);
+
+      // Hardened contact check must not break contact-based chat activation.
+      const conversation = await left.client.rpc(
+        "open_or_create_private_conversation",
+        {
+          p_target_user_id: right.id,
+          p_initial_body: null,
+          p_subject: null,
+        },
+      );
+      assert.equal(conversation.error, null, conversation.error?.message);
+      const status = await sql(
+        `select status from public.conversations where id = '${conversation.data}'`,
+      );
+      assert.equal(status.rows[0].status, "active");
+    } finally {
+      await deleteUser(left.id).catch(() => undefined);
+      await deleteUser(right.id).catch(() => undefined);
+      await deleteUser(stranger.id).catch(() => undefined);
+    }
+  });
+
+  it("prevents unrelated User C from probing A-B conversation membership", async () => {
+    const suffix = Date.now().toString(36);
+    const left = await createAuthedUser(`memb_a_${suffix}`, `memb_a_${suffix}`);
+    const right = await createAuthedUser(`memb_b_${suffix}`, `memb_b_${suffix}`);
+    const stranger = await createAuthedUser(
+      `memb_c_${suffix}`,
+      `memb_c_${suffix}`,
+    );
+
+    try {
+      const created = await left.client.rpc(
+        "open_or_create_private_conversation",
+        {
+          p_target_user_id: right.id,
+          p_initial_body: "Private membership probe target.",
+          p_subject: null,
+        },
+      );
+      assert.equal(created.error, null, created.error?.message);
+      const conversationId = created.data as string;
+
+      const selfCheck = await left.client.rpc("is_conversation_participant", {
+        check_conversation_id: conversationId,
+        check_user_id: left.id,
+      });
+      assert.equal(selfCheck.error, null, selfCheck.error?.message);
+      assert.equal(selfCheck.data, true);
+
+      const peerSelfCheck = await right.client.rpc(
+        "is_conversation_participant",
+        {
+          check_conversation_id: conversationId,
+          check_user_id: right.id,
+        },
+      );
+      assert.equal(peerSelfCheck.data, true);
+
+      const probeOtherUser = await stranger.client.rpc(
+        "is_conversation_participant",
+        {
+          check_conversation_id: conversationId,
+          check_user_id: left.id,
+        },
+      );
+      assert.equal(probeOtherUser.error, null, probeOtherUser.error?.message);
+      assert.equal(probeOtherUser.data, false);
+
+      const probeSelfOnForeign = await stranger.client.rpc(
+        "is_conversation_participant",
+        {
+          check_conversation_id: conversationId,
+          check_user_id: stranger.id,
+        },
+      );
+      assert.equal(probeSelfOnForeign.data, false);
+
+      const canSendProbe = await stranger.client.rpc(
+        "can_send_private_message",
+        {
+          p_conversation_id: conversationId,
+          p_user_id: left.id,
+        },
+      );
+      assert.equal(canSendProbe.data, false);
+    } finally {
+      await deleteUser(left.id).catch(() => undefined);
+      await deleteUser(right.id).catch(() => undefined);
+      await deleteUser(stranger.id).catch(() => undefined);
+    }
+  });
+});
+
 describe("conversation concurrent uniqueness", () => {
-  it("creates one conversation under concurrent open_or_create calls", async () => {
+  it("creates exactly one conversation and one initial message under same-direction concurrency", async () => {
+    const suffix = Date.now().toString(36);
+    const left = await createAuthedUser(`conc_s_${suffix}`, `conc_s_${suffix}`);
+    const right = await createAuthedUser(`conc_t_${suffix}`, `conc_t_${suffix}`);
+
+    try {
+      const results = await Promise.all(
+        Array.from({ length: 12 }, (_, index) =>
+          left.client.rpc("open_or_create_private_conversation", {
+            p_target_user_id: right.id,
+            p_initial_body: `Same-direction concurrent message ${index}`,
+            p_subject: null,
+          }),
+        ),
+      );
+
+      const ids = results
+        .filter((result) => !result.error && result.data)
+        .map((result) => result.data as string);
+      assert.ok(ids.length >= 1);
+      assert.equal(new Set(ids).size, 1);
+
+      const pairLow = left.id < right.id ? left.id : right.id;
+      const pairHigh = left.id < right.id ? right.id : left.id;
+      const conversations = await sql(
+        `select count(*)::int as count from public.conversations
+         where pair_user_low = '${pairLow}' and pair_user_high = '${pairHigh}'`,
+      );
+      assert.equal(conversations.rows[0].count, 1);
+
+      const messages = await sql(
+        `select count(*)::int as count from public.messages m
+         join public.conversations c on c.id = m.conversation_id
+         where c.pair_user_low = '${pairLow}' and c.pair_user_high = '${pairHigh}'`,
+      );
+      assert.equal(messages.rows[0].count, 1);
+
+      const direct = await left.client.from("messages").insert({
+        conversation_id: ids[0],
+        sender_id: left.id,
+        body: "Direct client insert must not add another pending request message.",
+      });
+      assert.ok(direct.error, "direct insert must fail while request is pending");
+
+      const afterDirect = await sql(
+        `select count(*)::int as count from public.messages where conversation_id = '${ids[0]}'`,
+      );
+      assert.equal(afterDirect.rows[0].count, 1);
+    } finally {
+      await deleteUser(left.id).catch(() => undefined);
+      await deleteUser(right.id).catch(() => undefined);
+    }
+  });
+
+  it("creates exactly one conversation and one initial message under reversed-direction concurrency", async () => {
     const suffix = Date.now().toString(36);
     const left = await createAuthedUser(`conc_l_${suffix}`, `conc_l_${suffix}`);
     const right = await createAuthedUser(`conc_r_${suffix}`, `conc_r_${suffix}`);
@@ -838,7 +1048,7 @@ describe("conversation concurrent uniqueness", () => {
             "open_or_create_private_conversation",
             {
               p_target_user_id: index % 2 === 0 ? right.id : left.id,
-              p_initial_body: `Concurrent message ${index}`,
+              p_initial_body: `Reversed concurrent message ${index}`,
               p_subject: null,
             },
           ),
@@ -858,6 +1068,24 @@ describe("conversation concurrent uniqueness", () => {
          where pair_user_low = '${pairLow}' and pair_user_high = '${pairHigh}'`,
       );
       assert.equal(count.rows[0].count, 1);
+
+      const messageCount = await sql(
+        `select count(*)::int as count from public.messages m
+         join public.conversations c on c.id = m.conversation_id
+         where c.pair_user_low = '${pairLow}' and c.pair_user_high = '${pairHigh}'`,
+      );
+      assert.equal(messageCount.rows[0].count, 1);
+
+      const direct = await left.client.from("messages").insert({
+        conversation_id: ids[0],
+        sender_id: left.id,
+        body: "Extra pending request via direct insert.",
+      });
+      assert.ok(direct.error);
+      const after = await sql(
+        `select count(*)::int as count from public.messages where conversation_id = '${ids[0]}'`,
+      );
+      assert.equal(after.rows[0].count, 1);
     } finally {
       await deleteUser(left.id).catch(() => undefined);
       await deleteUser(right.id).catch(() => undefined);

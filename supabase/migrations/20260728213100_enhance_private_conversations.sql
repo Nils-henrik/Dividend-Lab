@@ -9,12 +9,128 @@ alter table public.conversations
   add column if not exists pair_user_high uuid,
   add column if not exists responded_at timestamptz;
 
--- Backfill existing conversations as active DMs where a unique pair can be resolved.
+-- Consolidate legacy duplicate 1:1 conversations into the earliest canonical row
+-- before assigning pair columns / uniqueness. Non-two-participant conversations
+-- are left untouched.
+do $$
+declare
+  dup record;
+  remaining_pair record;
+begin
+  for dup in
+    with two_party as (
+      select
+        cp.conversation_id,
+        (array_agg(cp.user_id order by cp.user_id::text))[1] as pair_low,
+        (array_agg(cp.user_id order by cp.user_id::text))[2] as pair_high
+      from public.conversation_participants cp
+      group by cp.conversation_id
+      having count(*) = 2
+    ),
+    ranked as (
+      select
+        tp.conversation_id,
+        tp.pair_low,
+        tp.pair_high,
+        first_value(tp.conversation_id) over (
+          partition by tp.pair_low, tp.pair_high
+          order by c.created_at asc, c.id asc
+        ) as canonical_id,
+        row_number() over (
+          partition by tp.pair_low, tp.pair_high
+          order by c.created_at asc, c.id asc
+        ) as pair_rank
+      from two_party tp
+      join public.conversations c on c.id = tp.conversation_id
+      where tp.pair_low is distinct from tp.pair_high
+    )
+    select
+      conversation_id as duplicate_id,
+      canonical_id,
+      pair_low,
+      pair_high
+    from ranked
+    where pair_rank > 1
+  loop
+    -- Move all historical messages to the canonical conversation.
+    update public.messages
+    set conversation_id = dup.canonical_id
+    where conversation_id = dup.duplicate_id;
+
+    -- Preserve the best available participant read state on the canonical row.
+    insert into public.conversation_participants (
+      conversation_id,
+      user_id,
+      last_read_at
+    )
+    select
+      dup.canonical_id,
+      dp.user_id,
+      dp.last_read_at
+    from public.conversation_participants dp
+    where dp.conversation_id = dup.duplicate_id
+    on conflict (conversation_id, user_id) do update
+      set last_read_at = case
+        when conversation_participants.last_read_at is null then excluded.last_read_at
+        when excluded.last_read_at is null then conversation_participants.last_read_at
+        else greatest(
+          conversation_participants.last_read_at,
+          excluded.last_read_at
+        )
+      end;
+
+    -- Retain an existing subject on the canonical conversation when useful.
+    update public.conversations as canonical
+    set subject = coalesce(
+      nullif(btrim(coalesce(canonical.subject, '')), ''),
+      nullif(btrim(coalesce(duplicate.subject, '')), '')
+    )
+    from public.conversations as duplicate
+    where canonical.id = dup.canonical_id
+      and duplicate.id = dup.duplicate_id;
+
+    delete from public.conversation_participants
+    where conversation_id = dup.duplicate_id;
+
+    delete from public.conversations
+    where id = dup.duplicate_id;
+  end loop;
+
+  -- Fail explicitly rather than leaving duplicate private conversations behind.
+  select
+    tp.pair_low,
+    tp.pair_high,
+    count(*)::int as conversation_count
+  into remaining_pair
+  from (
+    select
+      cp.conversation_id,
+      (array_agg(cp.user_id order by cp.user_id::text))[1] as pair_low,
+      (array_agg(cp.user_id order by cp.user_id::text))[2] as pair_high
+    from public.conversation_participants cp
+    group by cp.conversation_id
+    having count(*) = 2
+  ) tp
+  where tp.pair_low is distinct from tp.pair_high
+  group by tp.pair_low, tp.pair_high
+  having count(*) > 1
+  limit 1;
+
+  if found then
+    raise exception
+      'Legacy duplicate private conversations could not be consolidated for pair % / % (% conversations remain).',
+      remaining_pair.pair_low,
+      remaining_pair.pair_high,
+      remaining_pair.conversation_count;
+  end if;
+end $$;
+
+-- Backfill remaining two-party conversations as active DMs with normalized pairs.
 with pair_candidates as (
   select
     cp.conversation_id,
-    (array_agg(cp.user_id order by cp.user_id))[1] as pair_low,
-    (array_agg(cp.user_id order by cp.user_id desc))[1] as pair_high,
+    (array_agg(cp.user_id order by cp.user_id::text))[1] as pair_low,
+    (array_agg(cp.user_id order by cp.user_id::text))[2] as pair_high,
     count(*)::int as participant_count
   from public.conversation_participants cp
   group by cp.conversation_id
@@ -103,6 +219,65 @@ create index if not exists conversations_status_updated_at_idx
 create index if not exists conversations_initiated_by_status_idx
   on public.conversations (initiated_by, status);
 
+-- Internal participant check used by RLS-safe trusted RPCs. Not client-executable.
+create or replace function public._is_conversation_participant_internal(
+  check_conversation_id uuid,
+  check_user_id uuid
+)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.conversation_participants
+    where conversation_id = check_conversation_id
+      and user_id = check_user_id
+  );
+$$;
+
+revoke all on function public._is_conversation_participant_internal(uuid, uuid) from public;
+revoke all on function public._is_conversation_participant_internal(uuid, uuid) from anon, authenticated;
+
+-- Client-safe wrapper: only allow checking the caller's own membership.
+-- Prevents probing whether another user participates in an unrelated conversation.
+create or replace function public.is_conversation_participant(
+  check_conversation_id uuid,
+  check_user_id uuid
+)
+returns boolean
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+declare
+  acting_user_id uuid := auth.uid();
+begin
+  if check_conversation_id is null or check_user_id is null then
+    return false;
+  end if;
+
+  if acting_user_id is null then
+    return false;
+  end if;
+
+  if acting_user_id is distinct from check_user_id then
+    return false;
+  end if;
+
+  return public._is_conversation_participant_internal(
+    check_conversation_id,
+    check_user_id
+  );
+end;
+$$;
+
+revoke all on function public.is_conversation_participant(uuid, uuid) from public;
+grant execute on function public.is_conversation_participant(uuid, uuid) to authenticated;
+
 create or replace function public.can_send_private_message(
   p_conversation_id uuid,
   p_user_id uuid
@@ -116,12 +291,18 @@ as $$
 declare
   conversation_row public.conversations;
   message_count bigint;
+  acting_user_id uuid := auth.uid();
 begin
   if p_conversation_id is null or p_user_id is null then
     return false;
   end if;
 
-  if not public.is_conversation_participant(p_conversation_id, p_user_id) then
+  -- External callers may only evaluate send permission for themselves.
+  if acting_user_id is distinct from p_user_id then
+    return false;
+  end if;
+
+  if not public._is_conversation_participant_internal(p_conversation_id, p_user_id) then
     return false;
   end if;
 
@@ -215,7 +396,7 @@ begin
 
   pair_low := least(acting_user_id, p_target_user_id);
   pair_high := greatest(acting_user_id, p_target_user_id);
-  are_contacts := public.are_accepted_contacts(acting_user_id, p_target_user_id);
+  are_contacts := public._are_accepted_contacts_internal(acting_user_id, p_target_user_id);
   desired_status := case when are_contacts then 'active' else 'message_request' end;
 
   select c.id, c.status
@@ -327,7 +508,7 @@ begin
 
       -- Other participant opening an existing request/active conversation should
       -- reuse the canonical row without inserting another message.
-      if public.is_conversation_participant(result_conversation_id, acting_user_id) then
+      if public._is_conversation_participant_internal(result_conversation_id, acting_user_id) then
         return result_conversation_id;
       end if;
 
@@ -438,7 +619,7 @@ begin
     raise exception 'Conversation was not found.';
   end if;
 
-  if not public.is_conversation_participant(existing.id, acting_user_id) then
+  if not public._is_conversation_participant_internal(existing.id, acting_user_id) then
     raise exception 'Only participants can manage this conversation.';
   end if;
 
@@ -494,7 +675,7 @@ begin
     raise exception 'Conversation was not found.';
   end if;
 
-  if not public.is_conversation_participant(existing.id, acting_user_id) then
+  if not public._is_conversation_participant_internal(existing.id, acting_user_id) then
     raise exception 'Only participants can manage this conversation.';
   end if;
 
@@ -550,7 +731,7 @@ begin
     raise exception 'Conversation was not found.';
   end if;
 
-  if not public.is_conversation_participant(existing.id, acting_user_id) then
+  if not public._is_conversation_participant_internal(existing.id, acting_user_id) then
     raise exception 'Only participants can manage this conversation.';
   end if;
 

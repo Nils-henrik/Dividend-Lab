@@ -103,7 +103,8 @@ $$;
 revoke all on function public.get_accepted_contact_counts(uuid[]) from public;
 grant execute on function public.get_accepted_contact_counts(uuid[]) to anon, authenticated;
 
-create or replace function public.are_accepted_contacts(
+-- Internal helper: trusted RPCs only. Not executable by clients.
+create or replace function public._are_accepted_contacts_internal(
   p_user_a uuid,
   p_user_b uuid
 )
@@ -120,6 +121,41 @@ as $$
       and user_low_id = least(p_user_a, p_user_b)
       and user_high_id = greatest(p_user_a, p_user_b)
   );
+$$;
+
+revoke all on function public._are_accepted_contacts_internal(uuid, uuid) from public;
+revoke all on function public._are_accepted_contacts_internal(uuid, uuid) from anon, authenticated;
+
+-- Client-safe wrapper: caller must be one of the two users (no contact-graph probing).
+create or replace function public.are_accepted_contacts(
+  p_user_a uuid,
+  p_user_b uuid
+)
+returns boolean
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+declare
+  acting_user_id uuid := auth.uid();
+begin
+  if p_user_a is null or p_user_b is null then
+    return false;
+  end if;
+
+  if acting_user_id is null then
+    return false;
+  end if;
+
+  -- Prevent User C from learning whether unrelated Users A and B are contacts.
+  if acting_user_id is distinct from p_user_a
+     and acting_user_id is distinct from p_user_b then
+    return false;
+  end if;
+
+  return public._are_accepted_contacts_internal(p_user_a, p_user_b);
+end;
 $$;
 
 revoke all on function public.are_accepted_contacts(uuid, uuid) from public;

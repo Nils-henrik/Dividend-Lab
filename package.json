@@ -9,6 +9,7 @@
     "lint": "eslint",
     "test": "node --experimental-strip-types --test tests/*.test.ts",
     "test:db": "node --experimental-strip-types --test tests/database/*.db.test.ts",
+    "test:db:migration": "node scripts/test-legacy-duplicate-migration.mjs",
     "test:all": "npm test && npm run test:db",
     "typecheck": "tsc --noEmit"
   },
