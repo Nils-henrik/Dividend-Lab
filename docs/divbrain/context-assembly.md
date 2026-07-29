@@ -104,6 +104,10 @@ Primary protection is **structural**: role/trust assignment and delimiters.
 String matching alone is not the security boundary. Prompt-like text inside
 sources or history remains untrusted data and cannot replace policy sections.
 
+Before wrapping, untrusted payloads neutralize literal `<<<` / `>>>` marker
+tokens (`<!<` / `>!>`) so forged open/close sequences cannot prematurely
+terminate DivBrain delimiter blocks. Structured citation metadata is unchanged.
+
 ## Provider-neutral design
 
 Assembly output is independent of any vendor SDK.

@@ -10,6 +10,7 @@ export {
   selectDivBrainContextSources,
 } from "./assemble";
 export {
+  neutralizeDivBrainDelimiterMarkers,
   sanitizeDivBrainContextDelimiterId,
   wrapUntrustedHistoryContent,
   wrapUntrustedSourceContent,
