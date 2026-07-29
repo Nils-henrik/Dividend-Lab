@@ -1,71 +1,168 @@
 # Contacts + Private Chat — Database Release Order
 
-Do **not** apply remote migrations until each step below is completed.
+Do **not** apply remote migrations until each step below is completed and Product Owner approval is given.
 
-## Preflight status (2026-07-29)
+## Preflight status
 
-**Decision: NOT READY — BLOCKERS FOUND**
+**Decision: NOT READY — MANUAL ACTION REQUIRED**
+
+Agent environment can read public Production client config and GitHub/PR state, but cannot authenticate to Vercel or Supabase management APIs:
+
+- `VERCEL_TOKEN`: unset; `vercel whoami` → no credentials
+- `SUPABASE_ACCESS_TOKEN`: unset; `supabase projects list` → auth required
+- Local repo is **not linked** to a remote Supabase project
+- Vercel Preview URLs are SSO-protected
 
 ### Positively identified
 
-- Production site `divlab.se` embeds `NEXT_PUBLIC_SUPABASE_URL` project ref **`faaxloafogpsywfkpbrm`** (masked host `faax****.supabase.co`).
-- Read-only PostgREST probes against that project show the contacts/private-chat migrations are **not** applied yet:
-  - `public.user_connections`: absent
-  - contact / message-request RPCs introduced by these migrations: absent
-  - `conversations.status|initiated_by|pair_user_low|pair_user_high|responded_at`: absent
-  - legacy `conversations`, `conversation_participants`, `messages`, `is_conversation_participant`, `create_private_conversation`: present
+| Item | Value |
+|---|---|
+| Production site | `divlab.se` |
+| Production Supabase project ref | `faaxloafogpsywfkpbrm` |
+| Masked hostname | `faax****.supabase.co` |
+| Contacts/chat migrations applied? | **No** (PostgREST: `user_connections` absent; new RPCs absent; pair/status columns absent) |
+| Legacy messaging present? | **Yes** (`conversations`, `conversation_participants`, `messages`, `is_conversation_participant`, `create_private_conversation`) |
 
-### Not yet positively confirmed (blockers)
+### Still not determinable in this environment
 
-- Vercel **Preview** and **Development** `NEXT_PUBLIC_SUPABASE_URL` (Preview URLs are SSO-protected; no Vercel/Supabase management token available in this agent environment)
-- Whether Preview shares `faaxloafogpsywfkpbrm` with Production
-- Whether `faaxloafogpsywfkpbrm` is the project previously called `dividend-lab-dev`
-- Whether a separate staging project exists
-- Production backup / PITR availability and latest recovery point
-- `supabase_migrations.schema_migrations` history rows for:
-  - `20260728213000_create_user_connections`
-  - `20260728213100_enhance_private_conversations`
-- Aggregate production messaging/duplicate preflight counts (private tables deny anonymous aggregate access)
-- Local CLI is **not linked** to a remote project (`supabase/.temp/project-ref` absent)
+| Item | Status |
+|---|---|
+| Preview `NEXT_PUBLIC_SUPABASE_URL` project ref | not determinable |
+| Development `NEXT_PUBLIC_SUPABASE_URL` project ref | not determinable |
+| Preview shares Production project? | not determinable |
+| `dividend-lab-dev` ↔ `faaxloafogpsywfkpbrm` | not determinable from name alone |
+| Separate staging project | not determinable |
+| Migration history rows for `20260728213000` / `20260728213100` | not readable (no DB/management access) |
+| Backup / PITR latest recovery point | not confirmable |
+| Aggregate duplicate/message preflight counts | not runnable (private tables deny anon aggregates) |
 
-Until the blockers above are cleared with read-only dashboard/CLI access, treat Preview/Production as a **shared-project risk** and do not apply migrations.
+## Henrik manual checklist (required)
 
-## Shared-project constraint
+Complete these read-only checks and reply with the listed fields only (no secrets).
 
-1. Compare `NEXT_PUBLIC_SUPABASE_URL` for **Production**, **Preview**, and **Development** in Vercel.
-2. If Preview and Production resolve to the same project ref, they share one database.
-3. If shared, do **not** apply these migrations from a casual Preview workflow. Apply only as an explicit controlled release after backup + preflight.
+### 1) Vercel environment mapping
 
-## Exact deployment order
+1. Open [Vercel Dashboard](https://vercel.com) → project **dividend-lab**.
+2. Go to **Settings → Environment Variables**.
+3. For each of **Production**, **Preview**, and **Development**, open `NEXT_PUBLIC_SUPABASE_URL`.
+4. From the hostname `https://<ref>.supabase.co`, record only `<ref>`.
 
-### Path A — Preview and Production share one Supabase project
+Report back:
 
-1. Confirm backup / PITR on `faaxloafogpsywfkpbrm`.
-2. Use a controlled low-traffic window.
-3. Apply both migrations in order on that project.
-4. Immediately verify database invariants (queries below).
-5. Smoke-test the Ready Vercel Preview against the migrated database.
-6. Verify existing production messaging remains functional with the backward-compatible schema.
-7. Mark PR #34 Ready for review.
-8. Merge PR #34.
-9. Verify the resulting production deployment.
+```text
+Production ref:
+Preview ref:
+Development ref:
+Preview == Production? yes/no
+Development == Production? yes/no/n/a
+```
 
-### Path B — Preview has a separate Supabase project
+Also open [Supabase Dashboard](https://supabase.com/dashboard) → project list and report:
 
-1. Apply migrations to Preview/staging first.
-2. Run full smoke tests there.
-3. Confirm production backup on `faaxloafogpsywfkpbrm`.
-4. Apply migrations to production.
-5. Verify database invariants.
-6. Mark PR Ready and merge.
-7. Verify production.
+```text
+Project display name for faaxloafogpsywfkpbrm:
+Is that project the one previously called dividend-lab-dev? yes/no/unknown
+Other remote projects used by this app (refs only):
+```
 
-**Applicable path:** unknown until Preview env is positively identified. Default operating assumption until then: **Path A risk**.
+### 2) Backup / PITR
+
+On Supabase project `faaxloafogpsywfkpbrm`:
+
+1. Open **Project Settings → Subscription / Add-ons** (or **Billing**) and note plan.
+2. Open **Database → Backups** (or **Settings → Database → Backups / Point-in-Time Recovery**).
+3. Record whether daily backups and/or PITR are enabled.
+
+Report back:
+
+```text
+Plan:
+Daily backups enabled? yes/no
+PITR enabled? yes/no
+Latest backup / earliest PITR restore point (timestamp if visible):
+Retention window:
+Sufficient for this migration? yes/no
+```
+
+### 3) Migration history (SQL Editor, read-only)
+
+In Supabase SQL Editor for `faaxloafogpsywfkpbrm`, run:
+
+```sql
+select version, name
+from supabase_migrations.schema_migrations
+order by version;
+```
+
+Report whether these versions appear:
+
+- `20260728213000`
+- `20260728213100`
+
+### 4) Aggregate data preflight (SQL Editor, read-only)
+
+Run the **Required read-only preflight SQL** section below on `faaxloafogpsywfkpbrm`.
+
+Paste back **aggregate numbers only** (no UUIDs, emails, usernames, message bodies).
+
+## Selected release path
+
+**Not selected yet** — depends on Preview vs Production mapping.
+
+- If Preview ref == Production ref `faaxloafogpsywfkpbrm` → **Path A (shared)**
+- If Preview ref is different → **Path B (separate Preview)**
+
+Until mapping is confirmed, operate under **Path A risk** (do not casually migrate from Preview).
+
+### Path A — Shared Preview/Production
+
+1. Confirm backup/PITR on `faaxloafogpsywfkpbrm`
+2. Low-traffic migration window
+3. Apply both migrations together, in order
+4. Post-migration verification
+5. Preview smoke test against migrated DB
+6. Explicit Product Owner approval
+7. Mark Ready → merge → verify production deploy
+
+### Path B — Separate Preview
+
+1. Apply + verify on Preview first
+2. Complete Preview smoke tests
+3. Confirm production backup/PITR
+4. Schedule production migration
+5. Production verification
+6. Explicit Product Owner approval
+7. Mark Ready → merge → verify production deploy
+
+**Do not execute either path until Product Owner approval after blockers clear.**
+
+## Migration safety review (code vs known production shape)
+
+Reviewed `20260728213000_create_user_connections.sql` and `20260728213100_enhance_private_conversations.sql` against production probes:
+
+| Concern | Assessment |
+|---|---|
+| Duplicate consolidation | Moves messages to earliest conversation; merges `last_read_at`; deletes only redundant rows; aborts if duplicates remain |
+| Message preservation | Message rows are updated in place (same ids/timestamps/senders); local migration test preserved all messages |
+| Participant remapping | Upserts participants onto canonical row; deletes duplicate participant rows after merge |
+| Canonical pair uniqueness | Unique index created only after consolidation + backfill |
+| Idempotency | `IF NOT EXISTS` / `CREATE OR REPLACE`; safe if re-applied after success; partial remote apply was **not** observed |
+| Failure mid-migration | Relies on migration transaction rollback; if runner aborts mid-file, restore/PITR is the recovery path |
+| Legacy RPC compatibility | Replaces `create_private_conversation` and hardens `is_conversation_participant`; expected and covered by local tests |
+| RLS / privileges | New table SELECT-only for clients; mutations via DEFINER RPCs; conversation UPDATE revoked |
+| Rollback realism | **Restore/PITR is the only realistic rollback** after consolidation (no faithful down migration) |
+
+No migration defect requiring a code change was identified from available evidence. Aggregate production duplicate scope remains unknown until Henrik’s SQL preflight.
 
 ## Required read-only preflight SQL (aggregates only)
 
+Confirm target project is `faaxloafogpsywfkpbrm` before running.
+
 ```sql
--- Migration history
+-- 0) Sanity: confirm we are on the expected project DB
+select current_database() as database_name;
+
+-- 1) Migration history
 select version, name
 from supabase_migrations.schema_migrations
 where version in ('20260728213000', '20260728213100')
@@ -73,19 +170,19 @@ where version in ('20260728213000', '20260728213100')
    or name ilike '%enhance_private_conversations%'
 order by version;
 
--- Messaging volume
-select count(*) as conversation_count from public.conversations;
-select count(*) as participant_count from public.conversation_participants;
-select count(*) as message_count from public.messages;
+-- 2) Volume
+select count(*)::bigint as conversation_count from public.conversations;
+select count(*)::bigint as participant_count from public.conversation_participants;
+select count(*)::bigint as message_count from public.messages;
 
--- Two-participant vs other shapes
+-- 3) Participant-count shapes
 select
   case
     when c = 2 then 'two_participant'
     when c < 2 then 'fewer_than_two'
     else 'more_than_two'
   end as shape,
-  count(*) as conversation_count
+  count(*)::bigint as conversation_count
 from (
   select conversation_id, count(*)::int as c
   from public.conversation_participants
@@ -94,7 +191,7 @@ from (
 group by 1
 order by 1;
 
--- Duplicate unordered pairs
+-- 4) Duplicate unordered pairs + largest group
 with two_party as (
   select
     cp.conversation_id,
@@ -112,11 +209,12 @@ dupes as (
   having count(*) > 1
 )
 select
-  count(*) as duplicate_pair_groups,
-  coalesce(max(conversation_count), 0) as largest_duplicate_group_size
+  count(*)::bigint as duplicate_pair_groups,
+  coalesce(max(conversation_count), 0)::int as largest_duplicate_group_size,
+  coalesce(sum(conversation_count), 0)::bigint as conversations_in_duplicate_groups
 from dupes;
 
--- Messages belonging to duplicate two-participant conversations
+-- 5) Messages that would move during consolidation
 with two_party as (
   select
     cp.conversation_id,
@@ -126,38 +224,116 @@ with two_party as (
   group by cp.conversation_id
   having count(*) = 2
 ),
-dup_conversations as (
-  select tp.conversation_id
+ranked as (
+  select
+    tp.conversation_id,
+    row_number() over (
+      partition by tp.pair_low, tp.pair_high
+      order by c.created_at asc, c.id asc
+    ) as pair_rank
   from two_party tp
-  join (
-    select pair_low, pair_high
-    from two_party
-    where pair_low is distinct from pair_high
-    group by pair_low, pair_high
-    having count(*) > 1
-  ) d on d.pair_low = tp.pair_low and d.pair_high = tp.pair_high
+  join public.conversations c on c.id = tp.conversation_id
+  where tp.pair_low is distinct from tp.pair_high
+),
+non_canonical as (
+  select conversation_id from ranked where pair_rank > 1
 )
-select count(*) as messages_in_duplicate_two_party_conversations
-from public.messages m
-join dup_conversations d on d.conversation_id = m.conversation_id;
+select
+  (select count(*) from non_canonical)::bigint as duplicate_conversations_to_remove,
+  (
+    select count(*)
+    from public.messages m
+    join non_canonical n on n.conversation_id = m.conversation_id
+  )::bigint as messages_to_move;
 
--- Orphans / empty conversations
-select count(*) as orphaned_participants
+-- 6) Conflicting non-null subjects inside duplicate groups
+with two_party as (
+  select
+    cp.conversation_id,
+    (array_agg(cp.user_id order by cp.user_id::text))[1] as pair_low,
+    (array_agg(cp.user_id order by cp.user_id::text))[2] as pair_high
+  from public.conversation_participants cp
+  group by cp.conversation_id
+  having count(*) = 2
+),
+dup_pairs as (
+  select pair_low, pair_high
+  from two_party
+  where pair_low is distinct from pair_high
+  group by pair_low, pair_high
+  having count(*) > 1
+),
+subjects as (
+  select
+    tp.pair_low,
+    tp.pair_high,
+    count(distinct nullif(btrim(coalesce(c.subject, '')), ''))::int as distinct_subjects
+  from two_party tp
+  join dup_pairs d on d.pair_low = tp.pair_low and d.pair_high = tp.pair_high
+  join public.conversations c on c.id = tp.conversation_id
+  group by tp.pair_low, tp.pair_high
+)
+select count(*)::bigint as duplicate_groups_with_conflicting_subjects
+from subjects
+where distinct_subjects > 1;
+
+-- 7) Duplicate participant rows / orphans / empty conversations
+select count(*)::bigint as duplicate_participant_rows
+from (
+  select conversation_id, user_id, count(*)
+  from public.conversation_participants
+  group by 1, 2
+  having count(*) > 1
+) d;
+
+select count(*)::bigint as orphaned_participants
 from public.conversation_participants cp
 left join public.conversations c on c.id = cp.conversation_id
 where c.id is null;
 
-select count(*) as orphaned_messages
+select count(*)::bigint as orphaned_messages
 from public.messages m
 left join public.conversations c on c.id = m.conversation_id
 where c.id is null;
 
-select count(*) as conversations_without_participants
+select count(*)::bigint as conversations_without_participants
 from public.conversations c
 left join public.conversation_participants cp on cp.conversation_id = c.id
 where cp.conversation_id is null;
 
--- Account-deletion FK rules
+-- 8) Name conflicts that could break migration objects
+select 'index' as kind, indexname as name
+from pg_indexes
+where schemaname = 'public'
+  and indexname in (
+    'conversations_dm_pair_uidx',
+    'user_connections_requester_status_idx',
+    'user_connections_addressee_status_idx',
+    'user_connections_accepted_low_idx',
+    'user_connections_accepted_high_idx',
+    'conversations_status_updated_at_idx',
+    'conversations_initiated_by_status_idx'
+  )
+union all
+select 'constraint', conname
+from pg_constraint
+where conname in (
+  'conversations_status_check',
+  'conversations_normalized_pair_check',
+  'user_connections_status_check',
+  'user_connections_no_self',
+  'user_connections_normalized_pair',
+  'user_connections_unique_pair'
+)
+union all
+select 'relation', c.relname
+from pg_class c
+join pg_namespace n on n.oid = c.relnamespace
+where n.nspname = 'public'
+  and c.relname = 'user_connections'
+order by 1, 2;
+
+-- 9) Account-deletion FK rules
 select
   conrelid::regclass as table_name,
   conname,
@@ -177,97 +353,50 @@ where contype = 'f'
 order by 1, 2;
 ```
 
-## Post-migration verification checklist (aggregates only)
+## Post-migration verification (aggregates only)
 
 ```sql
--- Both migration versions recorded
 select version
 from supabase_migrations.schema_migrations
 where version in ('20260728213000', '20260728213100')
 order by version;
 
--- user_connections + RLS
-select
-  to_regclass('public.user_connections') is not null as table_exists,
-  relrowsecurity as rls_enabled
+select to_regclass('public.user_connections') is not null as table_exists,
+       relrowsecurity as rls_enabled
 from pg_class
 where oid = 'public.user_connections'::regclass;
 
--- Normalized contact-pair uniqueness
-select indexname
-from pg_indexes
-where tablename = 'user_connections'
-  and indexdef ilike '%unique%user_low_id%user_high_id%';
-
--- Conversation state/pair columns + unique DM pair index
-select column_name
-from information_schema.columns
-where table_schema = 'public'
-  and table_name = 'conversations'
-  and column_name in ('status','initiated_by','pair_user_low','pair_user_high','responded_at')
-order by column_name;
-
-select indexname
-from pg_indexes
-where tablename = 'conversations'
-  and indexname = 'conversations_dm_pair_uidx';
-
--- No duplicate normalized pairs
-select count(*) as duplicate_normalized_pairs
+select count(*)::bigint as duplicate_normalized_pairs
 from (
-  select pair_user_low, pair_user_high, count(*)
+  select pair_user_low, pair_user_high
   from public.conversations
   where pair_user_low is not null and pair_user_high is not null
   group by 1, 2
   having count(*) > 1
 ) d;
 
--- Two-participant conversations should have populated pairs
-select count(*) as two_party_missing_pair_columns
+select count(*)::bigint as two_party_missing_pair_columns
 from public.conversations c
 where (
   select count(*) from public.conversation_participants cp where cp.conversation_id = c.id
 ) = 2
 and (c.pair_user_low is null or c.pair_user_high is null);
 
--- Message / participant totals unchanged vs preflight snapshot
-select count(*) as message_count from public.messages;
-select count(*) as participant_count from public.conversation_participants;
+select count(*)::bigint as message_count from public.messages;
+select count(*)::bigint as participant_count from public.conversation_participants;
 ```
 
-Also verify via authenticated smoke tests (not SQL dumps):
-
-- contact count RPC returns aggregate counts only
-- unrelated user cannot probe contact graph / conversation membership
-- unauthorized table mutation privileges remain revoked
+Also smoke-test authenticated privacy: contact-count returns aggregates only; unrelated users cannot probe contact graph or conversation membership.
 
 ## Rollback / incident plan
 
-Because `20260728213100_enhance_private_conversations.sql` consolidates historical duplicate conversations, a simple down migration cannot reliably reconstruct the prior structure.
+Because consolidation rewrites historical conversation topology, **restore/PITR is the only realistic rollback** after a successful enhance migration.
 
-### Stop conditions before applying
+Stop before apply if: mapping unknown, backup/PITR unconfirmed, preflight incomplete, or partial objects appear.
 
-- Preview/Production project relationship still unknown
-- Backup / PITR not confirmed
-- Aggregate duplicate preflight not completed
-- Either migration already partially present / conflicting
+Abort during apply if: consolidation raises, unexpected name conflicts, or counts diverge.
 
-### Abort conditions during application
-
-- Migration raises the explicit duplicate-consolidation exception
-- Unexpected constraint/index/function name conflicts
-- Row counts diverge unexpectedly mid-run
-
-### If migration succeeds but smoke tests fail
-
-1. Pause contact/chat write traffic if needed (feature flags / maintenance window).
-2. Do **not** merge old application code that assumes pre-pair schema if the DB has already been transformed irreversibly.
-3. Restore from the confirmed backup/PITR recovery point if invariants are broken.
-4. Keep PR #34 Draft until a human owner confirms restore or forward-fix success.
-
-### Success confirmation before merge
-
-Requires explicit human confirmation of: backup restore point, migration history rows, invariant queries, and Preview/production smoke tests.
+If migration succeeds but smoke fails: pause contact/chat writes if needed; do not merge older app assumptions; restore from confirmed recovery point; keep PR Draft until human confirmation.
 
 ## Migrations to apply (only after approval)
 
