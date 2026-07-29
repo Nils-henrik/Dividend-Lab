@@ -29,7 +29,7 @@ import type {
   DivBrainConversationRow,
   DivBrainMessageRow,
 } from "./rows";
-import { createDivBrainServiceRoleClient } from "./service-role-client";
+import { createDivBrainServiceRolePersistencePort } from "./service-role-client";
 
 const ACTOR_A = "11111111-1111-4111-8111-111111111111";
 const ACTOR_B = "22222222-2222-4222-8222-222222222222";
@@ -599,14 +599,78 @@ describe("DivBrain conversation repository — listing", () => {
       assert.equal(badCursor.error.code, "invalid_request");
     }
 
-    const badSize = await repo.listConversations({
-      actorId: ACTOR_A,
-      pageSize: 999,
+    const wrongKind = encodeMessageCursor({
+      createdAt: iso(),
+      id: MSG_1,
     });
-    assert.equal(badSize.ok, false);
-    if (!badSize.ok) {
-      assert.equal(badSize.error.code, "invalid_request");
+    const wrongCursor = await repo.listConversations({
+      actorId: ACTOR_A,
+      cursor: wrongKind,
+    });
+    assert.equal(wrongCursor.ok, false);
+    if (!wrongCursor.ok) {
+      assert.equal(wrongCursor.error.code, "invalid_request");
     }
+
+    for (const pageSize of [0, -1, 51]) {
+      const badSize = await repo.listConversations({
+        actorId: ACTOR_A,
+        pageSize,
+      });
+      assert.equal(badSize.ok, false);
+      if (!badSize.ok) {
+        assert.equal(badSize.error.code, "invalid_request");
+      }
+    }
+  });
+
+  it("handles one result, exact page size, and Unicode titles", async () => {
+    const state: FakeState = {
+      conversations: [
+        conversationRow({
+          id: CONV_1,
+          user_id: ACTOR_A,
+          title: "Utdelning — Göteborgs åäö",
+          updated_at: iso(1000),
+        }),
+        conversationRow({
+          id: CONV_2,
+          user_id: ACTOR_A,
+          title: "Andra",
+          updated_at: iso(2000),
+        }),
+      ],
+      messages: [],
+      deletedMessageIds: [],
+    };
+    const repo = createDivBrainConversationRepository({
+      persistence: createFakePersistence(state),
+    });
+
+    const one = await repo.listConversations({
+      actorId: ACTOR_A,
+      archiveFilter: "all",
+      pageSize: 1,
+    });
+    assert.equal(one.ok, true);
+    if (!one.ok) return;
+    assert.equal(one.data.items.length, 1);
+    assert.equal(one.data.items[0]?.title, "Andra");
+    assert.ok(one.data.nextCursor);
+
+    const exact = await repo.listConversations({
+      actorId: ACTOR_A,
+      archiveFilter: "all",
+      pageSize: 2,
+    });
+    assert.equal(exact.ok, true);
+    if (!exact.ok) return;
+    assert.equal(exact.data.items.length, 2);
+    assert.equal(exact.data.nextCursor, null);
+    assert.equal(
+      exact.data.items.some((item) => item.title.includes("åäö")),
+      true,
+    );
   });
 });
 
@@ -1059,7 +1123,7 @@ describe("DivBrain conversation repository — mapping and security", () => {
     delete process.env.NEXT_PUBLIC_SUPABASE_URL;
     delete process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-    const result = createDivBrainServiceRoleClient();
+    const result = createDivBrainServiceRolePersistencePort();
     assert.equal(result.ok, false);
     if (!result.ok) {
       assert.equal(result.error.code, "internal_error");
@@ -1067,6 +1131,7 @@ describe("DivBrain conversation repository — mapping and security", () => {
       assert.equal(serialized.includes("SERVICE_ROLE"), false);
       assert.equal(serialized.includes("service_role"), false);
       assert.equal(serialized.includes("service-role"), false);
+      assert.equal("data" in result, false);
     }
 
     if (previousUrl === undefined) {
@@ -1079,6 +1144,40 @@ describe("DivBrain conversation repository — mapping and security", () => {
     } else {
       process.env.SUPABASE_SERVICE_ROLE_KEY = previousKey;
     }
+  });
+
+  it("rejects unvalidated arbitrary sources on message create", async () => {
+    const state: FakeState = {
+      conversations: [
+        conversationRow({ id: CONV_1, user_id: ACTOR_A, title: "A" }),
+      ],
+      messages: [],
+      deletedMessageIds: [],
+    };
+    const repo = createDivBrainConversationRepository({
+      persistence: createFakePersistence(state),
+    });
+
+    const result = await repo.createMessage({
+      actorId: ACTOR_A,
+      conversationId: CONV_1,
+      role: "assistant",
+      content: "Svar",
+      completionStatus: "completed",
+      sources: [{ evil: true, providerBlob: "secret" }],
+    });
+    assert.equal(result.ok, false);
+    if (!result.ok) {
+      assert.equal(result.error.code, "invalid_request");
+    }
+    assert.equal(state.messages.length, 0);
+  });
+
+  it("public repository index does not export a raw service-role client factory", async () => {
+    const exported = await import("./index");
+    assert.equal("createDivBrainServiceRoleClient" in exported, false);
+    assert.equal("createDivBrainServiceRolePersistencePort" in exported, true);
+    assert.equal("createSupabaseDivBrainPersistencePort" in exported, true);
   });
 
   it("cursor helpers round-trip without secrets", () => {

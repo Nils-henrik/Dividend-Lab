@@ -51,7 +51,8 @@ export type {
 
 export { createSupabaseDivBrainPersistencePort } from "./supabase-persistence";
 
-export {
-  createDivBrainServiceRoleClient,
-  type DivBrainServiceRoleClient,
-} from "./service-role-client";
+/**
+ * Privileged wiring returns PersistencePort only — never a raw admin client.
+ * Do not re-export any service-role SupabaseClient factory from this surface.
+ */
+export { createDivBrainServiceRolePersistencePort } from "./service-role-client";

@@ -12,6 +12,7 @@ import type {
 } from "../../types";
 import type { DivBrainGuardrailDecision } from "../../guardrails";
 import type { DivBrainErrorCode } from "../../errors";
+import type { DivBrainSource } from "../../sources";
 import type {
   DivBrainConversationRow,
   DivBrainMessageRow,
@@ -59,7 +60,8 @@ export type DivBrainMessageInsert = {
   content: string;
   completion_status: DivBrainCompletionStatus;
   safety_classification?: DivBrainGuardrailDecision | null;
-  sources?: unknown[];
+  /** Validated DivBrainSource array only — never arbitrary caller metadata. */
+  sources?: DivBrainSource[];
   error_code?: DivBrainErrorCode | null;
 };
 

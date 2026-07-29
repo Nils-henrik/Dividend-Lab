@@ -153,7 +153,7 @@ Server-only persistence under `server/repository/`:
 
 - `repository.ts` — actor-scoped CRUD: create/get/list/update/archive/restore/delete conversations; list/create messages
 - `persistence.ts` + `supabase-persistence.ts` — injectable port + Supabase adapter
-- `service-role-client.ts` — privileged client for Model A message writes (never browser-exposed)
+- `service-role-client.ts` — privileged **port** factory for Model A message writes (raw admin client never exported)
 - `mapping.ts` / `pagination.ts` / `rows.ts` — row↔domain mapping and deterministic cursors
 
 Canonical documentation: [`docs/divbrain/conversation-repository.md`](../../docs/divbrain/conversation-repository.md).

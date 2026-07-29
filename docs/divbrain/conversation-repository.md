@@ -64,12 +64,20 @@ RLS remains the database safety net for authenticated session clients. Repositor
 
 Message INSERT is denied to authenticated clients (Ticket 1A-6 Model A). Production wiring may use:
 
-- `createDivBrainServiceRoleClient()` — reads `NEXT_PUBLIC_SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`
-- `createSupabaseDivBrainPersistencePort(client)` — adapter around the port interface
+- `createDivBrainServiceRolePersistencePort()` — reads `NEXT_PUBLIC_SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` and returns **only** a `DivBrainPersistencePort`
+- `createSupabaseDivBrainPersistencePort(client)` — adapter for an already-constructed server client (tests / advanced wiring)
 
-The repository itself depends on `DivBrainPersistencePort` (dependency injection). Unit tests use an in-memory fake and never require live credentials.
+The raw service-role Supabase client is **not** exported from the repository public surface and must never be returned to application callers.
 
-**Known blueprint tension:** technical blueprint §7 says “never use service role in normal repository paths,” while Model A requires privileged message writes. This ticket follows the approved migration Model A and scopes every privileged query by actor id.
+The repository itself depends on `DivBrainPersistencePort` (dependency injection). Unit tests use an in-memory fake / recording mock and never require live credentials.
+
+**Service-role decision (authoritative reading):**
+
+- Blueprint/roadmap forbid service role in **user/browser chat paths** and forbid using it as an ownership shortcut (“Using service role for chat | Forbidden”; “No service role in user paths”).
+- Ticket 1A-6 Model A simultaneously denies authenticated message INSERT, so server-controlled writes require a privileged server mechanism.
+- This module resolves the tension as: tightly scoped **server-only** privileged persistence that never trusts browser ownership fields and always applies explicit `user_id` / ownership filters. It is not a browser-accessible or user-session chat path.
+
+**Known consistency note:** ownership verification then message insert is not one DB transaction. Cross-user insertion remains prevented because `user_id` is not allowlisted for update and inserts only target a conversation id already proven owned by the actor. Concurrent archive/delete can yield safe `invalid_request` / `persistence_failed` rather than data leaks.
 
 ## Ordering and pagination
 

@@ -27,6 +27,7 @@ import {
   divBrainFailureFromCode,
   divBrainSuccess,
 } from "../../results";
+import { parseDivBrainSources, type DivBrainSource } from "../../sources";
 import type {
   DivBrainCompletionStatus,
   DivBrainConversation,
@@ -114,7 +115,12 @@ export type CreateDivBrainMessageParams = {
   content: string;
   completionStatus: DivBrainCompletionStatus;
   safetyClassification?: DivBrainGuardrailDecision | null;
-  sources?: unknown[];
+  /**
+   * Optional persistence-only sources. Validated via `parseDivBrainSources`
+   * before insert. Omitted from the normal `DivBrainMessage` domain transcript
+   * model (design A: writable on create, not part of list/get domain shape).
+   */
+  sources?: unknown;
   errorCode?: DivBrainErrorCode | null;
 };
 
@@ -692,10 +698,13 @@ export function createDivBrainConversationRepository(options: {
         }
       }
 
+      let sourcesForInsert: DivBrainSource[] | undefined;
       if (params.sources !== undefined) {
-        if (!Array.isArray(params.sources)) {
-          return divBrainFailureFromCode("invalid_request");
+        const sourcesResult = parseDivBrainSources(params.sources);
+        if (!sourcesResult.ok) {
+          return sourcesResult;
         }
+        sourcesForInsert = sourcesResult.data;
       }
 
       if (params.errorCode !== undefined) {
@@ -732,7 +741,9 @@ export function createDivBrainConversationRepository(options: {
         ...(params.safetyClassification !== undefined
           ? { safety_classification: params.safetyClassification }
           : {}),
-        ...(params.sources !== undefined ? { sources: params.sources } : {}),
+        ...(sourcesForInsert !== undefined
+          ? { sources: sourcesForInsert }
+          : {}),
         ...(params.errorCode !== undefined
           ? { error_code: params.errorCode }
           : {}),

@@ -1,26 +1,33 @@
 /**
- * Privileged Supabase client for DivBrain server-controlled writes.
+ * Privileged DivBrain persistence wiring (Ticket 1A-7a).
  *
- * Required for Model A message INSERT (authenticated clients have SELECT only).
- * Must never be imported by client components or exposed through public env.
+ * Model A denies authenticated message INSERT. A service-role client is used
+ * only inside this module to build a PersistencePort. The raw Supabase client
+ * is never returned to callers and must never be imported by browser code.
  *
- * Actor identity is NOT taken from this client — callers must pass a trusted
- * server-derived actor id and the repository must scope every query by it.
+ * Actor identity is NOT derived from this client — repository callers must
+ * pass a trusted server-derived actor id; the port/repository must scope
+ * every query by that actor.
  */
 
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
 
 import type { DivBrainResult } from "../../results";
 import { divBrainFailureFromCode, divBrainSuccess } from "../../results";
-
-export type DivBrainServiceRoleClient = SupabaseClient;
+import type { DivBrainPersistencePort } from "./persistence";
+import { createSupabaseDivBrainPersistencePort } from "./supabase-persistence";
 
 /**
- * Create a service-role Supabase client for DivBrain persistence.
- * Reads `NEXT_PUBLIC_SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`.
- * Never logs or returns the key.
+ * Build a privileged persistence port for server-controlled DivBrain writes.
+ *
+ * Reads:
+ * - `NEXT_PUBLIC_SUPABASE_URL` (existing public project URL convention)
+ * - `SUPABASE_SERVICE_ROLE_KEY` (private; never NEXT_PUBLIC_*)
+ *
+ * On success returns only `DivBrainPersistencePort` — never the admin client
+ * or credential. Missing configuration → safe `internal_error`.
  */
-export function createDivBrainServiceRoleClient(): DivBrainResult<DivBrainServiceRoleClient> {
+export function createDivBrainServiceRolePersistencePort(): DivBrainResult<DivBrainPersistencePort> {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -41,5 +48,5 @@ export function createDivBrainServiceRoleClient(): DivBrainResult<DivBrainServic
     },
   });
 
-  return divBrainSuccess(client);
+  return divBrainSuccess(createSupabaseDivBrainPersistencePort(client));
 }
