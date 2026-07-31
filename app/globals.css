@@ -98,12 +98,6 @@ body {
     box-shadow: var(--divlab-card-shadow);
   }
 
-  .divlab-elevated-panel {
-    @apply rounded-2xl border bg-divlab-elevated;
-    border-color: var(--divlab-border-subtle);
-    box-shadow: var(--divlab-card-highlight);
-  }
-
   .divlab-surface-panel {
     @apply rounded-lg border bg-divlab-surface;
     border-color: var(--divlab-border-subtle);

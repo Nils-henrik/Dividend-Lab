@@ -22,7 +22,6 @@ function collectArticleText(article: LearningArticle) {
     article.title,
     article.description,
     introText,
-    ...article.takeaways.map(plainText),
   ];
 
   for (const section of article.sections) {

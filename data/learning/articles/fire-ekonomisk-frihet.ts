@@ -29,15 +29,6 @@ const article: LearningArticle = {
     "Namnet kan få det att låta som att målet alltid är att lämna arbetslivet så snabbt som möjligt. För många som följer principerna är pensionen däremot inte det viktigaste. Det verkliga målet är att bygga tillräckligt stort ekonomiskt handlingsutrymme för att få mer kontroll över sin tid.",
     "FIRE är därför inte bara en fråga om att bli rik. Det är en metod för att minska avståndet mellan det liv du lever och det liv du faktiskt vill kunna välja.",
   ],
-  takeaways: [
-    "Ekonomisk frihet handlar om kontroll över tiden – inte bara om att sluta arbeta tidigt.",
-    "Kapitalbehovet styrs framför allt av hur mycket livet kostar att leva.",
-    "En högre sparkvot både bygger kapital snabbare och sänker det framtida kapitalbehovet.",
-    "4-procentsregeln är en pedagogisk startpunkt, inte ett löfte – särskilt vid långa uttagsperioder.",
-    "I Sverige behöver planen ofta delas upp mellan åren före och efter pension.",
-    "Skatt, avgifter och ordningsföljdsrisk påverkar mer än många kalkyler visar.",
-    "Lean FIRE, Coast FIRE, Barista FIRE och Slow FI kan vara mer realistiska vägar än att aldrig arbeta igen.",
-  ],
   sections: [
     {
       heading: "Vad innebär ekonomisk frihet?",

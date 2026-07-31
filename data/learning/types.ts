@@ -69,7 +69,6 @@ export type LearningArticle = {
   }[];
   showDefaultDisclaimer?: boolean;
   sections: LearningArticleSection[];
-  takeaways: string[];
 };
 
 export const learningDisclaimer =
