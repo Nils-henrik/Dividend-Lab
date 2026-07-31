@@ -21,4 +21,6 @@ Composition notes:
 
 Usage: Logos are used only as restrained company identifiers in an editorial news cover.
 Trademarks remain with their respective owners. DivLab does not claim ownership of these marks.
-Thumbnail variant omits the embedded article headline to avoid duplicate text in the news list.
+Thumbnail variant is a 16:9 card crop (1600×900) without the embedded article
+headline, with Amazon/Micron logos inset into a mobile-safe mid-lower band so
+both marks remain visible under the featured aspect-video object-cover crop.
