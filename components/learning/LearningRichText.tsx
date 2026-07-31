@@ -13,14 +13,13 @@ const linkClassName =
 export function LearningRichText({ text }: { text: string }) {
   const nodes: ReactNode[] = [];
   let lastIndex = 0;
-  let match: RegExpExecArray | null;
   let key = 0;
 
-  LINK_PATTERN.lastIndex = 0;
+  for (const match of text.matchAll(LINK_PATTERN)) {
+    const index = match.index ?? 0;
 
-  while ((match = LINK_PATTERN.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      nodes.push(text.slice(lastIndex, match.index));
+    if (index > lastIndex) {
+      nodes.push(text.slice(lastIndex, index));
     }
 
     nodes.push(
@@ -29,7 +28,7 @@ export function LearningRichText({ text }: { text: string }) {
       </Link>,
     );
     key += 1;
-    lastIndex = match.index + match[0].length;
+    lastIndex = index + match[0].length;
   }
 
   if (lastIndex < text.length) {
