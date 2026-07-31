@@ -25,15 +25,6 @@ const article: LearningArticle = {
     "En procentbudget ger varje del av lönen ett tydligt uppdrag. I stället för att betala månadens utgifter och sedan försöka spara det som eventuellt finns kvar fördelar du pengarna direkt mellan boende, vardagskostnader, buffert, resor, långsiktigt sparande och nöjen.",
     "Det viktiga är inte att följa procentsatserna exakt. Modellen ska hjälpa dig att förstå vart pengarna går och skapa en ekonomi som både fungerar i dag och bygger större frihet inför framtiden.",
   ],
-  takeaways: [
-    "Utgå från lönen du får ut efter skatt när du gör månadsbudgeten.",
-    "En sparkvot på 10 procent är en bra början.",
-    "Mellan 15 och 20 procent i långsiktigt sparande ger snabbare ekonomisk utveckling.",
-    "Bufferten bör prioriteras innan hela sparandet placeras långsiktigt.",
-    "Resekonto och andra målkonton är planerad konsumtion, inte långsiktigt förmögenhetssparande.",
-    "Privat pensionssparande beror bland annat på om du har tjänstepension.",
-    "Procentsatserna måste anpassas efter boende, familj, skulder, inkomst och ekonomiska mål.",
-  ],
   sections: [
     {
       heading: "Vad är sparkvot?",

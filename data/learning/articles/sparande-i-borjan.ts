@@ -114,13 +114,6 @@ const article: LearningArticle = {
       ],
     },
   ],
-  takeaways: [
-    "Insättningar påverkar kapitaltillväxten mer än avkastning när portföljen är liten.",
-    "Automatiskt månadssparande minskar risken att hoppa över insättningar.",
-    "Jämförelser med stora portföljer skapar onödig stress tidigt.",
-    "Avkastning blir viktigare när kapitalet växt — men grunden läggs i början.",
-    "Tålamod och enkelhet slår komplexitet i de första åren.",
-  ],
 };
 
 export default article;

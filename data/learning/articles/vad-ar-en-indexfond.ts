@@ -21,13 +21,6 @@ const article: LearningArticle = {
     "En indexfond är en fond som försöker följa utvecklingen i ett bestämt marknadsindex. I stället för att en förvaltare väljer ut de aktier som bedöms ha bäst framtidsutsikter följer fonden i huvudsak reglerna för sitt index.",
     "Det kan vara ett enkelt sätt att få exponering mot många bolag, men det betyder inte att alla indexfonder är breda, billiga eller har låg risk. För att förstå en indexfond behöver du därför veta vilket index den följer, hur innehaven är fördelade, vad fonden kostar och hur länge pengarna kan vara placerade.",
   ],
-  takeaways: [
-    "En indexfond försöker följa utvecklingen i ett bestämt index.",
-    "När du investerar köper du fondandelar och får indirekt exponering mot fondens värdepapper.",
-    "Indexfonder har ofta lägre avgifter än aktivt förvaltade fonder, men kostnaderna varierar.",
-    "Fondens risk beror på vilket index och vilka marknader den följer.",
-    "Riskspridning kan minska beroendet av enskilda bolag men skyddar inte mot en bred marknadsnedgång.",
-  ],
   sources: [
     {
       href: "https://www.fi.se/sv/for-konsumenter/spara/fakta-om-fonder/",

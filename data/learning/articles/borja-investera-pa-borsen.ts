@@ -23,14 +23,6 @@ const article: LearningArticle = {
     "Du behöver inte kunna analysera årsredovisningar, följa börsen varje dag eller börja med ett stort kapital. Däremot behöver du förstå vad du investerar i, varför du gör det och vilka risker du tar.",
     "Den här guiden går igenom hela vägen från privatekonomisk grund till ditt första köp.",
   ],
-  takeaways: [
-    "Bygg en buffert innan du börjar investera.",
-    "Bestäm vad pengarna ska användas till och när de kan behövas.",
-    "Förstå skillnaden mellan sparande och investeringar.",
-    "Sprid riskerna mellan flera innehav eller genom breda fonder.",
-    "Håll avgifterna under kontroll.",
-    "Investera bara pengar som du har råd att låta vara placerade.",
-  ],
   sources: [
     {
       href: "https://www.skatteverket.se/privat/skatter/vardepapper/investeringssparkontoisk",

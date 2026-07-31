@@ -21,23 +21,6 @@ function getIntroParagraphs(intro: string | string[]) {
   return Array.isArray(intro) ? intro : [intro];
 }
 
-function TakeawayCheckIcon() {
-  return (
-    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-divlab-blue/30 bg-divlab-blue/10 text-divlab-blue">
-      <svg
-        aria-hidden="true"
-        viewBox="0 0 16 16"
-        className="h-3 w-3"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-      >
-        <path d="M3.5 8.5 6.5 11.5 12.5 4.5" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    </span>
-  );
-}
-
 function MetadataIcon({ children }: { children: ReactNode }) {
   return (
     <span className="text-divlab-text-subtle" aria-hidden="true">
@@ -70,33 +53,6 @@ function LearningArticleBreadcrumb({ category }: { category?: string }) {
         )}
       </ol>
     </nav>
-  );
-}
-
-function LearningArticleKeyTakeaways({ items }: { items: string[] }) {
-  return (
-    <section
-      aria-labelledby="learning-key-takeaways"
-      className="divlab-elevated-panel p-6 md:p-8"
-    >
-      <h2
-        id="learning-key-takeaways"
-        className="text-xl font-semibold text-divlab-text"
-      >
-        Det viktigaste i korthet
-      </h2>
-      <ul className="mt-5 grid gap-x-8 gap-y-4 sm:grid-cols-2">
-        {items.map((takeaway) => (
-          <li
-            key={takeaway}
-            className="flex gap-3 text-base leading-7 text-divlab-text-secondary"
-          >
-            <TakeawayCheckIcon />
-            <span>{takeaway}</span>
-          </li>
-        ))}
-      </ul>
-    </section>
   );
 }
 
@@ -200,10 +156,6 @@ export default function LearningArticleView({ article }: Props) {
           )}
         </div>
       </header>
-
-      {article.takeaways.length > 0 && (
-        <LearningArticleKeyTakeaways items={article.takeaways} />
-      )}
 
       <div className="grid gap-10 xl:grid-cols-[minmax(0,48rem)_280px] xl:items-start xl:justify-center">
         <div className="min-w-0 max-w-3xl space-y-10 xl:max-w-none">
