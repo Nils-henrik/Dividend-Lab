@@ -1,0 +1,24 @@
+Title: Amazon rusar – Micron tvärvänder (DivLab Börsnyheter cover)
+Local files:
+- public/news-demo/amazon-rusar-micron-tvavander-ai.png
+- public/news-demo/amazon-rusar-micron-tvavander-ai-thumbnail.png
+Created: 2026-07-31
+Creator: DivLab (editorial composite)
+
+Composition notes:
+- Background: original AI-generated editorial illustration assembled for DivLab.
+- Typography: Inter (bold/semibold), DivLab editorial cover treatment.
+- Amazon logo: Wikimedia Commons File:Amazon_logo.svg
+  URL: https://commons.wikimedia.org/wiki/File:Amazon_logo.svg
+  Licence stated on Commons: Public domain (text logo); trademark remains with Amazon.com, Inc.
+  Also mirrored locally at public/company-logos/amazon.svg (see public/company-logos/SOURCES.md).
+- Micron logo: Wikimedia Commons File:Micron Technology logo 2024.svg
+  URL: https://commons.wikimedia.org/wiki/File:Micron_Technology_logo_2024.svg
+  Source organization asset referenced on Commons: Micron Technology, Inc. brand materials
+  Licence stated on Commons: Public domain (text logo); trademark remains with Micron Technology, Inc.
+  Supporting raster from Micron press image gallery also used for rendering checks:
+  https://commons.wikimedia.org/wiki/File:Micron_Logo_-_Black_-_RGB.ai.web.2000.2000.png
+
+Usage: Logos are used only as restrained company identifiers in an editorial news cover.
+Trademarks remain with their respective owners. DivLab does not claim ownership of these marks.
+Thumbnail variant omits the embedded article headline to avoid duplicate text in the news list.
