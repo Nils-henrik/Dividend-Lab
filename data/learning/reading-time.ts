@@ -1,3 +1,4 @@
+import { stripLearningRichText } from "@/lib/learning/rich-text";
 import type { LearningArticle } from "./types";
 
 const WORDS_PER_MINUTE = 200;
@@ -9,13 +10,19 @@ function countWords(text: string) {
     .filter(Boolean).length;
 }
 
+function plainText(text: string) {
+  return stripLearningRichText(text);
+}
+
 function collectArticleText(article: LearningArticle) {
-  const introText = Array.isArray(article.intro) ? article.intro.join(" ") : article.intro;
+  const introText = Array.isArray(article.intro)
+    ? article.intro.map(plainText).join(" ")
+    : plainText(article.intro);
   const chunks: string[] = [
     article.title,
     article.description,
     introText,
-    ...article.takeaways,
+    ...article.takeaways.map(plainText),
   ];
 
   for (const section of article.sections) {
@@ -24,23 +31,23 @@ function collectArticleText(article: LearningArticle) {
     }
 
     if (section.intro) {
-      chunks.push(...section.intro);
+      chunks.push(...section.intro.map(plainText));
     }
 
     if (section.paragraphs) {
-      chunks.push(...section.paragraphs);
+      chunks.push(...section.paragraphs.map(plainText));
     }
 
     if (section.bullets) {
-      chunks.push(...section.bullets);
+      chunks.push(...section.bullets.map(plainText));
     }
 
     if (section.numberedItems) {
-      chunks.push(...section.numberedItems);
+      chunks.push(...section.numberedItems.map(plainText));
     }
 
     if (section.callout) {
-      chunks.push(section.callout);
+      chunks.push(plainText(section.callout));
     }
 
     if (section.calculation) {
@@ -60,23 +67,23 @@ function collectArticleText(article: LearningArticle) {
     }
 
     if (section.paragraphsAfterLists) {
-      chunks.push(...section.paragraphsAfterLists);
+      chunks.push(...section.paragraphsAfterLists.map(plainText));
     }
 
     if (section.subsections) {
       for (const subsection of section.subsections) {
         chunks.push(subsection.subheading);
         if (subsection.paragraphs) {
-          chunks.push(...subsection.paragraphs);
+          chunks.push(...subsection.paragraphs.map(plainText));
         }
         if (subsection.bullets) {
-          chunks.push(...subsection.bullets);
+          chunks.push(...subsection.bullets.map(plainText));
         }
         if (subsection.numberedItems) {
-          chunks.push(...subsection.numberedItems);
+          chunks.push(...subsection.numberedItems.map(plainText));
         }
         if (subsection.paragraphsAfterLists) {
-          chunks.push(...subsection.paragraphsAfterLists);
+          chunks.push(...subsection.paragraphsAfterLists.map(plainText));
         }
       }
     }
