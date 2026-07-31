@@ -2,6 +2,7 @@ import borjaInvestera from "./articles/borja-investera-pa-borsen";
 import vadArEnAktie from "./articles/vad-ar-en-aktie";
 import vadArEnIndexfond from "./articles/vad-ar-en-indexfond";
 import direktavkastning from "./articles/direktavkastning-och-utdelningssakerhet";
+import fireEkonomiskFrihet from "./articles/fire-ekonomisk-frihet";
 import sparande from "./articles/sparande-i-borjan";
 import sparkvot from "./articles/sparkvot-budgetera-lonen-i-procent";
 import tidTillFrihet from "./articles/tid-till-ekonomisk-frihet";
@@ -22,6 +23,7 @@ export {
 } from "./reading-time";
 
 const rawArticles: LearningArticle[] = [
+  fireEkonomiskFrihet,
   sparkvot,
   vadArEnAktie,
   borjaInvestera,
