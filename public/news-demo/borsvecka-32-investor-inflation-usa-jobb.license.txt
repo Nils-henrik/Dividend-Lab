@@ -1,0 +1,14 @@
+Börsvecka 32: Investor vid rekordnivå (DivLab Börsnyheter cover)
+Local file:
+- public/news-demo/borsvecka-32-investor-inflation-usa-jobb.webp
+Created: 2026-08-02
+Creator: DivLab (editorial illustration)
+
+Composition notes:
+- Original AI-generated photorealistic editorial photograph assembled for DivLab.
+- Scene: empty Stockholm financial office at dawn before market open,
+  ultrawide monitor with abstract rising chart, City Hall skyline through glass.
+- No company logos, no embedded headline text, no ticker symbols.
+- Optimized WebP 1600×900 for article page and list-card object-cover crops.
+
+Usage: Editorial news cover for DivLab Börsnyheter. Illustration: DivLab.

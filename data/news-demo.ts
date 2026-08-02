@@ -1,6 +1,7 @@
 import type { NewsArticle } from "@/types/news";
 import { AKTIEREKAR_INFOR_NASTA_VECKA_MICROSOFT_META_AMAZON_SINCH_ARTICLE } from "@/data/news-articles/aktierekar-infor-nasta-vecka-microsoft-meta-amazon-sinch";
 import { AMAZON_RUSAR_MICRON_TVAVANDER_AI_BOOMEN_WALL_STREET_ARTICLE } from "@/data/news-articles/amazon-rusar-micron-tvavander-ai-boomen-wall-street";
+import { BORSVECKA_32_INVESTOR_INFLATION_USA_JOBB_ARTICLE } from "@/data/news-articles/borsvecka-32-investor-inflation-usa-jobb";
 import { BORSVECKAN_I_KORTHET_AI_FROSSA_OLJERUSNING_RANTEHOT_ARTICLE } from "@/data/news-articles/borsveckan-i-korthet-ai-frossa-oljerusning-rantehot";
 import { IRAN_OLJEPRIS_HORMUZ_BORSEN_ARTICLE } from "@/data/news-articles/iran-oljepris-hormuz-borsen";
 import { NOKIA_OVERRASKAR_AI_FORSALJNINGEN_FORDUBBLADES_ARTICLE } from "@/data/news-articles/nokia-overraskar-ai-forsaljningen-fordubblades";
@@ -14,6 +15,7 @@ import { USA_BORSEN_FALLER_ALPHABET_TESLA_OLJA_ARTICLE } from "@/data/news-artic
  * Not live or verified financial news — replace via a provider adapter later.
  */
 export const DEMO_NEWS_ARTICLES: NewsArticle[] = [
+  BORSVECKA_32_INVESTOR_INFLATION_USA_JOBB_ARTICLE,
   AMAZON_RUSAR_MICRON_TVAVANDER_AI_BOOMEN_WALL_STREET_ARTICLE,
   BORSVECKAN_I_KORTHET_AI_FROSSA_OLJERUSNING_RANTEHOT_ARTICLE,
   UKRAINA_WILDBERRIES_RYSSLAND_BENSIN_INFLATION_ARTICLE,
