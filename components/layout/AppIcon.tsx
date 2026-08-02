@@ -3,6 +3,7 @@ export type AppIconName =
   | "bell"
   | "brain"
   | "calendar"
+  | "contacts"
   | "dashboard"
   | "forum"
   | "goals"
@@ -27,6 +28,8 @@ const icons: Record<AppIconName, string> = {
     "M8 6a3 3 0 0 1 5-2 3 3 0 0 1 5 2 3 3 0 0 1 1 5 3 3 0 0 1-1 5 3 3 0 0 1-5 2 3 3 0 0 1-5-2 3 3 0 0 1-1-5 3 3 0 0 1 1-5Zm4-2v16M8 10h8M8 14h8",
   calendar:
     "M7 3v4M17 3v4M4 8h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Zm3 7h3M13 12h3M8 16h3",
+  contacts:
+    "M16 11a4 4 0 1 0-4-4 4 4 0 0 0 4 4ZM4 20a6 6 0 0 1 12 0M19 8v6M22 11h-6",
   dashboard:
     "M4 13h6V4H4v9Zm10 7h6V4h-6v16ZM4 20h6v-5H4v5Z",
   forum:

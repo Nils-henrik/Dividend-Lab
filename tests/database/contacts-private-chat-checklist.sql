@@ -1,0 +1,6 @@
+-- Executable database checklist companion.
+-- Prefer the automated suite:
+--   npm run test:db
+-- which exercises authenticated JWT contexts against local Supabase.
+--
+-- This SQL file remains as a human-readable requirement map for the same rules.

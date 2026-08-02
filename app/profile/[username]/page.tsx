@@ -5,6 +5,11 @@ import {
   getAuthenticatedUser,
   requireAuthenticatedUserWithProfile,
 } from "@/lib/auth/session";
+import {
+  getAcceptedContactCount,
+  getProfileContactState,
+} from "@/lib/contacts/contacts";
+import type { ProfileContactState } from "@/lib/contacts/types";
 import { getRecentForumActivityByAuthorId } from "@/lib/forum/queries";
 import { getForumAuthorStats } from "@/lib/forum/forum-status.server";
 import { getAvatarPublicUrl } from "@/lib/profiles/identity";
@@ -65,6 +70,25 @@ export default async function PublicProfilePage({ params }: Props) {
     getStaffRolesForUser(profile.id),
   ]);
 
+  let contactCount = 0;
+  let contactState: ProfileContactState =
+    currentUser?.id === profile.id
+      ? { kind: "self" }
+      : currentUser
+        ? { kind: "none" }
+        : { kind: "signed_out" };
+
+  try {
+    const [nextContactCount, nextContactState] = await Promise.all([
+      getAcceptedContactCount(profile.id),
+      getProfileContactState(currentUser?.id ?? null, profile.id),
+    ]);
+    contactCount = nextContactCount;
+    contactState = nextContactState;
+  } catch {
+    // Contacts foundation may be unavailable before migration; keep profile usable.
+  }
+
   return await renderWithAppShell(
     <PublicProfileView
       profile={profile}
@@ -74,6 +98,8 @@ export default async function PublicProfilePage({ params }: Props) {
       staffRoles={staffRoles}
       isSelf={currentUser?.id === profile.id}
       isAuthenticated={Boolean(currentUser)}
+      contactCount={contactCount}
+      contactState={contactState}
     />,
   );
 }

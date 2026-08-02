@@ -1,11 +1,15 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import AppShell from "@/components/layout/AppShell";
 import NewConversationForm from "@/components/messages/NewConversationForm";
 import { requireAuthenticatedUserWithProfile } from "@/lib/auth/session";
 import {
+  areAcceptedContacts,
+  findConversationIdBetweenUsers,
   getMessageParticipantByUserId,
   getMessageParticipantByUsername,
 } from "@/lib/messages/messages";
+import { createClient } from "@/lib/supabase/server";
 
 type Props = {
   searchParams: Promise<{
@@ -24,6 +28,37 @@ export default async function NewMessagePage({ searchParams }: Props) {
       : null;
   const initialUsername = username?.trim().replace(/^@/, "").toLowerCase() ?? "";
   const isSelfTarget = targetParticipant?.id === user.id;
+  let isMessageRequest = false;
+
+  if (targetParticipant && !isSelfTarget) {
+    const existingId = await findConversationIdBetweenUsers(
+      user.id,
+      targetParticipant.id,
+    );
+
+    if (existingId) {
+      redirect(`/messages/${existingId}`);
+    }
+
+    const areContacts = await areAcceptedContacts(user.id, targetParticipant.id);
+    isMessageRequest = !areContacts;
+
+    if (areContacts) {
+      const supabase = await createClient();
+      const { data: conversationId, error } = await supabase.rpc(
+        "open_or_create_private_conversation",
+        {
+          p_target_user_id: targetParticipant.id,
+          p_initial_body: null,
+          p_subject: null,
+        },
+      );
+
+      if (!error && conversationId) {
+        redirect(`/messages/${conversationId}`);
+      }
+    }
+  }
 
   return (
     <AppShell user={user} identity={identity}>
@@ -32,7 +67,7 @@ export default async function NewMessagePage({ searchParams }: Props) {
           <div>
             <p className="mb-3 divlab-section-label">Meddelanden</p>
             <h2 className="text-4xl font-semibold tracking-[-0.04em] text-divlab-text">
-              Ny konversation
+              {isMessageRequest ? "Meddelandeförfrågan" : "Ny konversation"}
             </h2>
             <p className="mt-4 max-w-2xl text-base leading-7 text-divlab-text-secondary">
               Skriv ett kort, tydligt meddelande till en annan medlem. E-post
@@ -66,6 +101,7 @@ export default async function NewMessagePage({ searchParams }: Props) {
             <NewConversationForm
               targetParticipant={targetParticipant}
               initialUsername={initialUsername}
+              isMessageRequest={isMessageRequest}
             />
           )}
         </section>

@@ -1,7 +1,7 @@
-import Link from "next/link";
 import ForumStatusBadge from "@/components/profile/ForumStatusBadge";
 import ForumStatusSection from "@/components/profile/ForumStatusSection";
 import ProfileAvatar from "@/components/account/ProfileAvatar";
+import ProfileContactActions from "@/components/contacts/ProfileContactActions";
 import StaffRoleBadges from "@/components/profile/StaffRoleBadges";
 import {
   formatForumMemberSince,
@@ -9,12 +9,14 @@ import {
   getForumExcerpt,
 } from "@/lib/forum/format";
 import { DIVLAB_MEMBER_LABEL } from "@/lib/site/brand";
+import type { ProfileContactState } from "@/lib/contacts/types";
 import type {
   ForumAuthorActivityItem,
   ForumAuthorStats,
 } from "@/lib/forum/types";
 import type { StaffRole } from "@/lib/profiles/staff-roles";
 import type { UserProfile } from "@/lib/profiles/types";
+import Link from "next/link";
 
 type Props = {
   profile: UserProfile;
@@ -24,6 +26,8 @@ type Props = {
   staffRoles: StaffRole[];
   isSelf: boolean;
   isAuthenticated: boolean;
+  contactCount: number;
+  contactState: ProfileContactState;
 };
 
 function getInitials(value: string) {
@@ -60,6 +64,8 @@ export default function PublicProfileView({
   staffRoles,
   isSelf,
   isAuthenticated,
+  contactCount,
+  contactState,
 }: Props) {
   const displayName =
     profile.displayName?.trim() || profile.username || DIVLAB_MEMBER_LABEL;
@@ -67,8 +73,7 @@ export default function PublicProfileView({
   const memberLabel = formatForumMemberSince(profile.createdAt);
   const messageHref = normalizedUsername
     ? `/messages/new?username=${encodeURIComponent(normalizedUsername)}`
-    : "/messages/new";
-  const loginHref = `/login?redirect=${encodeURIComponent(messageHref)}`;
+    : `/messages/new?userId=${encodeURIComponent(profile.id)}`;
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
@@ -103,20 +108,14 @@ export default function PublicProfileView({
             </div>
           </div>
 
-          <div className="flex w-full flex-col gap-3 sm:w-auto lg:items-end">
-            {isSelf ? (
-              <Link href="/account/edit" className="divlab-btn-primary w-full sm:w-auto">
-                Redigera profil
-              </Link>
-            ) : (
-              <Link
-                href={isAuthenticated ? messageHref : loginHref}
-                className="divlab-btn-primary w-full sm:w-auto"
-              >
-                Skicka meddelande
-              </Link>
-            )}
-          </div>
+          <ProfileContactActions
+            profileUserId={profile.id}
+            profileUsername={normalizedUsername || null}
+            contactCount={contactCount}
+            contactState={isSelf ? { kind: "self" } : contactState}
+            isAuthenticated={isAuthenticated}
+            messageHref={messageHref}
+          />
         </div>
       </section>
 
