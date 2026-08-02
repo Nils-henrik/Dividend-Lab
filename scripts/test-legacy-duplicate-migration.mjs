@@ -16,6 +16,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
+import os from "node:os";
 import { randomUUID } from "node:crypto";
 
 const execFileAsync = promisify(execFile);
@@ -23,20 +24,22 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const MIGRATIONS_DIR = path.join(ROOT, "supabase/migrations");
 const ENHANCE_NAME = "20260728213100_enhance_private_conversations.sql";
 const ENHANCE_PATH = path.join(MIGRATIONS_DIR, ENHANCE_NAME);
-const HOLD_PATH = path.join("/tmp", ENHANCE_NAME);
+const HOLD_PATH = path.join(os.tmpdir(), ENHANCE_NAME);
 
 async function run(command, args, options = {}) {
-  const { stdout, stderr } = await execFileAsync(command, args, {
+  // Windows: npx is a .cmd shim; execFile needs npx.cmd + shell.
+  const winNpx = process.platform === "win32" && command === "npx";
+  const { stdout, stderr } = await execFileAsync(winNpx ? "npx.cmd" : command, args, {
     cwd: ROOT,
     maxBuffer: 20 * 1024 * 1024,
+    shell: winNpx,
     ...options,
   });
   return { stdout: stdout?.toString() ?? "", stderr: stderr?.toString() ?? "" };
 }
 
 async function execSql(query) {
-  const { stdout } = await run("sudo", [
-    "docker",
+  const { stdout } = await run("docker", [
     "exec",
     "-i",
     "supabase_db_workspace",

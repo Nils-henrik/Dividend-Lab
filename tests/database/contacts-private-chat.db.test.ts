@@ -86,9 +86,8 @@ async function execSql(query: string): Promise<string> {
   const { promisify } = await import("node:util");
   const execFileAsync = promisify(execFile);
   const { stdout } = await execFileAsync(
-    "sudo",
+    "docker",
     [
-      "docker",
       "exec",
       "-i",
       "supabase_db_workspace",
