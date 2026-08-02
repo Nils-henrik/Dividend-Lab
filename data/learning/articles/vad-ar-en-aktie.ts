@@ -22,14 +22,6 @@ const article: LearningArticle = {
     "Det betyder däremot inte att avkastningen är säker. En aktie kan både stiga och falla i värde, utdelningen kan sänkas eller utebli och ett företag som misslyckas kan i värsta fall göra att aktien blir värdelös.",
     "I den här guiden går vi igenom vad en aktie representerar, varför företag ger ut aktier, hur handeln fungerar och vilka rättigheter, möjligheter och risker som följer med aktieägandet.",
   ],
-  takeaways: [
-    "En aktie är en ägarandel i ett aktiebolag.",
-    "Företag kan ge ut aktier för att få in kapital.",
-    "Aktiekursen påverkas av utbud, efterfrågan, bolagets utveckling och marknadens förväntningar.",
-    "Avkastning kan komma från kursuppgång och eventuell utdelning.",
-    "Aktier innebär alltid risk och värdet kan både stiga och falla.",
-    "Riskspridning minskar beroendet av hur ett enskilt företag utvecklas.",
-  ],
   sources: [
     {
       href: "https://www.fi.se/sv/for-konsumenter/spara/investera-i-aktier/",

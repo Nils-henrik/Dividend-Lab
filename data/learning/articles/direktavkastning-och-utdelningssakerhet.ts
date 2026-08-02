@@ -116,13 +116,6 @@ const article: LearningArticle = {
       ],
     },
   ],
-  takeaways: [
-    "Direktavkastning är enkelt att räkna ut men säger lite om framtida utdelningssäkerhet.",
-    "Hög avkastning kan spegla osäkerhet lika väl som kvalitet.",
-    "Utdelningstillväxt kan över tid ge mer planerbar inkomst än en hög men stillastående nivå.",
-    "Diversifiering minskar beroendet av enskilda utdelningsbeslut.",
-    "Förstå varför avkastningen ser ut som den gör — inte bara hur hög den är.",
-  ],
 };
 
 export default article;

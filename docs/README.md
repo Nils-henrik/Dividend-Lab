@@ -55,6 +55,8 @@ docs/
     product-blueprint.md
     technical-blueprint.md
     implementation-roadmap.md
+    context-assembly.md
+    conversation-repository.md
 ```
 
 ---

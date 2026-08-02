@@ -118,13 +118,6 @@ const article: LearningArticle = {
       ],
     },
   ],
-  takeaways: [
-    "Regelbundet sparande påverkar ofta resans längd mer än små avkastningsskillnader i början.",
-    "Direktavkastning avgör kapitalbehovet — men högre siffra innebär inte automatiskt lägre risk.",
-    "Realistiska, konservativa antaganden ger en mer trovärdig frihetsplan.",
-    "Diversifiering och utdelningssäkerhet blir viktigare när portföljen växer.",
-    "Tålamod och konsekvent uppföljning är centrala — frihet byggs sällan snabbt.",
-  ],
 };
 
 export default article;

@@ -1,3 +1,5 @@
+import { LearningRichText } from "@/components/learning/LearningRichText";
+
 type ListProps = {
   items: string[];
   ordered?: boolean;
@@ -15,7 +17,9 @@ function LearningArticleList({ items, ordered = false }: ListProps) {
       }
     >
       {items.map((item) => (
-        <li key={item}>{item}</li>
+        <li key={item}>
+          <LearningRichText text={item} />
+        </li>
       ))}
     </ListTag>
   );
@@ -40,13 +44,13 @@ export function LearningArticleSectionContent({
     <>
       {intro?.map((paragraph) => (
         <p key={paragraph} className="text-base leading-7 text-divlab-text-secondary">
-          {paragraph}
+          <LearningRichText text={paragraph} />
         </p>
       ))}
 
       {paragraphs?.map((paragraph) => (
         <p key={paragraph} className="text-base leading-7 text-divlab-text-secondary">
-          {paragraph}
+          <LearningRichText text={paragraph} />
         </p>
       ))}
 
@@ -58,7 +62,7 @@ export function LearningArticleSectionContent({
 
       {paragraphsAfterLists?.map((paragraph) => (
         <p key={paragraph} className="text-base leading-7 text-divlab-text-secondary">
-          {paragraph}
+          <LearningRichText text={paragraph} />
         </p>
       ))}
     </>
