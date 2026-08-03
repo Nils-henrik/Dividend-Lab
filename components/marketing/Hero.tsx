@@ -5,16 +5,16 @@ import ProductPreviewPanelFallback from "./ProductPreviewPanelFallback";
 
 const valuePoints = [
   {
-    title: "Marknaden i fokus",
-    description: "Data, nyheter och överblick.",
+    title: "Börsen i fokus",
+    description: "Nyheter och aktuella marknadshändelser.",
   },
   {
-    title: "Din portfölj",
-    description: "Verktyg som hjälper dig förstå innehaven.",
+    title: "Lär dig mer",
+    description: "Utbildning som gör ekonomi enklare att förstå.",
   },
   {
     title: "Community",
-    description: "Diskussioner med andra marknadsintresserade.",
+    description: "Diskussioner med andra sparintresserade.",
   },
 ] as const;
 
@@ -33,8 +33,8 @@ export default function Hero() {
           </h1>
 
           <p className="mt-6 max-w-xl text-lg leading-8 text-divlab-text-secondary">
-            Samla marknadsdata, portföljverktyg, börsnyheter, analyser och
-            diskussioner på ett ställe.
+            Börsnyheter, utbildning, smarta verktyg och diskussioner – samlat
+            på ett ställe.
           </p>
 
           <div className="mt-8 flex w-full max-w-sm flex-col items-stretch gap-3 sm:max-w-none sm:flex-row sm:items-center">
