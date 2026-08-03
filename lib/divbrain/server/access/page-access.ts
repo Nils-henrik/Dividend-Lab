@@ -26,10 +26,15 @@ export async function resolveDivBrainAlphaPageAccess(
   const gate =
     options.accessGate ?? createDivBrainAlphaAccessGateFromEnvironment();
 
-  const access = await gate.checkAccess(options.actorId);
-  if (!access.ok) {
+  try {
+    const access = await gate.checkAccess(options.actorId);
+    if (!access.ok) {
+      return { status: "unavailable" };
+    }
+
+    return { status: "allowed_placeholder" };
+  } catch {
+    // Injected or unexpected gate failures must fail closed — never escape.
     return { status: "unavailable" };
   }
-
-  return { status: "allowed_placeholder" };
 }

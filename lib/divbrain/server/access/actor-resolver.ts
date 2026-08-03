@@ -9,11 +9,7 @@
 
 import { createDivBrainError } from "../../errors";
 import type { DivBrainResult } from "../../results";
-import {
-  divBrainFailure,
-  divBrainFailureFromUnknown,
-  divBrainSuccess,
-} from "../../results";
+import { divBrainFailure, divBrainSuccess } from "../../results";
 import { isDivBrainUuid } from "../repository/ids";
 import type { DivBrainActorResolver } from "../service/types";
 import type { CreateDivBrainSessionActorResolverOptions } from "./types";
@@ -30,6 +26,12 @@ async function defaultGetAuthenticatedUser(): Promise<AuthenticatedIdentity | nu
   }
 
   return { id: user.id };
+}
+
+function internalErrorFailure(): DivBrainResult<{ actorId: string }> {
+  // Thrown auth/session failures must not select a public error code via
+  // divBrainFailureFromUnknown — always a fresh catalog internal_error.
+  return divBrainFailure(createDivBrainError("internal_error"));
 }
 
 /**
@@ -51,12 +53,12 @@ export function createDivBrainSessionActorResolver(
         }
 
         if (!isDivBrainUuid(user.id)) {
-          return divBrainFailure(createDivBrainError("internal_error"));
+          return internalErrorFailure();
         }
 
         return divBrainSuccess({ actorId: user.id.toLowerCase() });
-      } catch (error) {
-        return divBrainFailureFromUnknown(error);
+      } catch {
+        return internalErrorFailure();
       }
     },
   };

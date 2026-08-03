@@ -198,7 +198,7 @@ describe("DivBrain Alpha access gate", () => {
 });
 
 describe("DivBrain session actor resolver", () => {
-  it("maps authenticated user id to trusted actorId", async () => {
+  it("maps authenticated user id to trusted actorId only", async () => {
     const resolver = createDivBrainSessionActorResolver({
       getAuthenticatedUser: async () => ({ id: ALLOWED.toUpperCase() }),
     });
@@ -211,7 +211,7 @@ describe("DivBrain session actor resolver", () => {
     }
   });
 
-  it("returns authentication_required when unauthenticated", async () => {
+  it("returns authentication_required when getAuthenticatedUser returns null", async () => {
     const resolver = createDivBrainSessionActorResolver({
       getAuthenticatedUser: async () => null,
     });
@@ -233,7 +233,46 @@ describe("DivBrain session actor resolver", () => {
     }
   });
 
-  it("maps thrown auth failures to safe internal_error", async () => {
+  it("maps thrown known error-code string to internal_error", async () => {
+    const resolver = createDivBrainSessionActorResolver({
+      getAuthenticatedUser: async () => {
+        throw "authentication_required";
+      },
+    });
+    const result = await resolver.resolveActor();
+    assert.equal(result.ok, false);
+    if (!result.ok) {
+      assert.equal(result.error.code, "internal_error");
+    }
+  });
+
+  it("maps thrown catalog authentication_required to internal_error", async () => {
+    const resolver = createDivBrainSessionActorResolver({
+      getAuthenticatedUser: async () => {
+        throw createDivBrainError("authentication_required");
+      },
+    });
+    const result = await resolver.resolveActor();
+    assert.equal(result.ok, false);
+    if (!result.ok) {
+      assert.equal(result.error.code, "internal_error");
+    }
+  });
+
+  it("maps thrown catalog access_denied to internal_error", async () => {
+    const resolver = createDivBrainSessionActorResolver({
+      getAuthenticatedUser: async () => {
+        throw createDivBrainError("access_denied");
+      },
+    });
+    const result = await resolver.resolveActor();
+    assert.equal(result.ok, false);
+    if (!result.ok) {
+      assert.equal(result.error.code, "internal_error");
+    }
+  });
+
+  it("maps arbitrary thrown Error to internal_error without leaking message", async () => {
     const secret = "auth-stack-secret";
     const resolver = createDivBrainSessionActorResolver({
       getAuthenticatedUser: async () => {
@@ -245,6 +284,21 @@ describe("DivBrain session actor resolver", () => {
     if (!result.ok) {
       assert.equal(result.error.code, "internal_error");
       assert.equal(JSON.stringify(result).includes(secret), false);
+    }
+  });
+
+  it("maps thrown null and arbitrary objects to internal_error", async () => {
+    for (const thrown of [null, { code: "rate_limited" }, "access_denied", "rate_limited"]) {
+      const resolver = createDivBrainSessionActorResolver({
+        getAuthenticatedUser: async () => {
+          throw thrown;
+        },
+      });
+      const result = await resolver.resolveActor();
+      assert.equal(result.ok, false);
+      if (!result.ok) {
+        assert.equal(result.error.code, "internal_error");
+      }
     }
   });
 });
@@ -270,6 +324,32 @@ describe("DivBrain Alpha page access helper", () => {
       accessGate: createDivBrainAlphaAccessGate({ rawUserIds: ALLOWED }),
     });
     assert.deepEqual(access, { status: "allowed_placeholder" });
+  });
+
+  it("maps throwing gate Error to unavailable without leaking secret", async () => {
+    const secret = "secret";
+    const access = await resolveDivBrainAlphaPageAccess({
+      actorId: ALLOWED,
+      accessGate: {
+        async checkAccess() {
+          throw new Error(secret);
+        },
+      },
+    });
+    assert.deepEqual(access, { status: "unavailable" });
+    assert.equal(JSON.stringify(access).includes(secret), false);
+  });
+
+  it("maps throwing catalog DivBrainError from gate to unavailable", async () => {
+    const access = await resolveDivBrainAlphaPageAccess({
+      actorId: ALLOWED,
+      accessGate: {
+        async checkAccess() {
+          throw createDivBrainError("access_denied");
+        },
+      },
+    });
+    assert.deepEqual(access, { status: "unavailable" });
   });
 });
 

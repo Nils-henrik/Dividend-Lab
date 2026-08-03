@@ -76,8 +76,9 @@ createDivBrainSessionActorResolver({ getAuthenticatedUser? })
 
 - Uses `getAuthenticatedUser()` by default (no `redirect()`)
 - Authenticated valid UUID → `{ actorId }` (lowercase)
-- Unauthenticated → `authentication_required`
-- Malformed / thrown auth failure → `internal_error`
+- Unauthenticated (`null`) → `authentication_required`
+- Malformed authenticated id → `internal_error`
+- Any thrown auth/session value → fresh catalog `internal_error` (never `divBrainFailureFromUnknown`; thrown catalog codes cannot select the public code)
 - Result never includes email, profile, tokens, or the Supabase User object
 
 ## Lifecycle placement
@@ -109,6 +110,7 @@ Does **not** create API routes, server actions, or service-role clients.
 | Unauthenticated | `requireAuthenticatedUser()` → redirect `/login` |
 | Authenticated, denied | Calm unavailable placeholder; no repository/service calls |
 | Authenticated, allowlisted | Honest “foundation under development / no AI connected” placeholder |
+| Unexpected `checkAccess` throw | Fail closed → unavailable (exception never escapes to the page) |
 
 Denied copy uses the catalog meaning of `access_denied` without revealing configuration details.
 
