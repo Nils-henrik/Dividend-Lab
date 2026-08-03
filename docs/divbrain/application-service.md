@@ -40,6 +40,12 @@ Browser-facing input (exact keys only):
 { conversationId: string; content: string }
 ```
 
+The runtime boundary requires an **actual plain object**:
+
+- accepted prototypes: `Object.prototype`, or `null` (`Object.create(null)`)
+- rejected: class instances, `Date`, `Map`, `Set`, `RegExp`, boxed primitives, other custom prototypes
+- prototype-inspection failures return catalog `invalid_request` (never throw)
+
 Trusted `AbortSignal` may be supplied separately by a server caller. It is never part of the browser JSON payload.
 
 ## Dependency interfaces
@@ -178,7 +184,11 @@ Browser-facing results never expose assembled context, identity/policy sections,
 - `mapAssembledContextToProviderRequest` with server `providerTimeoutMs` (+ optional trusted signal)
 - Default provider: `UnconfiguredProvider` → honest `provider_unavailable`
 - Thrown unknowns map via `mapUnknownToDivBrainProviderResult`
-- Malformed provider results → safe internal failure
+- Provider return values are runtime-validated and sanitized via `normalizeDivBrainProviderResult` into **safe copies** (never provider-owned objects unchanged)
+- `failed` / `provider_unavailable` require catalog-valid `DivBrainError` objects; arbitrary `{ code: string }` is rejected
+- Unknown / malformed provider error codes become `failed` + catalog `internal_error`
+- Valid `provider_unavailable` always rebuilds the exact catalog `provider_unavailable` error
+- Malformed provider output cannot escape `submitMessage` as an exception; after user persistence it yields one safe failed assistant terminal row
 - Never fabricates financial answers
 
 ## Terminal assistant persistence

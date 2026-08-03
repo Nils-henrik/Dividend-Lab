@@ -19,7 +19,10 @@ export {
   mapMessagesToContextHistoryTurns,
 } from "./history";
 
-export { parseDivBrainSubmitMessageInput } from "./input";
+export {
+  isPlainDivBrainSubmitMessageObject,
+  parseDivBrainSubmitMessageInput,
+} from "./input";
 
 export {
   DIVBRAIN_APPLICATION_PROVIDER_TIMEOUT_MS_DEFAULT,

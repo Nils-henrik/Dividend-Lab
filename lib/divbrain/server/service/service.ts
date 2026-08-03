@@ -28,8 +28,8 @@ import { assembleDivBrainContext } from "../context/assemble";
 import { mapAssembledContextToProviderRequest } from "../context/to-provider-request";
 import { evaluateDivBrainGuardrails } from "../guardrails";
 import {
-  isDivBrainProviderResult,
   mapUnknownToDivBrainProviderResult,
+  normalizeDivBrainProviderResult,
 } from "../providers/provider";
 import type { DivBrainProvider } from "../providers/provider";
 import type { DivBrainProviderResult } from "../providers/types";
@@ -101,19 +101,6 @@ function resolveCompletedSources(
   }
 
   return parseDivBrainSources(providerResult.sources);
-}
-
-function normalizeProviderResult(
-  value: unknown,
-): DivBrainProviderResult {
-  if (isDivBrainProviderResult(value)) {
-    return value;
-  }
-
-  return {
-    status: "failed",
-    error: createDivBrainError("internal_error"),
-  };
 }
 
 async function persistFailedAssistant(params: {
@@ -403,7 +390,7 @@ export function createDivBrainApplicationService(
           providerResult = { status: "cancelled" };
         } else {
           const raw = await deps.provider.generate(providerRequestResult.data);
-          providerResult = normalizeProviderResult(raw);
+          providerResult = normalizeDivBrainProviderResult(raw);
         }
       } catch (error) {
         providerResult = mapUnknownToDivBrainProviderResult(error);

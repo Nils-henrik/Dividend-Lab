@@ -1266,3 +1266,344 @@ describe("DivBrain application service — boundaries", () => {
     assert.equal(serialized.includes("service_role"), false);
   });
 });
+
+describe("DivBrain application service — provider result sanitization", () => {
+  it("normalizes unknown failed error codes to safe internal_error terminal", async () => {
+    const log: CallLog = [];
+    const state: FakeRepoState = {
+      conversation: conversation(),
+      messages: [],
+      inserts: [],
+    };
+    const malformedCode = "not-a-real-code";
+    const service = createService({
+      log,
+      repo: createRecordingRepository(state, log),
+      provider: {
+        id: "fake-malformed-code",
+        async generate() {
+          log.push("provider.generate");
+          return {
+            status: "failed",
+            error: { code: malformedCode },
+          } as unknown as DivBrainProviderResult;
+        },
+      },
+    });
+
+    const result = await service.submitMessage({
+      conversationId: CONV,
+      content: "Vad är utdelning?",
+    });
+
+    assert.equal(result.ok, true);
+    if (result.ok) {
+      assert.equal(result.data.status, "failed");
+      if (result.data.status === "failed") {
+        assert.equal(result.data.persisted, true);
+        assert.equal(result.data.userMessage.content, "Vad är utdelning?");
+        assert.equal(
+          result.data.assistantMessage.completionStatus,
+          "failed",
+        );
+        assert.equal(
+          result.data.assistantMessage.content,
+          createDivBrainError("internal_error").message,
+        );
+      }
+    }
+
+    assert.equal(
+      state.inserts.filter((row) => row.role === "user").length,
+      1,
+    );
+    assert.equal(
+      state.inserts.filter((row) => row.role === "assistant").length,
+      1,
+    );
+    const assistantInsert = state.inserts.find((row) => row.role === "assistant");
+    assert.equal(assistantInsert?.errorCode, "internal_error");
+    assert.equal(assistantInsert?.content, createDivBrainError("internal_error").message);
+    assert.equal(JSON.stringify(result).includes(malformedCode), false);
+    assert.equal(JSON.stringify(state.inserts).includes(malformedCode), false);
+    assert.equal(
+      log.filter((entry) => entry === "provider.generate").length,
+      1,
+    );
+  });
+
+  it("strips arbitrary failed error messages and catalog-mismatched fields", async () => {
+    const log: CallLog = [];
+    const state: FakeRepoState = {
+      conversation: conversation(),
+      messages: [],
+      inserts: [],
+    };
+    const leak = "RAW_PROVIDER_SECRET_MESSAGE";
+    const service = createService({
+      log,
+      repo: createRecordingRepository(state, log),
+      provider: {
+        id: "fake-arbitrary-message",
+        async generate() {
+          log.push("provider.generate");
+          return {
+            status: "failed",
+            error: {
+              code: "failed",
+              message: leak,
+              retryable: true,
+              httpStatus: 999,
+              extra: "nope",
+            },
+          } as unknown as DivBrainProviderResult;
+        },
+      },
+    });
+
+    const result = await service.submitMessage({
+      conversationId: CONV,
+      content: "Vad är utdelning?",
+    });
+
+    assert.equal(result.ok, true);
+    if (result.ok && result.data.status === "failed") {
+      assert.equal(
+        result.data.assistantMessage.content,
+        createDivBrainError("internal_error").message,
+      );
+      assert.equal(result.data.assistantMessage.content.includes(leak), false);
+    }
+    assert.equal(JSON.stringify(result).includes(leak), false);
+    assert.equal(JSON.stringify(state.inserts).includes(leak), false);
+  });
+
+  it("does not trust malformed provider_unavailable error objects", async () => {
+    const log: CallLog = [];
+    const state: FakeRepoState = {
+      conversation: conversation(),
+      messages: [],
+      inserts: [],
+    };
+    const leak = "MALFORMED_UNAVAILABLE_PAYLOAD";
+    const service = createService({
+      log,
+      repo: createRecordingRepository(state, log),
+      provider: {
+        id: "fake-malformed-unavailable",
+        async generate() {
+          log.push("provider.generate");
+          return {
+            status: "provider_unavailable",
+            error: {
+              code: "provider_unavailable",
+              message: leak,
+              retryable: false,
+              httpStatus: 503,
+              secret: leak,
+            },
+          } as unknown as DivBrainProviderResult;
+        },
+      },
+    });
+
+    const result = await service.submitMessage({
+      conversationId: CONV,
+      content: "Vad är utdelning?",
+    });
+
+    assert.equal(result.ok, true);
+    if (result.ok) {
+      // Catalog-mismatched fields are rejected by isDivBrainError → internal_error.
+      assert.equal(result.data.status, "failed");
+      if (result.data.status === "failed") {
+        assert.equal(
+          result.data.assistantMessage.content,
+          createDivBrainError("internal_error").message,
+        );
+      }
+    }
+    assert.equal(JSON.stringify(result).includes(leak), false);
+    assert.equal(JSON.stringify(state.inserts).includes(leak), false);
+  });
+
+  it("accepts valid failed DivBrainError and persists catalog content", async () => {
+    const log: CallLog = [];
+    const state: FakeRepoState = {
+      conversation: conversation(),
+      messages: [],
+      inserts: [],
+    };
+    const service = createService({
+      log,
+      repo: createRecordingRepository(state, log),
+      provider: {
+        id: "fake-valid-failed",
+        async generate() {
+          log.push("provider.generate");
+          return {
+            status: "failed",
+            error: createDivBrainError("rate_limited"),
+          };
+        },
+      },
+    });
+
+    const result = await service.submitMessage({
+      conversationId: CONV,
+      content: "Vad är utdelning?",
+    });
+
+    assert.equal(result.ok, true);
+    if (result.ok && result.data.status === "failed") {
+      assert.equal(
+        result.data.assistantMessage.content,
+        createDivBrainError("rate_limited").message,
+      );
+    }
+    const assistantInsert = state.inserts.find((row) => row.role === "assistant");
+    assert.equal(assistantInsert?.errorCode, "rate_limited");
+    assert.equal(
+      assistantInsert?.content,
+      createDivBrainError("rate_limited").message,
+    );
+  });
+
+  it("keeps UnconfiguredProvider provider_unavailable behavior", async () => {
+    const log: CallLog = [];
+    const state: FakeRepoState = {
+      conversation: conversation(),
+      messages: [],
+      inserts: [],
+    };
+    const deps = createDivBrainApplicationServiceDeps({
+      actorResolver: {
+        async resolveActor() {
+          return divBrainSuccess({ actorId: ACTOR });
+        },
+      },
+      accessGate: {
+        async checkAccess() {
+          return divBrainSuccess(undefined);
+        },
+      },
+      repository: createRecordingRepository(state, log),
+      provider: createUnconfiguredProvider(),
+      guardrailEvaluator: {
+        evaluate: () => divBrainSuccess(assessment("allow")),
+      },
+      contextAssembler: {
+        assemble: (input) =>
+          divBrainSuccess({
+            sections: [
+              {
+                kind: "identity",
+                trust: "trusted_system",
+                content: "identity",
+                estimatedTokens: 1,
+                truncated: false,
+                order: 0,
+              },
+            ],
+            historyTurns: [],
+            currentUserMessage: input.currentUserMessage,
+            includedSources: [],
+            diagnostics: {
+              estimatedTotalTokens: 1,
+              budget: {
+                totalBudgetEstimatedTokens: 12000,
+                mandatoryReserveEstimatedTokens: 2500,
+                historyBudgetEstimatedTokens: 3000,
+                sourceBudgetEstimatedTokens: 4500,
+                maxHistoryMessages: 20,
+                maxSources: 3,
+                maxSourceExcerptEstimatedTokens: 375,
+              },
+              mandatoryEstimatedTokens: 1,
+              historyEstimatedTokens: 0,
+              sourceEstimatedTokens: 0,
+              optionalEstimatedTokens: 0,
+              truncated: false,
+              entries: [],
+            },
+          }),
+      },
+      providerRequestMapper: {
+        map: (_assembled, options) =>
+          divBrainSuccess({
+            contextBlocks: [{ kind: "identity", content: "identity" }],
+            messages: [{ role: "user", content: "Vad är utdelning?" }],
+            sources: [],
+            timeoutMs: options.timeoutMs,
+          }),
+      },
+    });
+
+    const result = await createDivBrainApplicationService(deps).submitMessage({
+      conversationId: CONV,
+      content: "Vad är utdelning?",
+    });
+
+    assert.equal(result.ok, true);
+    if (result.ok) {
+      assert.equal(result.data.status, "provider_unavailable");
+    }
+    const assistantInsert = state.inserts.find((row) => row.role === "assistant");
+    assert.equal(assistantInsert?.errorCode, "provider_unavailable");
+    assert.equal(
+      assistantInsert?.content,
+      createDivBrainError("provider_unavailable").message,
+    );
+  });
+});
+
+describe("DivBrain application service — plain object input", () => {
+  it("rejects class instances even with own conversationId/content", async () => {
+    class Payload {
+      conversationId = CONV;
+      content = "Vad är utdelning?";
+    }
+
+    const parsed = parseDivBrainSubmitMessageInput(new Payload());
+    assert.equal(parsed.ok, false);
+    if (!parsed.ok) {
+      assert.equal(parsed.error.code, "invalid_request");
+      assert.equal(JSON.stringify(parsed).includes(CONV), false);
+    }
+  });
+
+  it("rejects Date objects with injected fields", async () => {
+    const value = new Date() as Date & {
+      conversationId: string;
+      content: string;
+    };
+    value.conversationId = CONV;
+    value.content = "Vad är utdelning?";
+
+    const parsed = parseDivBrainSubmitMessageInput(value);
+    assert.equal(parsed.ok, false);
+    if (!parsed.ok) {
+      assert.equal(parsed.error.code, "invalid_request");
+    }
+  });
+
+  it("accepts ordinary plain objects", () => {
+    const parsed = parseDivBrainSubmitMessageInput({
+      conversationId: CONV,
+      content: "Vad är utdelning?",
+    });
+    assert.equal(parsed.ok, true);
+  });
+
+  it("accepts Object.create(null) plain dictionaries", () => {
+    const payload = Object.create(null) as Record<string, string>;
+    payload.conversationId = CONV;
+    payload.content = "Vad är utdelning?";
+
+    const parsed = parseDivBrainSubmitMessageInput(payload);
+    assert.equal(parsed.ok, true);
+    if (parsed.ok) {
+      assert.equal(parsed.data.content, "Vad är utdelning?");
+    }
+  });
+});
