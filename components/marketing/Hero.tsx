@@ -1,5 +1,7 @@
+import { Suspense } from "react";
 import Link from "next/link";
-import Dashboard from "./DashboardComponent";
+import ProductPreviewPanel from "./ProductPreviewPanel";
+import ProductPreviewPanelFallback from "./ProductPreviewPanelFallback";
 
 const valuePoints = [
   {
@@ -65,12 +67,11 @@ export default function Hero() {
           </div>
         </div>
 
-        <div className="hidden justify-end lg:flex">
-          <div
-            className="flex w-full max-w-[560px] items-center justify-center rounded-2xl divlab-card p-5"
-            aria-hidden="true"
-          >
-            <Dashboard />
+        <div className="flex w-full justify-center lg:justify-end">
+          <div className="w-full max-w-[560px] rounded-2xl divlab-card p-5">
+            <Suspense fallback={<ProductPreviewPanelFallback />}>
+              <ProductPreviewPanel />
+            </Suspense>
           </div>
         </div>
       </div>
