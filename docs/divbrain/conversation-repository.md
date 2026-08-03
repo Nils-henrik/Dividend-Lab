@@ -123,10 +123,12 @@ Run: `npm run test:divbrain`
 - Pagination while new rows arrive may skip/duplicate across pages under concurrent writes — acceptable for Internal Alpha list UX; no offset pagination.
 - Remote migration apply is **out of scope**; repository code does not require a live remote schema.
 
-## Deferred to Ticket 1A-7b
+## Deferred beyond Ticket 1A-7a
 
-- Auth → allowlist → validate → guardrails → persist lifecycle
-- Context assembly orchestration + provider calls
-- Blocked-content non-persistence policy at the service layer
+Application-service lifecycle orchestration is implemented in Ticket **1A-7b** — see [`application-service.md`](./application-service.md).
+
+Still deferred after 1A-7b:
+
+- Concrete Ticket 1A-8 Alpha allowlist env wiring
 - API routes / chat UI / streaming
 - Auto-titling, summarisation jobs, analytics

@@ -57,6 +57,7 @@ docs/
     implementation-roadmap.md
     context-assembly.md
     conversation-repository.md
+    application-service.md
 ```
 
 ---

@@ -5,8 +5,8 @@ Shared DivBrain domain language for server and client.
 ## Boundaries
 
 - **Shared (this folder today):** `constants`, `types`, `errors`, `results`, `validation`, `sources`, `citations`, `guardrails` — safe to import from server or client.
-- **Server-only by convention:** `server/guardrails`, `server/guardrail-evals`, `server/providers`, `server/identity`, `server/policy`, `server/context`, `server/context-evals`, `server/repository` — detection logic, eval fixtures, identity/policy text, context assembly, provider boundary, and conversation persistence. These modules live under `lib/divbrain/server/` and **must never be imported by client components** or other browser-safe UI. Package-level `import "server-only"` is deferred until an approved dependency/foundation ticket; folder placement and this README are the current boundary.
-- Later tickets add real provider adapters, services, allowlists, Learning retrieval under the same server-only rule.
+- **Server-only by convention:** `server/guardrails`, `server/guardrail-evals`, `server/providers`, `server/identity`, `server/policy`, `server/context`, `server/context-evals`, `server/repository`, `server/service` — detection logic, eval fixtures, identity/policy text, context assembly, provider boundary, conversation persistence, and application-service orchestration. These modules live under `lib/divbrain/server/` and **must never be imported by client components** or other browser-safe UI. Package-level `import "server-only"` is deferred until an approved dependency/foundation ticket; folder placement and this README are the current boundary.
+- Later tickets add real provider adapters, allowlists, Learning retrieval, and UI wiring under the same server-only rule.
 - Browser-safe modules must never import server-only DivBrain code.
 - Never expose secrets, tokens, emails, raw provider/DB errors, stack traces, or hidden reasoning across the browser boundary.
 
@@ -132,7 +132,7 @@ generate(request) →
 
 ## Persistence schema (Ticket 1A-6)
 
-Repository-only Supabase migration (not applied by this ticket):
+Supabase migration (applied and verified on the approved remote project; this package documents the contract):
 
 `supabase/migrations/20260719110800_create_divbrain_conversations_and_messages.sql`
 
@@ -171,6 +171,32 @@ Trusted `actorId` is required on every call. Ownership fields from callers are r
 - No live remote Supabase required for unit tests (`npm run test:divbrain`).
 - No schema/RLS/migration changes in this ticket.
 - No AI-provider calls, context orchestration, API routes, or chat UI (Ticket 1A-7b+).
+
+## Application service (Ticket 1A-7b)
+
+Server-only request lifecycle under `server/service/`:
+
+- `service.ts` — `createDivBrainApplicationService` / `submitMessage`
+- `input.ts` — exact-key browser-input boundary
+- `history.ts` — bounded completed-history loading for context
+- `types.ts` — actor resolver, access gate, outcome union
+
+Canonical documentation: [`docs/divbrain/application-service.md`](../../docs/divbrain/application-service.md).
+
+### Contract
+
+```ts
+createDivBrainApplicationService(deps).submitMessage(input, options?)
+  → DivBrainResult<DivBrainSubmitMessageOutcome>
+```
+
+### Rules
+
+- Auth → Alpha access gate → validate → guardrails → blocked (no persist) vs allowed (ownership → history → persist user → context → provider → persist terminal)
+- Phase 1A provider remains `UnconfiguredProvider` (honest `provider_unavailable`; never fabricates answers)
+- Blocked prompts cause zero repository/provider calls and are not persisted
+- Concrete Ticket 1A-8 env allowlist wiring remains outstanding
+- No API routes, server actions, or `/brain` UI in this ticket
 
 ## Sources and citations
 
