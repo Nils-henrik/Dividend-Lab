@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "DivLab | Marknad, verktyg och community",
   description:
-    "Följ marknaden, förstå din portfölj och delta i diskussioner med DivLab.",
+    "Börsnyheter, utbildning, smarta verktyg och diskussioner – samlat på ett ställe med DivLab.",
 };
 
 export default function RootLayout({
