@@ -5,8 +5,8 @@ Shared DivBrain domain language for server and client.
 ## Boundaries
 
 - **Shared (this folder today):** `constants`, `types`, `errors`, `results`, `validation`, `sources`, `citations`, `guardrails` — safe to import from server or client.
-- **Server-only by convention:** `server/guardrails`, `server/guardrail-evals`, `server/providers`, `server/identity`, `server/policy`, `server/context`, `server/context-evals`, `server/repository`, `server/service` — detection logic, eval fixtures, identity/policy text, context assembly, provider boundary, conversation persistence, and application-service orchestration. These modules live under `lib/divbrain/server/` and **must never be imported by client components** or other browser-safe UI. Package-level `import "server-only"` is deferred until an approved dependency/foundation ticket; folder placement and this README are the current boundary.
-- Later tickets add real provider adapters, allowlists, Learning retrieval, and UI wiring under the same server-only rule.
+- **Server-only by convention:** `server/guardrails`, `server/guardrail-evals`, `server/providers`, `server/identity`, `server/policy`, `server/context`, `server/context-evals`, `server/repository`, `server/service`, `server/access` — detection logic, eval fixtures, identity/policy text, context assembly, provider boundary, conversation persistence, application-service orchestration, and Internal Alpha access. These modules live under `lib/divbrain/server/` and **must never be imported by client components** or other browser-safe UI. Package-level `import "server-only"` is deferred until an approved dependency/foundation ticket; folder placement and this README are the current boundary.
+- Later tickets add real provider adapters, Learning retrieval, and full `/brain` UI wiring under the same server-only rule.
 - Browser-safe modules must never import server-only DivBrain code.
 - Never expose secrets, tokens, emails, raw provider/DB errors, stack traces, or hidden reasoning across the browser boundary.
 
@@ -195,8 +195,26 @@ createDivBrainApplicationService(deps).submitMessage(input, options?)
 - Auth → Alpha access gate → validate → guardrails → blocked (no persist) vs allowed (ownership → history → persist user → context → provider → persist terminal)
 - Phase 1A provider remains `UnconfiguredProvider` (honest `provider_unavailable`; never fabricates answers)
 - Blocked prompts cause zero repository/provider calls and are not persisted
-- Concrete Ticket 1A-8 env allowlist wiring remains outstanding
-- No API routes, server actions, or `/brain` UI in this ticket
+- No API routes, server actions, or full `/brain` UI in this ticket (1A-8 adds Alpha access; 1A-9 owns the shell)
+
+## Internal Alpha access (Ticket 1A-8)
+
+Server-only allowlist under `server/access/`:
+
+- `parse.ts` — strict `DIVBRAIN_ALPHA_USER_IDS` parser (fail-closed)
+- `gate.ts` — concrete `DivBrainAccessGate`
+- `actor-resolver.ts` — session-backed `DivBrainActorResolver` (no `redirect()`)
+- `wiring.ts` — deps helper for the 1A-7b application service
+- `page-access.ts` — `/brain` presentation decision helper
+
+Canonical documentation: [`docs/divbrain/alpha-access.md`](../../docs/divbrain/alpha-access.md).
+
+### Rules
+
+- Server-only env var `DIVBRAIN_ALPHA_USER_IDS` (never `NEXT_PUBLIC_*`)
+- Exact normalized UUID match; missing/malformed config → catalog `access_denied`
+- No hardcoded user ids; no allowlist logging; no entitlement database
+- Page-level `/brain` gate is additional to service-level `checkAccess` in `submitMessage`
 
 ## Sources and citations
 

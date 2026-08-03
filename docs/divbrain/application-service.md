@@ -96,8 +96,7 @@ Helper: `createDivBrainApplicationServiceDeps(...)` binds approved default evalu
 - Runs immediately after authentication and before input validation
 - Denial → `access_denied`
 - No repository/guardrail/context/provider calls after denial
-- **Concrete Ticket 1A-8 wiring remains outstanding** unless an approved env-backed gate already exists on `main` (it does not at the time of 1A-7b)
-- This ticket defines/enforces the injectable contract and uses fakes in tests
+- Concrete env-backed gate: Ticket **1A-8** (`docs/divbrain/alpha-access.md`) via `DIVBRAIN_ALPHA_USER_IDS`
 - Do not hardcode Henrik’s user id; do not invent entitlement tables
 
 ## Strict input boundary
@@ -254,16 +253,15 @@ Run: `npm run test:divbrain`
 
 Still required before live Alpha use:
 
-1. Ticket **1A-8** — concrete env-backed `DIVBRAIN_ALPHA_USER_IDS` access gate
-2. Trusted server actor-resolver adapter (session → actor id, no `redirect()` in core)
-3. Repository wired with privileged persistence port for Model A message writes
-4. Later tickets for `/brain` UI / server actions / API routes
+1. Secure runtime configuration of `DIVBRAIN_ALPHA_USER_IDS` (1A-8 code is present; env is a release step)
+2. Repository wired with privileged persistence port for Model A message writes
+3. Later tickets for `/brain` UI / server actions / API routes
 
 ## Deferred
 
 | Item | Ticket / phase |
 |------|----------------|
-| Concrete Alpha allowlist env wiring | 1A-8 |
+| Secure host env configuration of the allowlist | release / ops |
 | `/brain` shell / composer / UI | 1A-9a / 1A-9b |
 | Real provider selection / SDK | Phase 1B |
 | Learning retrieval | Phase 1C |

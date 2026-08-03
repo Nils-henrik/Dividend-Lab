@@ -58,6 +58,7 @@ docs/
     context-assembly.md
     conversation-repository.md
     application-service.md
+    alpha-access.md
 ```
 
 ---
