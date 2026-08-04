@@ -301,8 +301,8 @@ describe("DivBrain history drawer source boundaries", () => {
     assert.equal(source.includes("lib/divbrain/server"), false);
     assert.equal(source.includes("use server"), false);
     assert.equal(source.includes("submitMessage"), false);
-    assert.equal(source.includes("createConversation"), false);
-    assert.equal(source.includes('type="submit"'), false);
+    assert.equal(source.includes("DivBrainCreateConversationButton"), true);
+    assert.equal(source.includes("DivBrainScopeSwitch"), true);
 
     // Backdrop is a non-tab-stop presentation surface, not a button.
     assert.equal(source.includes('aria-hidden="true"'), true);

@@ -1,5 +1,8 @@
 import Link from "next/link";
+import { buildDivBrainHref } from "@/lib/divbrain/brain-routes";
 import type { DivBrainShellViewModel } from "@/lib/divbrain/server/ui";
+import DivBrainComposer from "./DivBrainComposer";
+import DivBrainConversationActions from "./DivBrainConversationActions";
 import DivBrainConversationRail from "./DivBrainConversationRail";
 import DivBrainDisabledComposer from "./DivBrainDisabledComposer";
 import DivBrainEmptyState from "./DivBrainEmptyState";
@@ -18,6 +21,8 @@ export default function DivBrainShell({ view }: Props) {
     view.state === "data_unavailable" ? [] : view.conversations;
   const hasMoreConversations =
     view.state === "data_unavailable" ? false : view.hasMoreConversations;
+  const archiveScope =
+    view.state === "data_unavailable" ? "active" : view.archiveScope;
   const selectedConversationId =
     view.state === "ready" ? view.selectedConversation.id : null;
 
@@ -27,7 +32,7 @@ export default function DivBrainShell({ view }: Props) {
 
       <DivBrainStatusNotice
         title="AI-motorn är inte ansluten ännu"
-        description="Frågor kan inte skickas i den här versionen. Den säkra tekniska grunden är aktiv, men ingen AI-motor genererar svar."
+        description="Du kan skapa privata konversationer och spara frågor. Inget AI-genererat svar skapas förrän AI-motorn kopplas in."
       />
 
       <div className="lg:hidden">
@@ -35,6 +40,7 @@ export default function DivBrainShell({ view }: Props) {
           conversations={conversations}
           selectedConversationId={selectedConversationId}
           hasMoreConversations={hasMoreConversations}
+          archiveScope={archiveScope}
         />
       </div>
 
@@ -44,6 +50,7 @@ export default function DivBrainShell({ view }: Props) {
             conversations={conversations}
             selectedConversationId={selectedConversationId}
             hasMoreConversations={hasMoreConversations}
+            archiveScope={archiveScope}
           />
         </aside>
 
@@ -61,25 +68,35 @@ export default function DivBrainShell({ view }: Props) {
             <DivBrainUnavailablePanel
               title="Konversationen hittades inte"
               description="Den kan ha tagits bort eller är inte tillgänglig för det här kontot."
-              href="/brain"
+              href={buildDivBrainHref({ archiveScope: view.archiveScope })}
               linkLabel="Tillbaka till DivBrain"
             />
           ) : null}
 
-          {view.state === "empty" ? <DivBrainEmptyState /> : null}
+          {view.state === "empty" ? (
+            <DivBrainEmptyState archiveScope={view.archiveScope} />
+          ) : null}
 
           {view.state === "ready" ? (
             <>
               <div className="border-b divlab-border-neutral px-5 py-4 sm:px-6">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="min-w-0 truncate text-lg font-semibold tracking-[-0.03em] text-divlab-text">
-                    {view.selectedConversation.title}
-                  </h2>
-                  {view.selectedConversation.archived ? (
-                    <span className="rounded-md border border-divlab-border bg-divlab-elevated px-2 py-0.5 text-[11px] font-medium uppercase tracking-[0.14em] text-divlab-text-muted">
-                      Arkiverad
-                    </span>
-                  ) : null}
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="flex min-w-0 flex-wrap items-center gap-2">
+                    <h2 className="min-w-0 truncate text-lg font-semibold tracking-[-0.03em] text-divlab-text">
+                      {view.selectedConversation.title}
+                    </h2>
+                    {view.selectedConversation.archived ? (
+                      <span className="rounded-md border border-divlab-border bg-divlab-elevated px-2 py-0.5 text-[11px] font-medium uppercase tracking-[0.14em] text-divlab-text-muted">
+                        Arkiverad
+                      </span>
+                    ) : null}
+                  </div>
+                  <DivBrainConversationActions
+                    conversationId={view.selectedConversation.id}
+                    title={view.selectedConversation.title}
+                    archived={view.selectedConversation.archived}
+                    archiveScope={view.archiveScope}
+                  />
                 </div>
               </div>
 
@@ -87,9 +104,16 @@ export default function DivBrainShell({ view }: Props) {
                 transcript={view.selectedConversation.transcript}
               />
 
-              <DivBrainDisabledComposer
-                archived={view.selectedConversation.archived}
-              />
+              {view.selectedConversation.archived ? (
+                <DivBrainDisabledComposer
+                  conversationId={view.selectedConversation.id}
+                  archived
+                />
+              ) : (
+                <DivBrainComposer
+                  conversationId={view.selectedConversation.id}
+                />
+              )}
             </>
           ) : null}
         </div>
