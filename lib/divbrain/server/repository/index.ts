@@ -52,6 +52,11 @@ export type {
 
 export { createSupabaseDivBrainPersistencePort } from "./supabase-persistence";
 
+export {
+  classifyPostgrestFailure,
+  type DivBrainPostgrestFailureClassification,
+} from "./postgrest-failure";
+
 /**
  * Privileged wiring returns PersistencePort only — never a raw admin client.
  * Do not re-export any service-role SupabaseClient factory from this surface.

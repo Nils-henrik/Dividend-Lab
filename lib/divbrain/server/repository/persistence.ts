@@ -23,13 +23,22 @@ import type {
 } from "./pagination";
 
 export type DivBrainPersistenceError = {
-  /** Safe internal label only — never exposed to callers as-is. */
+  /**
+   * Safe internal label only — never exposed to callers as-is.
+   * Refined PostgREST buckets support operational diagnostics without
+   * carrying raw codes or messages across the repository boundary.
+   */
   kind:
     | "not_found"
     | "unavailable"
     | "query_failed"
     | "malformed_response"
-    | "configuration";
+    | "configuration"
+    | "permission_denied"
+    | "relation_missing"
+    | "column_missing"
+    | "auth_rejected"
+    | "postgrest_other";
 };
 
 export type DivBrainPersistenceResult<T> =

@@ -181,6 +181,11 @@ function mapPersistenceFailure<T>(
       return divBrainFailureFromCode("not_found");
     case "malformed_response":
     case "query_failed":
+    case "permission_denied":
+    case "relation_missing":
+    case "column_missing":
+    case "auth_rejected":
+    case "postgrest_other":
     default:
       return divBrainFailureFromCode("persistence_failed");
   }
