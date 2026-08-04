@@ -2,6 +2,7 @@
  * Safe PostgREST failure classification for DivBrain persistence.
  *
  * Maps known stable error codes to fixed internal kinds.
+ * A present unknown code always takes precedence over message heuristics.
  * Never logs or returns raw messages, URLs, or identifiers.
  *
  * Server-only — must never be imported by client components.
@@ -25,9 +26,9 @@ export type DivBrainPostgrestFailureClassification = Extract<
 >;
 
 /**
- * Classify a PostgREST/Postgres error using stable codes only when available.
- * Message text may detect generic network failures when no stable code exists,
- * but the message itself is never returned or logged.
+ * Classify a PostgREST/Postgres error using stable codes first.
+ * Message-based network heuristics apply only when no usable code is present.
+ * The message itself is never returned or logged.
  */
 export function classifyPostgrestFailure(error: {
   message?: string;
@@ -37,21 +38,26 @@ export function classifyPostgrestFailure(error: {
     return "postgrest_other";
   }
 
-  const code = typeof error.code === "string" ? error.code : "";
+  const trimmedCode =
+    typeof error.code === "string" ? error.code.trim() : "";
+  const hasUsableCode = trimmedCode.length > 0;
 
-  switch (code) {
-    case "42501":
-      return "permission_denied";
-    case "42P01":
-    case "PGRST205":
-      return "relation_missing";
-    case "42703":
-    case "PGRST204":
-      return "column_missing";
-    case "PGRST301":
-      return "auth_rejected";
-    default:
-      break;
+  if (hasUsableCode) {
+    switch (trimmedCode) {
+      case "42501":
+        return "permission_denied";
+      case "42P01":
+      case "PGRST205":
+        return "relation_missing";
+      case "42703":
+      case "PGRST204":
+        return "column_missing";
+      case "PGRST301":
+        return "auth_rejected";
+      default:
+        // Present but unknown codes must not be reinterpreted by message text.
+        return "postgrest_other";
+    }
   }
 
   const message =

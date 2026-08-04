@@ -164,6 +164,20 @@ describe("DivBrain PostgREST failure classification", () => {
       }),
       "unavailable",
     );
+    assert.equal(
+      classifyPostgrestFailure({
+        code: "",
+        message: `timeout ${SECRET}`,
+      }),
+      "unavailable",
+    );
+    assert.equal(
+      classifyPostgrestFailure({
+        code: "   ",
+        message: `fetch failed ${SECRET}`,
+      }),
+      "unavailable",
+    );
   });
 
   it("maps unknown PostgREST codes to postgrest_other", () => {
@@ -175,6 +189,40 @@ describe("DivBrain PostgREST failure classification", () => {
       "postgrest_other",
     );
     assert.equal(classifyPostgrestFailure(null), "postgrest_other");
+  });
+
+  it("does not let network-like messages override a present unknown code", () => {
+    assert.equal(
+      classifyPostgrestFailure({
+        code: "PGRST999",
+        message: "network timeout",
+      }),
+      "postgrest_other",
+    );
+    assert.equal(
+      classifyPostgrestFailure({
+        code: "XX000",
+        message: `fetch failed ${SECRET}`,
+      }),
+      "postgrest_other",
+    );
+  });
+
+  it("keeps known codes even when the message looks network-like", () => {
+    assert.equal(
+      classifyPostgrestFailure({
+        code: "42501",
+        message: `network timeout ${SECRET}`,
+      }),
+      "permission_denied",
+    );
+    assert.equal(
+      classifyPostgrestFailure({
+        code: "42P01",
+        message: `timeout while loading ${FAKE_TABLE}`,
+      }),
+      "relation_missing",
+    );
   });
 
   it("classification output never includes raw code or message text", () => {

@@ -236,7 +236,7 @@ Allowlisted categories only (no dynamic fields):
 - `conversation_list_auth_rejected` (PostgREST `PGRST301`)
 - `conversation_list_postgrest_other` (remaining PostgREST query failures)
 
-Raw PostgREST codes/messages are classified internally and never logged. Diagnostics never log secrets, URLs, actor ids, conversation ids, stacks, or thrown values. Browser UI remains the generic `data_unavailable` copy with no category exposed.
+Raw PostgREST codes/messages are classified internally and never logged. A present non-empty error code always takes precedence over message heuristics; network/timeout message inspection applies only when no usable code exists. Diagnostics never log secrets, URLs, actor ids, conversation ids, stacks, or thrown values. Browser UI remains the generic `data_unavailable` copy with no category exposed. Collect refined categories from Production (`divlab.se`), not Preview hosts.
 
 ## Mobile history drawer
 
