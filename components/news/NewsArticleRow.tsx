@@ -20,7 +20,11 @@ export default function NewsArticleRow({ article }: Props) {
     <article className="border-b divlab-border-neutral py-4 last:border-0">
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:gap-4">
         {listImageUrl && (
-          <NewsArticleThumbnail imageUrl={listImageUrl} variant="row" />
+          <NewsArticleThumbnail
+            imageUrl={listImageUrl}
+            variant="row"
+            objectPosition={article.thumbnailObjectPosition}
+          />
         )}
 
         <div className="min-w-0 flex-1">
