@@ -1,0 +1,15 @@
+Börsnyheter cover: Norden i centrum, 4 Augusti (DivLab)
+Local file:
+- public/news-demo/norden-i-centrum-4-augusti-2026.webp
+Created: 2026-08-04
+Creator: DivLab (editorial illustration)
+
+Composition notes:
+- Original AI-generated photorealistic editorial photograph assembled for DivLab.
+- Scene: Nordic financial newsroom at early morning with market screens and
+  city dawn light; embedded cover title "Norden i centrum", date "4 Augusti",
+  subtitle "Sverige · Norge · Finland · Danmark".
+- No company logos, no ticker symbols, no live prices.
+- Optimized WebP 1600×900 for article page and list-card object-cover crops.
+
+Usage: Editorial news cover for DivLab Börsnyheter. Illustration: DivLab.
