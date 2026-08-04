@@ -220,7 +220,7 @@ describe("DivBrain shell legacy and product boundaries", () => {
     const accessIndex = functionBody.indexOf("resolveDivBrainAlphaPageAccess");
     const unavailableIndex = functionBody.indexOf('status === "unavailable"');
     const runtimeCallIndex = functionBody.indexOf(
-      "createDivBrainRuntimeRepository()",
+      "createDivBrainRuntimeRepository(",
     );
 
     assert.equal(accessIndex > -1, true);

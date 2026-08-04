@@ -11,6 +11,7 @@ export {
   DIVBRAIN_REPOSITORY_PUBLIC_ERROR_CODES,
   type ArchiveDivBrainConversationParams,
   type CreateDivBrainConversationParams,
+  type CreateDivBrainConversationRepositoryOptions,
   type CreateDivBrainMessageParams,
   type DeleteDivBrainConversationParams,
   type DivBrainConversationPage,

@@ -5,6 +5,8 @@ import { requireAuthenticatedUserWithProfile } from "@/lib/auth/session";
 import { resolveDivBrainAlphaPageAccess } from "@/lib/divbrain/server/access";
 import {
   createDivBrainRuntimeRepository,
+  createDivBrainShellDiagnosticLogger,
+  createOnceDivBrainShellDiagnosticSink,
   divBrainShellDataUnavailable,
   loadDivBrainShellData,
   type DivBrainShellViewModel,
@@ -49,8 +51,14 @@ export default async function DivBrainPage({ searchParams }: Props) {
   const resolvedSearchParams = await searchParams;
   const selectedConversationId = readConversationParam(resolvedSearchParams);
 
+  // Server-only fixed-category diagnostics for Vercel runtime logs.
+  // Never passed to the browser view model.
+  const diagnose = createOnceDivBrainShellDiagnosticSink(
+    createDivBrainShellDiagnosticLogger(),
+  );
+
   let view: DivBrainShellViewModel = divBrainShellDataUnavailable();
-  const repositoryResult = createDivBrainRuntimeRepository();
+  const repositoryResult = createDivBrainRuntimeRepository({ diagnose });
 
   if (!repositoryResult.ok) {
     view = divBrainShellDataUnavailable();
@@ -59,6 +67,7 @@ export default async function DivBrainPage({ searchParams }: Props) {
       actorId: user.id,
       selectedConversationId,
       repository: repositoryResult.data,
+      diagnose,
     });
   }
 

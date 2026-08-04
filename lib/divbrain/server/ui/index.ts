@@ -26,6 +26,17 @@ export { createDivBrainRuntimeRepository } from "./runtime";
 export type { CreateDivBrainRuntimeRepositoryOptions } from "./runtime";
 
 export {
+  DIVBRAIN_SHELL_DIAGNOSTIC_CATEGORIES,
+  createDivBrainShellDiagnosticLogger,
+  createOnceDivBrainShellDiagnosticSink,
+  isDivBrainShellDiagnosticCategory,
+  mapListConversationsPersistenceKindToDiagnosticCategory,
+  noopDivBrainShellDiagnosticSink,
+  type DivBrainShellDiagnosticCategory,
+  type DivBrainShellDiagnosticSink,
+} from "./diagnostic";
+
+export {
   divBrainShellDataUnavailable,
   loadDivBrainShellData,
   type LoadDivBrainShellDataParams,

@@ -213,6 +213,26 @@ Fail-closed rules:
 - typed repository `not_found` / `invalid_request` for an explicit selection remain `conversation_not_found`
 - raw runtime failures never escape the `/brain` page lifecycle as uncontrolled server errors
 
+### Operational diagnostics (server logs only)
+
+Production `/brain` wiring may emit a single fixed-category Vercel log entry on failure:
+
+```text
+[DivBrain shell diagnostic] { category: "<allowlisted>" }
+```
+
+Allowlisted categories only (no dynamic fields):
+
+- `runtime_configuration_missing`
+- `runtime_client_creation_failed`
+- `conversation_list_unavailable`
+- `conversation_list_query_failed`
+- `conversation_list_malformed_response`
+- `conversation_list_unknown_failure`
+- `shell_mapping_failure`
+
+Diagnostics never log secrets, URLs, actor ids, conversation ids, PostgREST messages, stacks, or raw thrown values. Browser UI remains the generic `data_unavailable` copy with no category exposed.
+
 ## Mobile history drawer
 
 - `Historik` opens an accessible dialog

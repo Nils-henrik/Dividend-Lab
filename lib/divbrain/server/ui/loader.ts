@@ -16,6 +16,10 @@ import type {
   DivBrainTrustedActorId,
 } from "../repository";
 import type { DivBrainConversation } from "../../types";
+import {
+  noopDivBrainShellDiagnosticSink,
+  type DivBrainShellDiagnosticSink,
+} from "./diagnostic";
 import { loadDivBrainShellTranscript } from "./transcript";
 import {
   DIVBRAIN_SHELL_CONVERSATION_PAGE_SIZE,
@@ -29,6 +33,11 @@ export type LoadDivBrainShellDataParams = {
   /** Untrusted query parameter — may be missing, malformed, or cross-owner. */
   selectedConversationId?: string | null;
   repository: DivBrainConversationRepository;
+  /**
+   * Optional fixed-category diagnostic sink.
+   * Must never receive raw errors, secrets, or identity values.
+   */
+  diagnose?: DivBrainShellDiagnosticSink;
 };
 
 function toListItem(
@@ -47,21 +56,12 @@ function toListItem(
   };
 }
 
-async function loadDivBrainShellDataInner(
+async function buildShellViewFromConversationList(
   params: LoadDivBrainShellDataParams,
+  listItems: readonly DivBrainConversation[],
+  hasMoreConversations: boolean,
 ): Promise<DivBrainShellViewModel> {
-  const listResult = await params.repository.listConversations({
-    actorId: params.actorId,
-    archiveFilter: "active",
-    pageSize: DIVBRAIN_SHELL_CONVERSATION_PAGE_SIZE,
-  });
-
-  if (!listResult.ok) {
-    return { state: "data_unavailable" };
-  }
-
-  const conversations = listResult.data.items.map(toListItem);
-  const hasMoreConversations = listResult.data.nextCursor !== null;
+  const conversations = listItems.map(toListItem);
   const requestedId =
     typeof params.selectedConversationId === "string"
       ? params.selectedConversationId.trim()
@@ -77,7 +77,7 @@ async function loadDivBrainShellDataInner(
       };
     }
 
-    const defaultConversation = listResult.data.items[0];
+    const defaultConversation = listItems[0];
     const transcript = await loadDivBrainShellTranscript({
       repository: params.repository,
       actorId: params.actorId,
@@ -164,6 +164,39 @@ async function loadDivBrainShellDataInner(
   };
 }
 
+async function loadDivBrainShellDataInner(
+  params: LoadDivBrainShellDataParams,
+): Promise<DivBrainShellViewModel> {
+  const diagnose = params.diagnose ?? noopDivBrainShellDiagnosticSink;
+
+  let listResult;
+  try {
+    listResult = await params.repository.listConversations({
+      actorId: params.actorId,
+      archiveFilter: "active",
+      pageSize: DIVBRAIN_SHELL_CONVERSATION_PAGE_SIZE,
+    });
+  } catch {
+    diagnose("conversation_list_unknown_failure");
+    return { state: "data_unavailable" };
+  }
+
+  if (!listResult.ok) {
+    return { state: "data_unavailable" };
+  }
+
+  try {
+    return await buildShellViewFromConversationList(
+      params,
+      listResult.data.items,
+      listResult.data.nextCursor !== null,
+    );
+  } catch {
+    diagnose("shell_mapping_failure");
+    return { state: "data_unavailable" };
+  }
+}
+
 /**
  * Build the browser-safe shell view model for an allowlisted actor.
  * Does not perform Alpha access checks — the page must gate first.
@@ -175,6 +208,8 @@ export async function loadDivBrainShellData(
   try {
     return await loadDivBrainShellDataInner(params);
   } catch {
+    const diagnose = params.diagnose ?? noopDivBrainShellDiagnosticSink;
+    diagnose("shell_mapping_failure");
     return { state: "data_unavailable" };
   }
 }

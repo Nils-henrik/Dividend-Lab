@@ -17,6 +17,19 @@ import { divBrainFailureFromCode, divBrainSuccess } from "../../results";
 import type { DivBrainPersistencePort } from "./persistence";
 import { createSupabaseDivBrainPersistencePort } from "./supabase-persistence";
 
+export type CreateDivBrainServiceRolePersistencePortOptions = {
+  /**
+   * Invoked when required environment configuration is missing.
+   * Must not receive environment values, secrets, or error objects.
+   */
+  onMissingConfiguration?: () => void;
+  /**
+   * Invoked when client or persistence-port construction throws.
+   * Must not receive the thrown value.
+   */
+  onClientCreationThrow?: () => void;
+};
+
 /**
  * Build a privileged persistence port for server-controlled DivBrain writes.
  *
@@ -27,7 +40,9 @@ import { createSupabaseDivBrainPersistencePort } from "./supabase-persistence";
  * On success returns only `DivBrainPersistencePort` — never the admin client
  * or credential. Missing configuration → safe `internal_error`.
  */
-export function createDivBrainServiceRolePersistencePort(): DivBrainResult<DivBrainPersistencePort> {
+export function createDivBrainServiceRolePersistencePort(
+  options: CreateDivBrainServiceRolePersistencePortOptions = {},
+): DivBrainResult<DivBrainPersistencePort> {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -37,16 +52,22 @@ export function createDivBrainServiceRolePersistencePort(): DivBrainResult<DivBr
     typeof serviceRoleKey !== "string" ||
     serviceRoleKey.trim().length === 0
   ) {
+    options.onMissingConfiguration?.();
     return divBrainFailureFromCode("internal_error");
   }
 
-  const client = createClient(supabaseUrl, serviceRoleKey, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-      detectSessionInUrl: false,
-    },
-  });
+  try {
+    const client = createClient(supabaseUrl, serviceRoleKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      },
+    });
 
-  return divBrainSuccess(createSupabaseDivBrainPersistencePort(client));
+    return divBrainSuccess(createSupabaseDivBrainPersistencePort(client));
+  } catch {
+    options.onClientCreationThrow?.();
+    return divBrainFailureFromCode("internal_error");
+  }
 }
