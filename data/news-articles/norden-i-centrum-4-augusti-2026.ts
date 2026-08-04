@@ -19,7 +19,7 @@ import type { NewsArticle } from "@/types/news";
  *   to apply for Spotlight delisting aiming for US listing in 18–24 months —
  *   MFN / Cision.
  *
- * Cover: original DivLab editorial illustration (AI) with embedded title.
+ * Cover: DivLab editorial composite with embedded title and company panels.
  * See norden-i-centrum-4-augusti-2026.license.txt.
  */
 export const NORDEN_I_CENTRUM_4_AUGUSTI_2026_ARTICLE: NewsArticle = {
@@ -34,8 +34,9 @@ export const NORDEN_I_CENTRUM_4_AUGUSTI_2026_ARTICLE: NewsArticle = {
   url: "/news/norden-i-centrum-4-augusti-2026",
   featured: true,
   imageUrl: "/news-demo/norden-i-centrum-4-augusti-2026.webp",
+  thumbnailObjectPosition: "center 36%",
   imageAlt:
-    "Nordisk börsöversikt med marknadsskärmar som representerar Sverige, Norge, Finland och Danmark.",
+    "Omslagsbild för Norden i centrum den 4 augusti med nordiska börsbolag från Sverige, Norge, Finland och Danmark.",
   imageCaption: "Illustration: DivLab.",
   readingMinutes: 8,
   seoTitle: "Norden i centrum 4 augusti: dagens nordiska börs",

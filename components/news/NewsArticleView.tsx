@@ -62,6 +62,11 @@ export default function NewsArticleView({ article }: Props) {
               priority
               sizes="(max-width: 768px) 100vw, 768px"
               className="h-auto w-full object-cover"
+              style={
+                article.thumbnailObjectPosition
+                  ? { objectPosition: article.thumbnailObjectPosition }
+                  : undefined
+              }
             />
           </div>
           {(article.imageCaptionParts?.length || article.imageCaption) && (

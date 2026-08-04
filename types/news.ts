@@ -40,6 +40,12 @@ export interface NewsArticle {
    * continue to use `imageUrl`.
    */
   thumbnailImageUrl?: string | null;
+  /**
+   * CSS object-position for Börsnyheter card/hero object-cover crops
+   * (e.g. "center 40%" or "left 35%"). Falls back to component defaults
+   * when omitted.
+   */
+  thumbnailObjectPosition?: string;
   /** When set, the article has an internal detail page at `/news/[slug]`. */
   slug?: string;
   /** Opening body paragraphs on the detail page (after the list ingress/summary). */

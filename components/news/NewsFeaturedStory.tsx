@@ -26,7 +26,7 @@ export default function NewsFeaturedStory({ article }: Props) {
           <NewsArticleThumbnail
             imageUrl={listImageUrl}
             variant="featured"
-            objectPosition="center 40%"
+            objectPosition={article.thumbnailObjectPosition ?? "center 40%"}
           />
         )}
 
