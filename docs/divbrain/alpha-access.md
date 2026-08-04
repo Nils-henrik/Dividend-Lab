@@ -109,7 +109,7 @@ Does **not** create API routes, server actions, or service-role clients.
 |-------|----------|
 | Unauthenticated | `requireAuthenticatedUser()` → redirect `/login` |
 | Authenticated, denied | Calm unavailable placeholder; no repository/service calls |
-| Authenticated, allowlisted | Honest “foundation under development / no AI connected” placeholder |
+| Authenticated, allowlisted | Honest DivBrain shell (Ticket 1A-9a) — see `alpha-shell.md` |
 | Unexpected `checkAccess` throw | Fail closed → unavailable (exception never escapes to the page) |
 
 Denied copy uses the catalog meaning of `access_denied` without revealing configuration details.
@@ -139,7 +139,8 @@ Local / Preview / production must set `DIVBRAIN_ALPHA_USER_IDS` through the host
 
 | Item | Owner |
 |------|--------|
-| Full `/brain` shell, composer, conversation UI | Ticket 1A-9 |
+| Honest `/brain` shell + read-only history | Ticket 1A-9a (`alpha-shell.md`) |
+| Functional composer + conversation mutations | Ticket 1A-9b |
 | Real AI provider | Phase 1B |
 | Broader entitlements / plans | post-Alpha |
 

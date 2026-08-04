@@ -565,15 +565,28 @@ describe("DivBrain Alpha access boundaries", () => {
     assert.equal(gateSource.includes("NEXT_PUBLIC_"), false);
   });
 
-  it("brain page source does not embed environment variable names as user copy", () => {
+  it("brain page source gates access before repository construction", () => {
     const pageSource = readFileSync(
       join(__dirname, "../../../../app/brain/page.tsx"),
       "utf8",
     );
     assert.equal(pageSource.includes(DIVBRAIN_ALPHA_USER_IDS_ENV), false);
-    assert.equal(pageSource.includes("requireAuthenticatedUser"), true);
+    assert.equal(pageSource.includes("requireAuthenticatedUserWithProfile"), true);
     assert.equal(pageSource.includes("resolveDivBrainAlphaPageAccess"), true);
     assert.equal(pageSource.includes("DivBrain"), true);
-    assert.equal(pageSource.includes("composer"), false);
+    assert.equal(pageSource.includes("createDivBrainRuntimeRepository"), true);
+
+    const functionBody = pageSource.slice(
+      pageSource.indexOf("export default async function DivBrainPage"),
+    );
+    const accessIndex = functionBody.indexOf("resolveDivBrainAlphaPageAccess");
+    const unavailableIndex = functionBody.indexOf('status === "unavailable"');
+    const runtimeCallIndex = functionBody.indexOf(
+      "createDivBrainRuntimeRepository()",
+    );
+
+    assert.equal(accessIndex > -1, true);
+    assert.equal(unavailableIndex > accessIndex, true);
+    assert.equal(runtimeCallIndex > unavailableIndex, true);
   });
 });

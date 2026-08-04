@@ -262,7 +262,8 @@ Still required before live Alpha use:
 | Item | Ticket / phase |
 |------|----------------|
 | Secure host env configuration of the allowlist | release / ops |
-| `/brain` shell / composer / UI | 1A-9a / 1A-9b |
+| Honest `/brain` shell + read-only history | 1A-9a (`alpha-shell.md`) |
+| Functional composer / conversation mutations | 1A-9b |
 | Real provider selection / SDK | Phase 1B |
 | Learning retrieval | Phase 1C |
 | Usage/cost persistence, analytics | later |

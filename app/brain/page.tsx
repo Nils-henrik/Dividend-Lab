@@ -1,15 +1,43 @@
 import AppShell from "@/components/layout/AppShell";
 import PlaceholderPage from "@/components/dashboard/PlaceholderPage";
-import { requireAuthenticatedUser } from "@/lib/auth/session";
+import DivBrainShell from "@/components/brain/DivBrainShell";
+import { requireAuthenticatedUserWithProfile } from "@/lib/auth/session";
 import { resolveDivBrainAlphaPageAccess } from "@/lib/divbrain/server/access";
+import {
+  createDivBrainRuntimeRepository,
+  divBrainShellDataUnavailable,
+  loadDivBrainShellData,
+  type DivBrainShellViewModel,
+} from "@/lib/divbrain/server/ui";
 
-export default async function DividendBrainPage() {
-  const user = await requireAuthenticatedUser();
+type BrainPageSearchParams = {
+  conversation?: string | string[];
+};
+
+type Props = {
+  searchParams: Promise<BrainPageSearchParams>;
+};
+
+function readConversationParam(
+  searchParams: BrainPageSearchParams,
+): string | null {
+  const value = searchParams.conversation;
+  if (typeof value === "string") {
+    return value;
+  }
+  if (Array.isArray(value) && typeof value[0] === "string") {
+    return value[0];
+  }
+  return null;
+}
+
+export default async function DivBrainPage({ searchParams }: Props) {
+  const { user, identity } = await requireAuthenticatedUserWithProfile();
   const access = await resolveDivBrainAlphaPageAccess({ actorId: user.id });
 
   if (access.status === "unavailable") {
     return (
-      <AppShell>
+      <AppShell user={user} identity={identity}>
         <PlaceholderPage
           title="DivBrain är inte tillgängligt"
           description="DivBrain är inte tillgängligt för det här kontot. DivBrain testas just nu i en begränsad intern Alpha."
@@ -18,12 +46,25 @@ export default async function DividendBrainPage() {
     );
   }
 
+  const resolvedSearchParams = await searchParams;
+  const selectedConversationId = readConversationParam(resolvedSearchParams);
+
+  let view: DivBrainShellViewModel = divBrainShellDataUnavailable();
+  const repositoryResult = createDivBrainRuntimeRepository();
+
+  if (!repositoryResult.ok) {
+    view = divBrainShellDataUnavailable();
+  } else {
+    view = await loadDivBrainShellData({
+      actorId: user.id,
+      selectedConversationId,
+      repository: repositoryResult.data,
+    });
+  }
+
   return (
-    <AppShell>
-      <PlaceholderPage
-        title="DivBrain"
-        description="Den tekniska grunden för DivBrain utvecklas. Ingen AI-motor är ansluten ännu — inga genererade svar, portföljanalyser eller marknadsdata visas."
-      />
+    <AppShell user={user} identity={identity}>
+      <DivBrainShell view={view} />
     </AppShell>
   );
 }
