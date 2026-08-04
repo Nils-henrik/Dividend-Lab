@@ -69,6 +69,8 @@ Message INSERT is denied to authenticated clients (Ticket 1A-6 Model A). Product
 
 The raw service-role Supabase client is **not** exported from the repository public surface and must never be returned to application callers.
 
+**Table grants (separate from RLS):** the trusted server role needs explicit privileges. Conversations: `SELECT`/`INSERT`/`UPDATE`/`DELETE`. Messages: `SELECT`/`INSERT` only. See `supabase/migrations/20260804183000_grant_divbrain_service_role_privileges.sql`. Authenticated client grants from Ticket 1A-6 are unchanged.
+
 The repository itself depends on `DivBrainPersistencePort` (dependency injection). Unit tests use an in-memory fake / recording mock and never require live credentials.
 
 **Service-role decision (authoritative reading):**
