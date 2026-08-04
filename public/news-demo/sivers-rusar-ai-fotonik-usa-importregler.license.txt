@@ -1,0 +1,14 @@
+Börsnyheter cover: Sivers rusar – AI-fotonik i fokus (DivLab)
+Local file:
+- public/news-demo/sivers-rusar-ai-fotonik-usa-importregler.webp
+Created: 2026-08-04
+Creator: DivLab (editorial illustration)
+
+Composition notes:
+- Original DivLab editorial cover: dark navy / DivLab blue datacenter atmosphere,
+  optical light beams, semiconductor / laser-chip detail, restrained upward
+  market line, embedded headline "SIVERS RUSAR" and "AI-fotonik i fokus".
+- Exported as WebP 1600×900 (16:9). List/hero object-cover uses article
+  thumbnailObjectPosition "center 32%" so headline and beams stay readable.
+
+Usage: Editorial news cover for DivLab Börsnyheter. Illustration: DivLab.
