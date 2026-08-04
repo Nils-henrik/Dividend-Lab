@@ -57,6 +57,7 @@ import {
 } from "./pagination";
 import type {
   DivBrainConversationArchiveFilter,
+  DivBrainPersistenceError,
   DivBrainPersistencePort,
   DivBrainPersistenceResult,
 } from "./persistence";
@@ -230,10 +231,21 @@ function assertNoOwnershipFields(input: object): DivBrainResult<void> {
   return divBrainSuccess(undefined);
 }
 
-export function createDivBrainConversationRepository(options: {
+export type CreateDivBrainConversationRepositoryOptions = {
   persistence: DivBrainPersistencePort;
-}): DivBrainConversationRepository {
-  const { persistence } = options;
+  /**
+   * Optional shell diagnostic seam. Receives only the internal persistence
+   * kind label for listConversations failures — never raw PostgREST payloads.
+   */
+  onListConversationsPersistenceFailure?: (
+    kind: DivBrainPersistenceError["kind"],
+  ) => void;
+};
+
+export function createDivBrainConversationRepository(
+  options: CreateDivBrainConversationRepositoryOptions,
+): DivBrainConversationRepository {
+  const { persistence, onListConversationsPersistenceFailure } = options;
 
   return {
     async createConversation(params) {
@@ -350,6 +362,7 @@ export function createDivBrainConversationRepository(options: {
       });
 
       if (!listResult.ok) {
+        onListConversationsPersistenceFailure?.(listResult.error.kind);
         return mapPersistenceFailure(listResult);
       }
 
