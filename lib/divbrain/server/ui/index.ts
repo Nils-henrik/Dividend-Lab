@@ -23,6 +23,7 @@ export {
 } from "./dates";
 
 export { createDivBrainRuntimeRepository } from "./runtime";
+export type { CreateDivBrainRuntimeRepositoryOptions } from "./runtime";
 
 export {
   divBrainShellDataUnavailable,

@@ -5,6 +5,9 @@
  * provider_unavailable, failed, and cancelled are retained for honest UI.
  * System messages are never exposed. Hidden reasoning is never present.
  *
+ * Unexpected throws fail closed as a fresh catalog `internal_error`.
+ * Thrown public error codes are not preserved.
+ *
  * Server-only — must never be imported by client components.
  */
 
@@ -171,11 +174,31 @@ export function mapMessagesToShellTranscriptItems(
   return items;
 }
 
-/**
- * Load a bounded transcript for the shell UI.
- * Reaches the chronological tail before presenting; fails safely on overflow.
- */
-export async function loadDivBrainShellTranscript(
+function isSafeMessagePage(value: unknown): value is {
+  items: readonly DivBrainMessage[];
+  nextCursor: string | null;
+} {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const page = value as {
+    items?: unknown;
+    nextCursor?: unknown;
+  };
+
+  if (!Array.isArray(page.items)) {
+    return false;
+  }
+
+  if (!(typeof page.nextCursor === "string" || page.nextCursor === null)) {
+    return false;
+  }
+
+  return true;
+}
+
+async function loadDivBrainShellTranscriptInner(
   params: LoadDivBrainShellTranscriptParams,
 ): Promise<DivBrainResult<DivBrainShellTranscriptView>> {
   const renderLimit =
@@ -210,15 +233,29 @@ export async function loadDivBrainShellTranscript(
 
     const pageBeforeCount = collected.length;
 
-    const page = await params.repository.listMessages({
-      actorId: params.actorId,
-      conversationId: params.conversationId,
-      pageSize: DIVBRAIN_REPOSITORY_MAX_PAGE_SIZE,
-      ...(cursor !== undefined ? { cursor } : {}),
-    });
+    let page: DivBrainResult<{
+      items: readonly DivBrainMessage[];
+      nextCursor: string | null;
+    }>;
+
+    try {
+      page = await params.repository.listMessages({
+        actorId: params.actorId,
+        conversationId: params.conversationId,
+        pageSize: DIVBRAIN_REPOSITORY_MAX_PAGE_SIZE,
+        ...(cursor !== undefined ? { cursor } : {}),
+      });
+    } catch {
+      return divBrainFailureFromCode("internal_error");
+    }
 
     if (!page.ok) {
-      return page;
+      // Typed repository failure — never forward raw thrown values.
+      return divBrainFailureFromCode(page.error.code);
+    }
+
+    if (!isSafeMessagePage(page.data)) {
+      return divBrainFailureFromCode("internal_error");
     }
 
     collected.push(...page.data.items);
@@ -262,4 +299,19 @@ export async function loadDivBrainShellTranscript(
     items,
     historyTruncated,
   });
+}
+
+/**
+ * Load a bounded transcript for the shell UI.
+ * Reaches the chronological tail before presenting; fails safely on overflow.
+ * Unexpected throws never escape as raw errors.
+ */
+export async function loadDivBrainShellTranscript(
+  params: LoadDivBrainShellTranscriptParams,
+): Promise<DivBrainResult<DivBrainShellTranscriptView>> {
+  try {
+    return await loadDivBrainShellTranscriptInner(params);
+  } catch {
+    return divBrainFailureFromCode("internal_error");
+  }
 }

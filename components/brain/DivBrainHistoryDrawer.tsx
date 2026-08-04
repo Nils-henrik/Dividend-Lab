@@ -1,8 +1,12 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { formatDivBrainConversationTimestamp } from "@/lib/divbrain/dates";
+import {
+  focusDivBrainElementIfConnected,
+  trapDivBrainDialogTabKey,
+} from "@/lib/divbrain/history-drawer-a11y";
 
 export type DivBrainHistoryConversationItem = {
   id: string;
@@ -24,31 +28,56 @@ export default function DivBrainHistoryDrawer({
 }: Props) {
   const [open, setOpen] = useState(false);
   const panelId = useId();
+  const triggerButtonRef = useRef<HTMLButtonElement | null>(null);
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
+  const dialogRef = useRef<HTMLElement | null>(null);
+  const wasOpenRef = useRef(false);
+
+  const closeDrawer = useCallback(() => {
+    setOpen(false);
+  }, []);
 
   useEffect(() => {
-    if (!open) {
-      return;
-    }
+    if (open) {
+      wasOpenRef.current = true;
+      const previousOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
 
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setOpen(false);
+      // Move focus into the dialog; prefer the explicit close control.
+      focusDivBrainElementIfConnected(closeButtonRef.current);
+
+      function handleKeyDown(event: KeyboardEvent) {
+        if (event.key === "Escape") {
+          event.preventDefault();
+          closeDrawer();
+          return;
+        }
+
+        trapDivBrainDialogTabKey(
+          event,
+          dialogRef.current,
+          document.activeElement,
+        );
       }
+
+      document.addEventListener("keydown", handleKeyDown);
+
+      return () => {
+        document.removeEventListener("keydown", handleKeyDown);
+        document.body.style.overflow = previousOverflow;
+      };
     }
 
-    document.addEventListener("keydown", handleKeyDown);
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [open]);
+    if (wasOpenRef.current) {
+      wasOpenRef.current = false;
+      focusDivBrainElementIfConnected(triggerButtonRef.current);
+    }
+  }, [open, closeDrawer]);
 
   return (
     <div>
       <button
+        ref={triggerButtonRef}
         type="button"
         className="divlab-btn-ghost inline-flex min-h-10 items-center"
         aria-expanded={open}
@@ -60,15 +89,15 @@ export default function DivBrainHistoryDrawer({
 
       {open ? (
         <div className="fixed inset-0 z-50 lg:hidden">
-          <button
-            type="button"
-            aria-label="Stäng historik"
+          <div
+            aria-hidden="true"
             className="absolute inset-0 bg-black/50"
-            onClick={() => setOpen(false)}
+            onClick={closeDrawer}
           />
 
           <aside
             id={panelId}
+            ref={dialogRef}
             role="dialog"
             aria-modal="true"
             aria-label="Konversationshistorik"
@@ -79,8 +108,9 @@ export default function DivBrainHistoryDrawer({
                 Konversationer
               </p>
               <button
+                ref={closeButtonRef}
                 type="button"
-                onClick={() => setOpen(false)}
+                onClick={closeDrawer}
                 aria-label="Stäng historik"
                 className="rounded-lg border divlab-border-neutral px-2.5 py-1.5 text-xs font-medium text-divlab-text-muted transition hover:border-divlab-border-strong hover:text-divlab-text"
               >
@@ -124,6 +154,7 @@ export default function DivBrainHistoryDrawer({
                         <Link
                           href={`/brain?conversation=${encodeURIComponent(conversation.id)}`}
                           aria-current={selected ? "page" : undefined}
+                          onClick={closeDrawer}
                           className={`block rounded-xl px-3 py-2.5 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-divlab-blue ${
                             selected
                               ? "bg-divlab-elevated text-divlab-text"

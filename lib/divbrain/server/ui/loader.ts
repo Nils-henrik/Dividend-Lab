@@ -5,6 +5,7 @@
  * Selected conversation id from navigation is treated as untrusted.
  *
  * Viewing never creates, updates, archives, restores, or deletes conversations.
+ * Unexpected repository or mapping throws collapse to data_unavailable.
  *
  * Server-only — must never be imported by client components.
  */
@@ -46,11 +47,7 @@ function toListItem(
   };
 }
 
-/**
- * Build the browser-safe shell view model for an allowlisted actor.
- * Does not perform Alpha access checks — the page must gate first.
- */
-export async function loadDivBrainShellData(
+async function loadDivBrainShellDataInner(
   params: LoadDivBrainShellDataParams,
 ): Promise<DivBrainShellViewModel> {
   const listResult = await params.repository.listConversations({
@@ -120,7 +117,7 @@ export async function loadDivBrainShellData(
 
   if (!owned.ok) {
     // Missing and cross-owner both surface as not_found from the repository.
-    // Any other failure collapses to the same safe presentation state.
+    // Any other typed failure collapses to data_unavailable.
     if (
       owned.error.code === "not_found" ||
       owned.error.code === "invalid_request"
@@ -165,6 +162,21 @@ export async function loadDivBrainShellData(
       transcript: transcript.data,
     },
   };
+}
+
+/**
+ * Build the browser-safe shell view model for an allowlisted actor.
+ * Does not perform Alpha access checks — the page must gate first.
+ * Unexpected throws never escape the page lifecycle.
+ */
+export async function loadDivBrainShellData(
+  params: LoadDivBrainShellDataParams,
+): Promise<DivBrainShellViewModel> {
+  try {
+    return await loadDivBrainShellDataInner(params);
+  } catch {
+    return { state: "data_unavailable" };
+  }
 }
 
 /**

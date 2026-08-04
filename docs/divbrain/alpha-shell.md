@@ -187,7 +187,7 @@ Ticket **1A-9b** replaces this with real interaction.
 - one `h1` (DivBrain)
 - conversation history `nav` landmark
 - `aria-current` on selected conversation
-- drawer: `aria-expanded`, `aria-controls`, Escape, close control
+- drawer: `aria-expanded`, `aria-controls`, Escape, close control, focus move/restore, Tab containment
 - disabled semantics on non-interactive controls
 - plain selectable message text (no `dangerouslySetInnerHTML`)
 
@@ -204,6 +204,24 @@ Product UI uses **DivBrain**, not “Dividend Brain”.
 ## Safe error behavior
 
 Repository construction / list / transcript failures keep Alpha access intact and render `data_unavailable` without raw Supabase, environment, table, or stack details.
+
+Fail-closed rules:
+
+- `createDivBrainRuntimeRepository()` wraps persistence-port and repository construction; unexpected throws become a fresh catalog `internal_error` result (thrown public codes are not preserved)
+- thrown `listConversations` / `getConversation` / mapping failures collapse to `{ state: "data_unavailable" }`
+- thrown `listMessages` or malformed transcript page payloads become a safe transcript `internal_error`, which the page loader maps to `data_unavailable`
+- typed repository `not_found` / `invalid_request` for an explicit selection remain `conversation_not_found`
+- raw runtime failures never escape the `/brain` page lifecycle as uncontrolled server errors
+
+## Mobile history drawer
+
+- `Historik` opens an accessible dialog
+- Escape, backdrop click, close button, and conversation-link click all call the same `closeDrawer()` path
+- opening moves focus into the dialog (close control preferred)
+- Tab / Shift+Tab remain contained in the dialog
+- closing restores focus to the Historik trigger when it still exists
+- body scroll is restored on close
+- the visual backdrop is not a Tab stop
 
 ## Browser verification
 
