@@ -219,7 +219,9 @@ Fail-closed rules:
 - Escape, backdrop click, close button, and conversation-link click all call the same `closeDrawer()` path
 - opening moves focus into the dialog (close control preferred)
 - Tab / Shift+Tab remain contained in the dialog
-- closing restores focus to the Historik trigger when it still exists
+- closing restores focus to the Historik trigger when it still exists and is visibly focusable
+- when the viewport enters the desktop (`lg` / 1024px) layout while open, the drawer closes, scroll lock and keydown trap are cleaned up, and focus is **not** restored to the CSS-hidden mobile trigger
+- returning to mobile leaves the drawer closed with normal scrolling
 - body scroll is restored on close
 - the visual backdrop is not a Tab stop
 

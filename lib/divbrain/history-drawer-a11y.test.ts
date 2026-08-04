@@ -1,6 +1,6 @@
 /**
- * DivBrain history-drawer accessibility helper tests.
- * Uses lightweight DOM stubs — no React or jsdom dependency.
+ * DivBrain history-drawer accessibility and responsive helper tests.
+ * Uses lightweight stubs — no React or jsdom dependency.
  */
 
 import assert from "node:assert/strict";
@@ -10,8 +10,13 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
+  DIVBRAIN_HISTORY_DRAWER_DESKTOP_MEDIA_QUERY,
+  DIVBRAIN_HISTORY_DRAWER_DESKTOP_MIN_WIDTH_PX,
   focusDivBrainElementIfConnected,
+  isDivBrainElementVisiblyFocusable,
   listDivBrainDialogFocusableElements,
+  shouldRestoreDivBrainHistoryDrawerTriggerFocus,
+  subscribeDivBrainDesktopMediaChange,
   trapDivBrainDialogTabKey,
 } from "./history-drawer-a11y";
 
@@ -27,6 +32,7 @@ function createFakeElement(options: {
   ariaHiddenAncestor?: boolean;
   text: string;
   connected?: boolean;
+  clientRectCount?: number;
 }): FakeElement {
   const element = {
     textContent: options.text,
@@ -49,6 +55,12 @@ function createFakeElement(options: {
         return {} as Element;
       }
       return null;
+    },
+    getClientRects() {
+      const count = options.clientRectCount ?? 1;
+      return {
+        length: count,
+      } as DOMRectList;
     },
     focus() {
       this._focused = true;
@@ -141,8 +153,128 @@ describe("DivBrain history drawer a11y helpers", () => {
   });
 });
 
+describe("DivBrain history drawer responsive helpers", () => {
+  it("uses a single named desktop media query matching Tailwind lg", () => {
+    assert.equal(DIVBRAIN_HISTORY_DRAWER_DESKTOP_MIN_WIDTH_PX, 1024);
+    assert.equal(
+      DIVBRAIN_HISTORY_DRAWER_DESKTOP_MEDIA_QUERY,
+      "(min-width: 1024px)",
+    );
+  });
+
+  it("treats zero client rects as not visibly focusable even when connected", () => {
+    const hidden = createFakeElement({
+      text: "Historik",
+      connected: true,
+      clientRectCount: 0,
+    });
+    const visible = createFakeElement({
+      text: "Historik",
+      connected: true,
+      clientRectCount: 1,
+    });
+
+    assert.equal(isDivBrainElementVisiblyFocusable(hidden), false);
+    assert.equal(isDivBrainElementVisiblyFocusable(visible), true);
+  });
+
+  it("suppresses focus restoration for desktop and navigate close reasons", () => {
+    const visible = createFakeElement({
+      text: "Historik",
+      connected: true,
+      clientRectCount: 1,
+    });
+    const hidden = createFakeElement({
+      text: "Historik",
+      connected: true,
+      clientRectCount: 0,
+    });
+
+    assert.equal(
+      shouldRestoreDivBrainHistoryDrawerTriggerFocus("desktop", visible),
+      false,
+    );
+    assert.equal(
+      shouldRestoreDivBrainHistoryDrawerTriggerFocus("navigate", visible),
+      false,
+    );
+    assert.equal(
+      shouldRestoreDivBrainHistoryDrawerTriggerFocus("user", visible),
+      true,
+    );
+    assert.equal(
+      shouldRestoreDivBrainHistoryDrawerTriggerFocus("user", hidden),
+      false,
+    );
+  });
+
+  it("subscribes to media changes and unsubscribes on cleanup", () => {
+    const listeners: Array<(event: { matches: boolean }) => void> = [];
+    const mediaQuery = {
+      matches: false,
+      addEventListener(
+        _type: "change",
+        listener: (event: { matches: boolean }) => void,
+      ) {
+        listeners.push(listener);
+      },
+      removeEventListener(
+        _type: "change",
+        listener: (event: { matches: boolean }) => void,
+      ) {
+        const index = listeners.indexOf(listener);
+        if (index >= 0) {
+          listeners.splice(index, 1);
+        }
+      },
+    };
+
+    let desktopCloseCount = 0;
+    const unsubscribe = subscribeDivBrainDesktopMediaChange(mediaQuery, () => {
+      desktopCloseCount += 1;
+    });
+
+    assert.equal(listeners.length, 1);
+    listeners[0]?.({ matches: false });
+    assert.equal(desktopCloseCount, 0);
+    listeners[0]?.({ matches: true });
+    assert.equal(desktopCloseCount, 1);
+
+    unsubscribe();
+    assert.equal(listeners.length, 0);
+    // Further events cannot fire after unsubscribe.
+    assert.equal(desktopCloseCount, 1);
+  });
+
+  it("supports legacy addListener/removeListener media queries", () => {
+    const listeners: Array<(event: { matches: boolean }) => void> = [];
+    const mediaQuery = {
+      matches: false,
+      addListener(listener: (event: { matches: boolean }) => void) {
+        listeners.push(listener);
+      },
+      removeListener(listener: (event: { matches: boolean }) => void) {
+        const index = listeners.indexOf(listener);
+        if (index >= 0) {
+          listeners.splice(index, 1);
+        }
+      },
+    };
+
+    let closed = false;
+    const unsubscribe = subscribeDivBrainDesktopMediaChange(mediaQuery, () => {
+      closed = true;
+    });
+
+    listeners[0]?.({ matches: true });
+    assert.equal(closed, true);
+    unsubscribe();
+    assert.equal(listeners.length, 0);
+  });
+});
+
 describe("DivBrain history drawer source boundaries", () => {
-  it("explicitly closes on conversation selection and wires focus refs", () => {
+  it("wires desktop close, focus reasons, and existing dismissal paths", () => {
     const source = readFileSync(
       join(__dirname, "../../components/brain/DivBrainHistoryDrawer.tsx"),
       "utf8",
@@ -153,25 +285,27 @@ describe("DivBrain history drawer source boundaries", () => {
     assert.equal(source.includes("closeButtonRef"), true);
     assert.equal(source.includes("dialogRef"), true);
     assert.equal(source.includes("closeDrawer"), true);
-    assert.equal(source.includes("onClick={closeDrawer}"), true);
+    assert.equal(source.includes('closeDrawer("user")'), true);
+    assert.equal(source.includes('closeDrawer("desktop")'), true);
+    assert.equal(source.includes('closeDrawer("navigate")'), true);
+    assert.equal(source.includes("DIVBRAIN_HISTORY_DRAWER_DESKTOP_MEDIA_QUERY"), true);
+    assert.equal(source.includes("subscribeDivBrainDesktopMediaChange"), true);
+    assert.equal(
+      source.includes("shouldRestoreDivBrainHistoryDrawerTriggerFocus"),
+      true,
+    );
     assert.equal(source.includes('event.key === "Escape"'), true);
     assert.equal(source.includes("trapDivBrainDialogTabKey"), true);
-    assert.equal(source.includes("focusDivBrainElementIfConnected"), true);
+    assert.equal(source.includes("document.body.style.overflow"), true);
     assert.equal(source.includes("@/lib/divbrain/server"), false);
     assert.equal(source.includes("lib/divbrain/server"), false);
     assert.equal(source.includes("use server"), false);
     assert.equal(source.includes("submitMessage"), false);
     assert.equal(source.includes("createConversation"), false);
-    assert.equal(source.includes("type=\"submit\""), false);
+    assert.equal(source.includes('type="submit"'), false);
 
     // Backdrop is a non-tab-stop presentation surface, not a button.
     assert.equal(source.includes('aria-hidden="true"'), true);
     assert.equal(source.includes('className="absolute inset-0 bg-black/50"'), true);
-    assert.equal(
-      source.includes(
-        'aria-label="Stäng historik"\n            className="absolute inset-0',
-      ),
-      false,
-    );
   });
 });

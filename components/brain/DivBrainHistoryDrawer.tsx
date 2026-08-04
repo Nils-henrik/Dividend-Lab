@@ -4,8 +4,12 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { formatDivBrainConversationTimestamp } from "@/lib/divbrain/dates";
 import {
+  DIVBRAIN_HISTORY_DRAWER_DESKTOP_MEDIA_QUERY,
   focusDivBrainElementIfConnected,
+  shouldRestoreDivBrainHistoryDrawerTriggerFocus,
+  subscribeDivBrainDesktopMediaChange,
   trapDivBrainDialogTabKey,
+  type DivBrainHistoryDrawerCloseReason,
 } from "@/lib/divbrain/history-drawer-a11y";
 
 export type DivBrainHistoryConversationItem = {
@@ -32,10 +36,39 @@ export default function DivBrainHistoryDrawer({
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
   const dialogRef = useRef<HTMLElement | null>(null);
   const wasOpenRef = useRef(false);
+  const closeReasonRef = useRef<DivBrainHistoryDrawerCloseReason>("user");
 
-  const closeDrawer = useCallback(() => {
-    setOpen(false);
-  }, []);
+  const closeDrawer = useCallback(
+    (reason: DivBrainHistoryDrawerCloseReason = "user") => {
+      closeReasonRef.current = reason;
+      setOpen(false);
+    },
+    [],
+  );
+
+  // Close when the viewport enters the desktop (lg) layout.
+  useEffect(() => {
+    if (
+      typeof window === "undefined" ||
+      typeof window.matchMedia !== "function"
+    ) {
+      return;
+    }
+
+    const mediaQuery = window.matchMedia(
+      DIVBRAIN_HISTORY_DRAWER_DESKTOP_MEDIA_QUERY,
+    );
+
+    function closeForDesktop() {
+      closeDrawer("desktop");
+    }
+
+    if (mediaQuery.matches) {
+      closeForDesktop();
+    }
+
+    return subscribeDivBrainDesktopMediaChange(mediaQuery, closeForDesktop);
+  }, [closeDrawer]);
 
   useEffect(() => {
     if (open) {
@@ -49,7 +82,7 @@ export default function DivBrainHistoryDrawer({
       function handleKeyDown(event: KeyboardEvent) {
         if (event.key === "Escape") {
           event.preventDefault();
-          closeDrawer();
+          closeDrawer("user");
           return;
         }
 
@@ -70,7 +103,14 @@ export default function DivBrainHistoryDrawer({
 
     if (wasOpenRef.current) {
       wasOpenRef.current = false;
-      focusDivBrainElementIfConnected(triggerButtonRef.current);
+      if (
+        shouldRestoreDivBrainHistoryDrawerTriggerFocus(
+          closeReasonRef.current,
+          triggerButtonRef.current,
+        )
+      ) {
+        focusDivBrainElementIfConnected(triggerButtonRef.current);
+      }
     }
   }, [open, closeDrawer]);
 
@@ -92,7 +132,7 @@ export default function DivBrainHistoryDrawer({
           <div
             aria-hidden="true"
             className="absolute inset-0 bg-black/50"
-            onClick={closeDrawer}
+            onClick={() => closeDrawer("user")}
           />
 
           <aside
@@ -110,7 +150,7 @@ export default function DivBrainHistoryDrawer({
               <button
                 ref={closeButtonRef}
                 type="button"
-                onClick={closeDrawer}
+                onClick={() => closeDrawer("user")}
                 aria-label="Stäng historik"
                 className="rounded-lg border divlab-border-neutral px-2.5 py-1.5 text-xs font-medium text-divlab-text-muted transition hover:border-divlab-border-strong hover:text-divlab-text"
               >
@@ -154,7 +194,7 @@ export default function DivBrainHistoryDrawer({
                         <Link
                           href={`/brain?conversation=${encodeURIComponent(conversation.id)}`}
                           aria-current={selected ? "page" : undefined}
-                          onClick={closeDrawer}
+                          onClick={() => closeDrawer("navigate")}
                           className={`block rounded-xl px-3 py-2.5 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-divlab-blue ${
                             selected
                               ? "bg-divlab-elevated text-divlab-text"
