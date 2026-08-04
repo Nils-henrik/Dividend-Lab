@@ -5,8 +5,8 @@ Shared DivBrain domain language for server and client.
 ## Boundaries
 
 - **Shared (this folder today):** `constants`, `types`, `errors`, `results`, `validation`, `sources`, `citations`, `guardrails` — safe to import from server or client.
-- **Server-only by convention:** `server/guardrails`, `server/guardrail-evals`, `server/providers`, `server/identity`, `server/policy`, `server/context`, `server/context-evals`, `server/repository`, `server/service`, `server/access` — detection logic, eval fixtures, identity/policy text, context assembly, provider boundary, conversation persistence, application-service orchestration, and Internal Alpha access. These modules live under `lib/divbrain/server/` and **must never be imported by client components** or other browser-safe UI. Package-level `import "server-only"` is deferred until an approved dependency/foundation ticket; folder placement and this README are the current boundary.
-- Later tickets add real provider adapters, Learning retrieval, and full `/brain` UI wiring under the same server-only rule.
+- **Server-only by convention:** `server/guardrails`, `server/guardrail-evals`, `server/providers`, `server/identity`, `server/policy`, `server/context`, `server/context-evals`, `server/repository`, `server/service`, `server/access`, `server/ui` — detection logic, eval fixtures, identity/policy text, context assembly, provider boundary, conversation persistence, application-service orchestration, Internal Alpha access, and the read-only `/brain` shell loader. These modules live under `lib/divbrain/server/` and **must never be imported by client components** or other browser-safe UI. Package-level `import "server-only"` is deferred until an approved dependency/foundation ticket; folder placement and this README are the current boundary.
+- Later tickets add real provider adapters, Learning retrieval, and interactive `/brain` composer wiring under the same server-only rule.
 - Browser-safe modules must never import server-only DivBrain code.
 - Never expose secrets, tokens, emails, raw provider/DB errors, stack traces, or hidden reasoning across the browser boundary.
 
@@ -215,6 +215,21 @@ Canonical documentation: [`docs/divbrain/alpha-access.md`](../../docs/divbrain/a
 - Exact normalized UUID match; missing/malformed config → catalog `access_denied`
 - No hardcoded user ids; no allowlist logging; no entitlement database
 - Page-level `/brain` gate is additional to service-level `checkAccess` in `submitMessage`
+
+## Internal Alpha shell (Ticket 1A-9a)
+
+Server-only read-only shell wiring under `server/ui/`:
+
+- `runtime.ts` — `createDivBrainRuntimeRepository()`
+- `loader.ts` — `loadDivBrainShellData(...)`
+- `transcript.ts` — bounded UI transcript loader (includes terminal statuses)
+- `types.ts` — browser-safe view-model contracts
+
+Shared browser-safe date helpers: `dates.ts`.
+
+Canonical documentation: [`docs/divbrain/alpha-shell.md`](../../docs/divbrain/alpha-shell.md).
+
+UI components live under `components/brain/`. Only the history drawer is a client component; it must never import `lib/divbrain/server`.
 
 ## Sources and citations
 

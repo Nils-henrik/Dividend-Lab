@@ -59,6 +59,7 @@ docs/
     conversation-repository.md
     application-service.md
     alpha-access.md
+    alpha-shell.md
 ```
 
 ---

@@ -1,10 +1,5 @@
-import PlaceholderPage from "@/components/dashboard/PlaceholderPage";
+import { redirect } from "next/navigation";
 
-export default function DividendBrainPage() {
-  return (
-    <PlaceholderPage
-      title="Dividend Brain"
-      description="Dividend Brain förklarar portföljmönster, jämför avvägningar och utbildar utan att ge finansiell rådgivning."
-    />
-  );
+export default function DashboardBrainPage() {
+  redirect("/brain");
 }
