@@ -124,6 +124,11 @@ describe("DivBrain shell diagnostic categories", () => {
       "conversation_list_malformed_response",
       "conversation_list_unknown_failure",
       "shell_mapping_failure",
+      "conversation_list_permission_denied",
+      "conversation_list_relation_missing",
+      "conversation_list_column_missing",
+      "conversation_list_auth_rejected",
+      "conversation_list_postgrest_other",
     ]);
   });
 
@@ -141,6 +146,30 @@ describe("DivBrain shell diagnostic categories", () => {
         "malformed_response",
       ),
       "conversation_list_malformed_response",
+    );
+    assert.equal(
+      mapListConversationsPersistenceKindToDiagnosticCategory(
+        "permission_denied",
+      ),
+      "conversation_list_permission_denied",
+    );
+    assert.equal(
+      mapListConversationsPersistenceKindToDiagnosticCategory(
+        "relation_missing",
+      ),
+      "conversation_list_relation_missing",
+    );
+    assert.equal(
+      mapListConversationsPersistenceKindToDiagnosticCategory("column_missing"),
+      "conversation_list_column_missing",
+    );
+    assert.equal(
+      mapListConversationsPersistenceKindToDiagnosticCategory("auth_rejected"),
+      "conversation_list_auth_rejected",
+    );
+    assert.equal(
+      mapListConversationsPersistenceKindToDiagnosticCategory("postgrest_other"),
+      "conversation_list_postgrest_other",
     );
     assert.equal(
       mapListConversationsPersistenceKindToDiagnosticCategory("configuration"),

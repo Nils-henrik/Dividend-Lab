@@ -20,14 +20,16 @@ import type {
   DivBrainListConversationsQuery,
   DivBrainListMessagesQuery,
   DivBrainMessageInsert,
+  DivBrainPersistenceError,
   DivBrainPersistencePort,
   DivBrainPersistenceResult,
 } from "./persistence";
+import { classifyPostgrestFailure } from "./postgrest-failure";
 
 type LooseClient = SupabaseClient;
 
 function failed(
-  kind: "not_found" | "unavailable" | "query_failed" | "malformed_response",
+  kind: DivBrainPersistenceError["kind"],
 ): DivBrainPersistenceResult<never> {
   return { ok: false, error: { kind } };
 }
@@ -36,21 +38,7 @@ function mapPostgrestError(error: {
   message?: string;
   code?: string;
 } | null): DivBrainPersistenceResult<never> {
-  if (!error) {
-    return failed("query_failed");
-  }
-
-  const message = (error.message ?? "").toLowerCase();
-  if (
-    message.includes("fetch failed") ||
-    message.includes("network") ||
-    message.includes("timeout") ||
-    error.code === "PGRST301"
-  ) {
-    return failed("unavailable");
-  }
-
-  return failed("query_failed");
+  return failed(classifyPostgrestFailure(error));
 }
 
 function applyConversationCursorFilter(

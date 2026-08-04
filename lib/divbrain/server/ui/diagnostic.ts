@@ -16,6 +16,11 @@ export const DIVBRAIN_SHELL_DIAGNOSTIC_CATEGORIES = [
   "conversation_list_malformed_response",
   "conversation_list_unknown_failure",
   "shell_mapping_failure",
+  "conversation_list_permission_denied",
+  "conversation_list_relation_missing",
+  "conversation_list_column_missing",
+  "conversation_list_auth_rejected",
+  "conversation_list_postgrest_other",
 ] as const;
 
 export type DivBrainShellDiagnosticCategory =
@@ -93,6 +98,16 @@ export function mapListConversationsPersistenceKindToDiagnosticCategory(
       return "conversation_list_query_failed";
     case "malformed_response":
       return "conversation_list_malformed_response";
+    case "permission_denied":
+      return "conversation_list_permission_denied";
+    case "relation_missing":
+      return "conversation_list_relation_missing";
+    case "column_missing":
+      return "conversation_list_column_missing";
+    case "auth_rejected":
+      return "conversation_list_auth_rejected";
+    case "postgrest_other":
+      return "conversation_list_postgrest_other";
     default:
       return "conversation_list_unknown_failure";
   }

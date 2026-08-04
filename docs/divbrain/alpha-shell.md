@@ -230,8 +230,13 @@ Allowlisted categories only (no dynamic fields):
 - `conversation_list_malformed_response`
 - `conversation_list_unknown_failure`
 - `shell_mapping_failure`
+- `conversation_list_permission_denied` (Postgres `42501`)
+- `conversation_list_relation_missing` (Postgres `42P01` / PostgREST `PGRST205`)
+- `conversation_list_column_missing` (Postgres `42703` / PostgREST `PGRST204`)
+- `conversation_list_auth_rejected` (PostgREST `PGRST301`)
+- `conversation_list_postgrest_other` (remaining PostgREST query failures)
 
-Diagnostics never log secrets, URLs, actor ids, conversation ids, PostgREST messages, stacks, or raw thrown values. Browser UI remains the generic `data_unavailable` copy with no category exposed.
+Raw PostgREST codes/messages are classified internally and never logged. Diagnostics never log secrets, URLs, actor ids, conversation ids, stacks, or thrown values. Browser UI remains the generic `data_unavailable` copy with no category exposed.
 
 ## Mobile history drawer
 

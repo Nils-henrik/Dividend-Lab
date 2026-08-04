@@ -231,7 +231,7 @@ Canonical documentation: [`docs/divbrain/alpha-shell.md`](../../docs/divbrain/al
 
 UI components live under `components/brain/`. Only the history drawer is a client component; it must never import `lib/divbrain/server`.
 
-Operational `/brain` diagnostics (`server/ui/diagnostic.ts`) may emit a single fixed-category `console.error` on failure for Vercel logs. Categories are allowlisted strings only — never secrets, ids, URLs, or raw errors — and are never exposed to the browser.
+Operational `/brain` diagnostics (`server/ui/diagnostic.ts`) may emit a single fixed-category `console.error` on failure for Vercel logs. Categories are allowlisted strings only — never secrets, ids, URLs, or raw errors — and are never exposed to the browser. PostgREST failures are classified by stable codes in `server/repository/postgrest-failure.ts` before mapping to those categories.
 
 ## Sources and citations
 
