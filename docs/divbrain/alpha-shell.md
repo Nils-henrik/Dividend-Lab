@@ -71,6 +71,19 @@ Returns only `DivBrainResult<DivBrainConversationRepository>`.
 
 Never returns a Supabase client, credentials, or persistence internals.
 
+### Service-role table privileges
+
+Trusted repository access requires **explicit** `service_role` table grants in addition to RLS. Ticket 1A-6 established authenticated RLS/grants; it did not grant `service_role`. Production diagnostic `conversation_list_permission_denied` (PostgreSQL `42501`) confirmed the missing privileges.
+
+Least-privilege grants (migration `20260804183000_grant_divbrain_service_role_privileges.sql`):
+
+| Table | Privileges to `service_role` |
+|-------|------------------------------|
+| `public.divbrain_conversations` | `SELECT`, `INSERT`, `UPDATE`, `DELETE` |
+| `public.divbrain_messages` | `SELECT`, `INSERT` only |
+
+RLS and table grants are separate layers. Client-facing authenticated permissions are unchanged (`anon` receives no DivBrain privileges; authenticated message writes remain denied). After this change merges, Production still needs the migration applied before the permission failure clears. Fixed-category diagnostics remain in place until Production verification succeeds.
+
 ## Read-only shell data flow
 
 ```text
