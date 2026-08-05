@@ -15,7 +15,8 @@ const article: LearningArticle = {
   coverImage: "/learning/ta-kontroll-over-premiepensionen.png",
   coverImageAlt:
     "En ensam randig solstol bredvid en palm på en lugn strand, som symboliserar pension och långsiktigt sparande.",
-  thumbnailObjectPosition: "center top",
+  thumbnailImageUrl: "/learning/ta-kontroll-over-premiepensionen-thumbnail.png",
+  thumbnailObjectPosition: "18% center",
   showDefaultDisclaimer: false,
   relatedArticleSlugs: [
     "sparkvot-budgetera-lonen-i-procent",

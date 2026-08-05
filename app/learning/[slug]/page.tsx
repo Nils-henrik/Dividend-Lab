@@ -31,21 +31,50 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return {};
   }
 
+  const siteUrl = getSiteUrlFromEnv();
   const pageTitle = article.seoTitle ?? article.title;
+  const canonical = `${siteUrl}/learning/${article.slug}`;
+  const imagePath = article.coverImage;
+  const imageUrl = imagePath
+    ? imagePath.startsWith("http")
+      ? imagePath
+      : `${siteUrl}${imagePath}`
+    : undefined;
 
   return {
     title: `${pageTitle} | ${DIVLAB_BRAND_NAME}`,
     description: article.description,
     alternates: {
-      canonical: `${getSiteUrlFromEnv()}/learning/${article.slug}`,
+      canonical,
     },
     openGraph: {
       title: pageTitle,
       description: article.description,
       type: "article",
+      url: canonical,
       ...(article.publishedAt ? { publishedTime: article.publishedAt } : {}),
       ...(article.updatedAt ? { modifiedTime: article.updatedAt } : {}),
+      ...(imageUrl
+        ? {
+            images: [
+              {
+                url: imageUrl,
+                alt: article.coverImageAlt ?? article.title,
+              },
+            ],
+          }
+        : {}),
     },
+    ...(imageUrl
+      ? {
+          twitter: {
+            card: "summary_large_image",
+            title: pageTitle,
+            description: article.description,
+            images: [imageUrl],
+          },
+        }
+      : {}),
   };
 }
 
