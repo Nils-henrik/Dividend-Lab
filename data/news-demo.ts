@@ -6,6 +6,7 @@ import { BORSVECKAN_I_KORTHET_AI_FROSSA_OLJERUSNING_RANTEHOT_ARTICLE } from "@/d
 import { IRAN_OLJEPRIS_HORMUZ_BORSEN_ARTICLE } from "@/data/news-articles/iran-oljepris-hormuz-borsen";
 import { NOKIA_OVERRASKAR_AI_FORSALJNINGEN_FORDUBBLADES_ARTICLE } from "@/data/news-articles/nokia-overraskar-ai-forsaljningen-fordubblades";
 import { NORDEN_I_CENTRUM_4_AUGUSTI_2026_ARTICLE } from "@/data/news-articles/norden-i-centrum-4-augusti-2026";
+import { NORDEN_I_CENTRUM_5_AUGUSTI_2026_ARTICLE } from "@/data/news-articles/norden-i-centrum-5-augusti-2026";
 import { ONSDAGENS_RAPPORTER_TESLA_IBM_ARTICLE } from "@/data/news-articles/onsdagens-rapporter-tesla-ibm";
 import { SINCH_RASAR_EFTER_Q2_RAPPORTEN_2026_ARTICLE } from "@/data/news-articles/sinch-rasar-efter-q2-rapporten-2026";
 import { SIVERS_RUSAR_AI_FOTONIK_USA_IMPORTREGLER_ARTICLE } from "@/data/news-articles/sivers-rusar-ai-fotonik-usa-importregler";
@@ -17,6 +18,7 @@ import { USA_BORSEN_FALLER_ALPHABET_TESLA_OLJA_ARTICLE } from "@/data/news-artic
  * Not live or verified financial news — replace via a provider adapter later.
  */
 export const DEMO_NEWS_ARTICLES: NewsArticle[] = [
+  NORDEN_I_CENTRUM_5_AUGUSTI_2026_ARTICLE,
   SIVERS_RUSAR_AI_FOTONIK_USA_IMPORTREGLER_ARTICLE,
   NORDEN_I_CENTRUM_4_AUGUSTI_2026_ARTICLE,
   BORSVECKA_32_INVESTOR_INFLATION_USA_JOBB_ARTICLE,
