@@ -5,6 +5,7 @@ import direktavkastning from "./articles/direktavkastning-och-utdelningssakerhet
 import fireEkonomiskFrihet from "./articles/fire-ekonomisk-frihet";
 import sparande from "./articles/sparande-i-borjan";
 import sparkvot from "./articles/sparkvot-budgetera-lonen-i-procent";
+import premiepension from "./articles/ta-kontroll-over-premiepensionen";
 import tidTillFrihet from "./articles/tid-till-ekonomisk-frihet";
 import { withReadingTime, type LearningArticleWithReadingTime } from "./reading-time";
 import type { LearningArticle } from "./types";
@@ -23,6 +24,7 @@ export {
 } from "./reading-time";
 
 const rawArticles: LearningArticle[] = [
+  premiepension,
   fireEkonomiskFrihet,
   sparkvot,
   vadArEnAktie,
