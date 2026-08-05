@@ -35,6 +35,7 @@ export const NORDEN_I_CENTRUM_5_AUGUSTI_2026_ARTICLE: NewsArticle = {
   featured: true,
   imageUrl: "/news-demo/norden-i-centrum-5-augusti-2026.webp",
   thumbnailObjectPosition: "center 34%",
+  mobileThumbnailObjectPosition: "center 21%",
   imageAlt:
     "Omslagsbild för Norden i centrum den 5 augusti med Novo Nordisk, Coffee Stain, W5 Solutions och andra nordiska börsbolag.",
   imageCaption: "Illustration: DivLab.",

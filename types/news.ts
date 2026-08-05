@@ -46,6 +46,12 @@ export interface NewsArticle {
    * when omitted.
    */
   thumbnailObjectPosition?: string;
+  /**
+   * Optional mobile-only object-position for list cards and article hero
+   * crops below the `md` breakpoint. Falls back to `thumbnailObjectPosition`
+   * when omitted.
+   */
+  mobileThumbnailObjectPosition?: string;
   /** When set, the article has an internal detail page at `/news/[slug]`. */
   slug?: string;
   /** Opening body paragraphs on the detail page (after the list ingress/summary). */

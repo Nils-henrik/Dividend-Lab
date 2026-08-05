@@ -27,6 +27,7 @@ export default function NewsFeaturedStory({ article }: Props) {
             imageUrl={listImageUrl}
             variant="featured"
             objectPosition={article.thumbnailObjectPosition ?? "center 40%"}
+            mobileObjectPosition={article.mobileThumbnailObjectPosition}
           />
         )}
 

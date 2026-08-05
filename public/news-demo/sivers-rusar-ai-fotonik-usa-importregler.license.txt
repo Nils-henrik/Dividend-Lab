@@ -10,5 +10,7 @@ Composition notes:
   market line, embedded headline "SIVERS RUSAR" and "AI-fotonik i fokus".
 - Exported as WebP 1600×900 (16:9). List/hero object-cover uses article
   thumbnailObjectPosition "center 32%" so headline and beams stay readable.
+- Mobile list/hero crops use mobileThumbnailObjectPosition "center 18%" so
+  "SIVERS RUSAR" and "AI-fotonik i fokus" stay fully inside the frame.
 
 Usage: Editorial news cover for DivLab Börsnyheter. Illustration: DivLab.

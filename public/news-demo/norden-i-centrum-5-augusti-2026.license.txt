@@ -12,5 +12,7 @@ Composition notes:
   redesign, redraw or crop of the original composition.
 - Native size 1023×682 (approx. 3:2). List/hero object-cover uses article
   thumbnailObjectPosition "center 34%" so the headline and date stay readable.
+- Mobile list/hero crops use mobileThumbnailObjectPosition "center 21%" to
+  keep "Norden i centrum" and "5 Augusti" readable without shrinking panel copy.
 
 Usage: Editorial news cover for DivLab Börsnyheter. Illustration: DivLab.

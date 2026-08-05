@@ -41,6 +41,7 @@ export const SIVERS_RUSAR_AI_FOTONIK_USA_IMPORTREGLER_ARTICLE: NewsArticle = {
   featured: true,
   imageUrl: "/news-demo/sivers-rusar-ai-fotonik-usa-importregler.webp",
   thumbnailObjectPosition: "center 32%",
+  mobileThumbnailObjectPosition: "center 18%",
   imageAlt:
     "Optiska ljusstrålar i ett AI-datacenter med rubriken Sivers rusar",
   imageCaption: "Illustration: DivLab.",
