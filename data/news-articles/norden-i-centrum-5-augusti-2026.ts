@@ -15,7 +15,8 @@ import type { NewsArticle } from "@/types/news";
  *   EUR 4.2m cash — orron.com / Aug 5 interim report.
  * - Novo Nordisk Q2: adj sales DKK 78,488m (+7% CER), adj op profit DKK 33,389m (+11% CER),
  *   2026 guidance raised to 0% to −6% CER — novonordisk.com Aug 4 report; call 13:00 CEST Aug 5.
- * - Sweden PMI-services July: 54.2 (from 56.5 in June) — Swedbank/Silf, Aug 5 08:30.
+ * - Sweden PMI-services July: 54.2 (from 56.5); PMI-Composite 54.7 (from 56.9) —
+ *   Swedbank/Silf, Aug 5 08:30.
  * - Avanza July stats: net inflow SEK 8,600m, customers 2,352,600 — investors.avanza.se Aug 5.
  * - Norway salmon week 31: fresh price NOK 73.57/kg, volume 26,958 t (Jul 27–Aug 2) — SSB Aug 5.
  *
@@ -30,7 +31,7 @@ export const NORDEN_I_CENTRUM_5_AUGUSTI_2026_ARTICLE: NewsArticle = {
     "Novo Nordisk möter marknaden efter rapporten, Coffee Stain växer men missar förväntningarna och W5 Solutions dubblar försäljningen. Här är dagens nordiska börsbild.",
   category: "market",
   source: "DivLab",
-  publishedAt: "2026-08-05T07:30:00+02:00",
+  publishedAt: "2026-08-05T08:45:00+02:00",
   url: "/news/norden-i-centrum-5-augusti-2026",
   featured: true,
   imageUrl: "/news-demo/norden-i-centrum-5-augusti-2026.webp",
@@ -150,7 +151,7 @@ export const NORDEN_I_CENTRUM_5_AUGUSTI_2026_ARTICLE: NewsArticle = {
         "Saab kan fortsätta påverkas av Europas upprustning och geopolitik.",
         "W5:s rapport visar att efterfrågan finns även längre ned i försvarsindustrins leverantörskedja, men också att snabb expansion kan skapa kostnadsproblem.",
         "Avanza publicerade månadsstatistik för juli klockan 08.30. Nettoinflödet uppgick till 8,6 miljarder kronor och antalet kunder till 2,35 miljoner vid månadsskiftet.",
-        "Samtidigt publicerades svenskt tjänste-PMI. Junis utfall var 56,6, vilket visade en tydlig expansion i tjänstesektorn. Julis PMI-tjänster backade till 54,2, vilket innebär fortfarande tillväxt men i lugnare takt än i juni.",
+        "Samtidigt publicerades svenskt tjänste-PMI och sammanvägt PMI. PMI–tjänster sjönk till 54,2 i juli från 56,5 i juni, men ligger kvar i tillväxtzonen. PMI-Composite backade till 54,7 från 56,9. Det innebär fortsatt expansion, men i lugnare takt än i juni.",
       ],
     },
     {
@@ -169,8 +170,8 @@ export const NORDEN_I_CENTRUM_5_AUGUSTI_2026_ARTICLE: NewsArticle = {
       heading: "Laxbolagen får nya exportdata",
       paragraphs: [
         "Mowi, SalMar och Lerøy Seafood är andra viktiga norska aktier att följa.",
-        "Norsk statistikmyndighet publicerar veckodata över exportpris och exportvolym för lax.",
-        "Senaste veckodata, för perioden 27 juli–2 augusti, visar en exportpris på 73,57 kronor per kilo för färsk lax och en volym på 26 958 ton. Det motsvarar en prisuppgång på 3,2 procent jämfört med föregående vecka och en volymökning på 4,4 procent.",
+        "Norsk statistikmyndighet har publicerat veckodata över exportpris och exportvolym för lax.",
+        "För vecka 31 (27 juli–2 augusti) blev exportpriset på färsk eller kyld lax 73,57 norska kronor per kilo, en uppgång med 3,2 procent jämfört med föregående vecka. Exportvolymen ökade med 4,4 procent till 26 958 ton.",
         "Siffrorna är viktiga eftersom kombinationen av pris, volym, biologiska kostnader och slaktvikt påverkar lönsamheten i hela sektorn.",
         "Kongsberg Gruppen följer i stället försvarsmarknaden och den geopolitiska utvecklingen.",
         "Bolaget kan därför röra sig i en annan riktning än den oljeberoende delen av Oslobörsen.",
@@ -227,10 +228,10 @@ export const NORDEN_I_CENTRUM_5_AUGUSTI_2026_ARTICLE: NewsArticle = {
     {
       heading: "Tiderna som kan flytta Norden i dag",
       paragraphs: [
-        "Klockan 08.30: Avanza publicerade månadsstatistik för juli och svenskt tjänste-PMI samt sammanvägt PMI publicerades.",
+        "Klockan 08.30: Avanza publicerade månadsstatistik för juli. Svenskt tjänste-PMI sjönk till 54,2 och PMI-Composite till 54,7.",
         "Klockan 09.00: Börserna öppnar i Stockholm, Oslo, Helsingfors och Köpenhamn. De första rörelserna i Coffee Stain, W5 Solutions, Orrön Energy och Novo Nordisk visar hur marknaden väger tillväxt mot förväntningar och lönsamhet.",
         "Klockan 10.00: Coffee Stain presenterar rapporten och svarar på frågor.",
-        "Klockan 11.00: W5 Solutions håller sin rapportpresentation. Norska bostadsmarknadsdata publiceras klockan 11.00 och kan påverka banker, fastighetsrelaterade bolag och synen på norsk ränta.",
+        "Klockan 11.00: W5 Solutions håller sin rapportpresentation. Samtidigt håller Eiendom Norge presskonferens om den norska bostadsprisstatistiken för juli, vilket kan påverka banker, fastighetsrelaterade bolag och synen på norsk ränta.",
         "Klockan 13.00: Novo Nordisk håller investerarsamtal om halvårsrapporten.",
         "Klockan 14.00: Orrön Energy presenterar sin rapport och Cloudberry-transaktionen.",
         "Klockan 14.15: USA publicerar ADP:s sysselsättningsstatistik för den privata sektorn.",
@@ -263,7 +264,7 @@ export const NORDEN_I_CENTRUM_5_AUGUSTI_2026_ARTICLE: NewsArticle = {
       heading: "Vanliga frågor",
       paragraphs: [
         "Vad händer på Stockholmsbörsen i dag?",
-        "Coffee Stain, W5 Solutions och Orrön Energy har rapporterat. Avanza publicerar månadsstatistik och svenskt tjänste-PMI kan påverka synen på konjunkturen och räntorna.",
+        "Coffee Stain, W5 Solutions och Orrön Energy har rapporterat. Avanza publicerade månadsstatistik för juli och svenskt tjänste-PMI sjönk till 54,2, vilket kan påverka synen på konjunkturen och räntorna.",
         "Varför är Novo Nordisk i fokus?",
         "Novo Nordisk har höjt helårsprognosen men marknaden oroas av konkurrensen inom fetmaläkemedel, försäljningen av Wegovy och motgångar i läkemedelspipelinen. Bolaget håller investerarsamtal klockan 13.00.",
         "Hur påverkar oljepriset Oslobörsen?",
