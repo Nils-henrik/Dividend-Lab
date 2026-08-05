@@ -1,10 +1,13 @@
 import AppShell from "@/components/layout/AppShell";
 import SettingsPageContent from "@/components/settings/SettingsPageContent";
+import { requireAuthenticatedUser } from "@/lib/auth/session";
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  const user = await requireAuthenticatedUser();
+
   return (
     <AppShell>
-      <SettingsPageContent />
+      <SettingsPageContent email={user.email} />
     </AppShell>
   );
 }

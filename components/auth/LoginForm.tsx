@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { signInWithIdentifier } from "@/app/login/actions";
 import PrimaryButton from "@/components/ui/Button";
 import { DIVLAB_BRAND_NAME } from "@/lib/site/brand";
 
@@ -14,7 +14,7 @@ type Props = {
 
 export default function LoginForm({ redirectTo, resetSuccess = false }: Props) {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -23,30 +23,22 @@ export default function LoginForm({ redirectTo, resetSuccess = false }: Props) {
     event.preventDefault();
     setError("");
 
-    const normalizedEmail = email.trim().toLowerCase();
-
-    if (!normalizedEmail || !password) {
-      setError("Ange e-post och lösenord för att fortsätta.");
-      return;
-    }
-
-    if (!normalizedEmail.includes("@")) {
-      setError("Ange en giltig e-postadress.");
+    if (!identifier.trim() || !password) {
+      setError("Ange e-post eller användarnamn och lösenord för att fortsätta.");
       return;
     }
 
     setIsLoading(true);
 
-    const supabase = createClient();
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: normalizedEmail,
+    const result = await signInWithIdentifier({
+      identifier,
       password,
     });
 
     setIsLoading(false);
 
-    if (signInError) {
-      setError(signInError.message);
+    if (!result.ok) {
+      setError(result.message);
       return;
     }
 
@@ -75,16 +67,17 @@ export default function LoginForm({ redirectTo, resetSuccess = false }: Props) {
       <form onSubmit={handleSubmit} className="space-y-5">
         <label className="block">
           <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-divlab-text-muted">
-            E-post
+            E-post eller användarnamn
           </span>
           <input
-            type="email"
-            value={email}
+            type="text"
+            name="identifier"
+            value={identifier}
             onChange={(event) => {
-              setEmail(event.target.value);
+              setIdentifier(event.target.value);
               setError("");
             }}
-            autoComplete="email"
+            autoComplete="username"
             required
             className="divlab-input w-full px-4 py-3"
           />

@@ -1,6 +1,11 @@
+import AccountEmailField from "./AccountEmailField";
 import ChangePasswordForm from "./ChangePasswordForm";
 
-export default function SettingsPageContent() {
+type Props = {
+  email: string;
+};
+
+export default function SettingsPageContent({ email }: Props) {
   return (
     <div className="space-y-8">
       <section className="divlab-hero">
@@ -13,6 +18,7 @@ export default function SettingsPageContent() {
         </p>
       </section>
 
+      <AccountEmailField email={email} />
       <ChangePasswordForm />
     </div>
   );

@@ -108,7 +108,7 @@ export async function saveProfileAction(
 ): Promise<ProfileFormState> {
   const user = await requireAuthenticatedUser();
   const values: ProfileFormValues = {
-    username: getFormValue(formData, "username").trim().toLowerCase(),
+    username: getFormValue(formData, "username"),
     displayName: getFormValue(formData, "displayName"),
     bio: getFormValue(formData, "bio"),
     favoriteSector: getFormValue(formData, "favoriteSector"),

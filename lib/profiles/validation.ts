@@ -1,4 +1,5 @@
 import type { ProfileFormValues, ProfileUpdateInput } from "./types";
+import { normalizeUsername } from "./username";
 
 export const PROFILE_LIMITS = {
   usernameMin: 3,
@@ -19,7 +20,7 @@ function normalizeOptionalValue(value: string | null | undefined) {
 
 export function validateProfileValues(values: ProfileFormValues) {
   const errors: string[] = [];
-  const username = normalizeOptionalValue(values.username)?.toLowerCase() ?? null;
+  const username = normalizeUsername(values.username ?? "");
   const displayName = normalizeOptionalValue(values.displayName);
   const bio = normalizeOptionalValue(values.bio);
   const favoriteSector = normalizeOptionalValue(values.favoriteSector);

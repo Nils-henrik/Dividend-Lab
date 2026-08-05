@@ -4,7 +4,6 @@ import type { UserProfile } from "./types";
 
 export type UserDisplayIdentity = {
   id: string;
-  email: string;
   name: string;
   initials: string;
   username: string | null;
@@ -13,7 +12,6 @@ export type UserDisplayIdentity = {
 
 export const GUEST_DISPLAY_IDENTITY: UserDisplayIdentity = {
   id: "guest",
-  email: "",
   name: "Gäst",
   initials: "DL",
   username: null,
@@ -70,7 +68,6 @@ export function getUserDisplayIdentity(
 
   return {
     id: user.id,
-    email: user.email,
     name: identityName,
     initials: getInitials(identityName),
     username: username || null,

@@ -1,5 +1,8 @@
 import SettingsPageContent from "@/components/settings/SettingsPageContent";
+import { requireAuthenticatedUser } from "@/lib/auth/session";
 
-export default function DashboardSettingsPage() {
-  return <SettingsPageContent />;
+export default async function DashboardSettingsPage() {
+  const user = await requireAuthenticatedUser();
+
+  return <SettingsPageContent email={user.email} />;
 }
