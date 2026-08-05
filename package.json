@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "node --experimental-strip-types --test tests/*.test.ts",
-    "test:seo": "tsx --test \"lib/seo/**/*.test.ts\"",
+    "test:seo": "tsx --test \"lib/seo/**/*.test.ts\" \"lib/news/**/*.test.ts\"",
     "test:divbrain": "tsx --test \"lib/divbrain/**/*.test.ts\"",
     "test:divbrain:context": "tsx --test \"lib/divbrain/server/context/**/*.test.ts\"",
     "test:db": "node --experimental-strip-types --test tests/database/*.db.test.ts",

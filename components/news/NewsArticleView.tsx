@@ -5,6 +5,10 @@ import type { NewsArticle } from "@/types/news";
 import { getNewsCategoryLabel } from "@/lib/news/categories";
 import { newsDisclaimer } from "@/lib/news/disclaimer";
 import { formatNewsPublishedAt } from "@/lib/news/format";
+import {
+  getResponsiveThumbnailPositionStyle,
+  RESPONSIVE_THUMBNAIL_POSITION_CLASS,
+} from "@/lib/news/thumbnail-position";
 
 type Props = {
   article: NewsArticle;
@@ -61,12 +65,11 @@ export default function NewsArticleView({ article }: Props) {
               height={900}
               priority
               sizes="(max-width: 768px) 100vw, 768px"
-              className="h-auto w-full object-cover"
-              style={
-                article.thumbnailObjectPosition
-                  ? { objectPosition: article.thumbnailObjectPosition }
-                  : undefined
-              }
+              className={`h-auto w-full object-cover ${RESPONSIVE_THUMBNAIL_POSITION_CLASS}`}
+              style={getResponsiveThumbnailPositionStyle({
+                desktop: article.thumbnailObjectPosition,
+                mobile: article.mobileThumbnailObjectPosition,
+              })}
             />
           </div>
           {(article.imageCaptionParts?.length || article.imageCaption) && (

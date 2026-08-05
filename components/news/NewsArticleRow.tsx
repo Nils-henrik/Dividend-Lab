@@ -24,6 +24,7 @@ export default function NewsArticleRow({ article }: Props) {
             imageUrl={listImageUrl}
             variant="row"
             objectPosition={article.thumbnailObjectPosition}
+            mobileObjectPosition={article.mobileThumbnailObjectPosition}
           />
         )}
 
