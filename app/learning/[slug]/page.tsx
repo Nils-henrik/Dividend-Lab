@@ -32,19 +32,34 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const pageTitle = article.seoTitle ?? article.title;
+  const canonical = `${getSiteUrlFromEnv()}/learning/${article.slug}`;
+  const imageUrl = article.coverImage
+    ? `${getSiteUrlFromEnv()}${article.coverImage}`
+    : undefined;
 
   return {
     title: `${pageTitle} | ${DIVLAB_BRAND_NAME}`,
     description: article.description,
     alternates: {
-      canonical: `${getSiteUrlFromEnv()}/learning/${article.slug}`,
+      canonical,
     },
     openGraph: {
       title: pageTitle,
       description: article.description,
       type: "article",
+      url: canonical,
       ...(article.publishedAt ? { publishedTime: article.publishedAt } : {}),
       ...(article.updatedAt ? { modifiedTime: article.updatedAt } : {}),
+      ...(imageUrl
+        ? {
+            images: [
+              {
+                url: imageUrl,
+                alt: article.coverImageAlt ?? article.title,
+              },
+            ],
+          }
+        : {}),
     },
   };
 }

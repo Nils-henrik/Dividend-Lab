@@ -12,16 +12,16 @@ const article: LearningArticle = {
   category: "Privatekonomi",
   publishedAt: "2026-08-05",
   updatedAt: "2026-08-05",
-  coverImage: "/learning/ta-kontroll-over-premiepensionen.png",
+  coverImage: "/learning/ta-kontroll-over-premiepensionen.webp",
   coverImageAlt:
     "En ensam randig solstol bredvid en palm på en lugn strand, som symboliserar pension och långsiktigt sparande.",
-  thumbnailObjectPosition: "center top",
+  thumbnailObjectPosition: "center",
   showDefaultDisclaimer: false,
   relatedArticleSlugs: [
     "sparkvot-budgetera-lonen-i-procent",
-    "vad-ar-en-indexfond",
     "fire-ekonomisk-frihet",
     "sparande-i-borjan",
+    "borja-investera-pa-borsen",
   ],
   intro: [
     "De flesta jämför bolåneräntor, elavtal och fondavgifter på sitt privata sparande. Samtidigt kan pensionspengar ligga placerade i årtionden utan att ägaren vet vilka fonder som finns på kontot.",
@@ -77,7 +77,8 @@ const article: LearningArticle = {
       ],
     },
     {
-      heading: "Varför behöver du kontrollera pensionen om förvalet redan är bra?",
+      heading:
+        "Varför behöver du kontrollera pensionen om förvalet redan är bra?",
       paragraphs: [
         "Det finns flera goda skäl att logga in och titta.",
         "Du kanske gjorde ett fondval för 15 år sedan och har glömt bort det. Fonderna kan ha valts utifrån en trend, en kampanj eller ett råd som inte längre känns relevant.",
@@ -209,7 +210,8 @@ const article: LearningArticle = {
       ],
     },
     {
-      heading: "Det viktigaste är inte att välja mest – utan att välja medvetet",
+      heading:
+        "Det viktigaste är inte att välja mest – utan att välja medvetet",
       paragraphs: [
         "Premiepensionen är inte hela din pension, men det är en del där små beslut kan få lång tid att verka.",
         "Du behöver inte bli fondexpert. Du behöver inte försöka förutse nästa börsvinnare. Du behöver inte heller ändra placeringen varje år.",
