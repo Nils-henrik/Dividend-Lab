@@ -1,4 +1,4 @@
-import { BRANCH_PREFIX, MAX_BRANCH_NAME_LENGTH } from "./config.ts";
+import { BRANCH_PREFIX, MAX_BRANCH_NAME_LENGTH } from "./config";
 
 /**
  * Generate a deterministic Cursor branch name for an Issue.

@@ -101,10 +101,7 @@ export function classifyPath(rawPath: string): SensitivePathMatch | null {
     return { path, category: "workflows" };
   }
 
-  if (path.startsWith("supabase/") || path === "supabase") {
-    return { path, category: "supabase" };
-  }
-
+  // More specific database categories before the broad supabase/** bucket.
   if (
     path.includes("/migrations/") ||
     path.startsWith("migrations/") ||
@@ -117,12 +114,20 @@ export function classifyPath(rawPath: string): SensitivePathMatch | null {
   }
 
   if (
-    /(^|\/)(rls|row[_-]?level[_-]?security)(\/|$)/.test(path) ||
-    (/policy/.test(path) && /\.(sql|ts|js)$/.test(path)) ||
+    /(^|\/)rls([._/-]|$)/.test(path) ||
+    path.includes("row-level-security") ||
+    path.includes("row_level_security") ||
     path.includes("database-policy") ||
-    path.includes("db-policy")
+    path.includes("db-policy") ||
+    (path.includes("supabase/") &&
+      /polic(y|ies)/.test(path) &&
+      /\.(sql|ts|js)$/.test(path))
   ) {
     return { path, category: "rls-policies" };
+  }
+
+  if (path.startsWith("supabase/") || path === "supabase") {
+    return { path, category: "supabase" };
   }
 
   if (

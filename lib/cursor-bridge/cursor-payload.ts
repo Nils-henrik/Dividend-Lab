@@ -1,7 +1,7 @@
-import { deterministicAgentId } from "./agent-id.ts";
-import { generateBranchName } from "./branch-name.ts";
-import { CURSOR_API, DIVLAB_REPO } from "./config.ts";
-import { parseRiskClassification, riskMarker } from "./risk.ts";
+import { deterministicAgentId } from "./agent-id";
+import { generateBranchName } from "./branch-name";
+import { CURSOR_API, DIVLAB_REPO } from "./config";
+import { parseRiskClassification, riskMarker } from "./risk";
 
 export interface CursorCreateAgentRequest {
   prompt: { text: string };

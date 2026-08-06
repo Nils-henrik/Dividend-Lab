@@ -1,4 +1,4 @@
-import { BRIDGE_LABELS } from "./config.ts";
+import { BRIDGE_LABELS } from "./config";
 
 export interface LabelDefinition {
   name: string;

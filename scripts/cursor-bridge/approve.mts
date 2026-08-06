@@ -13,27 +13,27 @@ import {
   CHECK_POLL_INTERVAL_MS,
   CHECK_WAIT_TIMEOUT_MS,
   DIVLAB_REPO,
-} from "../../lib/cursor-bridge/config.ts";
+} from "../../lib/cursor-bridge/config";
 import {
   buildApprovalRefusalComment,
   buildMergeSuccessComment,
   buildSensitiveBlockComment,
-} from "../../lib/cursor-bridge/comments.ts";
+} from "../../lib/cursor-bridge/comments";
 import {
   evaluateChecks,
   evaluateMergeEligibility,
   isVercelCheckName,
   type CheckStatusSummary,
   type PullRequestMergeContext,
-} from "../../lib/cursor-bridge/merge-eligibility.ts";
-import { getCategoryLabel } from "../../lib/cursor-bridge/sensitive-paths.ts";
-import { parseRiskClassification } from "../../lib/cursor-bridge/risk.ts";
+} from "../../lib/cursor-bridge/merge-eligibility";
+import { getCategoryLabel } from "../../lib/cursor-bridge/sensitive-paths";
+import { parseRiskClassification } from "../../lib/cursor-bridge/risk";
 import {
   extractPrLabelNames,
   isExpectedCursorCreatorFlow,
   type GithubPullRequestLike,
-} from "../../lib/cursor-bridge/pr-validation.ts";
-import { sanitizeErrorMessage } from "../../lib/cursor-bridge/sanitize.ts";
+} from "../../lib/cursor-bridge/pr-validation";
+import { sanitizeErrorMessage } from "../../lib/cursor-bridge/sanitize";
 
 interface ApproveOutputs {
   outcome:

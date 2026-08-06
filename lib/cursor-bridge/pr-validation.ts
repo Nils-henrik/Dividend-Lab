@@ -1,4 +1,4 @@
-import { DIVLAB_REPO } from "./config.ts";
+import { DIVLAB_REPO } from "./config";
 
 export interface GithubPullRequestLike {
   number?: number;

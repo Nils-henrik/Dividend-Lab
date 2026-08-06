@@ -1,4 +1,4 @@
-import { sanitizeErrorMessage } from "./sanitize.ts";
+import { sanitizeErrorMessage } from "./sanitize";
 
 export function buildDispatchSuccessComment(input: {
   agentId: string;

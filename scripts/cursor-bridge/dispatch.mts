@@ -7,22 +7,22 @@
  * outputs for the workflow (never logs CURSOR_API_KEY).
  */
 import { appendFileSync, writeFileSync } from "node:fs";
-import { BRIDGE_LABELS, CURSOR_API_KEY_SECRET_NAME } from "../../lib/cursor-bridge/config.ts";
+import { BRIDGE_LABELS, CURSOR_API_KEY_SECRET_NAME } from "../../lib/cursor-bridge/config";
 import {
   buildDispatchFailureComment,
   buildDispatchSuccessComment,
   hasDispatchSuccessMarker,
-} from "../../lib/cursor-bridge/comments.ts";
+} from "../../lib/cursor-bridge/comments";
 import {
   createCursorAgent,
   CursorApiError,
-} from "../../lib/cursor-bridge/cursor-client.ts";
-import { buildCursorDispatchPayload } from "../../lib/cursor-bridge/cursor-payload.ts";
+} from "../../lib/cursor-bridge/cursor-client";
+import { buildCursorDispatchPayload } from "../../lib/cursor-bridge/cursor-payload";
 import {
   readGithubEventFile,
   validateIssueDispatchEvent,
-} from "../../lib/cursor-bridge/github-event.ts";
-import { sanitizeErrorMessage } from "../../lib/cursor-bridge/sanitize.ts";
+} from "../../lib/cursor-bridge/github-event";
+import { sanitizeErrorMessage } from "../../lib/cursor-bridge/sanitize";
 
 interface DispatchOutputs {
   outcome: "success" | "failure" | "rejected";

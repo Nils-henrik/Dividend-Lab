@@ -1,13 +1,13 @@
-import { DIVLAB_REPO, type RiskClassification } from "./config.ts";
-import { isCursorBranch } from "./branch-name.ts";
-import { isAutoMergeRisk } from "./risk.ts";
+import { DIVLAB_REPO, type RiskClassification } from "./config";
+import { isCursorBranch } from "./branch-name";
+import { isAutoMergeRisk } from "./risk";
 import {
   findSensitivePaths,
   getCategoryLabel,
   summarizeSensitiveCategories,
   type SensitiveCategory,
   type SensitivePathMatch,
-} from "./sensitive-paths.ts";
+} from "./sensitive-paths";
 
 export type MergeBlockReason =
   | "wrong_repository"

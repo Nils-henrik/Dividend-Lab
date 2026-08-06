@@ -4,9 +4,9 @@
  * Uses GITHUB_TOKEN from Actions — never a personal access token.
  */
 import { spawnSync } from "node:child_process";
-import { DIVLAB_REPO } from "../../lib/cursor-bridge/config.ts";
-import { BRIDGE_LABEL_DEFINITIONS } from "../../lib/cursor-bridge/labels.ts";
-import { sanitizeErrorMessage } from "../../lib/cursor-bridge/sanitize.ts";
+import { DIVLAB_REPO } from "../../lib/cursor-bridge/config";
+import { BRIDGE_LABEL_DEFINITIONS } from "../../lib/cursor-bridge/labels";
+import { sanitizeErrorMessage } from "../../lib/cursor-bridge/sanitize";
 
 function main(): void {
   const repository = process.env.GITHUB_REPOSITORY ?? DIVLAB_REPO.fullName;

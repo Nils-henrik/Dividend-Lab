@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { DIVLAB_REPO } from "./config.ts";
+import { DIVLAB_REPO } from "./config";
 
 export type DispatchRejectionReason =
   | "wrong_repository"

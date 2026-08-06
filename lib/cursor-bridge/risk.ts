@@ -1,5 +1,5 @@
-import type { RiskClassification } from "./config.ts";
-import { AUTO_MERGE_ELIGIBLE_RISKS } from "./config.ts";
+import type { RiskClassification } from "./config";
+import { AUTO_MERGE_ELIGIBLE_RISKS } from "./config";
 
 const RISK_MARKER_RE =
   /<!--\s*divlab-risk:\s*(low|medium|high|manual-only)\s*-->/i;

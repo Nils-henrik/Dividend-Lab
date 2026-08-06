@@ -1,6 +1,6 @@
-import { CURSOR_API } from "./config.ts";
-import { sanitizeErrorMessage } from "./sanitize.ts";
-import type { CursorCreateAgentRequest } from "./cursor-payload.ts";
+import { CURSOR_API } from "./config";
+import { sanitizeErrorMessage } from "./sanitize";
+import type { CursorCreateAgentRequest } from "./cursor-payload";
 
 export interface CursorAgentResponse {
   agentId: string;
