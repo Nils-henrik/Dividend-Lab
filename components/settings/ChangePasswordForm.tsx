@@ -1,80 +1,69 @@
 "use client";
 
-import { type FormEvent, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { useActionState, useEffect, useRef } from "react";
+import {
+  changePasswordAction,
+  type ChangePasswordState,
+} from "@/app/settings/actions";
 
-const MIN_PASSWORD_LENGTH = 6;
+const idleState: ChangePasswordState = {
+  status: "idle",
+  message: "",
+};
+
+const MIN_PASSWORD_LENGTH = 8;
 
 export default function ChangePasswordForm() {
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const formRef = useRef<HTMLFormElement | null>(null);
+  const [state, formAction, isPending] = useActionState(
+    changePasswordAction,
+    idleState,
+  );
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError("");
-    setSuccessMessage("");
-
-    if (password.length < MIN_PASSWORD_LENGTH) {
-      setError("Använd minst 6 tecken för ditt nya lösenord.");
-      return;
+  useEffect(() => {
+    if (state.status === "success") {
+      formRef.current?.reset();
     }
-
-    if (password !== confirmPassword) {
-      setError("Lösenorden matchar inte.");
-      return;
-    }
-
-    setIsLoading(true);
-
-    const supabase = createClient();
-    const { error: updateError } = await supabase.auth.updateUser({
-      password,
-    });
-
-    setIsLoading(false);
-
-    if (updateError) {
-      setError(
-        "Det gick inte att uppdatera lösenordet just nu. Försök igen om en stund.",
-      );
-      return;
-    }
-
-    setPassword("");
-    setConfirmPassword("");
-    setSuccessMessage("Lösenordet har uppdaterats.");
-  }
+  }, [state.status]);
 
   return (
     <section className="divlab-card rounded-3xl p-8">
       <div className="mb-6">
         <h3 className="text-lg font-semibold text-divlab-text">Byt lösenord</h3>
         <p className="mt-2 text-sm leading-6 text-divlab-text-secondary">
-          Uppdatera lösenordet för ditt konto.
+          Ange ditt nuvarande lösenord och välj ett nytt.
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form ref={formRef} action={formAction} className="space-y-5">
+        <label className="block">
+          <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-divlab-text-muted">
+            Nuvarande lösenord
+          </span>
+          <input
+            type="password"
+            name="currentPassword"
+            autoComplete="current-password"
+            required
+            className="divlab-input w-full px-4 py-3"
+          />
+        </label>
+
         <label className="block">
           <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-divlab-text-muted">
             Nytt lösenord
           </span>
           <input
             type="password"
-            value={password}
-            onChange={(event) => {
-              setPassword(event.target.value);
-              setError("");
-              setSuccessMessage("");
-            }}
+            name="newPassword"
             autoComplete="new-password"
             minLength={MIN_PASSWORD_LENGTH}
             required
             className="divlab-input w-full px-4 py-3"
           />
+          <span className="mt-2 block text-xs leading-5 text-divlab-text-muted">
+            Använd minst {MIN_PASSWORD_LENGTH} tecken.
+          </span>
         </label>
 
         <label className="block">
@@ -83,12 +72,7 @@ export default function ChangePasswordForm() {
           </span>
           <input
             type="password"
-            value={confirmPassword}
-            onChange={(event) => {
-              setConfirmPassword(event.target.value);
-              setError("");
-              setSuccessMessage("");
-            }}
+            name="confirmPassword"
             autoComplete="new-password"
             minLength={MIN_PASSWORD_LENGTH}
             required
@@ -96,25 +80,31 @@ export default function ChangePasswordForm() {
           />
         </label>
 
-        {error && (
-          <p className="rounded-xl border divlab-border-neutral divlab-inset px-4 py-3 text-sm leading-6 text-divlab-text-secondary">
-            {error}
+        {state.status === "error" && state.message ? (
+          <p
+            role="alert"
+            className="rounded-xl border divlab-border-neutral divlab-inset px-4 py-3 text-sm leading-6 text-divlab-text-secondary"
+          >
+            {state.message}
           </p>
-        )}
+        ) : null}
 
-        {successMessage && (
-          <p className="rounded-xl border border-divlab-blue/20 bg-divlab-blue/5 px-4 py-3 text-sm leading-6 text-divlab-text-secondary">
-            {successMessage}
+        {state.status === "success" && state.message ? (
+          <p
+            role="status"
+            className="rounded-xl border border-divlab-blue/20 bg-divlab-blue/5 px-4 py-3 text-sm leading-6 text-divlab-text-secondary"
+          >
+            {state.message}
           </p>
-        )}
+        ) : null}
 
         <div className="flex flex-col sm:flex-row sm:justify-end">
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isPending}
             className="divlab-btn-primary h-11 w-full px-6 disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
           >
-            {isLoading ? "Sparar..." : "Uppdatera lösenord"}
+            {isPending ? "Sparar..." : "Uppdatera lösenord"}
           </button>
         </div>
       </form>

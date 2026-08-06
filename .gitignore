@@ -44,3 +44,7 @@ supabase/.temp/
 
 # Local licensed/source media (not for public web root)
 /private/
+
+tmp/
+
+supabase/.branches/

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import {
   acceptContactRequestAction,
   cancelContactRequestAction,
@@ -27,7 +27,13 @@ type Props = {
   incoming: ContactRequestItem[];
   outgoing: ContactRequestItem[];
   errorMessage?: string;
+  initialTab?: Tab;
+  highlightedRequestId?: string | null;
 };
+
+function isContactTab(value: string | undefined): value is Tab {
+  return value === "accepted" || value === "incoming" || value === "outgoing";
+}
 
 function Feedback({ state }: { state: ContactActionState }) {
   if (state.status === "idle" || !state.message) {
@@ -81,8 +87,12 @@ export default function ContactsManager({
   incoming,
   outgoing,
   errorMessage,
+  initialTab = "accepted",
+  highlightedRequestId = null,
 }: Props) {
-  const [tab, setTab] = useState<Tab>("accepted");
+  const [tab, setTab] = useState<Tab>(
+    isContactTab(initialTab) ? initialTab : "accepted",
+  );
   const [acceptState, acceptAction, acceptPending] = useActionState(
     acceptContactRequestAction,
     idleState,
@@ -100,6 +110,17 @@ export default function ContactsManager({
     idleState,
   );
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!highlightedRequestId || tab !== "incoming") {
+      return;
+    }
+
+    const target = document.getElementById(
+      `contact-request-${highlightedRequestId}`,
+    );
+    target?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [highlightedRequestId, tab]);
 
   const tabs: Array<{ id: Tab; label: string; count: number }> = [
     { id: "accepted", label: "Kontakter", count: accepted.length },
@@ -254,11 +275,16 @@ export default function ContactsManager({
                     const profileHref = item.profile.username
                       ? `/profile/${item.profile.username}`
                       : null;
+                    const isHighlighted =
+                      highlightedRequestId === item.connectionId;
 
                     return (
                       <li
+                        id={`contact-request-${item.connectionId}`}
                         key={item.connectionId}
-                        className="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
+                        className={`flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between ${
+                          isHighlighted ? "bg-divlab-blue/[0.05]" : ""
+                        }`}
                       >
                         {profileHref ? (
                           <Link href={profileHref} className="min-w-0">

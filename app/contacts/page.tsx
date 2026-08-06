@@ -11,8 +11,43 @@ import type {
   ContactRequestItem,
 } from "@/lib/contacts/types";
 
-export default async function ContactsPage() {
+type ContactsSearchParams = {
+  tab?: string | string[];
+  request?: string | string[];
+};
+
+function readSearchParam(
+  value: string | string[] | undefined,
+): string | undefined {
+  if (Array.isArray(value)) {
+    return value[0];
+  }
+
+  return value;
+}
+
+function resolveContactsTab(
+  value: string | undefined,
+): "accepted" | "incoming" | "outgoing" {
+  if (value === "incoming" || value === "outgoing" || value === "accepted") {
+    return value;
+  }
+
+  return "accepted";
+}
+
+export default async function ContactsPage({
+  searchParams,
+}: {
+  searchParams?: Promise<ContactsSearchParams>;
+}) {
   const { user, identity } = await requireAuthenticatedUserWithProfile();
+  const resolvedSearchParams = searchParams ? await searchParams : {};
+  const initialTab = resolveContactsTab(
+    readSearchParam(resolvedSearchParams.tab),
+  );
+  const highlightedRequestId =
+    readSearchParam(resolvedSearchParams.request) ?? null;
   let accepted: ContactListItem[] = [];
   let incoming: ContactRequestItem[] = [];
   let outgoing: ContactRequestItem[] = [];
@@ -36,6 +71,12 @@ export default async function ContactsPage() {
         incoming={incoming}
         outgoing={outgoing}
         errorMessage={errorMessage}
+        initialTab={
+          highlightedRequestId && initialTab === "accepted"
+            ? "incoming"
+            : initialTab
+        }
+        highlightedRequestId={highlightedRequestId}
       />
     </AppShell>
   );

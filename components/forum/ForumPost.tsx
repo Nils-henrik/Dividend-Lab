@@ -43,7 +43,8 @@ export default function ForumPost({
 
   return (
     <article
-      className={`divlab-reply-row ${tone === "a" ? "divlab-reply-row-a" : "divlab-reply-row-b"}`}
+      id={`reply-${post.id}`}
+      className={`divlab-reply-row scroll-mt-24 lg:scroll-mt-28 ${tone === "a" ? "divlab-reply-row-a" : "divlab-reply-row-b"}`}
     >
       <div className="grid gap-4 lg:grid-cols-[7.5rem_minmax(0,1fr)]">
         <aside className="lg:pr-4">

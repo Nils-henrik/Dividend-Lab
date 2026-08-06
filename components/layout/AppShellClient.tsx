@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import type { NotificationFeedItem } from "@/lib/notifications/types";
 import type { UserDisplayIdentity } from "@/lib/profiles/identity";
 import { createClient } from "@/lib/supabase/client";
 import AppHeader from "./AppHeader";
@@ -16,6 +17,9 @@ type Props = {
   children: React.ReactNode;
   user: UserDisplayIdentity;
   unreadMessageCount: number;
+  unreadNotificationCount: number;
+  notificationItems: NotificationFeedItem[];
+  notificationUserId?: string | null;
   isGuest?: boolean;
 };
 
@@ -23,6 +27,9 @@ export default function AppShellClient({
   children,
   user,
   unreadMessageCount,
+  unreadNotificationCount,
+  notificationItems,
+  notificationUserId = null,
   isGuest = false,
 }: Props) {
   const router = useRouter();
@@ -132,7 +139,9 @@ export default function AppShellClient({
         onOpenMenu={() => setIsMobileNavOpen(true)}
         isMenuOpen={isMobileNavOpen}
         isGuest={isGuest}
-        unreadMessageCount={unreadMessageCount}
+        unreadNotificationCount={unreadNotificationCount}
+        notificationItems={notificationItems}
+        notificationUserId={notificationUserId}
       />
       <MobileNavDrawer
         isOpen={isMobileNavOpen}
@@ -144,7 +153,9 @@ export default function AppShellClient({
         onLogout={handleLogout}
         isLoggingOut={isLoggingOut}
         isSidebarCollapsed={isSidebarCollapsed}
-        unreadMessageCount={unreadMessageCount}
+        unreadNotificationCount={unreadNotificationCount}
+        notificationItems={notificationItems}
+        notificationUserId={notificationUserId}
         isGuest={isGuest}
       />
       <div
