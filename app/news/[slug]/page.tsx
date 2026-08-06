@@ -1,12 +1,18 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import AppShell from "@/components/layout/AppShell";
+import PublicContentShell from "@/components/layout/PublicContentShell";
 import NewsArticleView from "@/components/news/NewsArticleView";
+import JsonLdScript from "@/components/seo/JsonLd";
 import {
   getNewsArticleBySlug,
   getNewsArticlesWithSlug,
 } from "@/lib/news/get-articles";
-import { getSiteUrlFromEnv } from "@/lib/auth/site-url";
+import { getCanonicalUrl } from "@/lib/seo/canonical";
+import {
+  breadcrumbJsonLd,
+  newsArticleJsonLd,
+} from "@/lib/seo/json-ld";
+import { getNewsCategoryLabel } from "@/lib/news/categories";
 import { DIVLAB_BRAND_NAME } from "@/lib/site/brand";
 
 type Props = {
@@ -29,14 +35,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return {};
   }
 
-  const siteUrl = getSiteUrlFromEnv();
   const pageTitle = article.seoTitle ?? article.title;
   const description = article.seoDescription ?? article.summary;
-  const canonical = `${siteUrl}/news/${article.slug}`;
+  const canonical = getCanonicalUrl(`/news/${article.slug}`);
   const imageUrl = article.imageUrl
     ? article.imageUrl.startsWith("http")
       ? article.imageUrl
-      : `${siteUrl}${article.imageUrl}`
+      : getCanonicalUrl(article.imageUrl)
     : undefined;
 
   return {
@@ -51,6 +56,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description,
       type: "article",
       url: canonical,
+      locale: "sv_SE",
       publishedTime: article.publishedAt,
       ...(imageUrl
         ? {
@@ -84,9 +90,32 @@ export default async function NewsArticlePage({ params }: Props) {
     notFound();
   }
 
+  const path = `/news/${article.slug}`;
+
   return (
-    <AppShell allowGuest>
+    <PublicContentShell>
+      <JsonLdScript
+        data={[
+          newsArticleJsonLd({
+            title: article.title,
+            description: article.summary,
+            path,
+            publishedAt: article.publishedAt,
+            imageUrl: article.imageUrl ?? undefined,
+            authorName: article.source,
+          }),
+          breadcrumbJsonLd([
+            { name: "Hem", path: "/" },
+            { name: "Börsnyheter", path: "/news" },
+            {
+              name: getNewsCategoryLabel(article.category),
+              path: `/news?category=${article.category}`,
+            },
+            { name: article.title, path },
+          ]),
+        ]}
+      />
       <NewsArticleView article={article} />
-    </AppShell>
+    </PublicContentShell>
   );
 }

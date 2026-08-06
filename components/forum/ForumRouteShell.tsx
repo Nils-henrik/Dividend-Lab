@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { AuthenticatedUser } from "@/lib/auth/user";
 import AppShell from "@/components/layout/AppShell";
+import PublicPageShell from "@/components/layout/PublicPageShell";
 
 type Props = {
   user: AuthenticatedUser | null;
@@ -13,8 +14,8 @@ export default function ForumRouteShell({ user, children }: Props) {
   }
 
   return (
-    <main className="min-h-screen bg-divlab-bg text-divlab-text">
-      <div className="px-8 py-8">{children}</div>
-    </main>
+    <PublicPageShell contentClassName="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+      {children}
+    </PublicPageShell>
   );
 }

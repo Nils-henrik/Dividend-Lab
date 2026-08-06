@@ -5,10 +5,12 @@ import LearningPageShell from "@/components/learning/LearningPageShell";
 import LearningArticleView, {
   getLearningArticleOrThrow,
 } from "@/components/learning/LearningArticleView";
+import JsonLdScript from "@/components/seo/JsonLd";
 import { getLearningArticle, learningArticles } from "@/data/learning-articles";
 import { getAuthenticatedUser } from "@/lib/auth/session";
-import { getSiteUrlFromEnv } from "@/lib/auth/site-url";
 import { getProfileForUser } from "@/lib/profiles/profile";
+import { getCanonicalUrl } from "@/lib/seo/canonical";
+import { articleJsonLd, breadcrumbJsonLd } from "@/lib/seo/json-ld";
 import { DIVLAB_BRAND_NAME } from "@/lib/site/brand";
 
 type Props = {
@@ -31,14 +33,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return {};
   }
 
-  const siteUrl = getSiteUrlFromEnv();
   const pageTitle = article.seoTitle ?? article.title;
-  const canonical = `${siteUrl}/learning/${article.slug}`;
+  const canonical = getCanonicalUrl(`/learning/${article.slug}`);
   const imagePath = article.coverImage;
   const imageUrl = imagePath
     ? imagePath.startsWith("http")
       ? imagePath
-      : `${siteUrl}${imagePath}`
+      : getCanonicalUrl(imagePath)
     : undefined;
 
   return {
@@ -52,6 +53,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description: article.description,
       type: "article",
       url: canonical,
+      locale: "sv_SE",
       ...(article.publishedAt ? { publishedTime: article.publishedAt } : {}),
       ...(article.updatedAt ? { modifiedTime: article.updatedAt } : {}),
       ...(imageUrl
@@ -88,9 +90,30 @@ export default async function LearningArticlePage({ params }: Props) {
 
   const user = await getAuthenticatedUser();
   const profile = user ? await getProfileForUser(user.id) : null;
+  const path = `/learning/${article.slug}`;
 
   return (
     <LearningPageShell>
+      <JsonLdScript
+        data={[
+          articleJsonLd({
+            title: article.title,
+            description: article.description,
+            path,
+            publishedAt: article.publishedAt,
+            updatedAt: article.updatedAt,
+            imageUrl: article.coverImage,
+          }),
+          breadcrumbJsonLd([
+            { name: "Hem", path: "/" },
+            { name: "Utbildning", path: "/learning" },
+            ...(article.category
+              ? [{ name: article.category, path: "/learning" }]
+              : []),
+            { name: article.title, path },
+          ]),
+        ]}
+      />
       <div className="space-y-6">
         <LearningArticleView article={article} />
         <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8">

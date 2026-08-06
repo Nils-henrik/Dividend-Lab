@@ -79,11 +79,7 @@ export default function NewsArticleRow({ article }: Props) {
                   Läs mer
                 </a>
               )
-            ) : (
-              <span className="shrink-0 text-[11px] text-divlab-text-subtle">
-                Extern länk kommer snart
-              </span>
-            )}
+            ) : null}
           </div>
         </div>
       </div>

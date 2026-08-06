@@ -22,6 +22,7 @@ import type {
   ForumThreadRecord,
 } from "@/lib/forum/types";
 import { createClient } from "@/lib/supabase/server";
+import { tryGetSupabaseConfig } from "@/lib/supabase/config";
 import { getAvatarPublicUrl } from "@/lib/profiles/identity";
 import type { ForumPost, ForumThread } from "@/types/forum";
 import {
@@ -29,6 +30,14 @@ import {
   formatForumMemberSince,
   formatForumTimestamp,
 } from "./format";
+
+async function getForumSupabaseClient() {
+  if (!tryGetSupabaseConfig()) {
+    return null;
+  }
+
+  return createClient();
+}
 
 function isMissingForumTableError(error: { code?: string; message?: string }) {
   return (
@@ -128,7 +137,10 @@ async function getLatestReplyTimestampsByThreadIds(threadIds: string[]) {
     return new Map<string, string>();
   }
 
-  const supabase = await createClient();
+  const supabase = await getForumSupabaseClient();
+  if (!supabase) {
+    return new Map<string, string>();
+  }
   const { data, error } = await supabase
     .from("forum_replies")
     .select("thread_id, created_at")
@@ -163,7 +175,10 @@ async function getReactionCountsByThreadIds(threadIds: string[]) {
     return new Map<string, number>();
   }
 
-  const supabase = await createClient();
+  const supabase = await getForumSupabaseClient();
+  if (!supabase) {
+    return new Map<string, number>();
+  }
   const counts = new Map<string, number>();
 
   const { data: threadReactions, error: threadReactionError } = await supabase
@@ -275,7 +290,10 @@ async function getReplyCountsByThreadIds(threadIds: string[]) {
     return new Map<string, number>();
   }
 
-  const supabase = await createClient();
+  const supabase = await getForumSupabaseClient();
+  if (!supabase) {
+    return new Map<string, number>();
+  }
   const { data, error } = await supabase
     .from("forum_replies")
     .select("thread_id")
@@ -359,7 +377,10 @@ export function mapReplyRecordToForumPost(record: ForumReplyRecord): ForumPost {
 }
 
 export async function getForumThreadsFromDatabase() {
-  const supabase = await createClient();
+  const supabase = await getForumSupabaseClient();
+  if (!supabase) {
+    return [];
+  }
   const { data, error } = await supabase
     .from("forum_threads")
     .select(
@@ -441,7 +462,10 @@ export async function getForumPopularThreads(limit?: number) {
 }
 
 export async function getForumThreadBySlugFromDatabase(slug: string) {
-  const supabase = await createClient();
+  const supabase = await getForumSupabaseClient();
+  if (!supabase) {
+    return null;
+  }
   const { data, error } = await supabase
     .from("forum_threads")
     .select(
@@ -480,7 +504,10 @@ export async function getForumThreadBySlugFromDatabase(slug: string) {
 }
 
 export async function getForumRepliesByThreadIdFromDatabase(threadId: string) {
-  const supabase = await createClient();
+  const supabase = await getForumSupabaseClient();
+  if (!supabase) {
+    return [];
+  }
   const { data, error } = await supabase
     .from("forum_replies")
     .select(
@@ -539,7 +566,10 @@ export async function getRecentForumActivityByAuthorId(
   authorId: string,
   limit = 5,
 ): Promise<ForumAuthorActivityItem[]> {
-  const supabase = await createClient();
+  const supabase = await getForumSupabaseClient();
+  if (!supabase) {
+    return [];
+  }
   const fetchLimit = limit;
 
   const [threadsResult, repliesResult] = await Promise.all([

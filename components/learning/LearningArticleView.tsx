@@ -58,9 +58,11 @@ function LearningArticleBreadcrumb({ category }: { category?: string }) {
 
 function LearningArticleRelatedAside({
   articles,
+  headingId,
   className = "",
 }: {
   articles: LearningArticleWithReadingTime[];
+  headingId: string;
   className?: string;
 }) {
   if (articles.length === 0) {
@@ -68,10 +70,10 @@ function LearningArticleRelatedAside({
   }
 
   return (
-    <aside aria-labelledby="learning-related-topics" className={className}>
+    <aside aria-labelledby={headingId} className={className}>
       <div className="rounded-2xl border divlab-border-neutral bg-divlab-elevated/40 p-5">
         <h2
-          id="learning-related-topics"
+          id={headingId}
           className="text-sm font-semibold uppercase tracking-[0.12em] text-divlab-text-muted"
         >
           Relaterade ämnen
@@ -337,12 +339,14 @@ export default function LearningArticleView({ article }: Props) {
 
           <LearningArticleRelatedAside
             articles={relatedArticles}
+            headingId="learning-related-topics-mobile"
             className="xl:hidden"
           />
         </div>
 
         <LearningArticleRelatedAside
           articles={relatedArticles}
+          headingId="learning-related-topics-desktop"
           className="hidden xl:block"
         />
       </div>

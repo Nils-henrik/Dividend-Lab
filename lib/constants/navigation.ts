@@ -1,5 +1,10 @@
 import type { NavigationItem } from "@/types/navigation";
 
+/**
+ * Authenticated primary navigation.
+ * Unfinished Portfölj / Bevakningslista are omitted from primary nav —
+ * they remain reachable by direct URL with clear early-status copy.
+ */
 export const appNavigation: NavigationItem[] = [
   { label: "Översikt", href: "/dashboard", icon: "dashboard" },
   { label: "Börsnyheter", href: "/news", icon: "news" },
@@ -9,28 +14,16 @@ export const appNavigation: NavigationItem[] = [
   { label: "Meddelanden", href: "/messages", icon: "messages" },
   { label: "Kontakter", href: "/contacts", icon: "contacts" },
   {
-    label: "Portfölj",
-    href: "/portfolio",
-    icon: "portfolio",
-    statusLabel: "Kommer snart",
-  },
-  {
-    label: "Bevakningslista",
-    href: "/watchlist",
-    icon: "watchlist",
-    statusLabel: "Kommer snart",
+    label: "Kalender",
+    href: "/calendar",
+    icon: "calendar",
+    statusLabel: "Tidig version",
   },
   {
     label: "DivBrain",
     href: "/brain",
     icon: "brain",
     statusLabel: "Under utveckling",
-  },
-  {
-    label: "Kalender",
-    href: "/calendar",
-    icon: "calendar",
-    statusLabel: "Tidig version",
   },
   { label: "Konto", href: "/account", icon: "account", section: "account" },
   {

@@ -2,15 +2,24 @@ import { redirect } from "next/navigation";
 import { mapSupabaseUser } from "@/lib/auth/user";
 import { getUserDisplayIdentity } from "@/lib/profiles/identity";
 import { ensureProfileForUser } from "@/lib/profiles/profile";
+import { tryGetSupabaseConfig } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 
 export async function getAuthenticatedUser() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  if (!tryGetSupabaseConfig()) {
+    return null;
+  }
 
-  return user ? mapSupabaseUser(user) : null;
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    return user ? mapSupabaseUser(user) : null;
+  } catch {
+    return null;
+  }
 }
 
 export async function requireAuthenticatedUser() {

@@ -15,7 +15,7 @@ export default function NavbarAuthActions({ user }: Props) {
   if (user) {
     return (
       <Link href="/dashboard" className={primaryActionClassName}>
-        Logga in
+        Öppna DivLab
       </Link>
     );
   }

@@ -72,4 +72,4 @@ export type LearningArticle = {
 };
 
 export const learningDisclaimer =
-  "Innehållet är endast avsett för utbildning och allmän information. Det utgör inte personlig finansiell rådgivning eller en rekommendation att köpa eller sälja ett visst värdepapper. Investeringar innebär risk och du kan förlora hela eller delar av ditt kapital.";
+  "DivLab publicerar informationellt och redaktionellt utbildningsmaterial. Innehållet utgör inte personlig finansiell rådgivning och inte heller en individuell investeringsrekommendation. Marknadsinformation kan förändras efter publicering. Du ansvarar själv för dina beslut. Investeringar innebär risk och du kan förlora hela eller delar av ditt kapital.";

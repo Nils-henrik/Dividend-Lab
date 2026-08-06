@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useId, useState } from "react";
 import { registerUser } from "@/app/register/actions";
 import PrimaryButton from "@/components/ui/Button";
 import { LEGAL_ACCEPTANCE_VALIDATION_MESSAGE } from "@/lib/legal/acceptance";
@@ -12,8 +12,10 @@ type Props = {
 };
 
 export default function RegisterForm({ redirectTo }: Props) {
+  const errorId = useId();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [legalAccepted, setLegalAccepted] = useState(false);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
@@ -31,8 +33,8 @@ export default function RegisterForm({ redirectTo }: Props) {
       return;
     }
 
-    if (password.length < 6) {
-      setError("Använd minst 6 tecken i lösenordet.");
+    if (password.length < 8) {
+      setError("Använd minst 8 tecken i lösenordet.");
       return;
     }
 
@@ -77,12 +79,12 @@ export default function RegisterForm({ redirectTo }: Props) {
           Skapa konto
         </h1>
         <p className="mt-3 text-sm leading-6 text-divlab-text-secondary">
-          Registrera dig med e-post och lösenord för att börja bygga din
-          långsiktiga investeringsmiljö.
+          Få tillgång till forum, kommentarer, kontakter, meddelanden och din
+          personliga DivLab-miljö. DivLab är för närvarande en kostnadsfri beta.
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-5" noValidate>
         <label className="block">
           <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-divlab-text-muted">
             E-post
@@ -97,6 +99,8 @@ export default function RegisterForm({ redirectTo }: Props) {
             }}
             autoComplete="email"
             required
+            aria-invalid={Boolean(error)}
+            aria-describedby={error ? errorId : undefined}
             className="divlab-input w-full px-4 py-3"
           />
         </label>
@@ -105,19 +109,33 @@ export default function RegisterForm({ redirectTo }: Props) {
           <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-divlab-text-muted">
             Lösenord
           </span>
-          <input
-            type="password"
-            value={password}
-            onChange={(event) => {
-              setPassword(event.target.value);
-              setError("");
-              setSuccessMessage("");
-            }}
-            autoComplete="new-password"
-            minLength={6}
-            required
-            className="divlab-input w-full px-4 py-3"
-          />
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(event) => {
+                setPassword(event.target.value);
+                setError("");
+                setSuccessMessage("");
+              }}
+              autoComplete="new-password"
+              minLength={8}
+              required
+              aria-invalid={Boolean(error)}
+              aria-describedby={error ? errorId : undefined}
+              className="divlab-input w-full px-4 py-3 pr-24"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((value) => !value)}
+              className="absolute inset-y-0 right-2 my-auto inline-flex min-h-11 items-center rounded-lg px-3 text-xs font-medium text-divlab-text-muted transition hover:text-divlab-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/40"
+            >
+              {showPassword ? "Dölj" : "Visa"}
+            </button>
+          </div>
+          <span className="mt-2 block text-xs leading-5 text-divlab-text-muted">
+            Minst 8 tecken.
+          </span>
         </label>
 
         <div className="flex items-start gap-3">
@@ -159,13 +177,20 @@ export default function RegisterForm({ redirectTo }: Props) {
         </div>
 
         {error && (
-          <p className="rounded-xl border divlab-border-neutral divlab-inset px-4 py-3 text-sm leading-6 text-divlab-text-secondary">
+          <p
+            id={errorId}
+            role="alert"
+            className="rounded-xl border divlab-border-neutral divlab-inset px-4 py-3 text-sm leading-6 text-divlab-text-secondary"
+          >
             {error}
           </p>
         )}
 
         {successMessage && (
-          <p className="rounded-xl border border-divlab-blue/20 bg-divlab-blue/5 px-4 py-3 text-sm leading-6 text-divlab-text-secondary">
+          <p
+            role="status"
+            className="rounded-xl border border-divlab-blue/20 bg-divlab-blue/5 px-4 py-3 text-sm leading-6 text-divlab-text-secondary"
+          >
             {successMessage}
           </p>
         )}
@@ -179,6 +204,15 @@ export default function RegisterForm({ redirectTo }: Props) {
         Har du redan ett konto?{" "}
         <Link href="/login" className="divlab-link font-medium">
           Logga in
+        </Link>
+      </p>
+      <p className="mt-4 text-center text-sm text-divlab-text-muted">
+        <Link href="/" className="divlab-link">
+          Till startsidan
+        </Link>
+        <span aria-hidden="true"> · </span>
+        <Link href="/frihetsmaskinen" className="divlab-link">
+          Frihetsmaskinen
         </Link>
       </p>
     </section>
