@@ -689,7 +689,10 @@ export default function GavCalculatorClient() {
             </p>
           </div>
 
-          <div className="min-w-0 lg:sticky lg:top-6 print:static">
+          <div
+            data-gav-result-panel="events"
+            className="min-w-0 lg:sticky lg:top-24 print:static"
+          >
             <div className="hidden print:mb-6 print:block">
               <p className="text-sm font-semibold">DivLab</p>
               <h2 className="mt-2 text-2xl font-semibold">
@@ -818,7 +821,10 @@ export default function GavCalculatorClient() {
             </label>
           </fieldset>
 
-          <aside className="divlab-card min-w-0 p-5 sm:p-6 lg:sticky lg:top-6">
+          <aside
+            data-gav-result-panel="target"
+            className="divlab-card min-w-0 p-5 sm:p-6 lg:sticky lg:top-24"
+          >
             <p className="divlab-section-label text-divlab-blue-muted">
               Mål-GAV
             </p>

@@ -61,6 +61,53 @@ async function assertNoHorizontalOverflow(page) {
   );
 }
 
+async function assertStickyPanelClearsHeader(page, panelSelector) {
+  const panel = page.locator(panelSelector);
+  await panel.waitFor();
+  await panel.evaluate((element) => {
+    const documentTop = element.getBoundingClientRect().top + window.scrollY;
+    window.scrollTo({
+      top: Math.max(0, documentTop - 96),
+      behavior: "instant",
+    });
+  });
+  await page.waitForTimeout(100);
+
+  const geometry = await page.evaluate((selector) => {
+    const header = document.querySelector(".divlab-shell-header");
+    const resultPanel = document.querySelector(selector);
+    if (!header) {
+      throw new Error("public header not found");
+    }
+    if (!resultPanel) {
+      throw new Error(`result panel not found: ${selector}`);
+    }
+    const headerRect = header.getBoundingClientRect();
+    const panelRect = resultPanel.getBoundingClientRect();
+    const styles = getComputedStyle(resultPanel);
+    return {
+      headerBottom: headerRect.bottom,
+      headerSafeBottom: Math.max(headerRect.bottom, headerRect.height),
+      panelTop: panelRect.top,
+      position: styles.position,
+      stickyTop: Number.parseFloat(styles.top),
+    };
+  }, panelSelector);
+
+  assert.equal(geometry.position, "sticky");
+  assert.equal(geometry.stickyTop, 96);
+  assert.ok(
+    geometry.panelTop <= geometry.stickyTop + 1,
+    `panel did not reach sticky position: top=${geometry.panelTop}, expected=${geometry.stickyTop}`,
+  );
+  assert.ok(
+    geometry.panelTop >= geometry.headerSafeBottom + 8,
+    `sticky panel overlaps header: panel top=${geometry.panelTop}, header-safe bottom=${geometry.headerSafeBottom}`,
+  );
+
+  return geometry.panelTop - geometry.headerSafeBottom;
+}
+
 function assertCanonical(href, expectedPath) {
   const expected =
     expectedPath === "/"
@@ -488,6 +535,66 @@ async function main() {
         path: `${SHOT_DIR}/public-gav-calculator-mobile.png`,
         fullPage: true,
       });
+    });
+
+    await check("GAV desktop result panels stay below the sticky header", async () => {
+      const desktopViewports = VIEWPORTS.filter(
+        (viewport) => viewport.width === 1280 || viewport.width === 1536,
+      );
+      const margins = [];
+
+      for (const viewport of desktopViewports) {
+        await page.setViewportSize(viewport);
+        await page.goto(`${BASE}/verktyg/gav-kalkylator`, {
+          waitUntil: "networkidle",
+        });
+        await page.getByRole("tab", { name: "Händelser" }).click();
+        await page.getByRole("button", { name: "Ladda exempel" }).click();
+        await page
+          .locator('[data-gav-result-panel="events"]')
+          .waitFor();
+        await assertNoHorizontalOverflow(page);
+        const eventMargin = await assertStickyPanelClearsHeader(
+          page,
+          '[data-gav-result-panel="events"]',
+        );
+        await assertNoHorizontalOverflow(page);
+        await page.screenshot({
+          path: `${SHOT_DIR}/public-gav-sticky-events-${viewport.width}.png`,
+          fullPage: false,
+        });
+
+        await page.getByRole("tab", { name: "Mål-GAV" }).click();
+        const targetValues = [
+          ["Nuvarande antal", "100"],
+          ["Nuvarande GAV", "120"],
+          ["Köppris per aktie", "80"],
+          ["Courtage för köpet", "19"],
+          ["Önskat GAV", "100"],
+        ];
+        for (const [label, value] of targetValues) {
+          const input = page.getByLabel(label);
+          await input.fill("");
+          await input.fill(value);
+        }
+        await page.getByText("101", { exact: true }).waitFor();
+        await assertNoHorizontalOverflow(page);
+        const targetMargin = await assertStickyPanelClearsHeader(
+          page,
+          '[data-gav-result-panel="target"]',
+        );
+        await assertNoHorizontalOverflow(page);
+        await page.screenshot({
+          path: `${SHOT_DIR}/public-gav-sticky-target-${viewport.width}.png`,
+          fullPage: false,
+        });
+
+        margins.push(
+          `${viewport.width}px: händelser ${eventMargin.toFixed(0)}px, mål-GAV ${targetMargin.toFixed(0)}px`,
+        );
+      }
+
+      return margins.join("; ");
     });
 
     await check("login and registration pages", async () => {
