@@ -24,6 +24,8 @@ export const STATIC_PUBLIC_PATHS = [
   "/cookies",
   "/news",
   "/learning",
+  "/verktyg",
+  "/verktyg/gav-kalkylator",
   "/frihetsmaskinen",
   "/forum",
   "/forum/senaste",

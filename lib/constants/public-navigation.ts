@@ -2,7 +2,7 @@
 export const PUBLIC_NAV_LINKS = [
   { href: "/news", label: "Börsnyheter" },
   { href: "/learning", label: "Utbildning" },
-  { href: "/frihetsmaskinen", label: "Frihetsmaskinen" },
+  { href: "/verktyg", label: "Verktyg" },
   { href: "/forum", label: "Forum" },
   { href: "/about", label: "Om DivLab" },
 ] as const;

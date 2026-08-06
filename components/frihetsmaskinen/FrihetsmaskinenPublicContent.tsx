@@ -121,6 +121,33 @@ export default function FrihetsmaskinenPublicContent({
         </ul>
       </section>
 
+      <section
+        aria-labelledby="frihetsmaskinen-tools-heading"
+        className="flex flex-col gap-4 border-t divlab-border-neutral pt-8 sm:flex-row sm:items-center sm:justify-between"
+      >
+        <div>
+          <p className="divlab-section-label text-divlab-blue-muted">
+            Fler verktyg
+          </p>
+          <h2
+            id="frihetsmaskinen-tools-heading"
+            className="mt-2 text-lg font-semibold text-divlab-text"
+          >
+            Räkna ut ditt GAV
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-divlab-text-secondary">
+            Lägg in köp, courtage, försäljningar och split för att se ditt
+            genomsnittliga anskaffningsvärde.
+          </p>
+        </div>
+        <Link
+          href="/verktyg/gav-kalkylator"
+          className="divlab-btn-secondary min-h-11 shrink-0 px-5 py-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/40"
+        >
+          Öppna GAV-kalkylatorn
+        </Link>
+      </section>
+
       {showAccountCta ? (
         <section
           aria-labelledby="frihetsmaskinen-account-heading"
