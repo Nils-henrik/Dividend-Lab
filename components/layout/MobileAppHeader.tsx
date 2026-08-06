@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import GlobalSearch from "@/components/search/GlobalSearch";
+import type { NotificationFeedItem } from "@/lib/notifications/types";
 import type { UserDisplayIdentity } from "@/lib/profiles/identity";
 import { getPageTitle } from "@/lib/constants/navigation";
 import ProfileDropdown from "./ProfileDropdown";
@@ -16,7 +17,9 @@ type Props = {
   onOpenMenu: () => void;
   isMenuOpen?: boolean;
   isGuest?: boolean;
-  unreadMessageCount: number;
+  unreadNotificationCount: number;
+  notificationItems: NotificationFeedItem[];
+  notificationUserId?: string | null;
 };
 
 export default function MobileAppHeader({
@@ -26,7 +29,9 @@ export default function MobileAppHeader({
   onOpenMenu,
   isMenuOpen = false,
   isGuest = false,
-  unreadMessageCount,
+  unreadNotificationCount,
+  notificationItems,
+  notificationUserId = null,
 }: Props) {
   const pathname = usePathname();
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
@@ -75,7 +80,11 @@ export default function MobileAppHeader({
 
         {!isSearchExpanded && (
           <>
-            <NotificationBell unreadMessageCount={unreadMessageCount} />
+            <NotificationBell
+              unreadCount={unreadNotificationCount}
+              items={notificationItems}
+              userId={notificationUserId}
+            />
             <ProfileDropdown
               user={user}
               onLogout={onLogout}

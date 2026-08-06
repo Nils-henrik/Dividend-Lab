@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import type { NotificationFeedItem } from "@/lib/notifications/types";
 import type { UserDisplayIdentity } from "@/lib/profiles/identity";
 import { getPageTitle } from "@/lib/constants/navigation";
 import { DIVLAB_BRAND_NAME } from "@/lib/site/brand";
@@ -13,7 +14,9 @@ type Props = {
   onLogout: () => void;
   isLoggingOut: boolean;
   isSidebarCollapsed: boolean;
-  unreadMessageCount: number;
+  unreadNotificationCount: number;
+  notificationItems: NotificationFeedItem[];
+  notificationUserId?: string | null;
   isGuest?: boolean;
 };
 
@@ -22,7 +25,9 @@ export default function AppHeader({
   onLogout,
   isLoggingOut,
   isSidebarCollapsed,
-  unreadMessageCount,
+  unreadNotificationCount,
+  notificationItems,
+  notificationUserId = null,
   isGuest = false,
 }: Props) {
   const pathname = usePathname();
@@ -46,7 +51,11 @@ export default function AppHeader({
 
         <div className="flex items-center gap-3">
           <SearchBar />
-          <NotificationBell unreadMessageCount={unreadMessageCount} />
+          <NotificationBell
+            unreadCount={unreadNotificationCount}
+            items={notificationItems}
+            userId={notificationUserId}
+          />
           <ProfileDropdown
             user={user}
             onLogout={onLogout}
