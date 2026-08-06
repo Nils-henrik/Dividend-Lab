@@ -8,6 +8,8 @@ type Props = {
 };
 
 export default function ForumPreview({ discussions }: Props) {
+  const safeDiscussions = Array.isArray(discussions) ? discussions : [];
+
   return (
     <section className="divlab-card p-6">
       <div className="mb-6 flex items-start justify-between gap-4">
@@ -26,7 +28,7 @@ export default function ForumPreview({ discussions }: Props) {
         </Link>
       </div>
 
-      {discussions.length === 0 ? (
+      {safeDiscussions.length === 0 ? (
         <div className="rounded-xl border divlab-inset px-4 py-5">
           <p className="text-sm leading-6 text-divlab-text-secondary">
             Inga diskussioner ännu.
@@ -34,7 +36,7 @@ export default function ForumPreview({ discussions }: Props) {
         </div>
       ) : (
         <div className="space-y-3">
-          {discussions.map((discussion) => {
+          {safeDiscussions.map((discussion) => {
             const username = discussion.authorUsername?.replace(/^@/, "") ?? null;
             const initials = getForumAuthorInitials(
               discussion.authorUsername,
@@ -43,7 +45,7 @@ export default function ForumPreview({ discussions }: Props) {
 
             return (
               <Link
-                key={discussion.slug}
+                key={discussion.slug || discussion.id || discussion.title}
                 href={`/forum/${discussion.slug}`}
                 className="block rounded-xl border divlab-inset p-4 transition hover:border-divlab-blue/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
               >
