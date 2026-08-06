@@ -5,9 +5,12 @@ import { usePathname } from "next/navigation";
 import { useId, useState } from "react";
 import { appNavigation } from "@/lib/constants/navigation";
 import {
+  areNavigationGroupChildrenVisible,
+  getNavigationGroupAriaExpanded,
   getNavigationItemKey,
   isNavigationChildActive,
   isNavigationItemActive,
+  resolveNavigationGroupActivation,
   shouldNavigationGroupStartExpanded,
 } from "@/lib/navigation/app-navigation-state";
 import type { NavigationChildItem, NavigationItem } from "@/types/navigation";
@@ -17,6 +20,7 @@ type Props = {
   isCollapsed?: boolean;
   unreadMessageCount: number;
   onNavigate?: () => void;
+  onExpandSidebar?: () => void;
   className?: string;
   navigationSurface?: "desktop" | "mobile";
 };
@@ -118,11 +122,13 @@ function NavigationGroup({
   pathname,
   isCollapsed,
   onNavigate,
+  onExpandSidebar,
 }: {
   item: NavigationItem & { children: NavigationChildItem[] };
   pathname: string;
   isCollapsed: boolean;
   onNavigate?: () => void;
+  onExpandSidebar?: () => void;
 }) {
   const panelId = useId();
   const routeRequiresExpanded = shouldNavigationGroupStartExpanded(
@@ -131,17 +137,34 @@ function NavigationGroup({
   );
   const [isExpanded, setIsExpanded] = useState(routeRequiresExpanded);
   const isSectionActive = isNavigationItemActive(pathname, item);
-  const showChildren = isExpanded && !isCollapsed;
+  const showChildren = areNavigationGroupChildrenVisible(
+    isExpanded,
+    isCollapsed,
+  );
+  const ariaExpanded = getNavigationGroupAriaExpanded(isExpanded, isCollapsed);
+
+  function handleDisclosureClick() {
+    const activation = resolveNavigationGroupActivation({
+      isSidebarCollapsed: isCollapsed,
+      isGroupExpanded: isExpanded,
+    });
+
+    if (activation.shouldRequestSidebarExpand) {
+      onExpandSidebar?.();
+    }
+
+    setIsExpanded(activation.nextGroupExpanded);
+  }
 
   return (
     <div>
       <button
         type="button"
-        aria-expanded={isExpanded}
+        aria-expanded={ariaExpanded}
         aria-controls={panelId}
         title={isCollapsed ? item.label : undefined}
         aria-label={item.label}
-        onClick={() => setIsExpanded((current) => !current)}
+        onClick={handleDisclosureClick}
         className={`relative flex w-full items-center rounded-xl text-sm font-medium transition ${
           isCollapsed ? "justify-center px-2 py-2.5" : "gap-3 px-3 py-2.5"
         } ${isSectionActive ? "divlab-nav-active" : "divlab-nav-idle"}`}
@@ -158,7 +181,7 @@ function NavigationGroup({
           <AppIcon
             name="chevronDown"
             className={`h-3.5 w-3.5 shrink-0 transition-transform duration-200 ${
-              isExpanded ? "rotate-180" : ""
+              showChildren ? "rotate-180" : ""
             }`}
           />
         </span>
@@ -196,12 +219,14 @@ function NavigationEntry({
   isCollapsed,
   unreadMessageCount,
   onNavigate,
+  onExpandSidebar,
 }: {
   item: NavigationItem;
   pathname: string;
   isCollapsed: boolean;
   unreadMessageCount: number;
   onNavigate?: () => void;
+  onExpandSidebar?: () => void;
 }) {
   if (item.children && item.children.length > 0) {
     return (
@@ -211,6 +236,7 @@ function NavigationEntry({
         pathname={pathname}
         isCollapsed={isCollapsed}
         onNavigate={onNavigate}
+        onExpandSidebar={onExpandSidebar}
       />
     );
   }
@@ -234,6 +260,7 @@ export default function AppNavigationLinks({
   isCollapsed = false,
   unreadMessageCount,
   onNavigate,
+  onExpandSidebar,
   className = "",
   navigationSurface = "desktop",
 }: Props) {
@@ -255,6 +282,7 @@ export default function AppNavigationLinks({
             isCollapsed={isCollapsed}
             unreadMessageCount={unreadMessageCount}
             onNavigate={onNavigate}
+            onExpandSidebar={onExpandSidebar}
           />
         ))}
       </div>
@@ -269,6 +297,7 @@ export default function AppNavigationLinks({
               isCollapsed={isCollapsed}
               unreadMessageCount={unreadMessageCount}
               onNavigate={onNavigate}
+              onExpandSidebar={onExpandSidebar}
             />
           ))}
         </div>
