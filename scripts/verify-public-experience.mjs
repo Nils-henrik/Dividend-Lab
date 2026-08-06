@@ -67,7 +67,7 @@ async function assertStickyPanelClearsHeader(page, panelSelector) {
   await panel.evaluate((element) => {
     const documentTop = element.getBoundingClientRect().top + window.scrollY;
     window.scrollTo({
-      top: Math.max(0, documentTop - 96 + 32),
+      top: Math.max(0, documentTop - 96 + 1),
       behavior: "instant",
     });
   });
