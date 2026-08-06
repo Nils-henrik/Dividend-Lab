@@ -1,0 +1,107 @@
+# DivLab Cursor Cloud Agent dispatch bridge
+# Triggers only when the cursor-agent label is added to an Issue.
+# Never executes Issue text as shell. Never logs CURSOR_API_KEY.
+name: Cursor Agent Dispatch
+
+on:
+  issues:
+    types: [labeled]
+
+concurrency:
+  group: cursor-agent-dispatch-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  dispatch:
+    name: Dispatch Cursor agent
+    if: >
+      github.event.label.name == 'cursor-agent' &&
+      github.event.issue.pull_request == null &&
+      github.repository == 'Nils-henrik/Dividend-Lab'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository (default branch only)
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Detect prior dispatch (idempotency)
+        id: prior
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          ISSUE=${{ github.event.issue.number }}
+          LABELS="$(gh api "repos/${GITHUB_REPOSITORY}/issues/${ISSUE}" --jq '[.labels[].name] | join(",")')"
+          if [[ ",$LABELS," == *",cursor-running,"* ]]; then
+            echo "already_running=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "already_running=false" >> "$GITHUB_OUTPUT"
+          fi
+          COMMENTS="$(gh api "repos/${GITHUB_REPOSITORY}/issues/${ISSUE}/comments?per_page=100" --jq '[.[].body] | join("\n---\n")')"
+          if [[ "$COMMENTS" == *"<!-- divlab-cursor-dispatch:success -->"* ]]; then
+            echo "prior_success=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "prior_success=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Dispatch via Node (safe JSON + Cursor API)
+        id: dispatch
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          CURSOR_ALREADY_RUNNING: ${{ steps.prior.outputs.already_running }}
+          CURSOR_PRIOR_SUCCESS: ${{ steps.prior.outputs.prior_success }}
+          GITHUB_EVENT_PATH: ${{ github.event_path }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: npx tsx scripts/cursor-bridge/dispatch.mts
+        continue-on-error: true
+
+      - name: Transition labels
+        if: always() && steps.dispatch.outputs.remove_labels != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REMOVE_LABELS: ${{ steps.dispatch.outputs.remove_labels }}
+          APPLY_LABEL: ${{ steps.dispatch.outputs.apply_label }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          set -euo pipefail
+          while IFS= read -r label; do
+            [[ -z "$label" ]] && continue
+            encoded="$(printf %s "$label" | jq -sRr @uri)"
+            gh api --method DELETE "repos/${GITHUB_REPOSITORY}/issues/${ISSUE_NUMBER}/labels/${encoded}" \
+              || true
+          done <<< "$REMOVE_LABELS"
+          if [[ -n "${APPLY_LABEL}" ]]; then
+            jq -n --arg l "$APPLY_LABEL" '{labels:[$l]}' \
+              | gh api --method POST "repos/${GITHUB_REPOSITORY}/issues/${ISSUE_NUMBER}/labels" --input - \
+              || true
+          fi
+
+      - name: Audit comment
+        if: always() && steps.dispatch.outputs.comment_body != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          COMMENT_BODY: ${{ steps.dispatch.outputs.comment_body }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          set -euo pipefail
+          # Pass comment via stdin JSON — never interpolate Issue text into shell eval.
+          jq -n --arg body "$COMMENT_BODY" '{body:$body}' \
+            | gh api --method POST "repos/${GITHUB_REPOSITORY}/issues/${ISSUE_NUMBER}/comments" --input -
+
+      - name: Fail job when dispatch failed
+        if: steps.dispatch.outcome == 'failure' || steps.dispatch.outputs.outcome == 'failure'
+        run: exit 1

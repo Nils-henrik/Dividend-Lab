@@ -1,0 +1,143 @@
+name: Cursor Agent Task
+description: Structured DivLab task for ChatGPT → GitHub → Cursor Cloud Agents.
+title: "[Cursor] "
+labels: ["cursor-agent"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for DivLab tasks that should be dispatched to a Cursor Cloud Agent.
+
+        The automation bridge will send the complete Issue to Cursor when the `cursor-agent` label is present.
+        High-risk and Manual-only work is never eligible for automatic merge.
+
+  - type: textarea
+    id: objective
+    attributes:
+      label: Task objective
+      description: What should Cursor accomplish?
+      placeholder: Update the news article cover crop for …
+    validations:
+      required: true
+
+  - type: textarea
+    id: background
+    attributes:
+      label: Background / context
+      description: Why this change is needed and any product constraints.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Checklist of observable outcomes that define done.
+      placeholder: |
+        - [ ] …
+        - [ ] …
+    validations:
+      required: true
+
+  - type: textarea
+    id: allowed_scope
+    attributes:
+      label: Allowed scope
+      description: Files, routes, or areas Cursor may change.
+      placeholder: |
+        - app/news/...
+        - public/images/...
+    validations:
+      required: true
+
+  - type: textarea
+    id: forbidden_scope
+    attributes:
+      label: Forbidden scope
+      description: Files or areas Cursor must not touch.
+      placeholder: |
+        - .github/workflows/**
+        - supabase/**
+        - auth / middleware / secrets
+    validations:
+      required: true
+
+  - type: textarea
+    id: swedish_copy
+    attributes:
+      label: Expected Swedish user-facing copy
+      description: Exact or approximate Swedish strings when UI copy changes. Write "N/A" if none.
+      placeholder: N/A
+    validations:
+      required: true
+
+  - type: textarea
+    id: required_tests
+    attributes:
+      label: Required tests
+      description: Which checks Cursor must run (lint, typecheck, targeted tests, build, etc.).
+      placeholder: |
+        - npm run lint
+        - npm run typecheck
+        - relevant unit tests
+    validations:
+      required: true
+
+  - type: dropdown
+    id: visual_verification
+    attributes:
+      label: Visual verification required?
+      options:
+        - "No"
+        - "Yes — desktop and mobile screenshots / recording"
+    validations:
+      required: true
+
+  - type: textarea
+    id: deployment
+    attributes:
+      label: Deployment / publication instruction
+      description: What should happen after the draft PR is reviewed?
+      placeholder: Leave as draft PR for ChatGPT review. Do not merge. Do not deploy manually.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: risk
+    attributes:
+      label: Risk classification
+      description: High and Manual-only tasks are never auto-merged even if divlab-approved is applied by mistake.
+      options:
+        - Low — editorial/content/simple UI
+        - Medium — application logic
+        - High — auth/database/security/user data
+        - Manual only — migrations/RLS/secrets/payments/destructive changes
+    validations:
+      required: true
+
+  - type: textarea
+    id: related_paths
+    attributes:
+      label: Related routes or files (when known)
+      description: Optional hints to reduce unnecessary repository exploration.
+      placeholder: |
+        - app/(marketing)/page.tsx
+        - docs/...
+    validations:
+      required: false
+
+  - type: markdown
+    attributes:
+      value: |
+        ### Instructions for Cursor (automatically enforced by the bridge prompt)
+
+        - Preserve existing DivLab architecture.
+        - Preserve Swedish user-facing language.
+        - Follow accessibility requirements.
+        - Maintain responsive desktop and mobile behavior.
+        - Follow SEO and editorial conventions where relevant.
+        - Avoid unrelated changes.
+        - Never modify secrets.
+        - Open a **draft** PR.
+        - **Never merge** your own PR.
+        - Include `<!-- divlab-risk: low|medium|high|manual-only -->` in the PR body matching this Issue.

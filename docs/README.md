@@ -60,6 +60,9 @@ docs/
     application-service.md
     alpha-access.md
     alpha-shell.md
+
+  automation/
+    CURSOR_BRIDGE.md
 ```
 
 ---
