@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import {
   learningArticles,
@@ -99,12 +100,13 @@ function NewsModule({ article }: { article: NewsArticle | null }) {
 
       <div className="mt-3 flex gap-3">
         {listImageUrl ? (
-          <div className="h-[72px] w-[112px] shrink-0 overflow-hidden rounded-lg border divlab-border-neutral bg-divlab-surface sm:h-[80px] sm:w-[128px]">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+          <div className="relative h-[72px] w-[112px] shrink-0 overflow-hidden rounded-lg border divlab-border-neutral bg-divlab-surface sm:h-[80px] sm:w-[128px]">
+            <Image
               src={listImageUrl}
               alt=""
-              className="h-full w-full object-cover"
+              fill
+              sizes="128px"
+              className="object-cover"
             />
           </div>
         ) : null}

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import ForumOverviewPage from "@/components/forum/ForumOverviewPage";
 import ForumRouteShell from "@/components/forum/ForumRouteShell";
 import { getAuthenticatedUser } from "@/lib/auth/session";
@@ -9,7 +10,15 @@ import {
   isForumCategorySlug,
   mapThreadRecordToForumThread,
 } from "@/lib/forum/queries";
+import { buildForumMetadata } from "@/lib/seo/forum-metadata";
 import { redirect } from "next/navigation";
+
+export const metadata: Metadata = buildForumMetadata({
+  title: "Forum",
+  description:
+    "Diskutera börs, sparande och privatekonomi i DivLabs forum. Läs trådar öppet eller skapa konto för att delta.",
+  path: "/forum",
+});
 
 type Props = {
   searchParams: Promise<{

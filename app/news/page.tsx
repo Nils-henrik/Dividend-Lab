@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import AppShell from "@/components/layout/AppShell";
+import PublicContentShell from "@/components/layout/PublicContentShell";
 import NewsPageContent from "@/components/news/NewsPageContent";
-import { getSiteUrlFromEnv } from "@/lib/auth/site-url";
+import { getCanonicalUrl } from "@/lib/seo/canonical";
 import { getNewsArticles } from "@/lib/news/get-articles";
 import {
   buildNewsListHref,
@@ -30,7 +30,6 @@ export async function generateMetadata({
     page: requestedPage,
   });
   const page = listing.page;
-  const siteUrl = getSiteUrlFromEnv();
   const canonicalPath = buildNewsListHref({ category, page });
   const title =
     page > 1
@@ -42,9 +41,17 @@ export async function generateMetadata({
       absolute: title,
     },
     description:
-      "Följ aktuella händelser från börsen och finansmarknaden i DivLab.",
+      "Följ aktuella händelser från börsen och finansmarknaden i DivLab. Svenska börsnyheter för allmän information.",
     alternates: {
-      canonical: `${siteUrl}${canonicalPath}`,
+      canonical: getCanonicalUrl(canonicalPath),
+    },
+    openGraph: {
+      title,
+      description:
+        "Följ aktuella händelser från börsen och finansmarknaden i DivLab.",
+      url: getCanonicalUrl(canonicalPath),
+      type: "website",
+      locale: "sv_SE",
     },
   };
 }
@@ -63,7 +70,7 @@ export default async function NewsPage({ searchParams }: Props) {
   }
 
   return (
-    <AppShell allowGuest>
+    <PublicContentShell>
       <NewsPageContent
         category={listing.category}
         page={listing.page}
@@ -72,6 +79,6 @@ export default async function NewsPage({ searchParams }: Props) {
         featuredArticle={listing.featuredArticle}
         rowArticles={listing.rowArticles}
       />
-    </AppShell>
+    </PublicContentShell>
   );
 }

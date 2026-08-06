@@ -1,4 +1,5 @@
 import type { NewsArticle, NewsCategoryFilter as NewsCategoryFilterValue } from "@/types/news";
+import { formatArticleCountLabel } from "@/lib/i18n/swedish-counts";
 import NewsArticleRow from "./NewsArticleRow";
 import NewsCategoryFilter from "./NewsCategoryFilter";
 import NewsEmptyState from "./NewsEmptyState";
@@ -25,26 +26,18 @@ export default function NewsPageContent({
   const hasArticles = totalCount > 0;
 
   return (
-    <div className="mx-auto max-w-4xl space-y-5">
+    <div className="mx-auto max-w-4xl space-y-5 px-4 py-6 sm:px-6 lg:px-0 lg:py-0">
       <header className="space-y-4 border-b divlab-border-neutral pb-5">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <p className="divlab-section-label text-[10px] tracking-[0.22em]">
-              Marknadsinformation
-            </p>
-            <h1 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-divlab-text">
-              Börsnyheter
-            </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-divlab-text-secondary">
-              Följ det senaste från marknaden.
-            </p>
-          </div>
-
-          <p
-            className="inline-flex w-fit shrink-0 items-center rounded-full border divlab-border-neutral px-2.5 py-1 text-[10px] font-medium text-divlab-text-muted"
-            role="status"
-          >
-            Förhandsvisning med exempelartiklar
+        <div>
+          <p className="divlab-section-label text-[10px] tracking-[0.22em]">
+            Marknadsinformation
+          </p>
+          <h1 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-divlab-text">
+            Börsnyheter
+          </h1>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-divlab-text-secondary">
+            Aktuella händelser från börsen och finansmarknaden — för
+            allmän information, inte personlig rådgivning.
           </p>
         </div>
 
@@ -68,8 +61,7 @@ export default function NewsPageContent({
                   Senaste nyheter
                 </h2>
                 <span className="text-xs text-divlab-text-subtle tabular-nums">
-                  {totalCount} artikel
-                  {totalCount === 1 ? "" : "r"}
+                  {formatArticleCountLabel(totalCount)}
                 </span>
               </div>
 

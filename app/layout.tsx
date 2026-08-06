@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { PRODUCTION_SITE_ORIGIN } from "@/lib/seo/site";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -14,9 +15,22 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "DivLab | Marknad, verktyg och community",
+  metadataBase: new URL(PRODUCTION_SITE_ORIGIN),
+  title: {
+    default: "DivLab | Börsnyheter, utbildning och ekonomisk frihet",
+    template: "%s | DivLab",
+  },
   description:
-    "Börsnyheter, utbildning, smarta verktyg och diskussioner – samlat på ett ställe med DivLab.",
+    "DivLab är den svenska plattformen för börsnyheter, utbildning, Frihetsmaskinen och community kring långsiktigt sparande.",
+  openGraph: {
+    siteName: "DivLab",
+    locale: "sv_SE",
+    type: "website",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({

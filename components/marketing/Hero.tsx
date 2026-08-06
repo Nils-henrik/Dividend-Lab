@@ -5,26 +5,30 @@ import ProductPreviewPanelFallback from "./ProductPreviewPanelFallback";
 
 const valuePoints = [
   {
-    title: "Börsen i fokus",
-    description: "Nyheter och aktuella marknadshändelser.",
+    title: "Utan konto",
+    description: "Läs nyheter, guider och använd Frihetsmaskinen direkt.",
   },
   {
-    title: "Lär dig mer",
-    description: "Utbildning som gör ekonomi enklare att förstå.",
+    title: "Med konto",
+    description: "Forum, kommentarer, kontakter och din DivLab-miljö.",
   },
   {
-    title: "Community",
-    description: "Diskussioner med andra sparintresserade.",
+    title: "Svensk kontext",
+    description: "ISK, pension, indexfonder och långsiktigt sparande.",
   },
 ] as const;
 
 export default function Hero() {
   return (
     <section className="relative bg-divlab-bg">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(59,130,246,0.08),_transparent_55%)]"
+      />
       <div className="relative z-10 mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 px-6 pb-16 pt-12 md:px-8 lg:grid-cols-2 lg:gap-16 lg:pb-24 lg:pt-24">
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.18em] text-divlab-text-muted">
-            MARKNAD · VERKTYG · COMMUNITY
+            DivLab
           </p>
 
           <h1 className="mt-6 text-4xl font-bold leading-tight tracking-[-0.03em] text-divlab-text sm:text-5xl lg:text-6xl">
@@ -33,8 +37,8 @@ export default function Hero() {
           </h1>
 
           <p className="mt-6 max-w-xl text-lg leading-8 text-divlab-text-secondary">
-            Börsnyheter, utbildning, smarta verktyg och diskussioner – samlat
-            på ett ställe.
+            DivLab är den svenska plattformen för börsnyheter, utbildning,
+            Frihetsmaskinen och community kring långsiktigt sparande.
           </p>
 
           <div className="mt-8 flex w-full max-w-sm flex-col items-stretch gap-3 sm:max-w-none sm:flex-row sm:items-center">
@@ -46,10 +50,10 @@ export default function Hero() {
             </Link>
 
             <Link
-              href="/login"
+              href="/frihetsmaskinen"
               className="rounded-xl border divlab-border-neutral px-6 py-3.5 text-center text-sm font-medium text-divlab-text-secondary transition hover:border-divlab-border-strong hover:text-divlab-text sm:text-left"
             >
-              Logga in
+              Prova Frihetsmaskinen
             </Link>
           </div>
 
@@ -68,7 +72,7 @@ export default function Hero() {
         </div>
 
         <div className="flex w-full justify-center lg:justify-end">
-          <div className="w-full max-w-[560px] rounded-2xl divlab-card p-5">
+          <div className="w-full max-w-[560px] rounded-2xl border divlab-border-neutral bg-white/[0.02] p-5">
             <Suspense fallback={<ProductPreviewPanelFallback />}>
               <ProductPreviewPanel />
             </Suspense>

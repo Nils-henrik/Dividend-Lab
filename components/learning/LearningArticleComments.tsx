@@ -39,7 +39,7 @@ export default async function LearningArticleComments({
       <div className="space-y-3">
         {comments.length === 0 ? (
           <p className="rounded-xl border divlab-border-neutral divlab-inset px-4 py-3 text-sm text-divlab-text-secondary">
-            Inga kommentarer ännu. Var den första som delar ett lugn perspektiv.
+            Inga kommentarer ännu. Var den första som delar ett lugnt perspektiv.
           </p>
         ) : (
           comments.map((comment) => (

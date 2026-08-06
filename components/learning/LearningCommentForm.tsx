@@ -33,7 +33,7 @@ export default function LearningCommentForm({ articleSlug }: Props) {
         name="body"
         rows={4}
         maxLength={LEARNING_COMMENT_MAX_LENGTH}
-        placeholder="Dela ett lugn perspektiv eller en fråga om artikeln..."
+        placeholder="Dela ett lugnt perspektiv eller en fråga om artikeln..."
         className="divlab-input w-full resize-none px-3 py-2 text-sm leading-6 placeholder:text-divlab-text-subtle"
       />
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">

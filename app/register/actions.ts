@@ -23,7 +23,23 @@ function mapSignUpErrorMessage(message: string) {
     return LEGAL_ACCEPTANCE_VALIDATION_MESSAGE;
   }
 
-  return message;
+  if (
+    normalized.includes("already") ||
+    normalized.includes("registered") ||
+    normalized.includes("exists")
+  ) {
+    return "Kunde inte skapa kontot med de uppgifterna. Prova att logga in eller återställa lösenordet.";
+  }
+
+  if (normalized.includes("password")) {
+    return "Lösenordet uppfyller inte kraven. Använd minst 8 tecken.";
+  }
+
+  if (normalized.includes("rate") || normalized.includes("too many")) {
+    return "För många försök. Vänta en stund och försök igen.";
+  }
+
+  return "Kunde inte skapa kontot just nu. Försök igen om en stund.";
 }
 
 export async function registerUser(input: {
@@ -50,11 +66,11 @@ export async function registerUser(input: {
     };
   }
 
-  if (input.password.length < 6) {
+  if (input.password.length < 8) {
     return {
       ok: false,
       reason: "validation",
-      message: "Använd minst 6 tecken i lösenordet.",
+      message: "Använd minst 8 tecken i lösenordet.",
     };
   }
 

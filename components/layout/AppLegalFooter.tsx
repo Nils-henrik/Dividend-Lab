@@ -6,6 +6,7 @@ const legalLinks = [
   { label: "Integritet", href: "/privacy" },
   { label: "Cookies", href: "/cookies" },
   { label: "Ansvarsfriskrivning", href: "/disclaimer" },
+  { label: "Redaktionella riktlinjer", href: "/editorial" },
 ] as const;
 
 export default function AppLegalFooter() {

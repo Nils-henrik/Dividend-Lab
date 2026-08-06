@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useId, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PrimaryButton from "@/components/ui/Button";
+import { getSafeAuthErrorMessage } from "@/lib/auth/error-messages";
 import { DIVLAB_BRAND_NAME } from "@/lib/site/brand";
 
 type Props = {
@@ -14,8 +15,10 @@ type Props = {
 
 export default function LoginForm({ redirectTo, resetSuccess = false }: Props) {
   const router = useRouter();
+  const errorId = useId();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -46,7 +49,7 @@ export default function LoginForm({ redirectTo, resetSuccess = false }: Props) {
     setIsLoading(false);
 
     if (signInError) {
-      setError(signInError.message);
+      setError(getSafeAuthErrorMessage(signInError.message));
       return;
     }
 
@@ -62,7 +65,8 @@ export default function LoginForm({ redirectTo, resetSuccess = false }: Props) {
           Logga in
         </h1>
         <p className="mt-3 text-sm leading-6 text-divlab-text-secondary">
-          Få åtkomst till din portfölj, kontoinställningar och community-funktioner.
+          Få tillgång till verktyg, forum, kommentarer, kontakter och din
+          personliga DivLab-miljö.
         </p>
       </div>
 
@@ -72,7 +76,7 @@ export default function LoginForm({ redirectTo, resetSuccess = false }: Props) {
         </p>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-5" noValidate>
         <label className="block">
           <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-divlab-text-muted">
             E-post
@@ -86,6 +90,8 @@ export default function LoginForm({ redirectTo, resetSuccess = false }: Props) {
             }}
             autoComplete="email"
             required
+            aria-invalid={Boolean(error)}
+            aria-describedby={error ? errorId : undefined}
             className="divlab-input w-full px-4 py-3"
           />
         </label>
@@ -95,17 +101,28 @@ export default function LoginForm({ redirectTo, resetSuccess = false }: Props) {
             <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-divlab-text-muted">
               Lösenord
             </span>
-            <input
-              type="password"
-              value={password}
-              onChange={(event) => {
-                setPassword(event.target.value);
-                setError("");
-              }}
-              autoComplete="current-password"
-              required
-              className="divlab-input w-full px-4 py-3"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(event) => {
+                  setPassword(event.target.value);
+                  setError("");
+                }}
+                autoComplete="current-password"
+                required
+                aria-invalid={Boolean(error)}
+                aria-describedby={error ? errorId : undefined}
+                className="divlab-input w-full px-4 py-3 pr-24"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((value) => !value)}
+                className="absolute inset-y-0 right-2 my-auto inline-flex min-h-11 items-center rounded-lg px-3 text-xs font-medium text-divlab-text-muted transition hover:text-divlab-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/40"
+              >
+                {showPassword ? "Dölj" : "Visa"}
+              </button>
+            </div>
           </label>
 
           <div className="flex justify-end">
@@ -116,7 +133,11 @@ export default function LoginForm({ redirectTo, resetSuccess = false }: Props) {
         </div>
 
         {error && (
-          <p className="rounded-xl border divlab-border-neutral divlab-inset px-4 py-3 text-sm leading-6 text-divlab-text-secondary">
+          <p
+            id={errorId}
+            role="alert"
+            className="rounded-xl border divlab-border-neutral divlab-inset px-4 py-3 text-sm leading-6 text-divlab-text-secondary"
+          >
             {error}
           </p>
         )}
@@ -130,6 +151,15 @@ export default function LoginForm({ redirectTo, resetSuccess = false }: Props) {
         Ny på {DIVLAB_BRAND_NAME}?{" "}
         <Link href="/register" className="divlab-link font-medium">
           Skapa konto
+        </Link>
+      </p>
+      <p className="mt-4 text-center text-sm text-divlab-text-muted">
+        <Link href="/" className="divlab-link">
+          Till startsidan
+        </Link>
+        <span aria-hidden="true"> · </span>
+        <Link href="/news" className="divlab-link">
+          Börsnyheter
         </Link>
       </p>
     </section>

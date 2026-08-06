@@ -2,6 +2,6 @@ import { DIVLAB_BRAND_NAME } from "@/lib/site/brand";
 
 /**
  * Shared Börsnyheter disclaimer — aligned with the product disclaimer page.
- * Not investment advice; treat news as general market information.
+ * Informational and editorial only; not personal financial advice.
  */
-export const newsDisclaimer = `${DIVLAB_BRAND_NAME} tillhandahåller allmän information, verktyg, utbildning och community-diskussion. Inget innehåll ska tolkas som personlig finansiell rådgivning, investeringsrekommendation eller uppmaning att köpa, sälja eller behålla värdepapper. Marknadsdiagram, index, nyhetsrubriker och länkar kan komma från tredje part och kan vara försenade, ofullständiga eller felaktiga. Kontrollera viktiga uppgifter mot originalkällor innan du agerar.`;
+export const newsDisclaimer = `${DIVLAB_BRAND_NAME} publicerar informationellt och redaktionellt material. Innehållet utgör inte personlig finansiell rådgivning och inte heller en individuell investeringsrekommendation. Marknadsinformation kan förändras efter publicering. Du ansvarar själv för dina beslut. Investeringar innebär risk och historisk avkastning är ingen garanti för framtida resultat.`;

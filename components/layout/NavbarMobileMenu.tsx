@@ -19,6 +19,9 @@ export default function NavbarMobileMenu({ user, desktopNav }: Props) {
       return;
     }
 
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setIsOpen(false);
@@ -26,7 +29,10 @@ export default function NavbarMobileMenu({ user, desktopNav }: Props) {
     };
 
     document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", onKeyDown);
+    };
   }, [isOpen]);
 
   function closeMenu() {
@@ -44,7 +50,7 @@ export default function NavbarMobileMenu({ user, desktopNav }: Props) {
           aria-controls="marketing-mobile-nav"
           aria-label={isOpen ? "Stäng meny" : "Öppna meny"}
           onClick={() => setIsOpen((open) => !open)}
-          className="rounded-lg border divlab-border-neutral px-3 py-2.5 text-sm text-divlab-text-secondary transition hover:text-divlab-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 lg:hidden"
+          className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border divlab-border-neutral px-3 py-2.5 text-sm text-divlab-text-secondary transition hover:text-divlab-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 lg:hidden"
         >
           Meny
         </button>

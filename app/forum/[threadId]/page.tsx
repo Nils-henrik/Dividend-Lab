@@ -1,5 +1,8 @@
+import type { Metadata } from "next";
 import ForumThreadPage from "@/components/forum/ForumThreadPage";
 import AppShell from "@/components/layout/AppShell";
+import PublicPageShell from "@/components/layout/PublicPageShell";
+import JsonLdScript from "@/components/seo/JsonLd";
 import {
   getAuthenticatedUser,
   requireAuthenticatedUserWithProfile,
@@ -24,6 +27,12 @@ import {
   mapReplyRecordToForumPost,
   mapThreadRecordToForumThread,
 } from "@/lib/forum/queries";
+import {
+  breadcrumbJsonLd,
+  discussionForumPostingJsonLd,
+} from "@/lib/seo/json-ld";
+import { buildForumMetadata } from "@/lib/seo/forum-metadata";
+import { DIVLAB_BRAND_NAME } from "@/lib/site/brand";
 import type { ForumPost, ForumThread } from "@/types/forum";
 
 type Props = {
@@ -47,8 +56,8 @@ function getDemoThreadView(): {
       category: forumDemoThread.category,
       groupSlug: forumDemoThread.groupSlug,
       group: forumDemoThread.group,
-      author: `@${forumDemoPosts[0]?.username ?? "demo-preview"}`,
-      authorUsername: forumDemoPosts[0]?.username ?? "demo-preview",
+      author: `@${forumDemoPosts[0]?.username ?? "divlab-test"}`,
+      authorUsername: forumDemoPosts[0]?.username ?? "divlab-test",
       replies: 0,
       lastActivity: forumDemoThread.lastActivity,
       excerpt: forumDemoThread.excerpt,
@@ -68,6 +77,37 @@ function getDemoReactionMap(): ForumReactionMap {
   };
 }
 
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { threadId } = await params;
+
+  if (isForumDemoThread(threadId)) {
+    return {
+      title: `Internt testinnehåll | ${DIVLAB_BRAND_NAME}`,
+      robots: { index: false, follow: false },
+    };
+  }
+
+  const threadRecord = await getForumThreadBySlugFromDatabase(threadId);
+
+  if (!threadRecord) {
+    return {
+      title: `Forumtråd | ${DIVLAB_BRAND_NAME}`,
+      robots: { index: false, follow: false },
+    };
+  }
+
+  const thread = mapThreadRecordToForumThread(threadRecord);
+  const description =
+    thread.excerpt?.trim() ||
+    `Diskussion i DivLabs forum: ${thread.title}`;
+
+  return buildForumMetadata({
+    title: thread.title,
+    description: description.slice(0, 160),
+    path: `/forum/${thread.slug}`,
+  });
+}
+
 export default async function ForumThreadRoute({ params }: Props) {
   const { threadId } = await params;
   const user = await getAuthenticatedUser();
@@ -78,7 +118,7 @@ export default async function ForumThreadRoute({ params }: Props) {
   let isDemoThread = false;
   let openingAuthorUsername = "";
   let openingAuthorInitials = "DL";
-  let openingMemberSince = "DivLab member";
+  let openingMemberSince = "DivLab-medlem";
   let openingTimestamp = "";
 
   if (isForumDemoThread(threadId)) {
@@ -87,10 +127,10 @@ export default async function ForumThreadRoute({ params }: Props) {
     replies = demo.replies;
     reactionMap = getDemoReactionMap();
     isDemoThread = true;
-    openingAuthorUsername = demo.replies[0]?.username ?? "demo-preview";
-    openingAuthorInitials = demo.replies[0]?.avatar ?? "DP";
-    openingMemberSince = demo.replies[0]?.memberSince ?? "Förhandsvisning";
-    openingTimestamp = demo.replies[0]?.timestamp ?? "Preview";
+    openingAuthorUsername = demo.replies[0]?.username ?? "divlab-test";
+    openingAuthorInitials = demo.replies[0]?.avatar ?? "DT";
+    openingMemberSince = demo.replies[0]?.memberSince ?? "Internt testinnehåll";
+    openingTimestamp = demo.replies[0]?.timestamp ?? "Internt testinnehåll";
   } else {
     const threadRecord = await getForumThreadBySlugFromDatabase(threadId);
 
@@ -144,19 +184,38 @@ export default async function ForumThreadRoute({ params }: Props) {
   }
 
   return (
-    <main className="min-h-screen bg-divlab-bg text-divlab-text">
-      <div className="px-8 py-8">
-        <ForumThreadPage
-          thread={thread}
-          replies={replies}
-          reactionMap={reactionMap}
-          isDemoThread={isDemoThread}
-          openingAuthorUsername={openingAuthorUsername}
-          openingAuthorInitials={openingAuthorInitials}
-          openingMemberSince={openingMemberSince}
-          openingTimestamp={openingTimestamp}
+    <PublicPageShell contentClassName="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+      {thread && !isDemoThread ? (
+        <JsonLdScript
+          data={[
+            discussionForumPostingJsonLd({
+              title: thread.title,
+              description: thread.excerpt || thread.title,
+              path: `/forum/${thread.slug}`,
+              authorName: thread.authorUsername || thread.author,
+              commentCount: thread.replies,
+            }),
+            breadcrumbJsonLd([
+              { name: "Hem", path: "/" },
+              { name: "Forum", path: "/forum" },
+              {
+                name: thread.title,
+                path: `/forum/${thread.slug}`,
+              },
+            ]),
+          ]}
         />
-      </div>
-    </main>
+      ) : null}
+      <ForumThreadPage
+        thread={thread}
+        replies={replies}
+        reactionMap={reactionMap}
+        isDemoThread={isDemoThread}
+        openingAuthorUsername={openingAuthorUsername}
+        openingAuthorInitials={openingAuthorInitials}
+        openingMemberSince={openingMemberSince}
+        openingTimestamp={openingTimestamp}
+      />
+    </PublicPageShell>
   );
 }

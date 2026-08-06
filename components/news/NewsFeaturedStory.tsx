@@ -28,6 +28,7 @@ export default function NewsFeaturedStory({ article }: Props) {
             variant="featured"
             objectPosition={article.thumbnailObjectPosition ?? "center 40%"}
             mobileObjectPosition={article.mobileThumbnailObjectPosition}
+            priority
           />
         )}
 
@@ -88,11 +89,7 @@ export default function NewsFeaturedStory({ article }: Props) {
                   Läs mer
                 </a>
               )
-            ) : (
-              <span className="text-xs text-divlab-text-muted">
-                Extern länk kommer snart
-              </span>
-            )}
+            ) : null}
           </div>
         </div>
       </div>
