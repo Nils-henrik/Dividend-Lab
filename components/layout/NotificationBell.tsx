@@ -47,8 +47,13 @@ export default function NotificationBell({
   const [isPending, startTransition] = useTransition();
   const menuRef = useRef<HTMLDivElement | null>(null);
   const menuId = useId();
-  const hasUnread = unreadCount > 0;
-  const hasItems = items.length > 0;
+  const safeItems = Array.isArray(items) ? items : [];
+  const safeUnreadCount =
+    typeof unreadCount === "number" && Number.isFinite(unreadCount)
+      ? Math.max(0, unreadCount)
+      : 0;
+  const hasUnread = safeUnreadCount > 0;
+  const hasItems = safeItems.length > 0;
 
   useEffect(() => {
     const mediaQuery = window.matchMedia(FINE_POINTER_HOVER_QUERY);
@@ -96,26 +101,30 @@ export default function NotificationBell({
       return;
     }
 
-    const supabase = createClient();
-    const channel = supabase
-      .channel(`user-notifications:${userId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "user_notifications",
-          filter: `recipient_id=eq.${userId}`,
-        },
-        () => {
-          router.refresh();
-        },
-      )
-      .subscribe();
+    try {
+      const supabase = createClient();
+      const channel = supabase
+        .channel(`user-notifications:${userId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "user_notifications",
+            filter: `recipient_id=eq.${userId}`,
+          },
+          () => {
+            router.refresh();
+          },
+        )
+        .subscribe();
 
-    return () => {
-      void supabase.removeChannel(channel);
-    };
+      return () => {
+        void supabase.removeChannel(channel);
+      };
+    } catch {
+      return undefined;
+    }
   }, [router, userId]);
 
   function handleMouseLeave() {
@@ -147,7 +156,7 @@ export default function NotificationBell({
   }
 
   const triggerLabel = hasUnread
-    ? `Notifikationer, ${formatUnreadBadgeLabel(unreadCount)}`
+    ? `Notifikationer, ${formatUnreadBadgeLabel(safeUnreadCount)}`
     : "Notifikationer";
 
   return (
@@ -168,7 +177,7 @@ export default function NotificationBell({
         <AppIcon name="bell" />
         {hasUnread ? (
           <span className="absolute right-2 top-2 flex min-h-4 min-w-4 items-center justify-center rounded-full border border-divlab-bg bg-divlab-blue px-1 text-[10px] font-semibold leading-none text-white">
-            {unreadCount > 9 ? "9+" : unreadCount}
+            {safeUnreadCount > 9 ? "9+" : safeUnreadCount}
           </span>
         ) : null}
       </button>
@@ -199,7 +208,7 @@ export default function NotificationBell({
 
             {hasItems ? (
               <div className="max-h-[min(24rem,70vh)] overflow-y-auto py-2">
-                {items.map((item) => {
+                {safeItems.map((item) => {
                   const relativeTime = formatNotificationRelativeTime(
                     item.createdAt,
                   );

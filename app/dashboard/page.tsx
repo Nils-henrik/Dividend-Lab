@@ -4,23 +4,26 @@ import {
   getForumThreadsByLatestActivity,
   mapThreadRecordToForumThread,
 } from "@/lib/forum/queries";
+import type { ForumThread } from "@/types/forum";
 
 export default async function DashboardPage() {
   const { profile } = await requireAuthenticatedUserWithProfile();
-  let forumDiscussions: Awaited<
-    ReturnType<typeof getForumThreadsByLatestActivity>
-  > = [];
+  let forumDiscussions: ForumThread[] = [];
 
   try {
-    forumDiscussions = await getForumThreadsByLatestActivity(5);
+    const records = await getForumThreadsByLatestActivity(5);
+    forumDiscussions = records.flatMap((record) => {
+      try {
+        return [mapThreadRecordToForumThread(record)];
+      } catch {
+        return [];
+      }
+    });
   } catch {
     forumDiscussions = [];
   }
 
   return (
-    <DashboardShell
-      profile={profile}
-      forumDiscussions={forumDiscussions.map(mapThreadRecordToForumThread)}
-    />
+    <DashboardShell profile={profile} forumDiscussions={forumDiscussions} />
   );
 }

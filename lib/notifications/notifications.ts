@@ -6,6 +6,7 @@ import type {
 } from "@/lib/notifications/types";
 
 type NotificationProfileRow = {
+  id: string;
   username: string | null;
   display_name: string | null;
   avatar_path: string | null;
@@ -23,31 +24,27 @@ type NotificationRow = {
   dedupe_key: string;
   read_at: string | null;
   created_at: string;
-  profiles: NotificationProfileRow | NotificationProfileRow[] | null;
 };
 
-function isMissingNotificationsTableError(error: {
+function isSoftNotificationQueryError(error: {
   code?: string;
   message?: string;
 }) {
+  const message = error.message ?? "";
+
   return (
     error.code === "PGRST205" ||
-    error.message?.includes("user_notifications") === true
+    error.code === "PGRST200" ||
+    message.includes("user_notifications") ||
+    message.includes("schema cache")
   );
 }
 
-function getProfileRow(
-  profiles: NotificationProfileRow | NotificationProfileRow[] | null,
-): NotificationProfileRow | null {
-  if (!profiles) {
-    return null;
-  }
-
-  return Array.isArray(profiles) ? (profiles[0] ?? null) : profiles;
-}
-
-function mapNotificationRow(row: NotificationRow): UserNotificationRecord {
-  const profile = getProfileRow(row.profiles);
+function mapNotificationRow(
+  row: NotificationRow,
+  profile: NotificationProfileRow | null,
+): UserNotificationRecord {
+  const payload = row.payload ?? {};
 
   return {
     id: row.id,
@@ -56,73 +53,111 @@ function mapNotificationRow(row: NotificationRow): UserNotificationRecord {
     type: row.type,
     entityId: row.entity_id,
     destinationPath: row.destination_path,
-    payload: row.payload ?? {},
+    payload,
     dedupeKey: row.dedupe_key,
     readAt: row.read_at,
     createdAt: row.created_at,
-    actorUsername: profile?.username ?? null,
+    actorUsername:
+      profile?.username ??
+      (typeof payload.actorUsername === "string" ? payload.actorUsername : null),
     actorDisplayName: profile?.display_name ?? null,
     actorAvatarPath: profile?.avatar_path ?? null,
     actorProfileUpdatedAt: profile?.updated_at ?? null,
   };
 }
 
-export async function getUserNotifications(userId: string, limit = 20) {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("user_notifications")
-    .select(
-      `
-      id,
-      recipient_id,
-      actor_id,
-      type,
-      entity_id,
-      destination_path,
-      payload,
-      dedupe_key,
-      read_at,
-      created_at,
-      profiles:actor_id (
-        username,
-        display_name,
-        avatar_path,
-        updated_at
-      )
-    `,
-    )
-    .eq("recipient_id", userId)
-    .order("created_at", { ascending: false })
-    .limit(limit);
+async function getActorProfilesByIds(actorIds: string[]) {
+  const uniqueIds = [...new Set(actorIds.filter(Boolean))];
 
-  if (error) {
-    if (isMissingNotificationsTableError(error)) {
-      return [] as UserNotificationRecord[];
-    }
-
-    throw new Error(error.message);
+  if (uniqueIds.length === 0) {
+    return new Map<string, NotificationProfileRow>();
   }
 
-  return ((data ?? []) as NotificationRow[]).map(mapNotificationRow);
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id, username, display_name, avatar_path, updated_at")
+      .in("id", uniqueIds);
+
+    if (error) {
+      return new Map<string, NotificationProfileRow>();
+    }
+
+    return new Map(
+      ((data ?? []) as NotificationProfileRow[]).map((profile) => [
+        profile.id,
+        profile,
+      ]),
+    );
+  } catch {
+    return new Map<string, NotificationProfileRow>();
+  }
+}
+
+export async function getUserNotifications(userId: string, limit = 20) {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("user_notifications")
+      .select(
+        `
+        id,
+        recipient_id,
+        actor_id,
+        type,
+        entity_id,
+        destination_path,
+        payload,
+        dedupe_key,
+        read_at,
+        created_at
+      `,
+      )
+      .eq("recipient_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      if (isSoftNotificationQueryError(error)) {
+        return [] as UserNotificationRecord[];
+      }
+
+      throw new Error(error.message);
+    }
+
+    const rows = (data ?? []) as NotificationRow[];
+    const profiles = await getActorProfilesByIds(rows.map((row) => row.actor_id));
+
+    return rows.map((row) =>
+      mapNotificationRow(row, profiles.get(row.actor_id) ?? null),
+    );
+  } catch {
+    return [] as UserNotificationRecord[];
+  }
 }
 
 export async function getUnreadNotificationCount(userId: string) {
-  const supabase = await createClient();
-  const { count, error } = await supabase
-    .from("user_notifications")
-    .select("id", { count: "exact", head: true })
-    .eq("recipient_id", userId)
-    .is("read_at", null);
+  try {
+    const supabase = await createClient();
+    const { count, error } = await supabase
+      .from("user_notifications")
+      .select("id", { count: "exact", head: true })
+      .eq("recipient_id", userId)
+      .is("read_at", null);
 
-  if (error) {
-    if (isMissingNotificationsTableError(error)) {
-      return 0;
+    if (error) {
+      if (isSoftNotificationQueryError(error)) {
+        return 0;
+      }
+
+      throw new Error(error.message);
     }
 
-    throw new Error(error.message);
+    return count ?? 0;
+  } catch {
+    return 0;
   }
-
-  return count ?? 0;
 }
 
 export async function markNotificationRead(notificationId: string) {
