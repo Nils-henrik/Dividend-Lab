@@ -85,27 +85,46 @@ async function execSql(query: string): Promise<string> {
   const { execFile } = await import("node:child_process");
   const { promisify } = await import("node:util");
   const execFileAsync = promisify(execFile);
-  const { stdout } = await execFileAsync(
-    "docker",
-    [
-      "exec",
-      "-i",
-      "supabase_db_workspace",
-      "psql",
-      "-U",
-      "postgres",
-      "-d",
-      "postgres",
-      "-v",
-      "ON_ERROR_STOP=1",
-      "-At",
-      "-c",
-      query,
-    ],
-    { maxBuffer: 10 * 1024 * 1024 },
-  );
 
-  return stdout.trim();
+  const candidateContainers = [
+    process.env.SUPABASE_DB_CONTAINER,
+    "supabase_db_Dividend-Lab",
+    "supabase_db_dividend-lab",
+    "supabase_db_workspace",
+  ].filter(Boolean) as string[];
+
+  let lastError: unknown;
+
+  for (const container of candidateContainers) {
+    try {
+      const { stdout } = await execFileAsync(
+        "docker",
+        [
+          "exec",
+          "-i",
+          container,
+          "psql",
+          "-U",
+          "postgres",
+          "-d",
+          "postgres",
+          "-v",
+          "ON_ERROR_STOP=1",
+          "-At",
+          "-c",
+          query,
+        ],
+        { maxBuffer: 10 * 1024 * 1024 },
+      );
+      return stdout.trim();
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError instanceof Error
+    ? lastError
+    : new Error("Unable to execute SQL against local Supabase database.");
 }
 
 async function sql<T extends Record<string, unknown> = Record<string, unknown>>(
