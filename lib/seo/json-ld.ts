@@ -156,6 +156,11 @@ export function webApplicationJsonLd(input: {
     operatingSystem: "Web",
     inLanguage: "sv-SE",
     isAccessibleForFree: true,
+    offers: {
+      "@type": "Offer",
+      price: "0",
+      priceCurrency: "SEK",
+    },
     provider: {
       "@type": "Organization",
       name: DIVLAB_BRAND_NAME,

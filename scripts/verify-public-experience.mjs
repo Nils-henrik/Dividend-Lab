@@ -19,10 +19,12 @@ const BASE = process.env.APP_URL ?? "http://localhost:3000";
 const SHOT_DIR = "/opt/cursor/artifacts/screenshots";
 const REPORT_PATH = "/opt/cursor/artifacts/public-experience-report.json";
 const VIEWPORTS = [
+  { name: "360", width: 360, height: 800 },
   { name: "390", width: 390, height: 844 },
   { name: "412", width: 412, height: 915 },
   { name: "768", width: 768, height: 1024 },
   { name: "1280", width: 1280, height: 800 },
+  { name: "wide", width: 1536, height: 960 },
 ];
 
 mkdirSync(SHOT_DIR, { recursive: true });
@@ -71,7 +73,7 @@ function assertCanonical(href, expectedPath) {
 }
 
 async function assertHasPublicNav(page) {
-  const labels = ["Börsnyheter", "Utbildning", "Frihetsmaskinen", "Forum", "Om DivLab"];
+  const labels = ["Börsnyheter", "Utbildning", "Verktyg", "Forum", "Om DivLab"];
   for (const label of labels) {
     const count = await page.getByRole("link", { name: label, exact: true }).count();
     assert.ok(count >= 1, `missing nav link: ${label}`);
@@ -138,7 +140,7 @@ async function main() {
 
   try {
     await check("homepage loads with DivLab branding", async () => {
-      await page.setViewportSize(VIEWPORTS[3]);
+      await page.setViewportSize(VIEWPORTS[4]);
       await page.goto(`${BASE}/`, { waitUntil: "networkidle" });
       await assert.ok(await page.getByRole("heading", { level: 1 }).count());
       const title = await page.title();
@@ -176,7 +178,7 @@ async function main() {
     });
 
     await check("Börsnyheter listing and pluralisation", async () => {
-      await page.setViewportSize(VIEWPORTS[3]);
+      await page.setViewportSize(VIEWPORTS[4]);
       await page.goto(`${BASE}/news`, { waitUntil: "networkidle" });
       await assertHasPublicNav(page);
       await assertNoAuthenticatedSidebar(page);
@@ -202,7 +204,7 @@ async function main() {
     });
 
     await check("news article page has NewsArticle JSON-LD", async () => {
-      await page.setViewportSize(VIEWPORTS[3]);
+      await page.setViewportSize(VIEWPORTS[4]);
       await page.goto(`${BASE}/news`, { waitUntil: "networkidle" });
       const href = await page.locator('a[href^="/news/"]').first().getAttribute("href");
       assert.ok(href);
@@ -215,7 +217,7 @@ async function main() {
     });
 
     await check("Utbildning listing and article", async () => {
-      await page.setViewportSize(VIEWPORTS[3]);
+      await page.setViewportSize(VIEWPORTS[4]);
       await page.goto(`${BASE}/learning`, { waitUntil: "networkidle" });
       await assertHasPublicNav(page);
       await assertNoAuthenticatedSidebar(page);
@@ -284,7 +286,7 @@ async function main() {
     });
 
     await check("Forum overview and thread shell", async () => {
-      await page.setViewportSize(VIEWPORTS[3]);
+      await page.setViewportSize(VIEWPORTS[4]);
       const response = await page.goto(`${BASE}/forum`, {
         waitUntil: "networkidle",
       });
@@ -303,7 +305,7 @@ async function main() {
     });
 
     await check("Frihetsmaskinen is public and crawlable content", async () => {
-      await page.setViewportSize(VIEWPORTS[3]);
+      await page.setViewportSize(VIEWPORTS[4]);
       const response = await page.goto(`${BASE}/frihetsmaskinen`, {
         waitUntil: "networkidle",
       });
@@ -345,6 +347,143 @@ async function main() {
       });
     });
 
+    await check("tools hub is public, canonical and links both calculators", async () => {
+      await page.setViewportSize(VIEWPORTS[4]);
+      const response = await page.goto(`${BASE}/verktyg`, {
+        waitUntil: "networkidle",
+      });
+      assert.equal(response?.status(), 200);
+      assert.equal(await page.getByRole("heading", { level: 1 }).count(), 1);
+      assert.match(await page.title(), /Verktyg för sparande och investeringar/);
+      assertCanonical(await getCanonicalHref(page), "/verktyg");
+      await assertHasPublicNav(page);
+      assert.equal(
+        await page.locator('a[href="/frihetsmaskinen"]').count() >= 1,
+        true,
+      );
+      assert.equal(
+        await page.locator('a[href="/verktyg/gav-kalkylator"]').count() >= 1,
+        true,
+      );
+      await page.screenshot({
+        path: `${SHOT_DIR}/public-tools-hub-desktop.png`,
+        fullPage: true,
+      });
+    });
+
+    await check("GAV calculator works, persists, exports and prints", async () => {
+      await page.setViewportSize(VIEWPORTS[4]);
+      const response = await page.goto(`${BASE}/verktyg/gav-kalkylator`, {
+        waitUntil: "networkidle",
+      });
+      assert.equal(response?.status(), 200);
+      assert.equal(await page.getByRole("heading", { level: 1 }).count(), 1);
+      assert.match(await page.title(), /GAV-kalkylator/);
+      assertCanonical(
+        await getCanonicalHref(page),
+        "/verktyg/gav-kalkylator",
+      );
+      assert.doesNotMatch(await page.url(), /login/);
+      const bodyText = await page.locator("body").innerText();
+      assert.match(bodyText, /Vad är GAV\?/);
+      assert.match(bodyText, /Så räknar du ut GAV/);
+      assert.match(bodyText, /Fortsätt i din DivLab-miljö/);
+      const types = await getJsonLdTypes(page);
+      assert.ok(types.includes("WebApplication"));
+      assert.ok(types.includes("BreadcrumbList"));
+      const freeOffer = await page.evaluate(() => {
+        const scripts = [
+          ...document.querySelectorAll('script[type="application/ld+json"]'),
+        ];
+        return scripts.some((script) => {
+          const data = JSON.parse(script.textContent || "null");
+          const items = Array.isArray(data) ? data : [data];
+          return items.some(
+            (item) =>
+              item?.["@type"] === "WebApplication" &&
+              item?.offers?.price === "0" &&
+              item?.offers?.priceCurrency === "SEK",
+          );
+        });
+      });
+      assert.equal(freeOffer, true);
+
+      await page.getByRole("button", { name: "Ladda exempel" }).click();
+      await page.getByText("2\u00a0028,00 kr", { exact: true }).waitFor();
+      await page.getByText("67,60 kr", { exact: true }).first().waitFor();
+
+      await page.reload({ waitUntil: "networkidle" });
+      await page.getByText("2\u00a0028,00 kr", { exact: true }).waitFor();
+
+      const downloadPromise = page.waitForEvent("download");
+      await page.getByRole("button", { name: "Exportera CSV" }).click();
+      const download = await downloadPromise;
+      assert.equal(download.suggestedFilename(), "gav-berakning.csv");
+
+      await page.emulateMedia({ media: "print" });
+      const printState = await page.evaluate(() => ({
+        editor: getComputedStyle(document.querySelector(".gav-editor")).display,
+        printHeading: getComputedStyle(
+          document.querySelector(".gav-print-root .print\\:block"),
+        ).display,
+      }));
+      assert.equal(printState.editor, "none");
+      assert.notEqual(printState.printHeading, "none");
+      await page.emulateMedia({ media: "screen" });
+
+      await page.getByRole("button", { name: "Rensa allt" }).click();
+      await page.getByRole("button", { name: "Ja, rensa" }).click();
+      await page.reload({ waitUntil: "networkidle" });
+      assert.match(
+        await page.locator("body").innerText(),
+        /Lägg till minst ett innehav eller en händelse/,
+      );
+
+      await page.screenshot({
+        path: `${SHOT_DIR}/public-gav-calculator-desktop.png`,
+        fullPage: true,
+      });
+    });
+
+    await check("GAV target mode and mobile layouts are usable", async () => {
+      await page.setViewportSize(VIEWPORTS[0]);
+      await page.goto(`${BASE}/verktyg/gav-kalkylator`, {
+        waitUntil: "networkidle",
+      });
+      await page.getByRole("tab", { name: "Händelser" }).focus();
+      await page.keyboard.press("ArrowRight");
+      assert.equal(
+        await page.getByRole("tab", { name: "Mål-GAV" }).getAttribute(
+          "aria-selected",
+        ),
+        "true",
+      );
+      await page.getByLabel("Nuvarande antal").fill("100");
+      await page.getByLabel("Nuvarande GAV").fill("120");
+      await page.getByLabel("Köppris per aktie").fill("80");
+      await page.getByLabel("Courtage för köpet").fill("19");
+      await page.getByLabel("Önskat GAV").fill("100");
+      await page.getByText("101", { exact: true }).waitFor();
+      await page.getByText("100,00 kr", { exact: true }).waitFor();
+
+      for (const viewport of VIEWPORTS) {
+        await page.setViewportSize(viewport);
+        await assertNoHorizontalOverflow(page);
+        await page.goto(`${BASE}/verktyg`, { waitUntil: "networkidle" });
+        await assertNoHorizontalOverflow(page);
+        await page.goto(`${BASE}/verktyg/gav-kalkylator`, {
+          waitUntil: "networkidle",
+        });
+        await assertNoHorizontalOverflow(page);
+      }
+
+      await page.setViewportSize(VIEWPORTS[0]);
+      await page.screenshot({
+        path: `${SHOT_DIR}/public-gav-calculator-mobile.png`,
+        fullPage: true,
+      });
+    });
+
     await check("login and registration pages", async () => {
       await page.setViewportSize(VIEWPORTS[0]);
       await page.goto(`${BASE}/login`, { waitUntil: "networkidle" });
@@ -363,7 +502,7 @@ async function main() {
     });
 
     await check("legal and editorial footer links", async () => {
-      await page.setViewportSize(VIEWPORTS[3]);
+      await page.setViewportSize(VIEWPORTS[4]);
       await page.goto(`${BASE}/`, { waitUntil: "networkidle" });
       for (const path of [
         "/terms",
@@ -432,6 +571,11 @@ async function main() {
       assert.doesNotMatch(robots, /Disallow:\s*\/frihetsmaskinen/i);
       const sitemap = await (await page.goto(`${BASE}/sitemap.xml`)).text();
       assert.match(sitemap, /https:\/\/divlab\.se\/frihetsmaskinen/);
+      assert.match(sitemap, /https:\/\/divlab\.se\/verktyg/);
+      assert.match(
+        sitemap,
+        /https:\/\/divlab\.se\/verktyg\/gav-kalkylator/,
+      );
       assert.match(sitemap, /https:\/\/divlab\.se\/editorial/);
     });
 

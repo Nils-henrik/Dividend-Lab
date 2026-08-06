@@ -10,7 +10,7 @@ export const appNavigation: NavigationItem[] = [
   { label: "Börsnyheter", href: "/news", icon: "news" },
   { label: "Forum", href: "/forum", icon: "forum" },
   { label: "Utbildning", href: "/learning", icon: "learning" },
-  { label: "Frihetsmaskinen", href: "/frihetsmaskinen", icon: "goals" },
+  { label: "Verktyg", href: "/verktyg", icon: "goals" },
   { label: "Meddelanden", href: "/messages", icon: "messages" },
   { label: "Kontakter", href: "/contacts", icon: "contacts" },
   {
@@ -41,6 +41,8 @@ export const pageTitles: Record<string, string> = {
   "/calendar": "Kalender",
   "/dashboard": "Översikt",
   "/frihetsmaskinen": "Frihetsmaskinen",
+  "/verktyg": "Verktyg",
+  "/verktyg/gav-kalkylator": "GAV-kalkylator",
   "/forum": "Forum",
   "/forum/senaste": "Senaste",
   "/forum/populart": "Populärt",

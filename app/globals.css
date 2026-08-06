@@ -259,3 +259,67 @@ body {
     @apply text-sm leading-6 text-divlab-text-secondary;
   }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .gav-print-root *,
+  .gav-print-root *::before,
+  .gav-print-root *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+@media print {
+  @page {
+    margin: 16mm;
+  }
+
+  body:has(.gav-print-root) {
+    background: #fff !important;
+    color: #111 !important;
+  }
+
+  body:has(.gav-print-root) .divlab-shell-header,
+  body:has(.gav-print-root) footer,
+  body:has(.gav-print-root) .gav-screen-content,
+  body:has(.gav-print-root) .gav-no-print,
+  body:has(.gav-print-root) .gav-editor {
+    display: none !important;
+  }
+
+  body:has(.gav-print-root) .gav-page,
+  body:has(.gav-print-root) .gav-print-root,
+  body:has(.gav-print-root) .gav-results {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    color: #111 !important;
+  }
+
+  body:has(.gav-print-root) #gav-kalkylator,
+  body:has(.gav-print-root) .gav-results > section,
+  body:has(.gav-print-root) .gav-results > details,
+  body:has(.gav-print-root) .gav-results article {
+    background: #fff !important;
+    border-color: #bbb !important;
+    box-shadow: none !important;
+    color: #111 !important;
+  }
+
+  body:has(.gav-print-root) .gav-results *,
+  body:has(.gav-print-root) .gav-print-root [class*="text-divlab-"] {
+    color: #111 !important;
+  }
+
+  body:has(.gav-print-root) details:not([open]) > :not(summary) {
+    display: block !important;
+  }
+
+  body:has(.gav-print-root) details,
+  body:has(.gav-print-root) article {
+    break-inside: avoid;
+  }
+}
