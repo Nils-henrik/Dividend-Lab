@@ -564,11 +564,18 @@ async function main() {
         });
 
         await page.getByRole("tab", { name: "Mål-GAV" }).click();
-        await page.getByLabel("Nuvarande antal").fill("100");
-        await page.getByLabel("Nuvarande GAV").fill("120");
-        await page.getByLabel("Köppris per aktie").fill("80");
-        await page.getByLabel("Courtage för köpet").fill("19");
-        await page.getByLabel("Önskat GAV").fill("100");
+        const targetValues = [
+          ["Nuvarande antal", "100"],
+          ["Nuvarande GAV", "120"],
+          ["Köppris per aktie", "80"],
+          ["Courtage för köpet", "19"],
+          ["Önskat GAV", "100"],
+        ];
+        for (const [label, value] of targetValues) {
+          const input = page.getByLabel(label);
+          await input.fill("");
+          await input.fill(value);
+        }
         await page.getByText("101", { exact: true }).waitFor();
         await assertNoHorizontalOverflow(page);
         const targetMargin = await assertStickyPanelClearsHeader(
