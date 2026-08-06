@@ -409,11 +409,17 @@ async function main() {
       assert.equal(freeOffer, true);
 
       await page.getByRole("button", { name: "Ladda exempel" }).click();
-      await page.getByText("2\u00a0028,00 kr", { exact: true }).waitFor();
+      await page
+        .getByText("2\u00a0028,00 kr", { exact: true })
+        .first()
+        .waitFor();
       await page.getByText("67,60 kr", { exact: true }).first().waitFor();
 
       await page.reload({ waitUntil: "networkidle" });
-      await page.getByText("2\u00a0028,00 kr", { exact: true }).waitFor();
+      await page
+        .getByText("2\u00a0028,00 kr", { exact: true })
+        .first()
+        .waitFor();
 
       const downloadPromise = page.waitForEvent("download");
       await page.getByRole("button", { name: "Exportera CSV" }).click();
