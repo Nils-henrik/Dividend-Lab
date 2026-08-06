@@ -48,10 +48,10 @@ export default function DisclaimerPageContent() {
 
       <LegalSection title="Börsnyheter">
         <p>
-          Börsnyheter i {serviceName} är en tidig version av tjänstens nyhetsyta. Innehållet kan
-          bestå av demonstrationsexempel, redaktionellt förberedda exempelartiklar eller
-          begränsade rubriker — inte en fullständig, löpande nyhetstjänst. Behandla inte
-          exempelinnehåll som aktuella verifierade nyheter.
+          Börsnyheter i {serviceName} är informationellt och redaktionellt material för allmän
+          orientering. Innehållet utgör inte personlig finansiell rådgivning och inte heller en
+          individuell investeringsrekommendation. Marknadsinformation kan förändras efter
+          publicering. Du ansvarar själv för dina beslut.
         </p>
       </LegalSection>
 

@@ -76,6 +76,34 @@ async function assertHasPublicNav(page) {
     const count = await page.getByRole("link", { name: label, exact: true }).count();
     assert.ok(count >= 1, `missing nav link: ${label}`);
   }
+  assert.ok(
+    (await page.getByRole("link", { name: "Logga in", exact: true }).count()) >= 1,
+    "missing Logga in",
+  );
+  assert.ok(
+    (await page.getByRole("link", { name: "Skapa konto", exact: true }).count()) >= 1,
+    "missing Skapa konto",
+  );
+}
+
+function assertNoObsoletePublicCopy(bodyText) {
+  assert.doesNotMatch(bodyText, /Förhandsvisning med exempelartiklar/i);
+  assert.doesNotMatch(bodyText, /artikelr/i);
+  assert.doesNotMatch(bodyText, /ett lugn perspektiv/i);
+  assert.doesNotMatch(
+    bodyText,
+    /demonstrationsexempel,\s*redaktionellt förberedda exempelartiklar/i,
+  );
+  assert.doesNotMatch(bodyText, /exempelinnehåll som aktuella verifierade nyheter/i);
+}
+
+async function assertNoAuthenticatedSidebar(page) {
+  const sidebar = page.getByRole("navigation", {
+    name: /Applikationsnavigering|Huvudnavigering i appen|Kontoöversikt/i,
+  });
+  assert.equal(await sidebar.count(), 0);
+  const bodyText = await page.locator("body").innerText();
+  assert.doesNotMatch(bodyText, /Bevakningslista|Portföljöversikt|Min dashboard/i);
 }
 
 async function getCanonicalHref(page) {
@@ -116,6 +144,7 @@ async function main() {
       const title = await page.title();
       assert.match(title, /DivLab/i);
       await assertHasPublicNav(page);
+      assertNoObsoletePublicCopy(await page.locator("body").innerText());
       const canonical = await getCanonicalHref(page);
       assertCanonical(canonical, "/");
       const types = await getJsonLdTypes(page);
@@ -150,10 +179,11 @@ async function main() {
       await page.setViewportSize(VIEWPORTS[3]);
       await page.goto(`${BASE}/news`, { waitUntil: "networkidle" });
       await assertHasPublicNav(page);
+      await assertNoAuthenticatedSidebar(page);
       const bodyText = await page.locator("body").innerText();
-      assert.doesNotMatch(bodyText, /artikelr/i);
-      assert.doesNotMatch(bodyText, /Förhandsvisning med exempelartiklar/i);
-      assert.match(bodyText, /\d+ artiklar|\d+ artikel/);
+      assertNoObsoletePublicCopy(bodyText);
+      assert.match(bodyText, /\d+ artiklar|\d+ artikel(?!r)/);
+      assert.match(bodyText, /Frihetsmaskinen/);
       const title = await page.title();
       assert.match(title, /Börsnyheter/);
       const canonical = await getCanonicalHref(page);
@@ -188,8 +218,16 @@ async function main() {
       await page.setViewportSize(VIEWPORTS[3]);
       await page.goto(`${BASE}/learning`, { waitUntil: "networkidle" });
       await assertHasPublicNav(page);
+      await assertNoAuthenticatedSidebar(page);
       const title = await page.title();
-      assert.match(title, /Utbildning|aktier|fonder|privatekonomi/i);
+      assert.match(title, /aktier/i);
+      assert.match(title, /fonder/i);
+      assert.match(title, /privatekonomi/i);
+      const listingText = await page.locator("body").innerText();
+      assertNoObsoletePublicCopy(listingText);
+      assert.match(listingText, /Frihetsmaskinen/);
+      const listingCanonical = await getCanonicalHref(page);
+      assertCanonical(listingCanonical, "/learning");
       await page.screenshot({
         path: `${SHOT_DIR}/public-learning-desktop.png`,
         fullPage: true,
@@ -200,22 +238,49 @@ async function main() {
         path: `${SHOT_DIR}/public-learning-mobile.png`,
         fullPage: true,
       });
-      await page.setViewportSize(VIEWPORTS[3]);
-      const articleHref = await page
-        .locator('a[href^="/learning/"]')
-        .first()
-        .getAttribute("href");
-      assert.ok(articleHref);
-      await page.goto(`${BASE}${articleHref}`, { waitUntil: "networkidle" });
+
+      for (const viewport of VIEWPORTS) {
+        await page.setViewportSize(viewport);
+        await page.goto(
+          `${BASE}/learning/ta-kontroll-over-premiepensionen`,
+          { waitUntil: "networkidle" },
+        );
+        await assertNoHorizontalOverflow(page);
+        const bodyText = await page.locator("body").innerText();
+        assertNoObsoletePublicCopy(bodyText);
+        assert.match(bodyText, /ett lugnt perspektiv/i);
+        assert.doesNotMatch(bodyText, /Supabase|Failed to fetch|error loading/i);
+        const relatedHeadings = page.getByRole("heading", {
+          name: "Relaterade ämnen",
+        });
+        const relatedCount = await relatedHeadings.count();
+        let relatedVisible = 0;
+        for (let index = 0; index < relatedCount; index += 1) {
+          if (await relatedHeadings.nth(index).isVisible()) {
+            relatedVisible += 1;
+          }
+        }
+        assert.equal(
+          relatedVisible,
+          1,
+          `expected one visible Relaterade ämnen @${viewport.name}, got ${relatedVisible}`,
+        );
+        if (viewport.name === "1280") {
+          await page.screenshot({
+            path: `${SHOT_DIR}/public-premiepension-desktop.png`,
+            fullPage: true,
+          });
+        }
+        if (viewport.name === "390") {
+          await page.screenshot({
+            path: `${SHOT_DIR}/public-premiepension-mobile.png`,
+            fullPage: true,
+          });
+        }
+      }
+
       const types = await getJsonLdTypes(page);
       assert.ok(types.includes("Article"), `types=${types.join(",")}`);
-      const relatedVisible = await page
-        .getByRole("heading", { name: "Relaterade ämnen" })
-        .count();
-      assert.ok(
-        relatedVisible <= 1,
-        `duplicated related topics: ${relatedVisible}`,
-      );
     });
 
     await check("Forum overview and thread shell", async () => {
@@ -239,15 +304,35 @@ async function main() {
 
     await check("Frihetsmaskinen is public and crawlable content", async () => {
       await page.setViewportSize(VIEWPORTS[3]);
-      await page.goto(`${BASE}/frihetsmaskinen`, { waitUntil: "networkidle" });
+      const response = await page.goto(`${BASE}/frihetsmaskinen`, {
+        waitUntil: "networkidle",
+      });
+      assert.equal(response?.status(), 200);
       assert.match(await page.title(), /Frihetsmaskinen|ekonomisk frihet/i);
+      await assertHasPublicNav(page);
       const bodyText = await page.locator("body").innerText();
+      assertNoObsoletePublicCopy(bodyText);
       assert.match(bodyText, /ekonomisk frihet|FIRE|kalkyl/i);
+      assert.match(bodyText, /Vad verktyget gör|Begränsningar|Lär dig mer/i);
+      assert.match(bodyText, /Skapa konto/);
       assert.doesNotMatch(await page.url(), /login/);
       const canonical = await getCanonicalHref(page);
       assertCanonical(canonical, "/frihetsmaskinen");
       const types = await getJsonLdTypes(page);
       assert.ok(types.includes("WebApplication"));
+
+      const capitalInput = page.getByLabel("Nuvarande kapital");
+      await capitalInput.waitFor();
+      const before = await page.locator("body").innerText();
+      await capitalInput.fill("900000 kr");
+      await page.waitForTimeout(300);
+      const after = await page.locator("body").innerText();
+      assert.notEqual(
+        before,
+        after,
+        "Frihetsmaskinen results did not update after input change",
+      );
+
       await page.screenshot({
         path: `${SHOT_DIR}/public-frihetsmaskinen-desktop.png`,
         fullPage: true,
@@ -294,6 +379,43 @@ async function main() {
         });
         assert.equal(response?.ok(), true, path);
       }
+
+      await page.goto(`${BASE}/editorial`, { waitUntil: "networkidle" });
+      await assertHasPublicNav(page);
+      const editorialText = await page.locator("body").innerText();
+      assert.match(editorialText, /Redaktionella riktlinjer/);
+      assert.match(editorialText, /Frihetsmaskinen/);
+      assertNoObsoletePublicCopy(editorialText);
+      assertCanonical(await getCanonicalHref(page), "/editorial");
+      await page.screenshot({
+        path: `${SHOT_DIR}/public-editorial-desktop.png`,
+        fullPage: true,
+      });
+
+      await page.goto(`${BASE}/disclaimer`, { waitUntil: "networkidle" });
+      await assertHasPublicNav(page);
+      const disclaimerText = await page.locator("body").innerText();
+      assertNoObsoletePublicCopy(disclaimerText);
+      assert.match(disclaimerText, /allmän information|informationellt/i);
+      assert.match(disclaimerText, /personlig finansiell rådgivning/i);
+      assert.match(disclaimerText, /Marknadsinformation kan förändras|kan förändras/i);
+      assert.match(disclaimerText, /ansvarar själv|Du ansvarar/i);
+      assertCanonical(await getCanonicalHref(page), "/disclaimer");
+    });
+
+    await check("public mobile navigation screenshot", async () => {
+      await page.setViewportSize(VIEWPORTS[0]);
+      await page.goto(`${BASE}/`, { waitUntil: "networkidle" });
+      const menuButton = page.getByRole("button", {
+        name: /Öppna meny|Stäng meny|Meny/i,
+      });
+      await menuButton.click();
+      await page.getByRole("navigation", { name: /Mobil navigering/i }).waitFor();
+      await page.screenshot({
+        path: `${SHOT_DIR}/public-mobile-navigation.png`,
+        fullPage: false,
+      });
+      await page.keyboard.press("Escape");
     });
 
     await check("404 handling", async () => {
