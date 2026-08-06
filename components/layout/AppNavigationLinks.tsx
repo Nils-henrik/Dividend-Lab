@@ -2,8 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useId, useState } from "react";
 import { appNavigation } from "@/lib/constants/navigation";
-import type { NavigationItem } from "@/types/navigation";
+import {
+  getNavigationItemKey,
+  isNavigationChildActive,
+  isNavigationItemActive,
+  shouldNavigationGroupStartExpanded,
+} from "@/lib/navigation/app-navigation-state";
+import type { NavigationChildItem, NavigationItem } from "@/types/navigation";
 import AppIcon from "./AppIcon";
 
 type Props = {
@@ -24,14 +31,6 @@ function getNavigationItems(navigationSurface: "desktop" | "mobile") {
   });
 }
 
-function isNavigationItemActive(pathname: string, item: NavigationItem) {
-  if (item.href === "/dashboard") {
-    return pathname === item.href;
-  }
-
-  return pathname.startsWith(item.href);
-}
-
 function NavigationLink({
   item,
   isActive,
@@ -39,7 +38,7 @@ function NavigationLink({
   unreadMessageCount,
   onNavigate,
 }: {
-  item: NavigationItem;
+  item: NavigationItem & { href: string };
   isActive: boolean;
   isCollapsed: boolean;
   unreadMessageCount: number;
@@ -92,6 +91,145 @@ function NavigationLink({
   );
 }
 
+function NavigationChildLink({
+  child,
+  isActive,
+  onNavigate,
+}: {
+  child: NavigationChildItem;
+  isActive: boolean;
+  onNavigate?: () => void;
+}) {
+  return (
+    <Link
+      href={child.href}
+      onClick={onNavigate}
+      className={`flex items-center rounded-xl px-3 py-2 text-sm font-medium transition ${
+        isActive ? "divlab-nav-active" : "divlab-nav-idle"
+      }`}
+    >
+      <span className="truncate">{child.label}</span>
+    </Link>
+  );
+}
+
+function NavigationGroup({
+  item,
+  pathname,
+  isCollapsed,
+  onNavigate,
+}: {
+  item: NavigationItem & { children: NavigationChildItem[] };
+  pathname: string;
+  isCollapsed: boolean;
+  onNavigate?: () => void;
+}) {
+  const panelId = useId();
+  const routeRequiresExpanded = shouldNavigationGroupStartExpanded(
+    pathname,
+    item,
+  );
+  const [isExpanded, setIsExpanded] = useState(routeRequiresExpanded);
+  const isSectionActive = isNavigationItemActive(pathname, item);
+  const showChildren = isExpanded && !isCollapsed;
+
+  return (
+    <div>
+      <button
+        type="button"
+        aria-expanded={isExpanded}
+        aria-controls={panelId}
+        title={isCollapsed ? item.label : undefined}
+        aria-label={item.label}
+        onClick={() => setIsExpanded((current) => !current)}
+        className={`relative flex w-full items-center rounded-xl text-sm font-medium transition ${
+          isCollapsed ? "justify-center px-2 py-2.5" : "gap-3 px-3 py-2.5"
+        } ${isSectionActive ? "divlab-nav-active" : "divlab-nav-idle"}`}
+      >
+        <AppIcon name={item.icon} />
+        <span
+          className={
+            isCollapsed
+              ? "sr-only"
+              : "flex min-w-0 flex-1 items-center justify-between gap-2"
+          }
+        >
+          <span className="truncate">{item.label}</span>
+          <AppIcon
+            name="chevronDown"
+            className={`h-3.5 w-3.5 shrink-0 transition-transform duration-200 ${
+              isExpanded ? "rotate-180" : ""
+            }`}
+          />
+        </span>
+      </button>
+
+      <div
+        id={panelId}
+        role="group"
+        aria-label={item.label}
+        hidden={!showChildren}
+        className={
+          showChildren
+            ? "mt-1 space-y-1 border-l divlab-border-neutral ml-5 pl-2"
+            : undefined
+        }
+      >
+        {showChildren
+          ? item.children.map((child) => (
+              <NavigationChildLink
+                key={child.href}
+                child={child}
+                isActive={isNavigationChildActive(pathname, child)}
+                onNavigate={onNavigate}
+              />
+            ))
+          : null}
+      </div>
+    </div>
+  );
+}
+
+function NavigationEntry({
+  item,
+  pathname,
+  isCollapsed,
+  unreadMessageCount,
+  onNavigate,
+}: {
+  item: NavigationItem;
+  pathname: string;
+  isCollapsed: boolean;
+  unreadMessageCount: number;
+  onNavigate?: () => void;
+}) {
+  if (item.children && item.children.length > 0) {
+    return (
+      <NavigationGroup
+        key={`${getNavigationItemKey(item)}:${pathname}`}
+        item={{ ...item, children: item.children }}
+        pathname={pathname}
+        isCollapsed={isCollapsed}
+        onNavigate={onNavigate}
+      />
+    );
+  }
+
+  if (!item.href) {
+    return null;
+  }
+
+  return (
+    <NavigationLink
+      item={{ ...item, href: item.href }}
+      isActive={isNavigationItemActive(pathname, item)}
+      isCollapsed={isCollapsed}
+      unreadMessageCount={unreadMessageCount}
+      onNavigate={onNavigate}
+    />
+  );
+}
+
 export default function AppNavigationLinks({
   isCollapsed = false,
   unreadMessageCount,
@@ -110,10 +248,10 @@ export default function AppNavigationLinks({
     <nav className={`flex h-full flex-col ${className}`}>
       <div className="space-y-1">
         {mainItems.map((item) => (
-          <NavigationLink
-            key={item.href}
+          <NavigationEntry
+            key={getNavigationItemKey(item)}
             item={item}
-            isActive={isNavigationItemActive(pathname, item)}
+            pathname={pathname}
             isCollapsed={isCollapsed}
             unreadMessageCount={unreadMessageCount}
             onNavigate={onNavigate}
@@ -124,10 +262,10 @@ export default function AppNavigationLinks({
       {accountItems.length > 0 ? (
         <div className="mt-auto space-y-1 border-t divlab-border-neutral pt-3">
           {accountItems.map((item) => (
-            <NavigationLink
-              key={item.href}
+            <NavigationEntry
+              key={getNavigationItemKey(item)}
               item={item}
-              isActive={isNavigationItemActive(pathname, item)}
+              pathname={pathname}
               isCollapsed={isCollapsed}
               unreadMessageCount={unreadMessageCount}
               onNavigate={onNavigate}

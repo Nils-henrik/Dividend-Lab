@@ -10,7 +10,14 @@ export const appNavigation: NavigationItem[] = [
   { label: "Börsnyheter", href: "/news", icon: "news" },
   { label: "Forum", href: "/forum", icon: "forum" },
   { label: "Utbildning", href: "/learning", icon: "learning" },
-  { label: "Verktyg", href: "/verktyg", icon: "goals" },
+  {
+    label: "Verktyg",
+    icon: "goals",
+    children: [
+      { label: "Frihetsmaskinen", href: "/frihetsmaskinen" },
+      { label: "GAV-kalkylatorn", href: "/verktyg/gav-kalkylator" },
+    ],
+  },
   { label: "Meddelanden", href: "/messages", icon: "messages" },
   { label: "Kontakter", href: "/contacts", icon: "contacts" },
   {
