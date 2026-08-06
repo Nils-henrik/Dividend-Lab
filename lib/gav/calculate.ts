@@ -66,7 +66,7 @@ function parseOptionalFee(value: string): {
 }
 
 function isEventEmpty(event: GavEvent): boolean {
-  if (event.type === "split" || event.type === "reverseSplit") {
+  if ("oldUnits" in event) {
     return !event.oldUnits.trim() && !event.newUnits.trim();
   }
   return (
@@ -367,8 +367,12 @@ export function calculateTargetGav(
     return emptyResult;
   }
 
-  const lowerBound = Decimal.min(currentGav.value, purchasePrice.value);
-  const upperBound = Decimal.max(currentGav.value, purchasePrice.value);
+  const lowerBound = currentGav.value.lt(purchasePrice.value)
+    ? currentGav.value
+    : purchasePrice.value;
+  const upperBound = currentGav.value.gt(purchasePrice.value)
+    ? currentGav.value
+    : purchasePrice.value;
   if (
     targetGav.value.lte(lowerBound) ||
     targetGav.value.gte(upperBound)

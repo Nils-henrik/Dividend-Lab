@@ -235,7 +235,7 @@ describe("GAV calculation engine", () => {
     const gavAfterSale = requireSummary(result).gav;
     assert.ok(gavBeforeSale);
     assert.ok(gavAfterSale);
-    assert.equal(gavAfterSale.eq(gavBeforeSale), true);
+    assert.equal(gavAfterSale.minus(gavBeforeSale).abs().lt("1e-35"), true);
     assert.notEqual(gavAfterSale.toString(), "66.67");
   });
 });

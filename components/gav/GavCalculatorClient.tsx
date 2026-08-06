@@ -55,19 +55,23 @@ export default function GavCalculatorClient() {
   const skipNextPersistenceRef = useRef(false);
 
   useEffect(() => {
-    const serialized = window.localStorage.getItem(GAV_STORAGE_KEY);
-    const persisted = parsePersistedGavState(serialized);
-    if (persisted) {
-      setState(persisted);
-    } else if (serialized) {
-      window.localStorage.removeItem(GAV_STORAGE_KEY);
-    }
-    setGeneratedDate(
-      new Intl.DateTimeFormat("sv-SE", { dateStyle: "long" }).format(
-        new Date(),
-      ),
-    );
-    setHasLoadedStorage(true);
+    const timer = window.setTimeout(() => {
+      const serialized = window.localStorage.getItem(GAV_STORAGE_KEY);
+      const persisted = parsePersistedGavState(serialized);
+      if (persisted) {
+        setState(persisted);
+      } else if (serialized) {
+        window.localStorage.removeItem(GAV_STORAGE_KEY);
+      }
+      setGeneratedDate(
+        new Intl.DateTimeFormat("sv-SE", { dateStyle: "long" }).format(
+          new Date(),
+        ),
+      );
+      setHasLoadedStorage(true);
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {

@@ -69,7 +69,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function hasString(record: Record<string, unknown>, key: string) {
+function hasString<Key extends string>(
+  record: Record<string, unknown>,
+  key: Key,
+): record is Record<string, unknown> & Record<Key, string> {
   return typeof record[key] === "string";
 }
 
@@ -87,13 +90,14 @@ function sanitizeEvent(value: unknown): GavEvent | null {
     return null;
   }
 
-  if (value.type === "split" || value.type === "reverseSplit") {
+  const type = value.type as GavEventType;
+  if (type === "split" || type === "reverseSplit") {
     if (!hasString(value, "oldUnits") || !hasString(value, "newUnits")) {
       return null;
     }
     return {
       id: value.id,
-      type: value.type,
+      type,
       date: value.date,
       oldUnits: value.oldUnits,
       newUnits: value.newUnits,
@@ -109,7 +113,7 @@ function sanitizeEvent(value: unknown): GavEvent | null {
   }
   return {
     id: value.id,
-    type: value.type,
+    type: type as "purchase" | "sale",
     date: value.date,
     quantity: value.quantity,
     price: value.price,

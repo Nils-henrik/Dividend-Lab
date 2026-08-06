@@ -35,7 +35,9 @@ describe("public tools routes", () => {
       ),
     );
     assert.equal(
-      PUBLIC_NAV_LINKS.some((link) => link.href === "/frihetsmaskinen"),
+      PUBLIC_NAV_LINKS.some(
+        (link) => String(link.href) === "/frihetsmaskinen",
+      ),
       false,
     );
   });

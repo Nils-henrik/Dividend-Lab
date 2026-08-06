@@ -63,7 +63,7 @@ export function escapeCsvCell(
 }
 
 function eventDetails(event: GavEvent): string {
-  if (event.type === "split" || event.type === "reverseSplit") {
+  if ("oldUnits" in event) {
     return `Varje ${event.oldUnits} gamla blir ${event.newUnits} nya`;
   }
   const action = event.type === "purchase" ? "Köp" : "Försäljning";
