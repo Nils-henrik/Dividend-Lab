@@ -266,36 +266,36 @@ export function calculateGav(
   let breakEvenPrice: Decimal | null = null;
   let optionalFieldsAreValid = true;
 
-  const saleFee = parseOptionalFee(input.estimatedSaleFee ?? "");
-  addFieldError(errors, "market", "estimatedSaleFee", saleFee.error);
-  if (!saleFee.value) {
-    optionalFieldsAreValid = false;
-  }
-
-  const currentPriceInput = input.currentPrice?.trim() ?? "";
-  if (currentPriceInput) {
-    const currentPrice = parseRequiredPositive(
-      currentPriceInput,
-      "Ange ett giltigt pris.",
-    );
-    addFieldError(errors, "market", "currentPrice", currentPrice.error);
-
-    if (currentPrice.value && saleFee.value) {
-      marketValue = quantity.mul(currentPrice.value);
-      unrealizedResult = marketValue
-        .minus(saleFee.value)
-        .minus(totalCostBasis);
-      unrealizedPercent = totalCostBasis.gt(0)
-        ? unrealizedResult.div(totalCostBasis).mul(100)
-        : null;
-      breakEvenPrice = quantity.gt(0)
-        ? totalCostBasis.plus(saleFee.value).div(quantity)
-        : null;
-    } else {
+  if (quantity.gt(0)) {
+    const saleFee = parseOptionalFee(input.estimatedSaleFee ?? "");
+    addFieldError(errors, "market", "estimatedSaleFee", saleFee.error);
+    if (!saleFee.value) {
       optionalFieldsAreValid = false;
     }
-  } else if (quantity.gt(0) && saleFee.value?.gt(0)) {
-    breakEvenPrice = totalCostBasis.plus(saleFee.value).div(quantity);
+
+    const currentPriceInput = input.currentPrice?.trim() ?? "";
+    if (currentPriceInput) {
+      const currentPrice = parseRequiredPositive(
+        currentPriceInput,
+        "Ange ett giltigt pris.",
+      );
+      addFieldError(errors, "market", "currentPrice", currentPrice.error);
+
+      if (currentPrice.value && saleFee.value) {
+        marketValue = quantity.mul(currentPrice.value);
+        unrealizedResult = marketValue
+          .minus(saleFee.value)
+          .minus(totalCostBasis);
+        unrealizedPercent = totalCostBasis.gt(0)
+          ? unrealizedResult.div(totalCostBasis).mul(100)
+          : null;
+        breakEvenPrice = totalCostBasis.plus(saleFee.value).div(quantity);
+      } else {
+        optionalFieldsAreValid = false;
+      }
+    } else if (saleFee.value?.gt(0)) {
+      breakEvenPrice = totalCostBasis.plus(saleFee.value).div(quantity);
+    }
   }
 
   const summary: GavSummary = {

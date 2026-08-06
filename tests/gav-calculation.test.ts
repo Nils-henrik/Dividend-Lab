@@ -152,6 +152,45 @@ describe("GAV calculation engine", () => {
     assert.equal(summary.realizedResult.toString(), "9");
   });
 
+  it("omits every market metric after the complete holding is sold", () => {
+    const result = calculateGav({
+      opening: { enabled: true, quantity: "5", gav: "10" },
+      events: [sale("all-with-market-inputs", "5", "12", "1")],
+      currentPrice: "15",
+      estimatedSaleFee: "9",
+    });
+    const summary = requireSummary(result);
+
+    assert.equal(summary.quantity.toString(), "0");
+    assert.equal(summary.totalCostBasis.toString(), "0");
+    assert.equal(summary.gav, null);
+    assert.equal(summary.realizedResult.toString(), "9");
+    assert.equal(summary.marketValue, null);
+    assert.equal(summary.unrealizedResult, null);
+    assert.equal(summary.unrealizedPercent, null);
+    assert.equal(summary.breakEvenPrice, null);
+    assert.doesNotMatch(
+      JSON.stringify(summary),
+      /NaN|Infinity|"-0"/,
+    );
+  });
+
+  it("calculates market comparison while a holding remains", () => {
+    const result = calculateGav({
+      opening: { enabled: true, quantity: "10", gav: "10" },
+      events: [],
+      currentPrice: "12",
+      estimatedSaleFee: "5",
+    });
+    const summary = requireSummary(result);
+
+    assert.equal(summary.quantity.toString(), "10");
+    assert.equal(summary.marketValue?.toString(), "120");
+    assert.equal(summary.unrealizedResult?.toString(), "15");
+    assert.equal(summary.unrealizedPercent?.toString(), "15");
+    assert.equal(summary.breakEvenPrice?.toString(), "10.5");
+  });
+
   it("rejects a sale larger than the holding at that point", () => {
     const result = calculate([purchase("buy", "2", "10"), sale("sell", "3", "12")]);
 
