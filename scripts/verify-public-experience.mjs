@@ -245,7 +245,7 @@ async function main() {
         await page.setViewportSize(viewport);
         await page.goto(
           `${BASE}/learning/ta-kontroll-over-premiepensionen`,
-          { waitUntil: "networkidle" },
+          { waitUntil: "domcontentloaded" },
         );
         await assertNoHorizontalOverflow(page);
         const bodyText = await page.locator("body").innerText();
