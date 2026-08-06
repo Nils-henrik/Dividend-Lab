@@ -101,7 +101,7 @@ export default async function NewsArticlePage({ params }: Props) {
             description: article.summary,
             path,
             publishedAt: article.publishedAt,
-            imageUrl: article.imageUrl,
+            imageUrl: article.imageUrl ?? undefined,
             authorName: article.source,
           }),
           breadcrumbJsonLd([
