@@ -87,6 +87,7 @@ async function assertStickyPanelClearsHeader(page, panelSelector) {
     const styles = getComputedStyle(resultPanel);
     return {
       headerBottom: headerRect.bottom,
+      headerSafeBottom: Math.max(headerRect.bottom, headerRect.height),
       panelTop: panelRect.top,
       position: styles.position,
       stickyTop: Number.parseFloat(styles.top),
@@ -100,11 +101,11 @@ async function assertStickyPanelClearsHeader(page, panelSelector) {
     `panel did not reach sticky position: top=${geometry.panelTop}, expected=${geometry.stickyTop}`,
   );
   assert.ok(
-    geometry.panelTop >= geometry.headerBottom + 8,
-    `sticky panel overlaps header: panel top=${geometry.panelTop}, header bottom=${geometry.headerBottom}`,
+    geometry.panelTop >= geometry.headerSafeBottom + 8,
+    `sticky panel overlaps header: panel top=${geometry.panelTop}, header-safe bottom=${geometry.headerSafeBottom}`,
   );
 
-  return geometry.panelTop - geometry.headerBottom;
+  return geometry.panelTop - geometry.headerSafeBottom;
 }
 
 function assertCanonical(href, expectedPath) {
