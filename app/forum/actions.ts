@@ -78,6 +78,7 @@ export async function createForumThreadAction(
   }
 
   revalidatePath("/forum");
+  revalidatePath("/dashboard");
   revalidatePath(`/forum/${data.slug}`);
   redirect(`/forum/${data.slug}`);
 }
@@ -114,13 +115,17 @@ export async function createForumReplyAction(
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.from("forum_replies").insert({
-    thread_id: thread.id,
-    author_id: user.id,
-    body: bodyValidation.body,
-  });
+  const { data: reply, error } = await supabase
+    .from("forum_replies")
+    .insert({
+      thread_id: thread.id,
+      author_id: user.id,
+      body: bodyValidation.body,
+    })
+    .select("id")
+    .single();
 
-  if (error) {
+  if (error || !reply) {
     return {
       status: "error",
       message: "Ditt svar kunde inte publiceras. Försök igen.",
@@ -128,8 +133,9 @@ export async function createForumReplyAction(
   }
 
   revalidatePath("/forum");
+  revalidatePath("/dashboard");
   revalidatePath(`/forum/${threadSlug}`);
-  redirect(`/forum/${threadSlug}#forum-replies`);
+  redirect(`/forum/${threadSlug}#reply-${reply.id}`);
 }
 
 export async function toggleForumReactionAction(

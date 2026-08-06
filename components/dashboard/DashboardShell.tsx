@@ -1,4 +1,5 @@
 import type { UserProfile } from "@/lib/profiles/types";
+import type { ForumThread } from "@/types/forum";
 import EducationalInsightsCard from "./EducationalInsightsCard";
 import ForumPreview from "./ForumPreview";
 import FreedomPlanCard from "./FreedomPlanCard";
@@ -8,9 +9,10 @@ import OnboardingCard from "./OnboardingCard";
 
 type Props = {
   profile: UserProfile;
+  forumDiscussions: ForumThread[];
 };
 
-export default function DashboardShell({ profile }: Props) {
+export default function DashboardShell({ profile, forumDiscussions }: Props) {
   return (
     <div className="space-y-6">
       <section className="divlab-hero">
@@ -46,7 +48,7 @@ export default function DashboardShell({ profile }: Props) {
 
       <EducationalInsightsCard />
 
-      <ForumPreview />
+      <ForumPreview discussions={forumDiscussions} />
     </div>
   );
 }
