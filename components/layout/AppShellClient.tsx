@@ -122,6 +122,7 @@ export default function AppShellClient({
         isCollapsed={isSidebarCollapsed}
         onMouseEnter={handleSidebarEnter}
         onMouseLeave={handleSidebarLeave}
+        onExpandSidebar={openSidebar}
         unreadMessageCount={unreadMessageCount}
       />
       <MobileAppHeader

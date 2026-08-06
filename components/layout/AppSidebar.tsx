@@ -7,6 +7,7 @@ type Props = {
   isCollapsed: boolean;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
+  onExpandSidebar: () => void;
   unreadMessageCount: number;
 };
 
@@ -14,6 +15,7 @@ export default function AppSidebar({
   isCollapsed,
   onMouseEnter,
   onMouseLeave,
+  onExpandSidebar,
   unreadMessageCount,
 }: Props) {
   return (
@@ -40,6 +42,7 @@ export default function AppSidebar({
       <AppNavigationLinks
         isCollapsed={isCollapsed}
         unreadMessageCount={unreadMessageCount}
+        onExpandSidebar={onExpandSidebar}
         className="flex-1 px-3 py-5"
       />
     </aside>
