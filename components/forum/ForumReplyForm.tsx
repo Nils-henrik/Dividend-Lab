@@ -44,7 +44,7 @@ export default function ForumReplyForm({
         onChange={(event) => onBodyChange(event.target.value)}
         rows={5}
         maxLength={FORUM_BODY_MAX_LENGTH}
-        placeholder="Skriv ett lugnt, användbart svar..."
+        placeholder="Skriv ett svar..."
         className="w-full resize-none divlab-input px-3 py-2 text-sm leading-6 placeholder:text-divlab-text-subtle"
       />
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">

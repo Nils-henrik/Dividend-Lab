@@ -211,9 +211,17 @@ body {
   }
 
   .divlab-reply-thread {
-    @apply overflow-hidden rounded-2xl border;
+    @apply overflow-visible rounded-2xl border;
     border-color: var(--divlab-border-subtle);
     box-shadow: var(--divlab-card-highlight);
+  }
+
+  .divlab-reply-thread > .divlab-reply-row:first-child {
+    @apply rounded-t-2xl;
+  }
+
+  .divlab-reply-thread > .divlab-reply-row:last-child {
+    @apply rounded-b-2xl;
   }
 
   .divlab-reply-row {
