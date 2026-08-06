@@ -1,5 +1,6 @@
 import { formatForumTimestamp } from "@/lib/forum/format";
 import { createClient } from "@/lib/supabase/server";
+import { tryGetSupabaseConfig } from "@/lib/supabase/config";
 import type {
   LearningArticleComment,
   LearningCommentRecord,
@@ -34,6 +35,10 @@ function mapCommentRecord(record: LearningCommentRecord): LearningArticleComment
 }
 
 export async function getLearningArticleComments(articleSlug: string) {
+  if (!tryGetSupabaseConfig()) {
+    return [];
+  }
+
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("learning_article_comments")

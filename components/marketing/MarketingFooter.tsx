@@ -1,6 +1,5 @@
 import Link from "next/link";
 import DivLabWordmark from "@/components/brand/DivLabWordmark";
-import { PUBLIC_SECONDARY_LINKS } from "@/lib/constants/public-navigation";
 
 const linkGroups = [
   {
@@ -10,7 +9,7 @@ const linkGroups = [
       { label: "Utbildning", href: "/learning" },
       { label: "Frihetsmaskinen", href: "/frihetsmaskinen" },
       { label: "Forum", href: "/forum" },
-      ...PUBLIC_SECONDARY_LINKS,
+      { label: "Funktioner", href: "/features" },
     ],
   },
   {

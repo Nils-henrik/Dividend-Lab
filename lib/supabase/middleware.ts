@@ -1,14 +1,14 @@
 import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 import { RECOVERY_PENDING_COOKIE } from "@/lib/auth/recovery";
-import { getSupabaseConfig } from "./config";
+import { tryGetSupabaseConfig } from "./config";
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
   });
 
-  const { supabaseUrl, supabasePublishableKey } = getSupabaseConfig();
+  const config = tryGetSupabaseConfig();
   const pathname = request.nextUrl.pathname;
   const recoveryPending =
     request.cookies.get(RECOVERY_PENDING_COOKIE)?.value === "1";
@@ -24,6 +24,12 @@ export async function updateSession(request: NextRequest) {
     redirectUrl.search = "";
     return NextResponse.redirect(redirectUrl);
   }
+
+  if (!config) {
+    return supabaseResponse;
+  }
+
+  const { supabaseUrl, supabasePublishableKey } = config;
 
   const supabase = createServerClient(supabaseUrl, supabasePublishableKey, {
     cookies: {
@@ -46,7 +52,11 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  await supabase.auth.getUser();
+  try {
+    await supabase.auth.getUser();
+  } catch {
+    // Public pages should still render if the auth provider is temporarily unreachable.
+  }
 
   return supabaseResponse;
 }

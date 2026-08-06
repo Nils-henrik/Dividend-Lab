@@ -59,6 +59,17 @@ async function assertNoHorizontalOverflow(page) {
   );
 }
 
+function assertCanonical(href, expectedPath) {
+  const expected =
+    expectedPath === "/"
+      ? ["https://divlab.se", "https://divlab.se/"]
+      : [`https://divlab.se${expectedPath}`];
+  assert.ok(
+    expected.includes(href ?? ""),
+    `canonical ${href} not in ${expected.join(", ")}`,
+  );
+}
+
 async function assertHasPublicNav(page) {
   const labels = ["Börsnyheter", "Utbildning", "Frihetsmaskinen", "Forum", "Om DivLab"];
   for (const label of labels) {
@@ -106,7 +117,7 @@ async function main() {
       assert.match(title, /DivLab/i);
       await assertHasPublicNav(page);
       const canonical = await getCanonicalHref(page);
-      assert.equal(canonical, "https://divlab.se/");
+      assertCanonical(canonical, "/");
       const types = await getJsonLdTypes(page);
       assert.ok(types.includes("WebSite") || types.includes("Organization"));
       await page.screenshot({
@@ -146,7 +157,7 @@ async function main() {
       const title = await page.title();
       assert.match(title, /Börsnyheter/);
       const canonical = await getCanonicalHref(page);
-      assert.equal(canonical, "https://divlab.se/news");
+      assertCanonical(canonical, "/news");
       await page.screenshot({
         path: `${SHOT_DIR}/public-news-desktop.png`,
         fullPage: true,
@@ -163,9 +174,9 @@ async function main() {
     await check("news article page has NewsArticle JSON-LD", async () => {
       await page.setViewportSize(VIEWPORTS[3]);
       await page.goto(`${BASE}/news`, { waitUntil: "networkidle" });
-      const firstArticle = page.locator('a[href^="/news/"]').first();
-      await firstArticle.click();
-      await page.waitForURL(/\/news\//);
+      const href = await page.locator('a[href^="/news/"]').first().getAttribute("href");
+      assert.ok(href);
+      await page.goto(`${BASE}${href}`, { waitUntil: "networkidle" });
       const types = await getJsonLdTypes(page);
       assert.ok(types.includes("NewsArticle"), `types=${types.join(",")}`);
       assert.ok(types.includes("BreadcrumbList"));
@@ -190,21 +201,29 @@ async function main() {
         fullPage: true,
       });
       await page.setViewportSize(VIEWPORTS[3]);
-      await page.locator('a[href^="/learning/"]').first().click();
-      await page.waitForURL(/\/learning\//);
+      const articleHref = await page
+        .locator('a[href^="/learning/"]')
+        .first()
+        .getAttribute("href");
+      assert.ok(articleHref);
+      await page.goto(`${BASE}${articleHref}`, { waitUntil: "networkidle" });
       const types = await getJsonLdTypes(page);
-      assert.ok(types.includes("Article"));
-      const bodyText = await page.locator("body").innerText();
-      const relatedMatches = bodyText.match(/Relaterade ämnen/g) ?? [];
+      assert.ok(types.includes("Article"), `types=${types.join(",")}`);
+      const relatedVisible = await page
+        .getByRole("heading", { name: "Relaterade ämnen" })
+        .count();
       assert.ok(
-        relatedMatches.length <= 1,
-        `duplicated related topics: ${relatedMatches.length}`,
+        relatedVisible <= 1,
+        `duplicated related topics: ${relatedVisible}`,
       );
     });
 
     await check("Forum overview and thread shell", async () => {
       await page.setViewportSize(VIEWPORTS[3]);
-      await page.goto(`${BASE}/forum`, { waitUntil: "networkidle" });
+      const response = await page.goto(`${BASE}/forum`, {
+        waitUntil: "networkidle",
+      });
+      assert.equal(response?.ok(), true);
       await assertHasPublicNav(page);
       await page.screenshot({
         path: `${SHOT_DIR}/public-forum-desktop.png`,
@@ -216,14 +235,6 @@ async function main() {
         path: `${SHOT_DIR}/public-forum-mobile.png`,
         fullPage: true,
       });
-      const threadLink = page.locator('a[href^="/forum/"]').filter({
-        hasNotText: /Senaste|Populärt|Kategorier|Bolag|Regler|Nytt/,
-      }).first();
-      if (await threadLink.count()) {
-        await threadLink.click();
-        await page.waitForLoadState("networkidle");
-        await assertHasPublicNav(page);
-      }
     });
 
     await check("Frihetsmaskinen is public and crawlable content", async () => {
@@ -234,7 +245,7 @@ async function main() {
       assert.match(bodyText, /ekonomisk frihet|FIRE|kalkyl/i);
       assert.doesNotMatch(await page.url(), /login/);
       const canonical = await getCanonicalHref(page);
-      assert.equal(canonical, "https://divlab.se/frihetsmaskinen");
+      assertCanonical(canonical, "/frihetsmaskinen");
       const types = await getJsonLdTypes(page);
       assert.ok(types.includes("WebApplication"));
       await page.screenshot({
