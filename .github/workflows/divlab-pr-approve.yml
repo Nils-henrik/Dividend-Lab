@@ -1,0 +1,48 @@
+name: DivLab PR Approval Merge
+
+on:
+  pull_request_target:
+    types: [labeled]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: divlab-merge-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  approve-and-merge:
+    if: |
+      github.repository == 'Nils-henrik/Dividend-Lab' &&
+      github.event.action == 'labeled' &&
+      github.event.label.name == 'divlab-approved'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout trusted automation scripts from main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          sparse-checkout: |
+            scripts/automation
+            package.json
+            package-lock.json
+            tsconfig.json
+          sparse-checkout-cone-mode: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install toolchain (tsx)
+        run: npm ci --ignore-scripts
+
+      - name: Merge eligible Cursor pull request
+        env:
+          GITHUB_EVENT_PATH: ${{ github.event_path }}
+        run: npx tsx scripts/automation/cursor-bridge/merge-approve.ts

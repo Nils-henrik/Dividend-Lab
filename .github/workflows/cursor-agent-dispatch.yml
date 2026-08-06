@@ -1,0 +1,47 @@
+name: Cursor Agent Dispatch
+
+on:
+  issues:
+    types: [labeled]
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: cursor-dispatch-issue-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  dispatch:
+    if: |
+      github.repository == 'Nils-henrik/Dividend-Lab' &&
+      github.event.action == 'labeled' &&
+      github.event.label.name == 'cursor-agent'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout automation scripts
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            scripts/automation
+            package.json
+            package-lock.json
+            tsconfig.json
+          sparse-checkout-cone-mode: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install toolchain (tsx)
+        run: npm ci --ignore-scripts
+
+      - name: Dispatch Cursor Cloud Agent
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          GITHUB_EVENT_PATH: ${{ github.event_path }}
+        run: npx tsx scripts/automation/cursor-bridge/dispatch.ts

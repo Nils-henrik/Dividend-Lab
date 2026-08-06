@@ -1,0 +1,45 @@
+name: Cursor Bridge Label Bootstrap
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/cursor-bridge-bootstrap.yml
+      - scripts/automation/cursor-bridge/bootstrap-labels.ts
+      - scripts/automation/cursor-bridge/config.ts
+      - scripts/automation/cursor-bridge/github-api.ts
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  bootstrap-labels:
+    if: github.repository == 'Nils-henrik/Dividend-Lab'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout automation scripts
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            scripts/automation
+            package.json
+            package-lock.json
+            tsconfig.json
+          sparse-checkout-cone-mode: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install toolchain (tsx)
+        run: npm ci --ignore-scripts
+
+      - name: Create or update bridge labels
+        env:
+          GITHUB_EVENT_PATH: ${{ github.event_path }}
+        run: npx tsx scripts/automation/cursor-bridge/bootstrap-labels.ts

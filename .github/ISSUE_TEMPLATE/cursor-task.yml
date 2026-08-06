@@ -1,0 +1,126 @@
+name: Cursor Cloud Agent Task
+description: Structured task for Cursor Cloud Agent automation bridge
+title: "[Cursor] "
+labels:
+  - cursor-agent
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This form dispatches a structured task to **Cursor Cloud Agent** via GitHub Actions when submitted.
+
+        Cursor will start from `main`, create a `cursor/issue-<number>-<slug>` branch, implement the task, validate it, and open a **draft** pull request. Cursor will **not** merge its own PR.
+
+        Preserve Swedish user-facing language, accessibility, responsive layout, and DivLab architecture standards.
+
+  - type: textarea
+    id: objective
+    attributes:
+      label: Task objective
+      description: What should Cursor accomplish?
+    validations:
+      required: true
+
+  - type: textarea
+    id: background
+    attributes:
+      label: Background / context
+      description: Why is this change needed?
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Acceptance criteria
+      description: Concrete, testable outcomes that define done.
+    validations:
+      required: true
+
+  - type: textarea
+    id: allowed_scope
+    attributes:
+      label: Allowed scope
+      description: Files, routes, or areas Cursor may change.
+    validations:
+      required: true
+
+  - type: textarea
+    id: forbidden_scope
+    attributes:
+      label: Forbidden scope
+      description: Areas Cursor must not touch.
+    validations:
+      required: true
+
+  - type: textarea
+    id: swedish_copy
+    attributes:
+      label: Expected Swedish user-facing copy
+      description: Exact or approximate Swedish strings when UI text changes.
+    validations:
+      required: false
+
+  - type: textarea
+    id: required_tests
+    attributes:
+      label: Required tests
+      description: Tests Cursor must add or run (unit, integration, etc.).
+    validations:
+      required: true
+
+  - type: dropdown
+    id: visual_verification
+    attributes:
+      label: Visual verification required?
+      options:
+        - "No"
+        - "Yes — desktop"
+        - "Yes — mobile"
+        - "Yes — desktop and mobile"
+    validations:
+      required: true
+
+  - type: textarea
+    id: deployment_instruction
+    attributes:
+      label: Deployment / publication instruction
+      description: How this should ship (preview only, post-merge, etc.).
+    validations:
+      required: true
+
+  - type: dropdown
+    id: risk_classification
+    attributes:
+      label: Risk classification
+      description: High and Manual only block automatic merge even if divlab-approved is applied.
+      options:
+        - Low — editorial/content/simple UI
+        - Medium — application logic
+        - High — auth/database/security/user data
+        - Manual only — migrations/RLS/secrets/payments/destructive changes
+    validations:
+      required: true
+
+  - type: textarea
+    id: related_routes
+    attributes:
+      label: Related routes or files (when known)
+      description: Help Cursor inspect only necessary files.
+    validations:
+      required: false
+
+  - type: markdown
+    attributes:
+      value: |
+        ### Cursor instructions (automatic)
+
+        - Preserve existing DivLab architecture and module boundaries.
+        - Preserve Swedish user-facing language.
+        - Follow accessibility requirements.
+        - Maintain responsive desktop and mobile behavior.
+        - Follow SEO and editorial conventions where relevant.
+        - Avoid unrelated changes.
+        - Never modify secrets or credentials.
+        - Open a **draft** PR — never merge your own PR.
+        - Run `npm run lint`, `npm run typecheck`, relevant tests, and `npm run build` when appropriate.
