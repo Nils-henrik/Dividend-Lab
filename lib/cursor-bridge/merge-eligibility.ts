@@ -200,15 +200,20 @@ export function evaluateChecks(checks: CheckStatusSummary): MergeDecision {
     );
   }
 
-  if (checks.requiredChecks.length === 0) {
-    // Fail closed if GitHub reports no required contexts — ambiguous protection state.
+  const requiredChecks = checks.requiredChecks.filter(
+    (check) => !isApprovalWorkflowCheckName(check.name),
+  );
+
+  if (requiredChecks.length === 0) {
+    // Fail closed if GitHub reports no independent required contexts.
+    // The approval workflow's own check can never gate itself.
     return fail(
       "checks_not_ready",
-      "No required checks were reported; refusing to bypass branch protection",
+      "No independent required checks were reported; refusing to bypass branch protection",
     );
   }
 
-  for (const check of checks.requiredChecks) {
+  for (const check of requiredChecks) {
     if (!isSuccessfulCheck(check)) {
       return fail(
         "checks_not_ready",
@@ -245,6 +250,14 @@ export function isVercelCheckName(name: string): boolean {
     lower === "vercel" ||
     lower.startsWith("vercel —") ||
     lower.startsWith("vercel -")
+  );
+}
+
+export function isApprovalWorkflowCheckName(name: string): boolean {
+  const normalized = name.trim().toLowerCase();
+  return (
+    normalized === "validate and squash-merge" ||
+    normalized.endsWith(" / validate and squash-merge")
   );
 }
 
