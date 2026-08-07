@@ -60,6 +60,7 @@ docs/
     application-service.md
     alpha-access.md
     alpha-shell.md
+    provider-setup.md
 
   automation/
     CURSOR_BRIDGE.md
