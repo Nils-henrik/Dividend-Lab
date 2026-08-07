@@ -5,8 +5,8 @@ Shared DivBrain domain language for server and client.
 ## Boundaries
 
 - **Shared (this folder today):** `constants`, `types`, `errors`, `results`, `validation`, `sources`, `citations`, `guardrails` — safe to import from server or client.
-- **Server-only by convention:** `server/guardrails`, `server/guardrail-evals`, `server/providers`, `server/identity`, `server/policy`, `server/context`, `server/context-evals`, `server/repository`, `server/service`, `server/access`, `server/ui`, `server/learning` — detection logic, eval fixtures, identity/policy text, context assembly, provider boundary, conversation persistence, application-service orchestration, Internal Alpha access, the read-only `/brain` shell loader, and Learning lexical retrieval. These modules live under `lib/divbrain/server/` and **must never be imported by client components** or other browser-safe UI. Package-level `import "server-only"` is deferred until an approved dependency/foundation ticket; folder placement and this README are the current boundary.
-- Later tickets add real provider adapters, Learning→service wiring, and interactive `/brain` composer wiring under the same server-only rule.
+- **Server-only by convention:** `server/guardrails`, `server/guardrail-evals`, `server/providers`, `server/benchmark`, `server/identity`, `server/policy`, `server/context`, `server/context-evals`, `server/repository`, `server/service`, `server/access`, `server/ui`, `server/learning` — detection logic, eval fixtures, identity/policy text, context assembly, provider boundary, Phase 1B benchmark harness, conversation persistence, application-service orchestration, Internal Alpha access, the `/brain` shell loader, and Learning lexical retrieval. These modules live under `lib/divbrain/server/` and **must never be imported by client components** or other browser-safe UI. Package-level `import "server-only"` is deferred until an approved dependency/foundation ticket; folder placement and this README are the current boundary.
+- Later tickets wire an approved gateway model into the live `/brain` path and connect Learning retrieval to the service/citation flow under the same server-only rule.
 - Browser-safe modules must never import server-only DivBrain code.
 - Never expose secrets, tokens, emails, raw provider/DB errors, stack traces, or hidden reasoning across the browser boundary.
 
@@ -102,14 +102,20 @@ mapAssembledContextToProviderRequest(assembled, { timeoutMs }) → DivBrainResul
 - No database access inside the assemble core; no live provider calls in unit tests.
 - Minimal test runner: `npm run test:divbrain` (tsx + node:test). Full CI wiring remains Ticket 1A-10 scope.
 
-## Provider interface (Ticket 1A-5)
+## Provider interface (Tickets 1A-5 / 1B-1)
 
 Server-owned, provider-neutral generation boundary under `server/providers/`:
 
-- `types.ts` — request/response shapes, context-block kinds, optional token-usage hooks (no cost math)
+- `types.ts` — request/response shapes, context-block kinds, optional token-usage hooks
 - `provider.ts` — `DivBrainProvider` contract + safe unknown-error mapping
 - `validation.ts` — deterministic request validation / usage normalization
-- `unconfigured-provider.ts` — `UnconfiguredProvider` (explicit unconfigured state)
+- `unconfigured-provider.ts` — `UnconfiguredProvider` (explicit unconfigured state; **runtime default**)
+- `ai-gateway-provider.ts` — Vercel AI Gateway adapter (server-only; not wired into live `/brain` yet)
+- `factory.ts` / `config.ts` — fail-closed server config → unconfigured or gateway
+- `candidates.ts` / `cost.ts` — Phase 1B benchmark candidate catalog + USD estimate helpers
+- `server/benchmark/**` — deterministic multi-candidate harness + local rubric
+
+Canonical Founder runbook: [`docs/divbrain/provider-setup.md`](../../docs/divbrain/provider-setup.md).
 
 ### Contract
 
@@ -123,12 +129,12 @@ generate(request) →
 
 ### Rules
 
-- No real AI SDK, API keys, environment reads, network calls, streaming, or tool calls in 1A-5.
-- `UnconfiguredProvider` returns catalog `provider_unavailable` for valid requests and **never** fabricates assistant text.
+- `UnconfiguredProvider` remains the default until an explicit Founder activation step.
+- AI Gateway adapter uses the AI SDK (`ai`); model ids are server-configured only.
 - Invalid requests map to `failed` + `invalid_request`; already-aborted signals map to `cancelled`.
-- Later adapters catch SDK exceptions and map via `mapUnknownToDivBrainProviderResult` — raw vendor payloads must not cross this boundary.
-- Token-usage fields are optional normalized integer hooks only; pricing/billing remain later work.
-- No provider registry, factory framework, or selection logic in this ticket.
+- Gateway adapters map timeout/rate-limit/auth/outage/malformed failures to catalog errors — raw vendor payloads must not cross this boundary.
+- Token-usage fields are optional normalized integers; cost helpers estimate USD from the candidate catalog only.
+- Live benchmark requires `DIVBRAIN_PROVIDER_BENCHMARK_LIVE=1` and is never part of CI.
 
 ## Persistence schema (Ticket 1A-6)
 
