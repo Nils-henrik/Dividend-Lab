@@ -1,0 +1,44 @@
+# Idempotent bootstrap of DivLab Cursor bridge labels.
+name: Cursor Bridge Labels
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/cursor-bridge-labels.yml"
+      - ".github/workflows/cursor-agent-dispatch.yml"
+      - ".github/workflows/cursor-pr-approval.yml"
+      - "lib/cursor-bridge/**"
+      - "scripts/cursor-bridge/**"
+      - "docs/automation/CURSOR_BRIDGE.md"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  bootstrap-labels:
+    name: Ensure bridge labels
+    if: github.repository == 'Nils-henrik/Dividend-Lab'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Create or update bridge labels (idempotent)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: npx tsx scripts/cursor-bridge/bootstrap-labels.mts

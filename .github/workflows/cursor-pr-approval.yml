@@ -1,0 +1,51 @@
+# Controlled DivLab approval gate for Cursor PRs.
+# Uses pull_request_target so untrusted PR code is never checked out or executed.
+name: Cursor PR Approval
+
+on:
+  pull_request_target:
+    types: [labeled]
+
+concurrency:
+  group: cursor-pr-approval-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  checks: read
+  statuses: read
+  issues: write
+
+jobs:
+  approve-and-merge:
+    name: Validate and squash-merge
+    if: >
+      github.event.label.name == 'divlab-approved' &&
+      github.repository == 'Nils-henrik/Dividend-Lab' &&
+      github.event.pull_request.base.ref == 'main' &&
+      startsWith(github.event.pull_request.head.ref, 'cursor/')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout base branch only (never PR head)
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Controlled approval / merge (GitHub API only)
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          APPROVED_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: npx tsx scripts/cursor-bridge/approve.mts
