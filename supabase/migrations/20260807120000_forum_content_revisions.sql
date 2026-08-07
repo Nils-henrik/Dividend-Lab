@@ -172,13 +172,13 @@ $$;
 
 drop trigger if exists archive_forum_thread_revision on public.forum_threads;
 create trigger archive_forum_thread_revision
-  before update on public.forum_threads
+  before update of title, body on public.forum_threads
   for each row
   execute function public.archive_forum_thread_revision();
 
 drop trigger if exists archive_forum_reply_revision on public.forum_replies;
 create trigger archive_forum_reply_revision
-  before update on public.forum_replies
+  before update of body on public.forum_replies
   for each row
   execute function public.archive_forum_reply_revision();
 
@@ -238,8 +238,14 @@ create policy "Authors can update their own forum replies"
   using (author_id = auth.uid())
   with check (author_id = auth.uid());
 
-revoke update on public.forum_threads from anon, authenticated;
-revoke update on public.forum_replies from anon, authenticated;
+-- Hosted Supabase defaults can leave broader non-DML privileges on public
+-- tables than the forum client needs. Remove them as part of the edit rollout.
+-- Public/anon only need SELECT; authenticated additionally needs INSERT and the
+-- column-limited UPDATE grants below.
+revoke delete, truncate, references, trigger, update
+  on public.forum_threads from public, anon, authenticated;
+revoke delete, truncate, references, trigger, update
+  on public.forum_replies from public, anon, authenticated;
 
 grant update (title, body) on public.forum_threads to authenticated;
 grant update (body) on public.forum_replies to authenticated;
