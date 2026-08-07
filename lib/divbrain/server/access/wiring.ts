@@ -1,5 +1,5 @@
 /**
- * Concrete wiring helpers for Ticket 1A-7b + 1A-8 (Alpha access).
+ * Concrete wiring helpers for Ticket 1A-7b + 1A-8 + 1B-2 runtime provider selection.
  *
  * Does not create API routes, server actions, or service-role clients.
  * Repository must be supplied by the caller (Ticket 1A-9+).
@@ -16,6 +16,7 @@ import type {
   CreateDivBrainApplicationServiceDeps,
   DivBrainApplicationService,
 } from "../service/types";
+import { createDivBrainProvider } from "../providers/factory";
 import { createDivBrainSessionActorResolver } from "./actor-resolver";
 import { createDivBrainAlphaAccessGate } from "./gate";
 import type {
@@ -43,13 +44,22 @@ export type CreateDivBrainAlphaApplicationServiceDepsOptions = {
   repository: DivBrainConversationRepository;
   accessGate?: CreateDivBrainAlphaAccessGateOptions;
   actorResolver?: CreateDivBrainSessionActorResolverOptions;
+  /** Explicit provider override for tests/special server callers. */
   provider?: CreateDivBrainApplicationServiceDeps["provider"];
   providerTimeoutMs?: number;
 };
 
 /**
- * Build 1A-7b application-service dependencies with concrete Alpha access wiring.
- * Defaults remain UnconfiguredProvider + approved guardrail/context/mapper bindings.
+ * Build application-service dependencies with concrete Alpha access wiring.
+ *
+ * Runtime provider selection is server-only and fail-closed:
+ * - an explicit `provider` override wins;
+ * - otherwise `createDivBrainProvider()` reads the approved server config;
+ * - missing/malformed config resolves to `UnconfiguredProvider`.
+ *
+ * Merely importing or constructing these dependencies never performs a model
+ * request. Network generation can occur only later, after auth + Alpha access +
+ * validation + guardrails + persistence reach the provider lifecycle.
  */
 export function createDivBrainAlphaApplicationServiceDeps(
   options: CreateDivBrainAlphaApplicationServiceDepsOptions,
@@ -58,19 +68,20 @@ export function createDivBrainAlphaApplicationServiceDeps(
     accessGate: options.accessGate,
     actorResolver: options.actorResolver,
   });
+  const provider = options.provider ?? createDivBrainProvider().provider;
 
   return createDivBrainApplicationServiceDeps({
     actorResolver: access.actorResolver,
     accessGate: access.accessGate,
     repository: options.repository,
-    ...(options.provider !== undefined ? { provider: options.provider } : {}),
+    provider,
     ...(options.providerTimeoutMs !== undefined
       ? { providerTimeoutMs: options.providerTimeoutMs }
       : {}),
   });
 }
 
-/** Convenience factory: Alpha-wired application service for later Ticket 1A-9. */
+/** Convenience factory: Alpha-wired application service for `/brain`. */
 export function createDivBrainAlphaApplicationService(
   options: CreateDivBrainAlphaApplicationServiceDepsOptions,
 ): DivBrainApplicationService {
