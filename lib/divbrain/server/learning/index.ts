@@ -1,9 +1,9 @@
 /**
  * DivBrain Learning retrieval + context integration server surface
- * (Tickets 1C-1 / 1C-2).
+ * (Tickets 1C-1 / 1C-2 / roadmap 1C-3 evals).
  *
  * Must never be imported by client components.
- * Retrieval is deterministic/local; no provider or network call occurs here.
+ * Retrieval/evals are deterministic/local; no provider or network call occurs here.
  */
 
 export {
@@ -26,6 +26,17 @@ export {
   learningArticleToCorpusRecord,
   normalizeLearningQuery,
 } from "./corpus";
+export {
+  DIVBRAIN_LEARNING_EVAL_CASES,
+  DIVBRAIN_LEARNING_EVAL_CATEGORIES,
+  DIVBRAIN_LEARNING_EVAL_SCHEMA_VERSION,
+  evaluateDivBrainLearningEvalCase,
+  runDivBrainLearningEvals,
+  type DivBrainLearningEvalCase,
+  type DivBrainLearningEvalCaseReport,
+  type DivBrainLearningEvalCategory,
+  type DivBrainLearningEvalReport,
+} from "./learning-evals";
 export {
   normalizeDivBrainLearningText,
   stemDivBrainLearningToken,
