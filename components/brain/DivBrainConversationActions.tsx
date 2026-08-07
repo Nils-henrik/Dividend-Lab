@@ -162,13 +162,18 @@ export default function DivBrainConversationActions({
       ) : null}
 
       {mode === "rename" ? (
-        <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/40 p-4 sm:items-center">
+        <div className="fixed inset-0 z-40 flex items-end justify-center p-4 sm:items-center">
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 bg-black/40"
+            onClick={closeDialog}
+          />
           <div
             ref={dialogRef}
             role="dialog"
             aria-modal="true"
             aria-labelledby={renameTitleId}
-            className="divlab-card w-full max-w-md p-5"
+            className="divlab-card relative z-10 w-full max-w-md p-5"
           >
             <h3
               id={renameTitleId}
@@ -223,14 +228,19 @@ export default function DivBrainConversationActions({
       ) : null}
 
       {mode === "delete" ? (
-        <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/40 p-4 sm:items-center">
+        <div className="fixed inset-0 z-40 flex items-end justify-center p-4 sm:items-center">
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 bg-black/40"
+            onClick={closeDialog}
+          />
           <div
             ref={dialogRef}
             role="dialog"
             aria-modal="true"
             aria-labelledby={deleteTitleId}
             aria-describedby={deleteDescId}
-            className="divlab-card w-full max-w-md p-5"
+            className="divlab-card relative z-10 w-full max-w-md p-5"
           >
             <h3
               id={deleteTitleId}
