@@ -69,7 +69,7 @@ describe("DivBrain persisted message sources", () => {
     assert.equal("sources" in mapped.data, false);
   });
 
-  it("fails closed on malformed persisted sources", () => {
+  it("fails closed on malformed sources for completed assistant messages", () => {
     const mapped = mapMessageRowToDomain(
       row({
         sources: [
@@ -86,16 +86,30 @@ describe("DivBrain persisted message sources", () => {
     }
   });
 
-  it("rejects source payloads attached to non-assistant/non-completed rows", () => {
+  it("ignores source-shaped metadata when the role/status cannot expose sources", () => {
     const user = mapMessageRowToDomain(
-      row({ role: "user", content: "Hej", completion_status: "completed" }),
+      row({
+        role: "user",
+        content: "Hej",
+        completion_status: "completed",
+        sources: [{ id: "legacy-user-metadata" }],
+      }),
     );
-    assert.equal(user.ok, false);
+    assert.equal(user.ok, true);
+    if (user.ok) {
+      assert.equal("sources" in user.data, false);
+    }
 
     const failedAssistant = mapMessageRowToDomain(
-      row({ completion_status: "failed" }),
+      row({
+        completion_status: "failed",
+        sources: [{ id: "legacy-terminal-metadata" }],
+      }),
     );
-    assert.equal(failedAssistant.ok, false);
+    assert.equal(failedAssistant.ok, true);
+    if (failedAssistant.ok) {
+      assert.equal("sources" in failedAssistant.data, false);
+    }
   });
 });
 
