@@ -22,6 +22,7 @@
     "divbrain:provider-benchmark:live": "tsx scripts/divbrain-provider-benchmark.mts"
   },
   "dependencies": {
+    "@ai-sdk/gateway": "4.0.44",
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.110.1",
     "@vercel/analytics": "^2.0.1",
