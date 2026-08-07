@@ -1,5 +1,5 @@
 /**
- * Concrete wiring helpers for Ticket 1A-7b + 1A-8 + 1B-2 runtime provider selection.
+ * Concrete wiring helpers for Ticket 1A-7b + 1A-8 + Phase 1B/1C runtime wiring.
  *
  * Does not create API routes, server actions, or service-role clients.
  * Repository must be supplied by the caller (Ticket 1A-9+).
@@ -17,6 +17,7 @@ import type {
   DivBrainApplicationService,
 } from "../service/types";
 import { createDivBrainProvider } from "../providers/factory";
+import { createDivBrainLearningContextAssembler } from "../learning/context-assembler";
 import { createDivBrainSessionActorResolver } from "./actor-resolver";
 import { createDivBrainAlphaAccessGate } from "./gate";
 import type {
@@ -46,20 +47,26 @@ export type CreateDivBrainAlphaApplicationServiceDepsOptions = {
   actorResolver?: CreateDivBrainSessionActorResolverOptions;
   /** Explicit provider override for tests/special server callers. */
   provider?: CreateDivBrainApplicationServiceDeps["provider"];
+  /** Explicit context-assembler override for deterministic tests/special callers. */
+  contextAssembler?: CreateDivBrainApplicationServiceDeps["contextAssembler"];
   providerTimeoutMs?: number;
 };
 
 /**
- * Build application-service dependencies with concrete Alpha access wiring.
+ * Build application-service dependencies with concrete Internal Alpha wiring.
  *
  * Runtime provider selection is server-only and fail-closed:
  * - an explicit `provider` override wins;
- * - otherwise `createDivBrainProvider()` reads the approved server config;
+ * - otherwise `createDivBrainProvider()` reads approved server config;
  * - missing/malformed config resolves to `UnconfiguredProvider`.
  *
- * Merely importing or constructing these dependencies never performs a model
- * request. Network generation can occur only later, after auth + Alpha access +
- * validation + guardrails + persistence reach the provider lifecycle.
+ * Learning grounding is also server-only:
+ * - an explicit `contextAssembler` override wins;
+ * - otherwise the Alpha service uses the deterministic Learning-aware assembler;
+ * - retrieved Learning prose remains `untrusted_context` under the canonical
+ *   context assembler's validation, delimiter and budget rules.
+ *
+ * Merely constructing these dependencies performs no model/network request.
  */
 export function createDivBrainAlphaApplicationServiceDeps(
   options: CreateDivBrainAlphaApplicationServiceDepsOptions,
@@ -69,12 +76,15 @@ export function createDivBrainAlphaApplicationServiceDeps(
     actorResolver: options.actorResolver,
   });
   const provider = options.provider ?? createDivBrainProvider().provider;
+  const contextAssembler =
+    options.contextAssembler ?? createDivBrainLearningContextAssembler();
 
   return createDivBrainApplicationServiceDeps({
     actorResolver: access.actorResolver,
     accessGate: access.accessGate,
     repository: options.repository,
     provider,
+    contextAssembler,
     ...(options.providerTimeoutMs !== undefined
       ? { providerTimeoutMs: options.providerTimeoutMs }
       : {}),
