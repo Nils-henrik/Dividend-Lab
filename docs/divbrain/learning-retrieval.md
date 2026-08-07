@@ -1,142 +1,95 @@
-# DivBrain Learning retrieval and source grounding (Tickets 1C-1 / 1C-2 / 1C-3)
+# DivBrain Learning retrieval, grounding and source UI
 
-DivBrain uses deterministic **lexical** retrieval over the published DivLab Learning corpus (`data/learning/**`), wires relevant sources into Internal Alpha context assembly, and can surface validated source metadata alongside completed assistant messages in the transcript.
+**Implemented foundations:** 1C-1 retrieval, 1C-2 context grounding, grounded transcript source UI  
+**Roadmap Ticket 1C-3:** deterministic Learning retrieval eval cases
 
-The retrieval layer itself remains local and deterministic: **no embeddings, provider calls, external search, or paid model work** are required to find Learning sources.
+> Numbering note: the grounded transcript source UI was initially described as “1C-3” in one implementation PR. The canonical roadmap already reserves **1C-3 for retrieval eval cases**. This document follows the roadmap numbering from here onward; the source UI is treated as an additional 1C grounding/UI increment rather than a second 1C-3.
 
-## Purpose
+DivBrain uses deterministic **lexical** retrieval over the published DivLab Learning corpus (`data/learning/**`), injects relevant sources into Internal Alpha context assembly, persists retained grounded sources with completed assistant messages, and displays a browser-safe numbered source list in the transcript.
 
-Ground educational DivBrain turns in DivLab’s own Learning articles with:
+The retrieval/eval layer is local and deterministic: **no embeddings, provider calls, external search, LLM judge, or paid model work** is required.
 
-- structured `DivBrainSource` objects (`category: "divlab_learning"`)
-- stable source ids / record refs
-- citation-ready identifiers for the existing citation model
-- bounded excerpts treated as **untrusted context**
-- automatic handoff of retained sources into the provider request contract
-- a browser-safe numbered source list for completed grounded assistant messages
+## Retrieval contract
 
-## Why lexical retrieval before vectors
+- Corpus: canonical `data/learning` articles only.
+- Max **3** Learning sources per query.
+- Excerpt max **800** chars.
+- One best section per article slug.
+- Stable deterministic tie-break.
+- Weak/body-only overlap does not qualify.
+- Unrelated queries return zero sources rather than fabricated relevance.
+- Swedish normalization preserves å/ä/ö, removes common function words and applies conservative morphology.
 
-The Learning corpus is small, curated, and already structured (slug, title, sections, dates). Explicit keyword/heading scoring is deterministic, inexpensive, easy to audit, and requires no embedding operations or external model calls.
-
-Vectors remain a later upgrade only if corpus size and measured retrieval quality justify them.
-
-## Modules
+Key modules:
 
 | Path | Responsibility |
 |------|----------------|
-| `lib/divbrain/server/learning/corpus.ts` | Adapter: `data/learning` → searchable records |
-| `lib/divbrain/server/learning/normalize.ts` | Swedish-safe normalize / tokenize / light stems |
-| `lib/divbrain/server/learning/score.ts` | Weighted lexical scoring + threshold + dedupe |
-| `lib/divbrain/server/learning/to-source.ts` | Map hits → validated `DivBrainSource` |
-| `lib/divbrain/server/learning/retrieve.ts` | `retrieveDivBrainLearningSources` |
-| `lib/divbrain/server/learning/context-assembler.ts` | Retrieve → canonical context assembler |
-| `lib/divbrain/server/repository/mapping.ts` | Validate persisted message sources on read |
-| `lib/divbrain/server/ui/transcript.ts` | Reduce validated sources to browser-safe display metadata |
-| `components/brain/DivBrainTranscript.tsx` | Render the numbered transcript source list |
+| `lib/divbrain/server/learning/corpus.ts` | Published Learning corpus adapter |
+| `lib/divbrain/server/learning/normalize.ts` | Swedish-safe normalization/tokenization |
+| `lib/divbrain/server/learning/score.ts` | Weighted lexical ranking |
+| `lib/divbrain/server/learning/retrieve.ts` | Retrieval API |
+| `lib/divbrain/server/learning/context-assembler.ts` | Retrieval → canonical context assembly |
+| `lib/divbrain/server/learning/learning-eval-fixtures.ts` | Roadmap 1C-3 curated eval fixture |
+| `lib/divbrain/server/learning/learning-evals.ts` | Prompt-free deterministic eval runner |
 
-## Scoring and threshold
+## Trust boundary
 
-Field weights (`DIVBRAIN_LEARNING_SCORE_WEIGHTS`):
+Retrieved Learning prose is **untrusted context**. It cannot replace DivBrain identity, policy or guardrails. Guardrail-blocked prompts return before Learning retrieval. The canonical context assembler still validates, deduplicates, budgets and delimits source material.
 
-| Field | Weight |
-|-------|--------|
-| title | 12 |
-| slug | 9 |
-| heading | 8 |
-| description | 5 |
-| excerpt | 4 |
-| category | 2 |
-| body / intro | 1 |
-| full-query phrase in title | +15 |
-| full-query phrase in heading | +10 |
-| title+slug+heading coverage | up to +8 |
-
-A candidate is returned only when **both**:
-
-- `score >= DIVBRAIN_LEARNING_RETRIEVAL_MIN_SCORE` (**16**)
-- `strongScore >= DIVBRAIN_LEARNING_RETRIEVAL_MIN_STRONG_SCORE` (**10**)
-
-Body-only overlap never qualifies. Weak/unrelated queries return no result rather than inventing relevance.
-
-Hard bounds:
-
-- max **3** sources
-- excerpt ≤ **800** chars
-- one hit per article slug (best section wins)
-- stable tie-break: score ↓, strongScore ↓, slug ↑, sectionIndex ↑
-
-Normalization preserves Swedish å/ä/ö, drops common function words, uses conservative morphology, and neutralizes excerpt angle brackets so Learning prose remains plain untrusted text.
-
-## Source / citation contract
-
-Each Learning hit emits a validated `DivBrainSource` with stable `learning:<slug>` identity, `/learning/<slug>` internal route, internally curated provenance and bounded article metadata.
-
-The same source objects flow through context assembly and the provider request. On a completed grounded assistant response, the service persists the retained provider-result sources with the assistant message.
-
-### Persistence → browser boundary
-
-The database row may contain the full validated `DivBrainSource` metadata needed for provenance. Repository mapping validates that payload again on read and fails closed if it is malformed. Non-empty source payloads are accepted only for **completed assistant messages**.
-
-The transcript browser view deliberately exposes only:
+A completed grounded assistant result may persist validated source objects. Repository reads validate source payloads on the semantically active grounded-answer path. The browser shell receives only display-safe metadata:
 
 - source id
 - title
 - optional publisher / attribution
-- validated internal DivLab route or validated HTTPS canonical URL
+- validated internal route or HTTPS canonical URL
 
-It does **not** expose source excerpts, record refs, data-as-of fields, retrieval diagnostics, prompt context, policy text or provider-private metadata.
+The shell never receives source excerpts, record refs, data-as-of fields, retrieval diagnostics, prompt/system context or provider-private metadata.
 
-### Transcript rendering
+## Transcript source rendering
 
-Completed assistant messages with retained sources show a compact **Källor** section numbered `[1]`, `[2]`, and so on in source order. Internal DivLab Learning sources link through Next.js routes; external sources, when later used, open validated HTTPS URLs in a new tab with `noopener noreferrer`.
+Completed grounded assistant messages show a compact **Källor** list numbered `[1]`, `[2]`, etc. Internal Learning routes use Next.js navigation; future external sources use validated HTTPS links with `noopener noreferrer`.
 
-The model is already instructed to use numbered citations when sources exist. In 1C-3, citation markers such as `[1]` inside the generated answer remain ordinary escaped text while the matching numbered source list is rendered below. Turning those inline markers into interactive links is a possible later polish step; source transparency itself no longer depends on that work.
+Generated inline `[n]` markers remain escaped plain text for now. The numbered source list beneath the answer is authoritative; interactive inline markers are optional later polish.
 
-## Runtime integration
+## Roadmap 1C-3 — retrieval evals
 
-Internal Alpha defaults to `createDivBrainLearningContextAssembler()` through `createDivBrainAlphaApplicationServiceDeps()`.
+The deterministic eval suite contains **36 manually curated cases**:
 
-Lifecycle implications:
+- 3 clear retrieval cases for each of the 9 currently published Learning articles = 27 matched cases
+- 9 deliberately unrelated no-match cases
+- unique case IDs
+- all 10 eval categories represented (9 article/topic categories + `no_match`)
 
-1. Authentication and the Internal Alpha gate run first.
-2. Guardrail-blocked prompts return before context assembly, so they do **not** run Learning retrieval and remain non-persistent.
-3. Allowed, owned conversation turns reach the Learning-aware wrapper during context assembly.
-4. Local retrieval selects relevant Learning sources from the current user message.
-5. The canonical assembler validates, deduplicates, budgets and wraps source prose as `untrusted_context`.
-6. `mapAssembledContextToProviderRequest()` carries only retained `includedSources` into the provider request.
-7. A completed provider result may return those sources; the service persists them with the assistant message.
-8. Repository mapping validates persisted sources again before the shell creates its minimal browser-safe source list.
+Each case specifies only the expected top Learning slug (or no-match). The runner verifies:
 
-The generic application-service lifecycle and security ordering remain unchanged.
+- expected top slug / honest zero-match
+- max-result bound
+- source/hit ordering consistency
+- canonical `/learning/<slug>` route consistency
+- `divlab_learning` source category
+- duplicate fixture IDs
 
-## Trust boundary
+Eval reports contain case IDs, categories and outcomes only — **never the raw prompt text**.
 
-Learning retrieval and source rendering do **not** bypass or replace identity, policy, guardrails, ownership checks, provider validation or source validation.
+The suite is included automatically by `npm run test:divbrain`; no live model call is needed.
 
-Instruction-like article text remains source material. It cannot become `trusted_system` policy or overwrite DivBrain identity. React renders answer/source text normally; `dangerouslySetInnerHTML` is not used.
-
-## How new Learning articles become searchable
+## Adding new Learning articles
 
 1. Add the article under `data/learning/articles/`.
 2. Register it in `data/learning/index.ts` (`learningArticles`).
-3. No separate vector/search index is needed; the corpus adapter maps `learningArticles` on demand and module-caches the result.
+3. Add/update retrieval eval cases that represent the new article’s intended queries.
+4. Do not edit article copy solely to game retrieval ranking.
 
-Do **not** edit article copy solely to manipulate retrieval ranking.
+## Current limitations
 
-## Current limitations / next step
-
-- Lexical overlap is not semantic understanding; typo/synonym handling remains intentionally conservative.
+- Lexical overlap is not semantic understanding; typo/synonym handling is intentionally conservative.
 - No vector retrieval or model re-ranking.
 - No personalization.
-- Inline `[n]` markers are not yet interactive links; the authoritative numbered source list is displayed beneath the answer.
-- Retrieval does not provide live market/news data.
-- Freshness is stable `current` for the internally curated Learning corpus rather than computed from wall-clock age.
-- ISK vs KF currently resolves to broader articles where that content exists; a dedicated guide would improve retrieval specificity.
+- No live market/news retrieval.
+- Learning freshness is internally curated rather than computed from wall-clock age.
+- Inline `[n]` markers are not interactive yet.
 
 ## Validation
-
-Normal repository validation should cover this path:
 
 ```bash
 npm run lint
@@ -145,4 +98,4 @@ npm run test:divbrain
 npm run build
 ```
 
-No live provider or network call is required for these tests.
+No provider/network call is required for these tests.
