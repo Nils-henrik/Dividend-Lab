@@ -121,7 +121,8 @@ begin
     old.content_version,
     old.title,
     old.body,
-    now()
+    -- Timestamp for this historical version: when that content became current.
+    coalesce(old.edited_at, old.created_at)
   );
 
   new.content_version := old.content_version + 1;
@@ -159,7 +160,8 @@ begin
     old.id,
     old.content_version,
     old.body,
-    now()
+    -- Timestamp for this historical version: when that content became current.
+    coalesce(old.edited_at, old.created_at)
   );
 
   new.content_version := old.content_version + 1;
