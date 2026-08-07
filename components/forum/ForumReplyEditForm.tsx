@@ -52,6 +52,8 @@ export default function ForumReplyEditForm({
           onChange={(event) => setBody(event.target.value)}
           maxLength={FORUM_BODY_MAX_LENGTH}
           rows={5}
+          required
+          autoFocus
           className="w-full resize-none divlab-input px-3 py-2 text-sm leading-6 text-divlab-text"
         />
         <span className="mt-1 block text-[11px] text-divlab-text-muted">
@@ -77,7 +79,10 @@ export default function ForumReplyEditForm({
       </div>
 
       {state.status === "error" && (
-        <p className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs leading-5 text-gray-300">
+        <p
+          role="alert"
+          className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs leading-5 text-gray-300"
+        >
           {state.message}
         </p>
       )}
