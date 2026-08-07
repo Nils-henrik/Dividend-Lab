@@ -2,7 +2,8 @@
 -- Existing non-null usernames are preserved exactly as-is.
 -- Null/blank legacy usernames are backfilled with collision-resistant handles,
 -- then NOT NULL and a database-enforced username policy protect future writes.
--- Signup metadata username is applied by handle_new_auth_user.
+-- During rollout, an old deployed signup client that does not yet send username
+-- metadata receives a temporary random handle rather than failing registration.
 
 -- Backfill only profiles that do not already have a real username.
 do $$
@@ -49,10 +50,10 @@ alter table public.profiles
   );
 
 -- Do not add a blanket reserved-name CHECK: an old account may already own a
--- now-reserved handle, and this migration must never silently rename or fail on
--- an existing real username. Instead, reject reserved handles on new inserts
--- and whenever a username is actually changed. Unchanged legacy handles are
--- grandfathered until their owner chooses another username.
+-- now-reserved handle (for example @divlab), and this migration must never
+-- silently rename or invalidate that identity. Reject reserved handles on new
+-- inserts and whenever a username is actually changed. Unchanged legacy handles
+-- are grandfathered until their owner voluntarily chooses another username.
 alter table public.profiles
   drop constraint if exists profiles_username_reserved;
 
@@ -74,11 +75,9 @@ begin
       using errcode = '23514', hint = 'Username must be 3-20 chars of a-z, 0-9 or underscore.';
   end if;
 
-  if (
-    tg_op = 'INSERT'
-    or new.username is distinct from old.username
-  ) and new.username in (
+  if new.username in (
     'divlab',
+    'divlab_mod',
     'dividendlab',
     'admin',
     'administrator',
@@ -98,8 +97,13 @@ begin
     'medlem',
     'anvandare'
   ) then
-    raise exception 'username_reserved'
-      using errcode = '23514', hint = 'Username is reserved.';
+    if tg_op = 'INSERT' then
+      raise exception 'username_reserved'
+        using errcode = '23514', hint = 'Username is reserved.';
+    elsif new.username is distinct from old.username then
+      raise exception 'username_reserved'
+        using errcode = '23514', hint = 'Username is reserved.';
+    end if;
   end if;
 
   return new;
@@ -112,9 +116,11 @@ create trigger enforce_profile_username_policy
   for each row
   execute function public.enforce_profile_username_policy();
 
--- Signup path: require validated username from auth metadata and store it on
--- the profile in the same auth.users insert transaction. The UNIQUE constraint
--- on profiles.username remains the final authority for concurrent claims.
+-- Signup path. New web clients provide a validated username in auth metadata.
+-- For the short migration-before-deploy rollout window, legacy clients without
+-- username metadata get a random temporary handle so signup does not break.
+-- The UNIQUE constraint on profiles.username remains the final authority for
+-- concurrent claims.
 create or replace function public.handle_new_auth_user()
 returns trigger
 language plpgsql
@@ -125,6 +131,8 @@ declare
   terms_version_id uuid;
   privacy_version_id uuid;
   requested_username text;
+  candidate text;
+  attempts int;
 begin
   if not (
     coalesce(new.raw_user_meta_data, '{}'::jsonb)
@@ -136,39 +144,37 @@ begin
 
   requested_username := lower(btrim(coalesce(new.raw_user_meta_data->>'username', '')));
 
-  if requested_username = '' then
-    raise exception 'username_required'
-      using hint = 'Registration requires a username.';
-  end if;
+  if requested_username <> '' then
+    if requested_username !~ '^[a-z0-9_]{3,20}$' then
+      raise exception 'username_invalid'
+        using hint = 'Username must be 3-20 chars of a-z, 0-9 or underscore.';
+    end if;
 
-  if requested_username !~ '^[a-z0-9_]{3,20}$' then
-    raise exception 'username_invalid'
-      using hint = 'Username must be 3-20 chars of a-z, 0-9 or underscore.';
-  end if;
-
-  if requested_username in (
-    'divlab',
-    'dividendlab',
-    'admin',
-    'administrator',
-    'admins',
-    'moderator',
-    'moderators',
-    'mod',
-    'support',
-    'help',
-    'system',
-    'official',
-    'team',
-    'staff',
-    'root',
-    'api',
-    'security',
-    'medlem',
-    'anvandare'
-  ) then
-    raise exception 'username_reserved'
-      using hint = 'Username is reserved.';
+    if requested_username in (
+      'divlab',
+      'divlab_mod',
+      'dividendlab',
+      'admin',
+      'administrator',
+      'admins',
+      'moderator',
+      'moderators',
+      'mod',
+      'support',
+      'help',
+      'system',
+      'official',
+      'team',
+      'staff',
+      'root',
+      'api',
+      'security',
+      'medlem',
+      'anvandare'
+    ) then
+      raise exception 'username_reserved'
+        using hint = 'Username is reserved.';
+    end if;
   end if;
 
   select id
@@ -193,14 +199,32 @@ begin
       using hint = 'No active privacy version is configured.';
   end if;
 
-  begin
-    insert into public.profiles (id, username)
-    values (new.id, requested_username);
-  exception
-    when unique_violation then
-      raise exception 'username_taken'
-        using hint = 'Username is already taken.';
-  end;
+  if requested_username <> '' then
+    begin
+      insert into public.profiles (id, username)
+      values (new.id, requested_username);
+    exception
+      when unique_violation then
+        raise exception 'username_taken'
+          using hint = 'Username is already taken.';
+    end;
+  else
+    attempts := 0;
+    loop
+      attempts := attempts + 1;
+      candidate := 'u_' || substr(replace(gen_random_uuid()::text, '-', ''), 1, 12);
+      begin
+        insert into public.profiles (id, username)
+        values (new.id, candidate);
+        exit;
+      exception
+        when unique_violation then
+          if attempts >= 20 then
+            raise;
+          end if;
+      end;
+    end loop;
+  end if;
 
   insert into public.user_legal_acceptances (
     user_id,
