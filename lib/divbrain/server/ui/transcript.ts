@@ -1,9 +1,10 @@
 /**
- * Bounded read-only transcript loading for the DivBrain shell (Ticket 1A-9a).
+ * Bounded read-only transcript loading for the DivBrain shell.
  *
  * Differs from the context-history loader: terminal statuses such as
  * provider_unavailable, failed, and cancelled are retained for honest UI.
  * System messages are never exposed. Hidden reasoning is never present.
+ * Completed assistant messages may expose a minimal validated source subset.
  *
  * Unexpected throws fail closed as a fresh catalog `internal_error`.
  * Thrown public error codes are not preserved.
@@ -14,6 +15,7 @@
 import { createDivBrainError } from "../../errors";
 import type { DivBrainResult } from "../../results";
 import { divBrainFailureFromCode, divBrainSuccess } from "../../results";
+import type { DivBrainSource } from "../../sources";
 import type { DivBrainMessage } from "../../types";
 import {
   DIVBRAIN_REPOSITORY_MAX_PAGE_SIZE,
@@ -24,6 +26,7 @@ import {
   DIVBRAIN_SHELL_TRANSCRIPT_MAX_PAGE_ROUNDS,
   DIVBRAIN_SHELL_TRANSCRIPT_RENDER_LIMIT,
   type DivBrainShellTranscriptItem,
+  type DivBrainShellTranscriptSource,
   type DivBrainShellTranscriptView,
 } from "./types";
 
@@ -43,6 +46,27 @@ const INCOMPLETE_NOTICE =
 const BLOCKED_NOTICE = "Den här begäran kunde inte visas.";
 
 const UNAVAILABLE_NOTICE = "Meddelandet är inte tillgängligt just nu.";
+
+function mapSourceForShell(source: DivBrainSource): DivBrainShellTranscriptSource {
+  return {
+    id: source.id,
+    title: source.title,
+    ...(source.publisher ? { publisher: source.publisher } : {}),
+    ...(source.attribution ? { attribution: source.attribution } : {}),
+    ...(source.internalRoute ? { internalRoute: source.internalRoute } : {}),
+    ...(source.canonicalUrl ? { canonicalUrl: source.canonicalUrl } : {}),
+  };
+}
+
+function mapSourcesForShell(
+  sources: readonly DivBrainSource[] | undefined,
+): DivBrainShellTranscriptSource[] {
+  if (!sources || sources.length === 0) {
+    return [];
+  }
+
+  return sources.map(mapSourceForShell);
+}
 
 /**
  * Map a persisted message to a safe browser transcript item.
@@ -81,11 +105,13 @@ export function mapDivBrainMessageToShellTranscriptItem(
         };
       }
 
+      const sources = mapSourcesForShell(message.sources);
       return {
         kind: "assistant_message",
         id: message.id,
         content: message.content,
         createdAt: message.createdAt,
+        ...(sources.length > 0 ? { sources } : {}),
       };
     }
     case "provider_unavailable": {

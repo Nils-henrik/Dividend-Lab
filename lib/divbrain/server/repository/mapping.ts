@@ -10,6 +10,7 @@ import {
 } from "../../validation";
 import type { DivBrainResult } from "../../results";
 import { divBrainFailureFromCode, divBrainSuccess } from "../../results";
+import { parseDivBrainSources } from "../../sources";
 import type {
   DivBrainConversationRow,
   DivBrainMessageRow,
@@ -57,7 +58,14 @@ export function mapConversationRowToDomain(
 
 /**
  * Map a message row to the shared domain message.
- * Omits DB-only fields: safety_classification, sources, error_code.
+ *
+ * DB-only safety/error metadata remains omitted. Persisted `sources` are
+ * relevant only for completed assistant messages: on that grounded-answer
+ * path they are parsed through the canonical source validator and malformed
+ * payloads fail closed. Source-shaped DB metadata on every other role/status is
+ * ignored and never reaches the domain/UI boundary, preserving the historical
+ * repository contract and avoiding an ownership/transcript oracle from fields
+ * that are not semantically active for those rows.
  */
 export function mapMessageRowToDomain(
   row: DivBrainMessageRow,
@@ -73,6 +81,17 @@ export function mapMessageRowToDomain(
     return divBrainFailureFromCode("persistence_failed");
   }
 
+  let validatedSources: DivBrainMessage["sources"];
+  if (row.role === "assistant" && row.completion_status === "completed") {
+    const sourcesResult = parseDivBrainSources(row.sources);
+    if (!sourcesResult.ok) {
+      return divBrainFailureFromCode("persistence_failed");
+    }
+    if (sourcesResult.data.length > 0) {
+      validatedSources = [...sourcesResult.data];
+    }
+  }
+
   const message: DivBrainMessage = {
     id: row.id.toLowerCase(),
     conversationId: row.conversation_id.toLowerCase(),
@@ -80,6 +99,7 @@ export function mapMessageRowToDomain(
     content: row.content,
     completionStatus: row.completion_status,
     createdAt: row.created_at,
+    ...(validatedSources ? { sources: validatedSources } : {}),
   };
 
   return divBrainSuccess(message);

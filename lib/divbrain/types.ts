@@ -13,6 +13,7 @@ import {
   DIVBRAIN_COMPLETION_STATUSES,
   DIVBRAIN_MESSAGE_ROLES,
 } from "./constants";
+import type { DivBrainSource } from "./sources";
 
 export type DivBrainConversationId = string;
 export type DivBrainMessageId = string;
@@ -42,9 +43,12 @@ export type DivBrainConversation = {
 };
 
 /**
- * Domain message. Grounded assistant payloads use
- * `DivBrainGroundedAnswer` in `citations.ts` rather than forcing sources
- * onto every message instance. Do not store hidden reasoning here.
+ * Domain message.
+ *
+ * `sources` is optional validated evidence metadata for grounded completed
+ * assistant messages. Empty source arrays are omitted by repository mapping so
+ * ordinary/user messages preserve the compact historical shape. Hidden
+ * reasoning and provider-private metadata are never stored here.
  */
 export type DivBrainMessage = {
   id: DivBrainMessageId;
@@ -53,6 +57,7 @@ export type DivBrainMessage = {
   content: string;
   completionStatus: DivBrainCompletionStatus;
   createdAt: string;
+  sources?: readonly DivBrainSource[];
 };
 
 /** Client-facing input: create conversation. No owner/user id. */
