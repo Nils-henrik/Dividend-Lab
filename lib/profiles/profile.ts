@@ -105,22 +105,34 @@ export async function ensureProfileForUser(userId: string) {
   }
 
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("profiles")
-    .insert({
-      id: userId,
-      username: createTemporaryUsername(userId),
-    })
-    .select(
-      "id, username, display_name, bio, favorite_sector, investor_goal, avatar_path, created_at, updated_at",
-    )
-    .single<ProfileRow>();
 
-  if (error) {
-    throw new Error(error.message);
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const { data, error } = await supabase
+      .from("profiles")
+      .insert({
+        id: userId,
+        username: createTemporaryUsername(),
+      })
+      .select(
+        "id, username, display_name, bio, favorite_sector, investor_goal, avatar_path, created_at, updated_at",
+      )
+      .single<ProfileRow>();
+
+    if (!error && data) {
+      return mapProfileRow(data);
+    }
+
+    if (error?.code !== "23505") {
+      throw new Error(error?.message ?? "Kunde inte skapa användarprofilen.");
+    }
+
+    const concurrentProfile = await getProfileForUser(userId);
+    if (concurrentProfile) {
+      return concurrentProfile;
+    }
   }
 
-  return mapProfileRow(data);
+  throw new Error("Kunde inte skapa ett unikt användarnamn för profilen.");
 }
 
 export async function updateProfileForUser(
