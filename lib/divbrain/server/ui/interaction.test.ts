@@ -382,6 +382,56 @@ describe("DivBrain interaction orchestration security", () => {
 });
 
 describe("DivBrain message submission orchestration", () => {
+  it("submit authentication failure causes zero gate/repository/provider/service calls", async () => {
+    const { deps, log } = createDeps({ authenticated: false });
+    const result = await runSubmitDivBrainMessage(
+      deps,
+      form({
+        conversationId: CONV,
+        content: PROMPT,
+        actorId: OTHER,
+        userId: OTHER,
+      }),
+    );
+
+    assert.equal(result.kind, "state");
+    if (result.kind === "state") {
+      assert.equal(result.state.status, "error");
+      assertSafeState(result.state);
+    }
+    assert.equal(log.resolveActor, 1);
+    assert.equal(log.checkAccess, 0);
+    assert.equal(log.createRepository, 0);
+    assert.equal(log.createApplicationService, 0);
+    assert.deepEqual(log.submitInputs, []);
+    assert.deepEqual(log.repo, []);
+  });
+
+  it("submit Alpha denial causes zero repository/provider/service calls", async () => {
+    const { deps, log } = createDeps({ allowed: false });
+    const result = await runSubmitDivBrainMessage(
+      deps,
+      form({
+        conversationId: CONV,
+        content: PROMPT,
+        actorId: OTHER,
+        userId: OTHER,
+      }),
+    );
+
+    assert.equal(result.kind, "state");
+    if (result.kind === "state") {
+      assert.equal(result.state.status, "error");
+      assertSafeState(result.state);
+    }
+    assert.equal(log.resolveActor, 1);
+    assert.equal(log.checkAccess, 1);
+    assert.equal(log.createRepository, 0);
+    assert.equal(log.createApplicationService, 0);
+    assert.deepEqual(log.submitInputs, []);
+    assert.deepEqual(log.repo, []);
+  });
+
   it("submit constructs exactly conversationId + content and uses the application service", async () => {
     const { deps, log } = createDeps({
       submitOutcome: {
@@ -416,6 +466,9 @@ describe("DivBrain message submission orchestration", () => {
       }),
     );
 
+    assert.equal(log.resolveActor, 1);
+    assert.equal(log.checkAccess, 1);
+    assert.equal(log.createRepository, 1);
     assert.equal(log.createApplicationService, 1);
     assert.deepEqual(log.submitInputs, [
       { conversationId: CONV, content: PROMPT },

@@ -477,8 +477,14 @@ export async function runSubmitDivBrainMessage(
   formData: FormData,
 ): Promise<DivBrainInteractionResult> {
   try {
-    // Auth + Alpha are enforced again inside the application service.
-    // The action still constructs the service through Alpha wiring only.
+    // Outer boundary: every mutation independently resolves the trusted actor
+    // and enforces the Internal Alpha gate before repository/service wiring.
+    // Application-service Alpha gating remains as defense in depth.
+    const access = await resolveTrustedActorAndAccess(deps);
+    if (!access.ok) {
+      return { kind: "state", state: access.state };
+    }
+
     const conversationId = readConversationId(formData);
     const content = getFormString(formData, "content");
 
@@ -507,6 +513,7 @@ export async function runSubmitDivBrainMessage(
     const service = createApplicationService(repositoryResult.data);
 
     // Exact plain object — never spread FormData; never accept actor/role/status.
+    // Trusted browser fields remain only conversationId + content.
     const submitInput = {
       conversationId,
       content,

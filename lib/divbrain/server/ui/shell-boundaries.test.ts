@@ -238,6 +238,49 @@ describe("DivBrain shell legacy and product boundaries", () => {
     assert.equal(actions.includes("Escape"), true);
   });
 
+  it("rename and delete dialogs dismiss via dedicated backdrop without closing on dialog clicks", () => {
+    const actions = read("components/brain/DivBrainConversationActions.tsx");
+    const drawer = read("components/brain/DivBrainHistoryDrawer.tsx");
+
+    // Match the history-drawer pattern: separate aria-hidden backdrop sibling.
+    assert.equal(drawer.includes('aria-hidden="true"'), true);
+    assert.equal(drawer.includes('onClick={() => closeDrawer("user")}'), true);
+
+    const backdropMarker = 'aria-hidden="true"';
+    const backdropClose = "onClick={closeDialog}";
+    const firstBackdrop = actions.indexOf(backdropMarker);
+    const secondBackdrop = actions.indexOf(backdropMarker, firstBackdrop + 1);
+    assert.equal(firstBackdrop > -1, true);
+    assert.equal(secondBackdrop > firstBackdrop, true);
+
+    const firstClose = actions.indexOf(backdropClose, firstBackdrop);
+    const secondClose = actions.indexOf(backdropClose, secondBackdrop);
+    assert.equal(firstClose > firstBackdrop, true);
+    assert.equal(secondClose > secondBackdrop, true);
+
+    // Backdrop closes; dialog panels themselves must not wire onClick={closeDialog}.
+    const renameDialogIndex = actions.indexOf('aria-labelledby={renameTitleId}');
+    const deleteDialogIndex = actions.indexOf('aria-labelledby={deleteTitleId}');
+    assert.equal(renameDialogIndex > -1, true);
+    assert.equal(deleteDialogIndex > -1, true);
+
+    const renameDialogOpenTag = actions.slice(
+      actions.lastIndexOf("<div", renameDialogIndex),
+      actions.indexOf(">", renameDialogIndex) + 1,
+    );
+    const deleteDialogOpenTag = actions.slice(
+      actions.lastIndexOf("<div", deleteDialogIndex),
+      actions.indexOf(">", deleteDialogIndex) + 1,
+    );
+    assert.equal(renameDialogOpenTag.includes("onClick={closeDialog}"), false);
+    assert.equal(deleteDialogOpenTag.includes("onClick={closeDialog}"), false);
+
+    // Permanent delete still requires confirmed form submit — backdrop only closes.
+    assert.equal(actions.includes('name="confirmDelete"'), true);
+    assert.equal(actions.includes('value="permanent"'), true);
+    assert.equal(actions.includes("focusDivBrainElementIfConnected(menuButtonRef.current)"), true);
+  });
+
   it("page authenticates and gates before repository construction", () => {
     const page = read("app/brain/page.tsx");
     assert.equal(page.includes("requireAuthenticatedUserWithProfile"), true);
