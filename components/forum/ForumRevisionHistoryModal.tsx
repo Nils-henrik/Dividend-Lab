@@ -22,6 +22,15 @@ type Props = {
   showTitle?: boolean;
 };
 
+const FOCUSABLE_SELECTOR = [
+  "a[href]",
+  "button:not([disabled])",
+  "input:not([disabled])",
+  "select:not([disabled])",
+  "textarea:not([disabled])",
+  '[tabindex]:not([tabindex="-1"])',
+].join(",");
+
 export default function ForumRevisionHistoryModal({
   open,
   onClose,
@@ -34,30 +43,77 @@ export default function ForumRevisionHistoryModal({
   const titleId = useId();
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
   const dialogRef = useRef<HTMLDivElement | null>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     if (!open) {
       return;
     }
 
+    const previouslyFocused =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    closeButtonRef.current?.focus();
+
+    const focusFrame = window.requestAnimationFrame(() => {
+      closeButtonRef.current?.focus();
+    });
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
         event.preventDefault();
-        onClose();
+        onCloseRef.current();
+        return;
+      }
+
+      if (event.key !== "Tab") {
+        return;
+      }
+
+      const dialog = dialogRef.current;
+      if (!dialog) {
+        return;
+      }
+
+      const focusable = Array.from(
+        dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
+      ).filter((element) => !element.hasAttribute("hidden"));
+
+      if (focusable.length === 0) {
+        event.preventDefault();
+        return;
+      }
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement;
+
+      if (event.shiftKey) {
+        if (active === first || !dialog.contains(active)) {
+          event.preventDefault();
+          last?.focus();
+        }
+        return;
+      }
+
+      if (active === last || !dialog.contains(active)) {
+        event.preventDefault();
+        first?.focus();
       }
     }
 
     document.addEventListener("keydown", handleKeyDown);
 
     return () => {
+      window.cancelAnimationFrame(focusFrame);
       document.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = previousOverflow;
+      previouslyFocused?.focus();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) {
     return null;
@@ -67,6 +123,7 @@ export default function ForumRevisionHistoryModal({
     <div className="fixed inset-0 z-[100] flex min-h-dvh items-end justify-center overflow-y-auto bg-black/70 px-3 py-4 backdrop-blur-sm sm:items-center sm:px-6 sm:py-8">
       <button
         type="button"
+        tabIndex={-1}
         aria-label="Stäng redigeringshistorik"
         onClick={onClose}
         className="absolute inset-0 cursor-default"
@@ -101,9 +158,13 @@ export default function ForumRevisionHistoryModal({
 
         <div className="overflow-y-auto px-4 py-4 sm:px-5">
           {isLoading ? (
-            <p className="text-sm text-divlab-text-muted">Laddar historik...</p>
+            <p className="text-sm text-divlab-text-muted" role="status">
+              Laddar historik...
+            </p>
           ) : errorMessage ? (
-            <p className="text-sm text-divlab-text-muted">{errorMessage}</p>
+            <p className="text-sm text-divlab-text-muted" role="alert">
+              {errorMessage}
+            </p>
           ) : items.length === 0 ? (
             <p className="text-sm text-divlab-text-muted">
               Ingen redigeringshistorik hittades.
