@@ -96,8 +96,8 @@ describe("profile username requirements", () => {
 
 describe("forum author username routing", () => {
   it("does not invent medlem or display-name slug handles", () => {
-    assert.equal(getForumAuthorUsername(null, "Henrik Karlsson"), "");
-    assert.equal(getForumAuthorUsername("", "Alice"), "");
-    assert.equal(getForumAuthorUsername("alice_01", "Alice"), "alice_01");
+    assert.equal(getForumAuthorUsername(null), "");
+    assert.equal(getForumAuthorUsername(""), "");
+    assert.equal(getForumAuthorUsername("alice_01"), "alice_01");
   });
 });

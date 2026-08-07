@@ -27,7 +27,6 @@ export function getForumAuthorLabel(
 
 export function getForumAuthorUsername(
   username: string | null | undefined,
-  _displayName?: string | null | undefined,
 ) {
   return username?.trim() ?? "";
 }

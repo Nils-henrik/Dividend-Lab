@@ -350,10 +350,7 @@ export function mapThreadRecordToForumThread(
 }
 
 export function mapReplyRecordToForumPost(record: ForumReplyRecord): ForumPost {
-  const username = getForumAuthorUsername(
-    record.authorUsername,
-    record.authorDisplayName,
-  );
+  const username = getForumAuthorUsername(record.authorUsername);
 
   return {
     id: record.id,
