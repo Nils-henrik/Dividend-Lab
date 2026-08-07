@@ -7,9 +7,10 @@ import {
   getNewsArticles,
   isInternalNewsArticleHref,
 } from "@/lib/news/get-articles";
+import { sortNewsArticlesByPublishedAt } from "@/lib/news/list";
 
 export default function DashboardNewsFocus() {
-  const article = getNewsArticles()[0];
+  const [article] = sortNewsArticlesByPublishedAt(getNewsArticles());
 
   if (!article) {
     return null;
