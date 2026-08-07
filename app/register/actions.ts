@@ -6,6 +6,7 @@ import {
   LEGAL_ACCEPTANCE_METADATA_KEY,
   LEGAL_ACCEPTANCE_VALIDATION_MESSAGE,
 } from "@/lib/legal/acceptance";
+import { validateUsername } from "@/lib/profiles/username";
 import { createClient } from "@/lib/supabase/server";
 
 export type RegisterUserResult =
@@ -21,6 +22,26 @@ function mapSignUpErrorMessage(message: string) {
     normalized.includes("no_active_privacy_version")
   ) {
     return LEGAL_ACCEPTANCE_VALIDATION_MESSAGE;
+  }
+
+  if (normalized.includes("username_required")) {
+    return "Ange ett användarnamn.";
+  }
+
+  if (normalized.includes("username_invalid")) {
+    return "Användarnamnet måste vara 3–20 tecken och får bara innehålla bokstäver, siffror eller understreck.";
+  }
+
+  if (normalized.includes("username_reserved")) {
+    return "Det användarnamnet är reserverat.";
+  }
+
+  if (
+    normalized.includes("username_taken") ||
+    normalized.includes("duplicate key") ||
+    normalized.includes("profiles_username")
+  ) {
+    return "Användarnamnet är redan upptaget.";
   }
 
   if (
@@ -45,6 +66,7 @@ function mapSignUpErrorMessage(message: string) {
 export async function registerUser(input: {
   email: string;
   password: string;
+  username: string;
   legalAcceptanceConfirmed: boolean;
   redirectTo?: string;
 }): Promise<RegisterUserResult> {
@@ -53,6 +75,16 @@ export async function registerUser(input: {
       ok: false,
       reason: "validation",
       message: LEGAL_ACCEPTANCE_VALIDATION_MESSAGE,
+    };
+  }
+
+  const usernameResult = validateUsername(input.username, { required: true });
+
+  if (!usernameResult.ok) {
+    return {
+      ok: false,
+      reason: "validation",
+      message: usernameResult.error,
     };
   }
 
@@ -86,6 +118,7 @@ export async function registerUser(input: {
       emailRedirectTo,
       data: {
         [LEGAL_ACCEPTANCE_METADATA_KEY]: true,
+        username: usernameResult.username,
       },
     },
   });

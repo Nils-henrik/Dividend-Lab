@@ -9,7 +9,7 @@ import { formatForumRelativeActivity } from "@/lib/forum/format";
 
 function getActorHandle(username: string | null | undefined) {
   const cleaned = username?.replace(/^@/, "").trim();
-  return cleaned ? `@${cleaned}` : "@medlem";
+  return cleaned ? `@${cleaned}` : "En medlem";
 }
 
 function getCategoryLabel(type: UserNotificationType | "message_summary") {
