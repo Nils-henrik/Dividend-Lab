@@ -1,9 +1,6 @@
 import DashboardShell from "@/components/dashboard/DashboardShell";
 import { requireAuthenticatedUserWithProfile } from "@/lib/auth/session";
-import {
-  getForumThreadsByLatestActivity,
-  mapThreadRecordToForumThread,
-} from "@/lib/forum/queries";
+import { getDashboardForumThreadsByLatestActivity } from "@/lib/forum/dashboard-queries";
 import type { ForumThread } from "@/types/forum";
 
 export default async function DashboardPage() {
@@ -11,14 +8,7 @@ export default async function DashboardPage() {
   let forumDiscussions: ForumThread[] = [];
 
   try {
-    const records = await getForumThreadsByLatestActivity(5);
-    forumDiscussions = records.flatMap((record) => {
-      try {
-        return [mapThreadRecordToForumThread(record)];
-      } catch {
-        return [];
-      }
-    });
+    forumDiscussions = await getDashboardForumThreadsByLatestActivity(5);
   } catch {
     forumDiscussions = [];
   }
