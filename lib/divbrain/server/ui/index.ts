@@ -1,5 +1,5 @@
 /**
- * DivBrain shell UI server surface (Tickets 1A-9a / 1A-9b).
+ * DivBrain shell UI server surface (Tickets 1A-9a / 1A-9b / 1C-3).
  *
  * Server-only by convention (`lib/divbrain/server/`). Must never be imported
  * by client components.
@@ -14,6 +14,7 @@ export {
   type DivBrainShellConversationListItem,
   type DivBrainShellSelectedConversation,
   type DivBrainShellTranscriptItem,
+  type DivBrainShellTranscriptSource,
   type DivBrainShellTranscriptView,
   type DivBrainShellViewModel,
 } from "./types";
