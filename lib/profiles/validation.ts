@@ -1,4 +1,5 @@
 import type { ProfileFormValues, ProfileUpdateInput } from "./types";
+import { validateUsername } from "./username";
 
 export const PROFILE_LIMITS = {
   usernameMin: 3,
@@ -9,8 +10,6 @@ export const PROFILE_LIMITS = {
   investorGoalMax: 120,
 };
 
-const USERNAME_PATTERN = /^[a-z0-9_]{3,20}$/;
-
 function normalizeOptionalValue(value: string | null | undefined) {
   const normalizedValue = value?.trim() ?? "";
 
@@ -19,16 +18,14 @@ function normalizeOptionalValue(value: string | null | undefined) {
 
 export function validateProfileValues(values: ProfileFormValues) {
   const errors: string[] = [];
-  const username = normalizeOptionalValue(values.username)?.toLowerCase() ?? null;
+  const usernameResult = validateUsername(values.username, { required: true });
   const displayName = normalizeOptionalValue(values.displayName);
   const bio = normalizeOptionalValue(values.bio);
   const favoriteSector = normalizeOptionalValue(values.favoriteSector);
   const investorGoal = normalizeOptionalValue(values.investorGoal);
 
-  if (username && !USERNAME_PATTERN.test(username)) {
-    errors.push(
-      "Användarnamnet måste vara 3–20 tecken och får bara innehålla bokstäver, siffror eller understreck.",
-    );
+  if (!usernameResult.ok) {
+    errors.push(usernameResult.error);
   }
 
   if (displayName && displayName.length > PROFILE_LIMITS.displayNameMax) {
@@ -53,7 +50,7 @@ export function validateProfileValues(values: ProfileFormValues) {
   return {
     errors,
     values: {
-      username,
+      username: usernameResult.ok ? usernameResult.username : null,
       displayName,
       bio,
       favoriteSector,

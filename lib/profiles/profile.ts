@@ -5,6 +5,7 @@ import type {
   ProfileUpdateInput,
   UserProfile,
 } from "./types";
+import { createTemporaryUsername } from "./username";
 import { validateProfileValues } from "./validation";
 
 function mapProfileRow(row: ProfileRow): UserProfile {
@@ -106,7 +107,10 @@ export async function ensureProfileForUser(userId: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("profiles")
-    .insert({ id: userId })
+    .insert({
+      id: userId,
+      username: createTemporaryUsername(userId),
+    })
     .select(
       "id, username, display_name, bio, favorite_sector, investor_goal, avatar_path, created_at, updated_at",
     )

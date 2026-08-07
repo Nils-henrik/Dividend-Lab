@@ -45,7 +45,7 @@ export default function NewConversationForm({
           <input
             name="username"
             type="text"
-            placeholder="@anvandare"
+            placeholder="@anvandarnamn"
             defaultValue={initialUsername}
             autoComplete="off"
             className="w-full divlab-input px-4 py-3 text-sm text-divlab-text placeholder:text-divlab-text-subtle"

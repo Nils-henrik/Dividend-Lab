@@ -14,6 +14,7 @@ type Props = {
 export default function RegisterForm({ redirectTo }: Props) {
   const errorId = useId();
   const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [legalAccepted, setLegalAccepted] = useState(false);
@@ -27,6 +28,19 @@ export default function RegisterForm({ redirectTo }: Props) {
     setSuccessMessage("");
 
     const normalizedEmail = email.trim().toLowerCase();
+    const normalizedUsername = username.trim().toLowerCase();
+
+    if (!normalizedUsername) {
+      setError("Ange ett användarnamn.");
+      return;
+    }
+
+    if (!/^[a-z0-9_]{3,20}$/.test(normalizedUsername)) {
+      setError(
+        "Användarnamnet måste vara 3–20 tecken och får bara innehålla bokstäver, siffror eller understreck.",
+      );
+      return;
+    }
 
     if (!normalizedEmail.includes("@")) {
       setError("Ange en giltig e-postadress.");
@@ -48,6 +62,7 @@ export default function RegisterForm({ redirectTo }: Props) {
     const result = await registerUser({
       email: normalizedEmail,
       password,
+      username: normalizedUsername,
       legalAcceptanceConfirmed: legalAccepted,
       redirectTo,
     });
@@ -85,6 +100,32 @@ export default function RegisterForm({ redirectTo }: Props) {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+        <label className="block">
+          <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-divlab-text-muted">
+            Användarnamn
+          </span>
+          <input
+            type="text"
+            value={username}
+            onChange={(event) => {
+              setUsername(event.target.value);
+              setError("");
+              setSuccessMessage("");
+            }}
+            autoComplete="username"
+            minLength={3}
+            maxLength={20}
+            pattern="[A-Za-z0-9_]{3,20}"
+            required
+            aria-invalid={Boolean(error)}
+            aria-describedby={error ? errorId : undefined}
+            className="divlab-input w-full px-4 py-3"
+          />
+          <span className="mt-2 block text-xs leading-5 text-divlab-text-muted">
+            3–20 tecken. Endast bokstäver, siffror eller understreck.
+          </span>
+        </label>
+
         <label className="block">
           <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-divlab-text-muted">
             E-post
