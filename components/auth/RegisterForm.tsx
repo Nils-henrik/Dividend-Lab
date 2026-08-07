@@ -5,6 +5,7 @@ import { type FormEvent, useId, useState } from "react";
 import { registerUser } from "@/app/register/actions";
 import PrimaryButton from "@/components/ui/Button";
 import { LEGAL_ACCEPTANCE_VALIDATION_MESSAGE } from "@/lib/legal/acceptance";
+import { validateUsername } from "@/lib/profiles/username";
 import { DIVLAB_BRAND_NAME } from "@/lib/site/brand";
 
 type Props = {
@@ -28,22 +29,15 @@ export default function RegisterForm({ redirectTo }: Props) {
     setSuccessMessage("");
 
     const normalizedEmail = email.trim().toLowerCase();
-    const normalizedUsername = username.trim().toLowerCase();
-
-    if (!normalizedUsername) {
-      setError("Ange ett användarnamn.");
-      return;
-    }
-
-    if (!/^[a-z0-9_]{3,20}$/.test(normalizedUsername)) {
-      setError(
-        "Användarnamnet måste vara 3–20 tecken och får bara innehålla bokstäver, siffror eller understreck.",
-      );
-      return;
-    }
+    const usernameResult = validateUsername(username, { required: true });
 
     if (!normalizedEmail.includes("@")) {
       setError("Ange en giltig e-postadress.");
+      return;
+    }
+
+    if (!usernameResult.ok) {
+      setError(usernameResult.error);
       return;
     }
 
@@ -62,7 +56,7 @@ export default function RegisterForm({ redirectTo }: Props) {
     const result = await registerUser({
       email: normalizedEmail,
       password,
-      username: normalizedUsername,
+      username: usernameResult.username,
       legalAcceptanceConfirmed: legalAccepted,
       redirectTo,
     });
@@ -102,32 +96,6 @@ export default function RegisterForm({ redirectTo }: Props) {
       <form onSubmit={handleSubmit} className="space-y-5" noValidate>
         <label className="block">
           <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-divlab-text-muted">
-            Användarnamn
-          </span>
-          <input
-            type="text"
-            value={username}
-            onChange={(event) => {
-              setUsername(event.target.value);
-              setError("");
-              setSuccessMessage("");
-            }}
-            autoComplete="username"
-            minLength={3}
-            maxLength={20}
-            pattern="[A-Za-z0-9_]{3,20}"
-            required
-            aria-invalid={Boolean(error)}
-            aria-describedby={error ? errorId : undefined}
-            className="divlab-input w-full px-4 py-3"
-          />
-          <span className="mt-2 block text-xs leading-5 text-divlab-text-muted">
-            3–20 tecken. Endast bokstäver, siffror eller understreck.
-          </span>
-        </label>
-
-        <label className="block">
-          <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-divlab-text-muted">
             E-post
           </span>
           <input
@@ -144,6 +112,40 @@ export default function RegisterForm({ redirectTo }: Props) {
             aria-describedby={error ? errorId : undefined}
             className="divlab-input w-full px-4 py-3"
           />
+        </label>
+
+        <label className="block">
+          <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-divlab-text-muted">
+            Användarnamn
+          </span>
+          <div className="relative">
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-sm text-divlab-text-muted"
+            >
+              @
+            </span>
+            <input
+              type="text"
+              value={username}
+              onChange={(event) => {
+                setUsername(event.target.value);
+                setError("");
+                setSuccessMessage("");
+              }}
+              autoComplete="username"
+              minLength={3}
+              maxLength={20}
+              pattern="[A-Za-z0-9_]{3,20}"
+              required
+              aria-invalid={Boolean(error)}
+              aria-describedby={error ? errorId : undefined}
+              className="divlab-input w-full py-3 pl-9 pr-4"
+            />
+          </div>
+          <span className="mt-2 block text-xs leading-5 text-divlab-text-muted">
+            Ditt offentliga namn på DivLab. 3–20 tecken: a–z, 0–9 eller _.
+          </span>
         </label>
 
         <label className="block">
