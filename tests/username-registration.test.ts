@@ -11,6 +11,7 @@ import {
 
 const reservedUsernames = [
   "divlab",
+  "divlab_mod",
   "dividendlab",
   "admin",
   "administrator",
@@ -46,6 +47,7 @@ describe("username validation", () => {
     assert.equal(validateUsername("admin").ok, false);
     assert.equal(validateUsername("medlem").ok, false);
     assert.equal(validateUsername("anvandare").ok, false);
+    assert.equal(validateUsername("DivLab_Mod").ok, false);
 
     const valid = validateUsername("  Alice_01 ");
     assert.equal(valid.ok, true);
