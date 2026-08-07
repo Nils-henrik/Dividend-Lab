@@ -146,3 +146,16 @@ the domain assembly object. Unit tests use `UnconfiguredProvider` only.
 - 1B: feed mapped provider request to a real adapter; persist usage hooks
 - 1C: Learning retriever emits `DivBrainSource` into this assembler
 - 1D: tune budget constants; enforce rate/token limits at the service layer
+
+### 1C-1 Learning retrieval integration point
+
+Ticket **1C-1** implements pure lexical retrieval in
+`lib/divbrain/server/learning/` (see [`learning-retrieval.md`](./learning-retrieval.md)).
+
+Exact later service hook (not wired yet):
+
+1. `retrieveDivBrainLearningSources(userQuery)` after guardrails allow the turn
+2. Pass `result.sources` as `assembleDivBrainContext({ sources })`
+3. Build numbered citations from `includedSources` / hit citation inputs
+
+Retrieved Learning excerpts remain `untrusted_context` via existing delimiters.

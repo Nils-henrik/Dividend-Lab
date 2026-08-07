@@ -5,8 +5,8 @@ Shared DivBrain domain language for server and client.
 ## Boundaries
 
 - **Shared (this folder today):** `constants`, `types`, `errors`, `results`, `validation`, `sources`, `citations`, `guardrails` — safe to import from server or client.
-- **Server-only by convention:** `server/guardrails`, `server/guardrail-evals`, `server/providers`, `server/identity`, `server/policy`, `server/context`, `server/context-evals`, `server/repository`, `server/service`, `server/access`, `server/ui` — detection logic, eval fixtures, identity/policy text, context assembly, provider boundary, conversation persistence, application-service orchestration, Internal Alpha access, and the read-only `/brain` shell loader. These modules live under `lib/divbrain/server/` and **must never be imported by client components** or other browser-safe UI. Package-level `import "server-only"` is deferred until an approved dependency/foundation ticket; folder placement and this README are the current boundary.
-- Later tickets add real provider adapters, Learning retrieval, and interactive `/brain` composer wiring under the same server-only rule.
+- **Server-only by convention:** `server/guardrails`, `server/guardrail-evals`, `server/providers`, `server/identity`, `server/policy`, `server/context`, `server/context-evals`, `server/repository`, `server/service`, `server/access`, `server/ui`, `server/learning` — detection logic, eval fixtures, identity/policy text, context assembly, provider boundary, conversation persistence, application-service orchestration, Internal Alpha access, the read-only `/brain` shell loader, and Learning lexical retrieval. These modules live under `lib/divbrain/server/` and **must never be imported by client components** or other browser-safe UI. Package-level `import "server-only"` is deferred until an approved dependency/foundation ticket; folder placement and this README are the current boundary.
+- Later tickets add real provider adapters, Learning→service wiring, and interactive `/brain` composer wiring under the same server-only rule.
 - Browser-safe modules must never import server-only DivBrain code.
 - Never expose secrets, tokens, emails, raw provider/DB errors, stack traces, or hidden reasoning across the browser boundary.
 
@@ -253,6 +253,14 @@ Operational `/brain` diagnostics (`server/ui/diagnostic.ts`) may emit a single f
 - Orphan citations and unused final sources are rejected.
 - Final grounded-answer payloads contain only retained cited sources (aliases are not retained in the payload).
 - Unknown extra fields on parse/validate input are ignored and not retained in output.
+
+## Learning retrieval (Ticket 1C-1)
+
+- `server/learning/` — deterministic lexical retrieval over `data/learning`.
+- Public entry: `retrieveDivBrainLearningSources(query)`.
+- Emits validated `DivBrainSource` (`divlab_learning`) with `/learning/<slug>` routes only.
+- No vectors, provider calls, or live `/brain` wiring in this ticket.
+- Docs: `docs/divbrain/learning-retrieval.md`.
 
 ## Plain text and rendering
 
