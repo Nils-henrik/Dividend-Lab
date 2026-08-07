@@ -59,10 +59,13 @@ export function mapConversationRowToDomain(
 /**
  * Map a message row to the shared domain message.
  *
- * DB-only safety/error metadata remains omitted. Persisted `sources` are parsed
- * through the canonical source validator and are exposed only for completed
- * assistant messages. Malformed or misplaced source payloads fail closed as a
- * persistence failure rather than reaching history/UI consumers.
+ * DB-only safety/error metadata remains omitted. Persisted `sources` are
+ * relevant only for completed assistant messages: on that grounded-answer
+ * path they are parsed through the canonical source validator and malformed
+ * payloads fail closed. Source-shaped DB metadata on every other role/status is
+ * ignored and never reaches the domain/UI boundary, preserving the historical
+ * repository contract and avoiding an ownership/transcript oracle from fields
+ * that are not semantically active for those rows.
  */
 export function mapMessageRowToDomain(
   row: DivBrainMessageRow,
@@ -78,16 +81,15 @@ export function mapMessageRowToDomain(
     return divBrainFailureFromCode("persistence_failed");
   }
 
-  const sourcesResult = parseDivBrainSources(row.sources);
-  if (!sourcesResult.ok) {
-    return divBrainFailureFromCode("persistence_failed");
-  }
-
-  if (
-    sourcesResult.data.length > 0 &&
-    (row.role !== "assistant" || row.completion_status !== "completed")
-  ) {
-    return divBrainFailureFromCode("persistence_failed");
+  let validatedSources: DivBrainMessage["sources"];
+  if (row.role === "assistant" && row.completion_status === "completed") {
+    const sourcesResult = parseDivBrainSources(row.sources);
+    if (!sourcesResult.ok) {
+      return divBrainFailureFromCode("persistence_failed");
+    }
+    if (sourcesResult.data.length > 0) {
+      validatedSources = [...sourcesResult.data];
+    }
   }
 
   const message: DivBrainMessage = {
@@ -97,9 +99,7 @@ export function mapMessageRowToDomain(
     content: row.content,
     completionStatus: row.completion_status,
     createdAt: row.created_at,
-    ...(sourcesResult.data.length > 0
-      ? { sources: [...sourcesResult.data] }
-      : {}),
+    ...(validatedSources ? { sources: validatedSources } : {}),
   };
 
   return divBrainSuccess(message);
