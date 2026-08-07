@@ -10,6 +10,7 @@ import {
 } from "../../validation";
 import type { DivBrainResult } from "../../results";
 import { divBrainFailureFromCode, divBrainSuccess } from "../../results";
+import { parseDivBrainSources } from "../../sources";
 import type {
   DivBrainConversationRow,
   DivBrainMessageRow,
@@ -57,7 +58,11 @@ export function mapConversationRowToDomain(
 
 /**
  * Map a message row to the shared domain message.
- * Omits DB-only fields: safety_classification, sources, error_code.
+ *
+ * DB-only safety/error metadata remains omitted. Persisted `sources` are parsed
+ * through the canonical source validator and are exposed only for completed
+ * assistant messages. Malformed or misplaced source payloads fail closed as a
+ * persistence failure rather than reaching history/UI consumers.
  */
 export function mapMessageRowToDomain(
   row: DivBrainMessageRow,
@@ -73,6 +78,18 @@ export function mapMessageRowToDomain(
     return divBrainFailureFromCode("persistence_failed");
   }
 
+  const sourcesResult = parseDivBrainSources(row.sources);
+  if (!sourcesResult.ok) {
+    return divBrainFailureFromCode("persistence_failed");
+  }
+
+  if (
+    sourcesResult.data.length > 0 &&
+    (row.role !== "assistant" || row.completion_status !== "completed")
+  ) {
+    return divBrainFailureFromCode("persistence_failed");
+  }
+
   const message: DivBrainMessage = {
     id: row.id.toLowerCase(),
     conversationId: row.conversation_id.toLowerCase(),
@@ -80,6 +97,9 @@ export function mapMessageRowToDomain(
     content: row.content,
     completionStatus: row.completion_status,
     createdAt: row.created_at,
+    ...(sourcesResult.data.length > 0
+      ? { sources: [...sourcesResult.data] }
+      : {}),
   };
 
   return divBrainSuccess(message);
