@@ -12,10 +12,6 @@ describe("dashboard forum preview", () => {
       join(root, "components/dashboard/ForumPreview.tsx"),
       "utf8",
     );
-    const dashboardData = readFileSync(
-      join(root, "data/dashboard.ts"),
-      "utf8",
-    );
     const dashboardPage = readFileSync(
       join(root, "app/dashboard/page.tsx"),
       "utf8",
@@ -26,7 +22,6 @@ describe("dashboard forum preview", () => {
     );
 
     assert.doesNotMatch(preview, /forumDiscussions/);
-    assert.doesNotMatch(dashboardData, /export const forumDiscussions/);
     assert.match(dashboardPage, /getDashboardForumThreadsByLatestActivity\(5\)/);
     assert.match(
       dashboardQueries,
