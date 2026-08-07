@@ -21,6 +21,14 @@ import type {
   ForumReplyRecord,
   ForumThreadRecord,
 } from "@/lib/forum/types";
+import {
+  buildForumReplyHistory,
+  buildForumThreadHistory,
+  mapReplyRevisionRow,
+  mapThreadRevisionRow,
+  type ForumReplyHistoryEntry,
+  type ForumThreadHistoryEntry,
+} from "@/lib/forum/history";
 import { createClient } from "@/lib/supabase/server";
 import { tryGetSupabaseConfig } from "@/lib/supabase/config";
 import { getAvatarPublicUrl } from "@/lib/profiles/identity";
@@ -72,6 +80,8 @@ type ThreadRow = {
   body: string;
   created_at: string;
   updated_at: string;
+  content_version?: number | null;
+  edited_at?: string | null;
   profiles: ThreadProfileRow | ThreadProfileRow[] | null;
 };
 
@@ -81,6 +91,9 @@ type ReplyRow = {
   author_id: string;
   body: string;
   created_at: string;
+  updated_at?: string | null;
+  content_version?: number | null;
+  edited_at?: string | null;
   profiles: ThreadProfileRow | ThreadProfileRow[] | null;
 };
 
@@ -106,6 +119,8 @@ function mapThreadRow(row: ThreadRow, replyCount = 0): ForumThreadRecord {
     body: row.body,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    contentVersion: row.content_version ?? 1,
+    editedAt: row.edited_at ?? null,
     authorUsername: profile?.username ?? null,
     authorDisplayName: profile?.display_name ?? null,
     authorProfileCreatedAt: profile?.created_at ?? null,
@@ -124,6 +139,9 @@ function mapReplyRow(row: ReplyRow): ForumReplyRecord {
     authorId: row.author_id,
     body: row.body,
     createdAt: row.created_at,
+    updatedAt: row.updated_at ?? row.created_at,
+    contentVersion: row.content_version ?? 1,
+    editedAt: row.edited_at ?? null,
     authorUsername: profile?.username ?? null,
     authorDisplayName: profile?.display_name ?? null,
     authorProfileCreatedAt: profile?.created_at ?? null,
@@ -344,6 +362,8 @@ export function mapThreadRecordToForumThread(
     replies: record.replyCount,
     lastActivity: formatForumRelativeActivity(activityTimestamp),
     createdAt: record.createdAt,
+    contentVersion: record.contentVersion,
+    editedAt: record.editedAt,
     excerpt: getForumExcerpt(record.body),
     tags: [],
   };
@@ -370,6 +390,8 @@ export function mapReplyRecordToForumPost(record: ForumReplyRecord): ForumPost {
     content: record.body,
     reactions: [],
     authorUserId: record.authorId,
+    contentVersion: record.contentVersion,
+    editedAt: record.editedAt,
   };
 }
 
@@ -390,6 +412,8 @@ export async function getForumThreadsFromDatabase() {
       body,
       created_at,
       updated_at,
+      content_version,
+      edited_at,
       profiles:author_id (
         ${forumAuthorProfileSelect}
       )
@@ -475,6 +499,8 @@ export async function getForumThreadBySlugFromDatabase(slug: string) {
       body,
       created_at,
       updated_at,
+      content_version,
+      edited_at,
       profiles:author_id (
         ${forumAuthorProfileSelect}
       )
@@ -514,6 +540,9 @@ export async function getForumRepliesByThreadIdFromDatabase(threadId: string) {
       author_id,
       body,
       created_at,
+      updated_at,
+      content_version,
+      edited_at,
       profiles:author_id (
         ${forumAuthorProfileSelect}
       )
@@ -694,4 +723,128 @@ export function getForumCategoriesWithCounts(categoryCounts: ForumCategoryCounts
 
 export function isForumCategorySlug(value: string) {
   return forumCategories.some((category) => category.slug === value);
+}
+
+function isMissingForumRevisionTableError(error: {
+  code?: string;
+  message?: string;
+}) {
+  return (
+    error.code === "PGRST205" ||
+    error.message?.includes("forum_thread_revisions") ||
+    error.message?.includes("forum_reply_revisions") ||
+    error.message?.includes("content_version") ||
+    error.message?.includes("edited_at")
+  );
+}
+
+export async function getForumThreadRevisionHistory(
+  threadId: string,
+): Promise<ForumThreadHistoryEntry[]> {
+  const supabase = await getForumSupabaseClient();
+  if (!supabase) {
+    return [];
+  }
+
+  const { data: thread, error: threadError } = await supabase
+    .from("forum_threads")
+    .select("id, title, body, content_version, edited_at, created_at, updated_at")
+    .eq("id", threadId)
+    .maybeSingle();
+
+  if (threadError) {
+    if (
+      isMissingForumTableError(threadError) ||
+      isMissingForumRevisionTableError(threadError)
+    ) {
+      return [];
+    }
+
+    throw new Error(threadError.message);
+  }
+
+  if (!thread) {
+    return [];
+  }
+
+  const { data: revisions, error: revisionsError } = await supabase
+    .from("forum_thread_revisions")
+    .select("id, thread_id, version, title, body, archived_at")
+    .eq("thread_id", threadId)
+    .order("version", { ascending: false });
+
+  if (revisionsError) {
+    if (isMissingForumRevisionTableError(revisionsError)) {
+      return [];
+    }
+
+    throw new Error(revisionsError.message);
+  }
+
+  const currentVersion = thread.content_version ?? 1;
+  const currentTimestamp =
+    thread.edited_at ?? thread.updated_at ?? thread.created_at;
+
+  return buildForumThreadHistory({
+    currentVersion,
+    currentTitle: thread.title,
+    currentBody: thread.body,
+    currentTimestamp,
+    revisions: (revisions ?? []).map(mapThreadRevisionRow),
+  });
+}
+
+export async function getForumReplyRevisionHistory(
+  replyId: string,
+): Promise<ForumReplyHistoryEntry[]> {
+  const supabase = await getForumSupabaseClient();
+  if (!supabase) {
+    return [];
+  }
+
+  const { data: reply, error: replyError } = await supabase
+    .from("forum_replies")
+    .select("id, body, content_version, edited_at, created_at, updated_at")
+    .eq("id", replyId)
+    .maybeSingle();
+
+  if (replyError) {
+    if (
+      isMissingForumTableError(replyError) ||
+      isMissingForumRevisionTableError(replyError)
+    ) {
+      return [];
+    }
+
+    throw new Error(replyError.message);
+  }
+
+  if (!reply) {
+    return [];
+  }
+
+  const { data: revisions, error: revisionsError } = await supabase
+    .from("forum_reply_revisions")
+    .select("id, reply_id, version, body, archived_at")
+    .eq("reply_id", replyId)
+    .order("version", { ascending: false });
+
+  if (revisionsError) {
+    if (isMissingForumRevisionTableError(revisionsError)) {
+      return [];
+    }
+
+    throw new Error(revisionsError.message);
+  }
+
+  const currentVersion = reply.content_version ?? 1;
+  const currentTimestamp =
+    reply.edited_at ?? reply.updated_at ?? reply.created_at;
+
+  return buildForumReplyHistory({
+    currentVersion,
+    currentBody: reply.body,
+    currentTimestamp,
+    revisions: (revisions ?? []).map(mapReplyRevisionRow),
+  });
 }

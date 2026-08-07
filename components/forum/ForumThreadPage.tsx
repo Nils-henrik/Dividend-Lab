@@ -255,6 +255,8 @@ export default function ForumThreadPage({
                 isAuthenticated={isAuthenticated}
                 loginHref={loginHref}
                 currentUsername={currentUsername}
+                currentUserId={currentUserId}
+                isDemoContent={isDemoThread}
                 reactionsDisabled={isOpeningAuthor}
                 onReply={handleReplyToThread}
                 onQuote={handleQuoteOpeningPost}
@@ -275,6 +277,8 @@ export default function ForumThreadPage({
                     isAuthenticated={isAuthenticated}
                     loginHref={loginHref}
                     currentUsername={currentUsername}
+                    currentUserId={currentUserId}
+                    isDemoContent
                     onQuote={handleDemoQuote}
                     onReply={() =>
                       openReplyEditor({
@@ -316,6 +320,8 @@ export default function ForumThreadPage({
                     isAuthenticated={isAuthenticated}
                     loginHref={loginHref}
                     currentUsername={currentUsername}
+                    currentUserId={currentUserId}
+                    isDemoContent={isDemoThread}
                     onQuote={handleQuoteFromPost}
                     onReply={handleReplyToPost}
                     reactionsDisabled={

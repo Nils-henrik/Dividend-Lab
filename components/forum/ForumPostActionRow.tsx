@@ -7,6 +7,8 @@ type Props = {
   loginHref: string;
   onReply: () => void;
   onQuote: () => void;
+  canEdit?: boolean;
+  onEdit?: () => void;
 };
 
 export default function ForumPostActionRow({
@@ -14,6 +16,8 @@ export default function ForumPostActionRow({
   loginHref,
   onReply,
   onQuote,
+  canEdit = false,
+  onEdit,
 }: Props) {
   const buttonClassName = "divlab-btn-ghost px-2 py-0.5 text-[11px]";
 
@@ -38,6 +42,11 @@ export default function ForumPostActionRow({
       <button type="button" onClick={onQuote} className={buttonClassName}>
         Citera
       </button>
+      {canEdit && onEdit ? (
+        <button type="button" onClick={onEdit} className={buttonClassName}>
+          Redigera
+        </button>
+      ) : null}
     </div>
   );
 }
