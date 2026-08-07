@@ -25,15 +25,15 @@ function mapSignUpErrorMessage(message: string) {
   }
 
   if (normalized.includes("username_required")) {
-    return "Ange ett användarnamn.";
+    return "Välj ett användarnamn.";
   }
 
   if (normalized.includes("username_invalid")) {
-    return "Användarnamnet måste vara 3–20 tecken och får bara innehålla bokstäver, siffror eller understreck.";
+    return "Användarnamnet måste vara 3–20 tecken och får bara innehålla a–z, 0–9 och _.";
   }
 
   if (normalized.includes("username_reserved")) {
-    return "Det användarnamnet är reserverat.";
+    return "Det användarnamnet är reserverat. Välj ett annat.";
   }
 
   if (
@@ -111,6 +111,24 @@ export async function registerUser(input: {
   const emailRedirectTo = `${origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`;
 
   const supabase = await createClient();
+
+  // Friendly preflight for the normal "already taken" case. This is advisory:
+  // the profiles.username UNIQUE constraint remains authoritative so concurrent
+  // registrations cannot claim the same handle.
+  const { data: existingUsername, error: usernameLookupError } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("username", usernameResult.username)
+    .maybeSingle();
+
+  if (!usernameLookupError && existingUsername) {
+    return {
+      ok: false,
+      reason: "validation",
+      message: "Användarnamnet är redan upptaget.",
+    };
+  }
+
   const { data, error } = await supabase.auth.signUp({
     email: normalizedEmail,
     password: input.password,
