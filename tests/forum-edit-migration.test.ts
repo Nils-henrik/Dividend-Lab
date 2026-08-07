@@ -41,6 +41,14 @@ describe("forum content revisions migration invariants", () => {
     assert.match(migration, /new\.thread_id := old\.thread_id/);
     assert.match(
       migration,
+      /before update of title, body on public\.forum_threads/,
+    );
+    assert.match(
+      migration,
+      /before update of body on public\.forum_replies/,
+    );
+    assert.match(
+      migration,
       /revoke all on function public\.archive_forum_thread_revision\(\) from anon, authenticated/,
     );
     assert.match(
@@ -90,6 +98,14 @@ describe("forum content revisions migration invariants", () => {
     );
     assert.match(migration, /using \(author_id = auth\.uid\(\)\)/);
     assert.match(migration, /with check \(author_id = auth\.uid\(\)\)/);
+    assert.match(
+      migration,
+      /revoke delete, truncate, references, trigger, update\s+on public\.forum_threads from public, anon, authenticated/,
+    );
+    assert.match(
+      migration,
+      /revoke delete, truncate, references, trigger, update\s+on public\.forum_replies from public, anon, authenticated/,
+    );
     assert.match(
       migration,
       /grant update \(title, body\) on public\.forum_threads to authenticated/,
