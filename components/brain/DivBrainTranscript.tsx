@@ -1,6 +1,8 @@
+import Link from "next/link";
 import { formatDivBrainMessageTimestamp } from "@/lib/divbrain/dates";
 import type {
   DivBrainShellTranscriptItem,
+  DivBrainShellTranscriptSource,
   DivBrainShellTranscriptView,
 } from "@/lib/divbrain/server/ui";
 
@@ -23,8 +25,8 @@ export default function DivBrainTranscript({ transcript }: Props) {
     return (
       <div className="flex flex-1 items-center px-5 py-8 sm:px-6">
         <p className="max-w-xl text-sm leading-6 text-divlab-text-secondary">
-          Den här konversationen har inga meddelanden ännu. Frågefunktionen
-          öppnas i nästa steg.
+          Den här konversationen har inga meddelanden ännu. Ställ en fråga
+          nedan för att börja.
         </p>
       </div>
     );
@@ -80,6 +82,9 @@ function DivBrainMessageItem({ item }: { item: DivBrainShellTranscriptItem }) {
         <p className="whitespace-pre-wrap break-words text-sm leading-6 text-divlab-text">
           {item.content}
         </p>
+        {item.sources && item.sources.length > 0 ? (
+          <DivBrainTranscriptSources sources={item.sources} />
+        ) : null}
         <time
           className="mt-2 block text-[11px] tabular-nums text-divlab-text-muted"
           dateTime={item.createdAt}
@@ -127,4 +132,76 @@ function DivBrainMessageItem({ item }: { item: DivBrainShellTranscriptItem }) {
       </time>
     </article>
   );
+}
+
+function DivBrainTranscriptSources({
+  sources,
+}: {
+  sources: readonly DivBrainShellTranscriptSource[];
+}) {
+  return (
+    <div className="mt-3 border-t divlab-border-neutral pt-3">
+      <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-divlab-text-muted">
+        Källor
+      </p>
+      <ol className="mt-2 space-y-1.5 text-xs leading-5 text-divlab-text-secondary">
+        {sources.map((source, index) => (
+          <li key={source.id} className="flex min-w-0 gap-2">
+            <span
+              className="shrink-0 tabular-nums text-divlab-text-muted"
+              aria-hidden="true"
+            >
+              [{index + 1}]
+            </span>
+            <div className="min-w-0">
+              <DivBrainSourceLink source={source} />
+              {source.publisher || source.attribution ? (
+                <p className="truncate text-[11px] text-divlab-text-muted">
+                  {[source.publisher, source.attribution]
+                    .filter(Boolean)
+                    .filter((value, valueIndex, values) =>
+                      values.indexOf(value) === valueIndex,
+                    )
+                    .join(" · ")}
+                </p>
+              ) : null}
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
+function DivBrainSourceLink({
+  source,
+}: {
+  source: DivBrainShellTranscriptSource;
+}) {
+  const className =
+    "break-words font-medium text-divlab-text underline decoration-divlab-border underline-offset-2 transition hover:decoration-current";
+
+  if (source.internalRoute) {
+    return (
+      <Link href={source.internalRoute} className={className}>
+        {source.title}
+      </Link>
+    );
+  }
+
+  if (source.canonicalUrl) {
+    return (
+      <a
+        href={source.canonicalUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={className}
+      >
+        {source.title}
+        <span className="sr-only"> (öppnas i ny flik)</span>
+      </a>
+    );
+  }
+
+  return <span className="font-medium text-divlab-text">{source.title}</span>;
 }
