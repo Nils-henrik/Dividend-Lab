@@ -52,6 +52,8 @@ type FakeRepoOptions = {
   listMessagesFails?: boolean;
   mutationLog?: string[];
   lastListPageSize?: { value?: number };
+  lastArchiveFilter?: { value?: string };
+  expectedArchiveFilter?: "active" | "archived";
 };
 
 function createFakeRepository(
@@ -87,8 +89,14 @@ function createFakeRepository(
       if (options.lastListPageSize) {
         options.lastListPageSize.value = params.pageSize;
       }
+      if (options.lastArchiveFilter) {
+        options.lastArchiveFilter.value = params.archiveFilter ?? "active";
+      }
       assert.equal(params.actorId, ACTOR);
-      assert.equal(params.archiveFilter ?? "active", "active");
+      assert.equal(
+        params.archiveFilter ?? "active",
+        options.expectedArchiveFilter ?? "active",
+      );
       if (options.listConversationsFails) {
         return {
           ok: false as const,
@@ -151,11 +159,66 @@ describe("DivBrain shell page loader data states", () => {
     });
     assert.equal(view.state, "empty");
     if (view.state === "empty") {
+      assert.equal(view.archiveScope, "active");
       assert.equal(view.conversations.length, 0);
       assert.equal(view.selectedConversationId, null);
       assert.equal(view.hasMoreConversations, false);
     }
     assertNoSensitiveFields(view);
+  });
+
+  it("defaults malformed archive scope to active", async () => {
+    const lastArchiveFilter: { value?: string } = {};
+    const view = await loadDivBrainShellData({
+      actorId: ACTOR,
+      archiveScope: "all",
+      repository: createFakeRepository({
+        conversations: [],
+        lastArchiveFilter,
+        expectedArchiveFilter: "active",
+      }),
+    });
+    assert.equal(view.state, "empty");
+    if (view.state === "empty") {
+      assert.equal(view.archiveScope, "active");
+    }
+    assert.equal(lastArchiveFilter.value, "active");
+  });
+
+  it("lists archived conversations when archive scope is archived", async () => {
+    const lastArchiveFilter: { value?: string } = {};
+    const view = await loadDivBrainShellData({
+      actorId: ACTOR,
+      archiveScope: "archived",
+      repository: createFakeRepository({
+        conversations: [conversation(CONV_A, "Arkiv", 0, iso(1))],
+        lastArchiveFilter,
+        expectedArchiveFilter: "archived",
+      }),
+    });
+    assert.equal(view.state, "ready");
+    if (view.state === "ready") {
+      assert.equal(view.archiveScope, "archived");
+      assert.equal(view.selectedConversation.id, CONV_A);
+      assert.equal(view.selectedConversation.archived, true);
+    }
+    assert.equal(lastArchiveFilter.value, "archived");
+    assert.equal(JSON.stringify(view).includes("nextCursor"), false);
+  });
+
+  it("returns archived empty state when no archived conversations exist", async () => {
+    const view = await loadDivBrainShellData({
+      actorId: ACTOR,
+      archiveScope: "archived",
+      repository: createFakeRepository({
+        conversations: [],
+        expectedArchiveFilter: "archived",
+      }),
+    });
+    assert.equal(view.state, "empty");
+    if (view.state === "empty") {
+      assert.equal(view.archiveScope, "archived");
+    }
   });
 
   it("selects the first active conversation by default", async () => {

@@ -1,15 +1,18 @@
 /**
- * Read-only DivBrain shell page loader (Ticket 1A-9a).
+ * DivBrain shell page loader (Tickets 1A-9a / 1A-9b).
  *
  * Dependency-injected for deterministic tests. Actor id is trusted server data.
- * Selected conversation id from navigation is treated as untrusted.
+ * Selected conversation id and archive scope from navigation are untrusted.
  *
- * Viewing never creates, updates, archives, restores, or deletes conversations.
  * Unexpected repository or mapping throws collapse to data_unavailable.
  *
  * Server-only — must never be imported by client components.
  */
 
+import {
+  parseDivBrainArchiveScope,
+  type DivBrainArchiveScope,
+} from "../../brain-routes";
 import { isDivBrainUuid } from "../repository/ids";
 import type {
   DivBrainConversationRepository,
@@ -32,6 +35,8 @@ export type LoadDivBrainShellDataParams = {
   actorId: DivBrainTrustedActorId;
   /** Untrusted query parameter — may be missing, malformed, or cross-owner. */
   selectedConversationId?: string | null;
+  /** Untrusted archive query — malformed values resolve to active. */
+  archiveScope?: string | string[] | null;
   repository: DivBrainConversationRepository;
   /**
    * Optional fixed-category diagnostic sink.
@@ -58,6 +63,7 @@ function toListItem(
 
 async function buildShellViewFromConversationList(
   params: LoadDivBrainShellDataParams,
+  archiveScope: DivBrainArchiveScope,
   listItems: readonly DivBrainConversation[],
   hasMoreConversations: boolean,
 ): Promise<DivBrainShellViewModel> {
@@ -71,6 +77,7 @@ async function buildShellViewFromConversationList(
     if (conversations.length === 0) {
       return {
         state: "empty",
+        archiveScope,
         conversations,
         hasMoreConversations,
         selectedConversationId: null,
@@ -90,6 +97,7 @@ async function buildShellViewFromConversationList(
 
     return {
       state: "ready",
+      archiveScope,
       conversations,
       hasMoreConversations,
       selectedConversation: {
@@ -105,6 +113,7 @@ async function buildShellViewFromConversationList(
   if (!isDivBrainUuid(requestedId)) {
     return {
       state: "conversation_not_found",
+      archiveScope,
       conversations,
       hasMoreConversations,
     };
@@ -124,6 +133,7 @@ async function buildShellViewFromConversationList(
     ) {
       return {
         state: "conversation_not_found",
+        archiveScope,
         conversations,
         hasMoreConversations,
       };
@@ -142,8 +152,8 @@ async function buildShellViewFromConversationList(
     return { state: "data_unavailable" };
   }
 
-  // Explicit archived selection may be rendered read-only even though the
-  // active list omits it — ensure the selected item appears in the rail.
+  // Explicit selection may be rendered even when it is outside the current
+  // scope list — ensure the selected item appears in the rail.
   const listIds = new Set(conversations.map((item) => item.id));
   const selectedListItem = toListItem(owned.data);
   const railConversations = listIds.has(selectedListItem.id)
@@ -152,6 +162,7 @@ async function buildShellViewFromConversationList(
 
   return {
     state: "ready",
+    archiveScope,
     conversations: railConversations,
     hasMoreConversations,
     selectedConversation: {
@@ -168,12 +179,13 @@ async function loadDivBrainShellDataInner(
   params: LoadDivBrainShellDataParams,
 ): Promise<DivBrainShellViewModel> {
   const diagnose = params.diagnose ?? noopDivBrainShellDiagnosticSink;
+  const archiveScope = parseDivBrainArchiveScope(params.archiveScope);
 
   let listResult;
   try {
     listResult = await params.repository.listConversations({
       actorId: params.actorId,
-      archiveFilter: "active",
+      archiveFilter: archiveScope,
       pageSize: DIVBRAIN_SHELL_CONVERSATION_PAGE_SIZE,
     });
   } catch {
@@ -188,6 +200,7 @@ async function loadDivBrainShellDataInner(
   try {
     return await buildShellViewFromConversationList(
       params,
+      archiveScope,
       listResult.data.items,
       listResult.data.nextCursor !== null,
     );

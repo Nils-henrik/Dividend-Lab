@@ -1,5 +1,5 @@
 /**
- * DivBrain shell UI server surface (Ticket 1A-9a).
+ * DivBrain shell UI server surface (Tickets 1A-9a / 1A-9b).
  *
  * Server-only by convention (`lib/divbrain/server/`). Must never be imported
  * by client components.
@@ -10,12 +10,20 @@ export {
   DIVBRAIN_SHELL_TRANSCRIPT_MAX_PAGE_ROUNDS,
   DIVBRAIN_SHELL_TRANSCRIPT_MAX_SCANNED_ROWS,
   DIVBRAIN_SHELL_TRANSCRIPT_RENDER_LIMIT,
+  type DivBrainArchiveScope,
   type DivBrainShellConversationListItem,
   type DivBrainShellSelectedConversation,
   type DivBrainShellTranscriptItem,
   type DivBrainShellTranscriptView,
   type DivBrainShellViewModel,
 } from "./types";
+
+export {
+  DIVBRAIN_ACTION_STATE_IDLE,
+  createDivBrainActionState,
+  type DivBrainActionState,
+  type DivBrainActionStatus,
+} from "./action-state";
 
 export {
   formatDivBrainConversationTimestamp,

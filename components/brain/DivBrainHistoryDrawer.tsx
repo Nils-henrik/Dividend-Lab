@@ -2,6 +2,10 @@
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
+import {
+  buildDivBrainHref,
+  type DivBrainArchiveScope,
+} from "@/lib/divbrain/brain-routes";
 import { formatDivBrainConversationTimestamp } from "@/lib/divbrain/dates";
 import {
   DIVBRAIN_HISTORY_DRAWER_DESKTOP_MEDIA_QUERY,
@@ -11,6 +15,8 @@ import {
   trapDivBrainDialogTabKey,
   type DivBrainHistoryDrawerCloseReason,
 } from "@/lib/divbrain/history-drawer-a11y";
+import DivBrainCreateConversationButton from "./DivBrainCreateConversationButton";
+import DivBrainScopeSwitch from "./DivBrainScopeSwitch";
 
 export type DivBrainHistoryConversationItem = {
   id: string;
@@ -23,12 +29,14 @@ type Props = {
   conversations: readonly DivBrainHistoryConversationItem[];
   selectedConversationId: string | null;
   hasMoreConversations: boolean;
+  archiveScope: DivBrainArchiveScope;
 };
 
 export default function DivBrainHistoryDrawer({
   conversations,
   selectedConversationId,
   hasMoreConversations,
+  archiveScope,
 }: Props) {
   const [open, setOpen] = useState(false);
   const panelId = useId();
@@ -159,17 +167,8 @@ export default function DivBrainHistoryDrawer({
             </div>
 
             <div className="border-b divlab-border-neutral px-4 py-3">
-              <button
-                type="button"
-                disabled
-                aria-disabled="true"
-                className="divlab-btn-ghost flex w-full min-h-10 cursor-not-allowed items-center justify-between opacity-60"
-              >
-                <span>Ny konversation</span>
-                <span className="text-[10px] uppercase tracking-[0.14em] text-divlab-text-muted">
-                  Nästa steg
-                </span>
-              </button>
+              <DivBrainCreateConversationButton />
+              <DivBrainScopeSwitch archiveScope={archiveScope} />
             </div>
 
             <nav
@@ -178,7 +177,9 @@ export default function DivBrainHistoryDrawer({
             >
               {conversations.length === 0 ? (
                 <p className="px-3 py-4 text-sm leading-6 text-divlab-text-muted">
-                  Inga konversationer ännu.
+                  {archiveScope === "archived"
+                    ? "Inga arkiverade konversationer."
+                    : "Inga konversationer ännu."}
                 </p>
               ) : (
                 <ul className="space-y-1">
@@ -192,7 +193,10 @@ export default function DivBrainHistoryDrawer({
                     return (
                       <li key={conversation.id}>
                         <Link
-                          href={`/brain?conversation=${encodeURIComponent(conversation.id)}`}
+                          href={buildDivBrainHref({
+                            archiveScope,
+                            conversationId: conversation.id,
+                          })}
                           aria-current={selected ? "page" : undefined}
                           onClick={() => closeDrawer("navigate")}
                           className={`block rounded-xl px-3 py-2.5 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-divlab-blue ${

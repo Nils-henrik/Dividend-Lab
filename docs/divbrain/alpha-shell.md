@@ -10,21 +10,20 @@ Depends on:
 
 ## Responsibility
 
-Ticket **1A-9a** owns the visual and read-only product foundation:
+Ticket **1A-9a** owns the visual product foundation:
 
 - authenticated + allowlisted page access
 - DivBrain header and Intern Alpha badge
 - provider-unavailable honesty
 - desktop conversation rail
 - accessible mobile/tablet history drawer
-- read-only conversation list and transcript
+- conversation list and transcript rendering
 - empty, not-found, and data-unavailable states
-- disabled composer layout
 - persistent non-advice / privacy note
 - legacy mock cleanup
 - `/dashboard/brain` → `/brain` redirect
 
-It does **not** submit messages, create conversations, or generate AI answers.
+Ticket **1A-9b** adds conversation mutations and honest submission — see [`alpha-interaction.md`](./alpha-interaction.md). No real AI answers are generated.
 
 ## Canonical route
 
@@ -82,7 +81,9 @@ Least-privilege grants (migration `20260804183000_grant_divbrain_service_role_pr
 | `public.divbrain_conversations` | `SELECT`, `INSERT`, `UPDATE`, `DELETE` |
 | `public.divbrain_messages` | `SELECT`, `INSERT` only |
 
-RLS and table grants are separate layers. Client-facing authenticated permissions are unchanged (`anon` receives no DivBrain privileges; authenticated message writes remain denied). After this change merges, Production still needs the migration applied before the permission failure clears. Fixed-category diagnostics remain in place until Production verification succeeds.
+RLS and table grants are separate layers. Client-facing authenticated permissions are unchanged (`anon` receives no DivBrain privileges; authenticated message writes remain denied).
+
+**Production status:** migration `20260804183000_grant_divbrain_service_role_privileges.sql` has been applied to the approved Production project. The authenticated Production `/brain` read path has been browser-verified after the grant. Fixed-category diagnostics remain available for future read-path failures. Do not claim a Vercel diagnostic-log check passed unless it was actually observed for the request under review.
 
 ## Read-only shell data flow
 
@@ -178,16 +179,9 @@ Persisted `provider_unavailable` rows use the catalog meaning:
 
 > AI-motorn är inte tillgänglig just nu.
 
-## Disabled composer boundary
+## Composer boundary
 
-Visual composer shell only:
-
-- textarea disabled
-- send button disabled
-- no form action / onSubmit / server action / API call
-- placeholder: `Frågefunktionen öppnas i nästa steg.`
-
-Ticket **1A-9b** replaces this with real interaction.
+Ticket **1A-9b** provides a functional composer for active owned conversations and a read-only archived notice with Restore. Submission goes through Ticket 1A-7b; the default provider remains `UnconfiguredProvider`.
 
 ## Desktop / tablet / mobile layout
 
@@ -279,10 +273,9 @@ Focused checks at 1440×900, 768×1024, and 390×844 where session permits. Stat
 
 | Item | Owner |
 |------|--------|
-| Create / rename / archive / restore / delete | Ticket 1A-9b |
-| Functional composer + submit | Ticket 1A-9b |
 | Real AI provider / SDK / network calls | Phase 1B |
 | Learning retrieval / citations | Phase 1C |
+| Streaming / cancel-generation network behavior | Phase 1B+ |
 
 ## Testing
 
