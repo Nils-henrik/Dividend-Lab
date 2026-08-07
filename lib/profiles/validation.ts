@@ -1,5 +1,5 @@
 import type { ProfileFormValues, ProfileUpdateInput } from "./types";
-import { validateUsername } from "./username";
+import { normalizeUsername, validateUsername } from "./username";
 
 export const PROFILE_LIMITS = {
   usernameMin: 3,
@@ -16,15 +16,23 @@ function normalizeOptionalValue(value: string | null | undefined) {
   return normalizedValue === "" ? null : normalizedValue;
 }
 
-export function validateProfileValues(values: ProfileFormValues) {
+export function validateProfileValues(
+  values: ProfileFormValues,
+  options: { currentUsername?: string | null } = {},
+) {
   const errors: string[] = [];
+  const normalizedRequestedUsername = normalizeUsername(values.username);
+  const normalizedCurrentUsername = normalizeUsername(options.currentUsername);
+  const keepsExistingUsername =
+    normalizedRequestedUsername !== null &&
+    normalizedRequestedUsername === normalizedCurrentUsername;
   const usernameResult = validateUsername(values.username, { required: true });
   const displayName = normalizeOptionalValue(values.displayName);
   const bio = normalizeOptionalValue(values.bio);
   const favoriteSector = normalizeOptionalValue(values.favoriteSector);
   const investorGoal = normalizeOptionalValue(values.investorGoal);
 
-  if (!usernameResult.ok) {
+  if (!usernameResult.ok && !keepsExistingUsername) {
     errors.push(usernameResult.error);
   }
 
@@ -50,7 +58,12 @@ export function validateProfileValues(values: ProfileFormValues) {
   return {
     errors,
     values: {
-      username: usernameResult.ok ? usernameResult.username : null,
+      username:
+        usernameResult.ok
+          ? usernameResult.username
+          : keepsExistingUsername
+            ? normalizedRequestedUsername
+            : null,
       displayName,
       bio,
       favoriteSector,
