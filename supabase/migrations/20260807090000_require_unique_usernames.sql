@@ -1,50 +1,10 @@
 -- Require unique usernames for all profiles.
--- Backfill null usernames with collision-resistant temporary handles,
--- then enforce NOT NULL + reserved-name checks at the database level.
+-- Existing non-null usernames are preserved exactly as-is.
+-- Null/blank legacy usernames are backfilled with collision-resistant handles,
+-- then NOT NULL and a database-enforced username policy protect future writes.
 -- Signup metadata username is applied by handle_new_auth_user.
 
--- Rename any existing reserved usernames so the reserved check can be added.
-do $$
-declare
-  r record;
-  candidate text;
-  attempts int;
-begin
-  for r in
-    select id, username
-    from public.profiles
-    where username is not null
-      and lower(btrim(username)) in (
-        'divlab',
-        'admin',
-        'moderator',
-        'support',
-        'system',
-        'medlem',
-        'anvandare'
-      )
-  loop
-    attempts := 0;
-    loop
-      attempts := attempts + 1;
-      candidate := 'u_' || substr(replace(gen_random_uuid()::text, '-', ''), 1, 12);
-      begin
-        update public.profiles
-        set username = candidate
-        where id = r.id;
-        exit;
-      exception
-        when unique_violation then
-          if attempts >= 20 then
-            raise;
-          end if;
-      end;
-    end loop;
-  end loop;
-end
-$$;
-
--- Backfill null / blank usernames with non-sequential temporary handles.
+-- Backfill only profiles that do not already have a real username.
 do $$
 declare
   r record;
@@ -88,23 +48,73 @@ alter table public.profiles
     btrim(username) <> ''
   );
 
+-- Do not add a blanket reserved-name CHECK: an old account may already own a
+-- now-reserved handle, and this migration must never silently rename or fail on
+-- an existing real username. Instead, reject reserved handles on new inserts
+-- and whenever a username is actually changed. Unchanged legacy handles are
+-- grandfathered until their owner chooses another username.
 alter table public.profiles
   drop constraint if exists profiles_username_reserved;
 
-alter table public.profiles
-  add constraint profiles_username_reserved check (
-    lower(btrim(username)) not in (
-      'divlab',
-      'admin',
-      'moderator',
-      'support',
-      'system',
-      'medlem',
-      'anvandare'
-    )
-  );
+create or replace function public.enforce_profile_username_policy()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if new.username is null or btrim(new.username) = '' then
+    raise exception 'username_required'
+      using errcode = '23514', hint = 'A profile username is required.';
+  end if;
 
--- Signup path: require validated username from auth metadata and store it on profile create.
+  new.username := lower(btrim(new.username));
+
+  if new.username !~ '^[a-z0-9_]{3,20}$' then
+    raise exception 'username_invalid'
+      using errcode = '23514', hint = 'Username must be 3-20 chars of a-z, 0-9 or underscore.';
+  end if;
+
+  if (
+    tg_op = 'INSERT'
+    or new.username is distinct from old.username
+  ) and new.username in (
+    'divlab',
+    'dividendlab',
+    'admin',
+    'administrator',
+    'admins',
+    'moderator',
+    'moderators',
+    'mod',
+    'support',
+    'help',
+    'system',
+    'official',
+    'team',
+    'staff',
+    'root',
+    'api',
+    'security',
+    'medlem',
+    'anvandare'
+  ) then
+    raise exception 'username_reserved'
+      using errcode = '23514', hint = 'Username is reserved.';
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists enforce_profile_username_policy on public.profiles;
+create trigger enforce_profile_username_policy
+  before insert or update of username on public.profiles
+  for each row
+  execute function public.enforce_profile_username_policy();
+
+-- Signup path: require validated username from auth metadata and store it on
+-- the profile in the same auth.users insert transaction. The UNIQUE constraint
+-- on profiles.username remains the final authority for concurrent claims.
 create or replace function public.handle_new_auth_user()
 returns trigger
 language plpgsql
@@ -138,10 +148,22 @@ begin
 
   if requested_username in (
     'divlab',
+    'dividendlab',
     'admin',
+    'administrator',
+    'admins',
     'moderator',
+    'moderators',
+    'mod',
     'support',
+    'help',
     'system',
+    'official',
+    'team',
+    'staff',
+    'root',
+    'api',
+    'security',
     'medlem',
     'anvandare'
   ) then
