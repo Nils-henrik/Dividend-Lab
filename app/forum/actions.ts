@@ -5,7 +5,9 @@ import { redirect } from "next/navigation";
 import { requireAuthenticatedUser } from "@/lib/auth/session";
 import { createForumThreadSlug } from "@/lib/forum/format";
 import {
+  getForumReplyRevisionHistory,
   getForumThreadBySlugFromDatabase,
+  getForumThreadRevisionHistory,
   isForumCategorySlug,
 } from "@/lib/forum/queries";
 import {
@@ -24,6 +26,12 @@ function getFormString(formData: FormData, key: string) {
   const value = formData.get(key);
 
   return typeof value === "string" ? value : "";
+}
+
+function revalidateForumThreadPaths(threadSlug: string) {
+  revalidatePath("/forum");
+  revalidatePath("/dashboard");
+  revalidatePath(`/forum/${threadSlug}`);
 }
 
 export async function createForumThreadAction(
@@ -132,10 +140,191 @@ export async function createForumReplyAction(
     };
   }
 
-  revalidatePath("/forum");
-  revalidatePath("/dashboard");
-  revalidatePath(`/forum/${threadSlug}`);
+  revalidateForumThreadPaths(threadSlug);
   redirect(`/forum/${threadSlug}#reply-${reply.id}`);
+}
+
+export async function updateForumThreadAction(
+  _state: ForumActionState,
+  formData: FormData,
+): Promise<ForumActionState> {
+  const user = await requireAuthenticatedUser();
+  const threadId = getFormString(formData, "threadId").trim();
+  const threadSlug = getFormString(formData, "threadSlug").trim();
+  const titleValidation = validateForumTitle(getFormString(formData, "title"));
+  const bodyValidation = validateForumBody(getFormString(formData, "body"));
+
+  if (!threadId || !threadSlug) {
+    return {
+      status: "error",
+      message: "Diskussionen kunde inte hittas.",
+    };
+  }
+
+  if (titleValidation.error) {
+    return {
+      status: "error",
+      message: titleValidation.error,
+    };
+  }
+
+  if (bodyValidation.error) {
+    return {
+      status: "error",
+      message: bodyValidation.error,
+    };
+  }
+
+  const thread = await getForumThreadBySlugFromDatabase(threadSlug);
+
+  if (!thread || thread.id !== threadId) {
+    return {
+      status: "error",
+      message: "Diskussionen kunde inte hittas.",
+    };
+  }
+
+  if (thread.authorId !== user.id) {
+    return {
+      status: "error",
+      message: "Du kan bara redigera dina egna inlägg.",
+    };
+  }
+
+  if (
+    thread.title === titleValidation.title &&
+    thread.body === bodyValidation.body
+  ) {
+    return {
+      status: "success",
+      message: "",
+    };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("forum_threads")
+    .update({
+      title: titleValidation.title,
+      body: bodyValidation.body,
+    })
+    .eq("id", thread.id)
+    .eq("author_id", user.id);
+
+  if (error) {
+    return {
+      status: "error",
+      message: "Inlägget kunde inte sparas. Försök igen.",
+    };
+  }
+
+  revalidateForumThreadPaths(thread.slug);
+  return {
+    status: "success",
+    message: "",
+  };
+}
+
+export async function updateForumReplyAction(
+  _state: ForumActionState,
+  formData: FormData,
+): Promise<ForumActionState> {
+  const user = await requireAuthenticatedUser();
+  const replyId = getFormString(formData, "replyId").trim();
+  const threadSlug = getFormString(formData, "threadSlug").trim();
+  const bodyValidation = validateForumBody(getFormString(formData, "body"));
+
+  if (!replyId || !threadSlug) {
+    return {
+      status: "error",
+      message: "Svaret kunde inte hittas.",
+    };
+  }
+
+  if (bodyValidation.error) {
+    return {
+      status: "error",
+      message: bodyValidation.error,
+    };
+  }
+
+  const thread = await getForumThreadBySlugFromDatabase(threadSlug);
+
+  if (!thread) {
+    return {
+      status: "error",
+      message: "Diskussionen kunde inte hittas.",
+    };
+  }
+
+  const supabase = await createClient();
+  const { data: reply, error: replyError } = await supabase
+    .from("forum_replies")
+    .select("id, thread_id, author_id, body")
+    .eq("id", replyId)
+    .maybeSingle();
+
+  if (replyError || !reply || reply.thread_id !== thread.id) {
+    return {
+      status: "error",
+      message: "Svaret kunde inte hittas.",
+    };
+  }
+
+  if (reply.author_id !== user.id) {
+    return {
+      status: "error",
+      message: "Du kan bara redigera dina egna inlägg.",
+    };
+  }
+
+  if (reply.body === bodyValidation.body) {
+    return {
+      status: "success",
+      message: "",
+    };
+  }
+
+  const { error } = await supabase
+    .from("forum_replies")
+    .update({
+      body: bodyValidation.body,
+    })
+    .eq("id", reply.id)
+    .eq("author_id", user.id);
+
+  if (error) {
+    return {
+      status: "error",
+      message: "Svaret kunde inte sparas. Försök igen.",
+    };
+  }
+
+  revalidateForumThreadPaths(threadSlug);
+  return {
+    status: "success",
+    message: "",
+  };
+}
+
+export async function fetchForumThreadRevisionHistoryAction(threadId: string) {
+  const normalizedId = threadId.trim();
+
+  if (!normalizedId) {
+    return [];
+  }
+
+  return getForumThreadRevisionHistory(normalizedId);
+}
+
+export async function fetchForumReplyRevisionHistoryAction(replyId: string) {
+  const normalizedId = replyId.trim();
+
+  if (!normalizedId) {
+    return [];
+  }
+
+  return getForumReplyRevisionHistory(normalizedId);
 }
 
 export async function toggleForumReactionAction(

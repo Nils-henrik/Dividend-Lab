@@ -37,6 +37,8 @@ export type ForumThread = {
   replies: number;
   lastActivity: string;
   createdAt?: string;
+  contentVersion?: number;
+  editedAt?: string | null;
   excerpt: string;
   tags: string[];
   sticky?: boolean;
@@ -54,6 +56,8 @@ export type ForumPost = {
   content: string;
   reactions: ForumReaction[];
   authorUserId?: string;
+  contentVersion?: number;
+  editedAt?: string | null;
 };
 
 export type ForumHelpfulMember = {

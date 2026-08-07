@@ -1,11 +1,22 @@
 "use client";
 
+import { useCallback, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import ProfileAvatar from "@/components/account/ProfileAvatar";
+import {
+  fetchForumReplyRevisionHistoryAction,
+} from "@/app/forum/actions";
+import { canEditForumContent } from "@/lib/forum/edit-eligibility";
 import type { ForumPost as ForumPostType } from "@/types/forum";
 import type { ForumReactionSummary } from "@/lib/forum/reactions";
+import ForumEditedLabel from "./ForumEditedLabel";
 import ForumPostActionRow from "./ForumPostActionRow";
 import ForumQualityReactions from "./ForumQualityReactions";
+import ForumReplyEditForm from "./ForumReplyEditForm";
+import ForumRevisionHistoryModal, {
+  type ForumRevisionHistoryItem,
+} from "./ForumRevisionHistoryModal";
 import ForumUserActions from "./ForumUserActions";
 
 type Props = {
@@ -15,6 +26,8 @@ type Props = {
   isAuthenticated: boolean;
   loginHref: string;
   currentUsername?: string | null;
+  currentUserId?: string | null;
+  isDemoContent?: boolean;
   onQuote: (post: ForumPostType) => void;
   onReply: (post: ForumPostType) => void;
   reactionsDisabled?: boolean;
@@ -28,11 +41,14 @@ export default function ForumPost({
   isAuthenticated,
   loginHref,
   currentUsername,
+  currentUserId = null,
+  isDemoContent = false,
   onQuote,
   onReply,
   reactionsDisabled = false,
   tone = "a",
 }: Props) {
+  const router = useRouter();
   const username = post.username.replace(/^@/, "");
   const normalizedUsername = username.toLowerCase();
   const profileHref = `/profile/${encodeURIComponent(normalizedUsername)}`;
@@ -40,6 +56,41 @@ export default function ForumPost({
     normalizedUsername,
   )}`;
   const isSelf = currentUsername?.toLowerCase() === normalizedUsername;
+  const canEdit = canEditForumContent({
+    isDemoContent,
+    isAuthenticated,
+    currentUserId,
+    authorUserId: post.authorUserId,
+  });
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyItems, setHistoryItems] = useState<ForumRevisionHistoryItem[]>(
+    [],
+  );
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+
+  const handleEditSuccess = useCallback(() => {
+    setIsEditing(false);
+    router.refresh();
+  }, [router]);
+
+  const openHistory = useCallback(async () => {
+    setHistoryOpen(true);
+    setHistoryLoading(true);
+    setHistoryError(null);
+
+    try {
+      const items = await fetchForumReplyRevisionHistoryAction(post.id);
+      setHistoryItems(items);
+    } catch {
+      setHistoryError("Historiken kunde inte laddas. Försök igen.");
+      setHistoryItems([]);
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, [post.id]);
 
   return (
     <article
@@ -83,31 +134,62 @@ export default function ForumPost({
         </aside>
 
         <div>
-          <p className="mb-2 text-[11px] text-divlab-text-muted">{post.timestamp}</p>
-
-          <p className="max-w-4xl whitespace-pre-wrap text-sm leading-6 text-divlab-text-secondary">
-            {post.content}
-          </p>
-
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-3 pt-3">
-            <ForumQualityReactions
-              targetType="reply"
-              targetId={post.id}
-              threadSlug={threadSlug}
-              reactions={reactions}
-              isAuthenticated={isAuthenticated}
-              loginHref={loginHref}
-              disabled={reactionsDisabled}
-            />
-            <ForumPostActionRow
-              isAuthenticated={isAuthenticated}
-              loginHref={loginHref}
-              onReply={() => onReply(post)}
-              onQuote={() => onQuote(post)}
-            />
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <p className="text-[11px] text-divlab-text-muted">{post.timestamp}</p>
+            {post.editedAt ? (
+              <ForumEditedLabel
+                editedAt={post.editedAt}
+                onOpenHistory={openHistory}
+              />
+            ) : null}
           </div>
+
+          {isEditing ? (
+            <ForumReplyEditForm
+              replyId={post.id}
+              threadSlug={threadSlug}
+              initialBody={post.content}
+              onCancel={() => setIsEditing(false)}
+              onSuccess={handleEditSuccess}
+            />
+          ) : (
+            <p className="max-w-4xl whitespace-pre-wrap text-sm leading-6 text-divlab-text-secondary">
+              {post.content}
+            </p>
+          )}
+
+          {!isEditing && (
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-3 pt-3">
+              <ForumQualityReactions
+                targetType="reply"
+                targetId={post.id}
+                threadSlug={threadSlug}
+                reactions={reactions}
+                isAuthenticated={isAuthenticated}
+                loginHref={loginHref}
+                disabled={reactionsDisabled}
+              />
+              <ForumPostActionRow
+                isAuthenticated={isAuthenticated}
+                loginHref={loginHref}
+                onReply={() => onReply(post)}
+                onQuote={() => onQuote(post)}
+                canEdit={canEdit}
+                onEdit={() => setIsEditing(true)}
+              />
+            </div>
+          )}
         </div>
       </div>
+
+      <ForumRevisionHistoryModal
+        open={historyOpen}
+        onClose={() => setHistoryOpen(false)}
+        title="Redigeringshistorik"
+        items={historyItems}
+        isLoading={historyLoading}
+        errorMessage={historyError}
+      />
     </article>
   );
 }

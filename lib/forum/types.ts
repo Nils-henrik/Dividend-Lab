@@ -4,7 +4,7 @@ export const FORUM_TITLE_MAX_LENGTH = 120;
 export const FORUM_BODY_MAX_LENGTH = 5000;
 
 export type ForumActionState = {
-  status: "idle" | "error";
+  status: "idle" | "error" | "success";
   message: string;
 };
 
@@ -22,6 +22,8 @@ export type ForumThreadRecord = {
   body: string;
   createdAt: string;
   updatedAt: string;
+  contentVersion: number;
+  editedAt: string | null;
   authorUsername: string | null;
   authorDisplayName: string | null;
   authorProfileCreatedAt: string | null;
@@ -39,6 +41,9 @@ export type ForumReplyRecord = {
   authorId: string;
   body: string;
   createdAt: string;
+  updatedAt: string;
+  contentVersion: number;
+  editedAt: string | null;
   authorUsername: string | null;
   authorDisplayName: string | null;
   authorProfileCreatedAt: string | null;

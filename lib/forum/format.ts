@@ -68,6 +68,28 @@ export function formatForumTimestamp(value: string) {
   });
 }
 
+/** Clickable edited marker shown near a post timestamp, e.g. "Redigerad 11:24". */
+export function formatForumEditedLabel(value: string) {
+  const date = parseDate(value);
+
+  if (!date) {
+    return "Redigerad";
+  }
+
+  const time = formatStockholmTime(date);
+
+  if (isSameStockholmDay(date, new Date())) {
+    return `Redigerad ${time}`;
+  }
+
+  const dayLabel = formatStockholmDateTime(date, {
+    day: "numeric",
+    month: "short",
+  });
+
+  return `Redigerad ${dayLabel} ${time}`;
+}
+
 export function formatForumRelativeActivity(value: string | null) {
   if (!value) {
     return "—";
