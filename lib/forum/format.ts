@@ -6,8 +6,6 @@ import {
   parseDate,
 } from "@/lib/time";
 
-const PUBLIC_MEMBER_FALLBACK = "medlem";
-
 export function getForumAuthorLabel(
   username: string | null | undefined,
   displayName: string | null | undefined,
@@ -29,21 +27,8 @@ export function getForumAuthorLabel(
 
 export function getForumAuthorUsername(
   username: string | null | undefined,
-  displayName: string | null | undefined,
 ) {
-  const normalizedUsername = username?.trim();
-
-  if (normalizedUsername) {
-    return normalizedUsername;
-  }
-
-  const normalizedDisplayName = displayName?.trim();
-
-  if (normalizedDisplayName) {
-    return normalizedDisplayName.replace(/\s+/g, "-").toLowerCase();
-  }
-
-  return PUBLIC_MEMBER_FALLBACK;
+  return username?.trim() ?? "";
 }
 
 export function getForumAuthorInitials(

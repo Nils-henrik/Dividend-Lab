@@ -138,7 +138,6 @@ export default async function ForumThreadRoute({ params }: Props) {
       thread = mapThreadRecordToForumThread(threadRecord);
       openingAuthorUsername = getForumAuthorUsername(
         threadRecord.authorUsername,
-        threadRecord.authorDisplayName,
       );
       openingAuthorInitials = getForumAuthorInitials(
         threadRecord.authorUsername,

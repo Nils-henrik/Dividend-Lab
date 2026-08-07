@@ -175,10 +175,11 @@ export default function ProfileEditForm({
                 minLength={PROFILE_LIMITS.usernameMin}
                 maxLength={PROFILE_LIMITS.usernameMax}
                 pattern="[A-Za-z0-9_]{3,20}"
+                required
                 className="divlab-input w-full px-4 py-3 text-white"
               />
               <span className="mt-2 block text-xs text-gray-600">
-                Offentliga användarnamn sparas med gemener. Använd{" "}
+                Obligatoriskt. Offentliga användarnamn sparas med gemener. Använd{" "}
                 {PROFILE_LIMITS.usernameMin} till {PROFILE_LIMITS.usernameMax}{" "}
                 bokstäver, siffror eller understreck.
               </span>
