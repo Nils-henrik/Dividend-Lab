@@ -139,7 +139,10 @@ export async function updateProfileForUser(
   userId: string,
   values: ProfileFormValues & { avatarPath?: string | null },
 ) {
-  const validation = validateProfileValues(values);
+  const existingProfile = await getProfileForUser(userId);
+  const validation = validateProfileValues(values, {
+    currentUsername: existingProfile?.username ?? null,
+  });
 
   if (validation.errors.length > 0) {
     return {
