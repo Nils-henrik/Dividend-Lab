@@ -1,8 +1,8 @@
 /**
- * Browser-safe DivBrain shell view-model contracts (Tickets 1A-9a / 1A-9b).
+ * Browser-safe DivBrain shell view-model contracts (Tickets 1A-9a / 1A-9b / 1C-3).
  *
  * Must never include actor/user/owner ids, emails, profiles, raw repository
- * errors, system messages, policy/context, or environment state.
+ * errors, system messages, policy/context, source excerpts, or environment state.
  *
  * Server-only module — do not import from client components.
  */
@@ -34,9 +34,20 @@ export type DivBrainShellConversationListItem = {
 };
 
 /**
- * Safe transcript presentation kinds.
- * Content is plain text only — never HTML, sources, or hidden reasoning.
+ * Minimal already-validated source metadata allowed across the shell boundary.
+ * Source excerpts, record refs, retrieval diagnostics and hidden context remain
+ * server-side. At most one of the two href fields is normally needed by UI.
  */
+export type DivBrainShellTranscriptSource = {
+  id: string;
+  title: string;
+  publisher?: string;
+  attribution?: string;
+  internalRoute?: string;
+  canonicalUrl?: string;
+};
+
+/** Safe transcript presentation kinds. Content is plain text only. */
 export type DivBrainShellTranscriptItem =
   | {
       kind: "user_message";
@@ -49,6 +60,7 @@ export type DivBrainShellTranscriptItem =
       id: string;
       content: string;
       createdAt: string;
+      sources?: readonly DivBrainShellTranscriptSource[];
     }
   | {
       kind: "provider_unavailable";
