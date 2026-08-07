@@ -1,10 +1,16 @@
 /**
- * DivBrain Learning retrieval public server surface (Ticket 1C-1).
+ * DivBrain Learning retrieval + context integration server surface
+ * (Tickets 1C-1 / 1C-2).
  *
  * Must never be imported by client components.
- * Pure lexical retrieval over `data/learning` — no provider or UI wiring.
+ * Retrieval is deterministic/local; no provider or network call occurs here.
  */
 
+export {
+  assembleDivBrainLearningContext,
+  createDivBrainLearningContextAssembler,
+  type CreateDivBrainLearningContextAssemblerOptions,
+} from "./context-assembler";
 export {
   DIVBRAIN_LEARNING_RETRIEVAL_MAX_EXCERPT_LENGTH,
   DIVBRAIN_LEARNING_RETRIEVAL_MAX_RESULTS,
