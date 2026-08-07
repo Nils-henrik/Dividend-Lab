@@ -1,8 +1,9 @@
 import type { UserProfile } from "@/lib/profiles/types";
 import type { ForumThread } from "@/types/forum";
+import DashboardNewsFocus from "./DashboardNewsFocus";
+import DashboardToolsCard from "./DashboardToolsCard";
 import EducationalInsightsCard from "./EducationalInsightsCard";
 import ForumPreview from "./ForumPreview";
-import FreedomPlanCard from "./FreedomPlanCard";
 import MarketPulse from "./MarketPulse";
 import MarketToday from "./MarketToday";
 import OnboardingCard from "./OnboardingCard";
@@ -14,41 +15,35 @@ type Props = {
 
 export default function DashboardShell({ profile, forumDiscussions }: Props) {
   return (
-    <div className="space-y-6">
-      <section className="divlab-hero">
-        <div className="relative flex flex-col justify-between gap-6 xl:flex-row xl:items-end">
-          <div>
-            <p className="mb-3 divlab-section-label">DivLab</p>
-            <h1 className="text-4xl font-semibold tracking-[-0.04em] text-divlab-text">
-              Bättre koll på marknaden. Djupare förståelse.
-            </h1>
-            <p className="mt-4 max-w-3xl text-base leading-7 text-divlab-text-secondary">
-              Följ marknaden, upptäck relevanta nyheter, använd smarta verktyg
-              och utveckla din kunskap tillsammans med andra – allt samlat på
-              ett ställe.
-            </p>
-          </div>
+    <div className="mx-auto w-full max-w-[1500px] space-y-8">
+      <header className="border-b divlab-border-neutral pb-6">
+        <p className="divlab-section-label">Översikt</p>
+        <h1 className="mt-2 text-3xl font-semibold tracking-[-0.035em] text-divlab-text sm:text-4xl">
+          Det viktigaste just nu
+        </h1>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-divlab-text-secondary sm:text-base">
+          Marknaden och det senaste från DivLab, samlat utan onödigt brus.
+        </p>
+      </header>
 
-          <div className="inline-flex w-fit items-center rounded-full border divlab-border-neutral divlab-inset px-3 py-1 text-xs font-medium text-divlab-text-secondary">
-            Marknad · Börsnyheter · Verktyg · Kunskap · Community
-          </div>
-        </div>
+      <OnboardingCard profile={profile} />
+
+      <section
+        aria-label="Marknaden idag"
+        className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.55fr)_minmax(320px,0.75fr)] xl:items-start"
+      >
+        <MarketToday compact />
+        <MarketPulse compact />
       </section>
 
-      <section className="grid grid-cols-1 gap-6 xl:grid-cols-3 xl:items-start">
-        <div className="hidden min-w-0 lg:block xl:col-span-2">
-          <FreedomPlanCard />
-        </div>
-        <div className="space-y-6">
-          <MarketToday compact />
-          <MarketPulse compact />
-          <OnboardingCard profile={profile} />
-        </div>
+      <DashboardNewsFocus />
+
+      <section className="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:items-start">
+        <ForumPreview discussions={forumDiscussions} />
+        <EducationalInsightsCard />
       </section>
 
-      <EducationalInsightsCard />
-
-      <ForumPreview discussions={forumDiscussions} />
+      <DashboardToolsCard />
     </div>
   );
 }
