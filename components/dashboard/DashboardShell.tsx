@@ -22,7 +22,7 @@ export default function DashboardShell({ profile, forumDiscussions }: Props) {
           Det viktigaste just nu
         </h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-divlab-text-secondary sm:text-base">
-          Marknaden och det senaste från DivLab, samlat utan onödigt brus.
+          Marknaden och det senaste från DivLab.
         </p>
       </header>
 
