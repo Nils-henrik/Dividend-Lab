@@ -9,6 +9,28 @@ import {
   validateUsername,
 } from "../lib/profiles/username";
 
+const reservedUsernames = [
+  "divlab",
+  "dividendlab",
+  "admin",
+  "administrator",
+  "admins",
+  "moderator",
+  "moderators",
+  "mod",
+  "support",
+  "help",
+  "system",
+  "official",
+  "team",
+  "staff",
+  "root",
+  "api",
+  "security",
+  "medlem",
+  "anvandare",
+];
+
 describe("username validation", () => {
   it("normalizes usernames to lowercase trimmed values", () => {
     assert.equal(normalizeUsername("  Alice_01 "), "alice_01");
@@ -19,6 +41,8 @@ describe("username validation", () => {
     assert.equal(validateUsername("").ok, false);
     assert.equal(validateUsername("ab").ok, false);
     assert.equal(validateUsername("Alice!").ok, false);
+    assert.equal(validateUsername("alice-name").ok, false);
+    assert.equal(validateUsername("åke").ok, false);
     assert.equal(validateUsername("admin").ok, false);
     assert.equal(validateUsername("medlem").ok, false);
     assert.equal(validateUsername("anvandare").ok, false);
@@ -31,26 +55,21 @@ describe("username validation", () => {
   });
 
   it("blocks reserved system names", () => {
-    for (const reserved of [
-      "divlab",
-      "admin",
-      "moderator",
-      "support",
-      "system",
-      "medlem",
-      "anvandare",
-    ]) {
+    for (const reserved of reservedUsernames) {
       assert.equal(isReservedUsername(reserved), true);
       assert.equal(validateUsername(reserved).ok, false);
     }
   });
 
-  it("creates collision-resistant temporary handles within format limits", () => {
-    const temporary = createTemporaryUsername(
-      "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
-    );
-    assert.match(temporary, /^u_[a-f0-9]{12}$/);
-    assert.equal(validateUsername(temporary).ok, true);
+  it("creates random temporary handles within format limits", () => {
+    const first = createTemporaryUsername();
+    const second = createTemporaryUsername();
+
+    assert.match(first, /^u_[a-f0-9]{12}$/);
+    assert.match(second, /^u_[a-f0-9]{12}$/);
+    assert.notEqual(first, second);
+    assert.equal(validateUsername(first).ok, true);
+    assert.equal(validateUsername(second).ok, true);
   });
 });
 
@@ -77,7 +96,10 @@ describe("profile username requirements", () => {
       investorGoal: "",
     });
 
-    assert.equal(result.errors[0], "Det användarnamnet är reserverat.");
+    assert.equal(
+      result.errors[0],
+      "Det användarnamnet är reserverat. Välj ett annat.",
+    );
   });
 
   it("accepts a normalized unique-format username", () => {
