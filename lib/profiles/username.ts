@@ -2,6 +2,7 @@ export const USERNAME_PATTERN = /^[a-z0-9_]{3,20}$/;
 
 export const RESERVED_USERNAMES = [
   "divlab",
+  "divlab_mod",
   "dividendlab",
   "admin",
   "administrator",
