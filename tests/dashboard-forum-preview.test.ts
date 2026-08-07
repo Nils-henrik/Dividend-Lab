@@ -7,7 +7,7 @@ import { dirname, join } from "node:path";
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 describe("dashboard forum preview", () => {
-  it("does not import hard-coded dashboard forum conversations", () => {
+  it("uses the live limited forum activity query instead of hard-coded dashboard conversations", () => {
     const preview = readFileSync(
       join(root, "components/dashboard/ForumPreview.tsx"),
       "utf8",
@@ -20,10 +20,18 @@ describe("dashboard forum preview", () => {
       join(root, "app/dashboard/page.tsx"),
       "utf8",
     );
+    const dashboardQueries = readFileSync(
+      join(root, "lib/forum/dashboard-queries.ts"),
+      "utf8",
+    );
 
     assert.doesNotMatch(preview, /forumDiscussions/);
     assert.doesNotMatch(dashboardData, /export const forumDiscussions/);
-    assert.match(dashboardPage, /getForumThreadsByLatestActivity/);
+    assert.match(dashboardPage, /getDashboardForumThreadsByLatestActivity\(5\)/);
+    assert.match(
+      dashboardQueries,
+      /get_forum_threads_by_latest_activity/,
+    );
     assert.match(preview, /Inga diskussioner ännu\./);
   });
 });
