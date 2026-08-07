@@ -18,16 +18,9 @@ const tools = [
 export default function DashboardToolsCard() {
   return (
     <section className="border-t divlab-border-neutral pt-7">
-      <div className="flex items-end justify-between gap-4">
-        <div>
-          <p className="divlab-section-label">Verktyg</p>
-          <h2 className="mt-2 text-xl font-semibold tracking-[-0.02em] text-divlab-text">
-            Räkna vidare när du behöver det
-          </h2>
-        </div>
-      </div>
+      <p className="divlab-section-label">Verktyg</p>
 
-      <div className="mt-5 grid gap-3 sm:grid-cols-2">
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
         {tools.map((tool) => (
           <Link
             key={tool.href}
