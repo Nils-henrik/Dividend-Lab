@@ -15,14 +15,14 @@ const MARKET_OPTIONS = [
 
 type MarketOption = (typeof MARKET_OPTIONS)[number];
 
-function buildWidgetConfig(option: MarketOption) {
+function buildWidgetConfig(option: MarketOption, height: number) {
   const suffix = "interval" in option ? option.interval : option.label;
 
   return {
     symbols: [[`${option.symbol}|${suffix}`]],
     chartOnly: false,
     width: "100%",
-    height: "420",
+    height: String(height),
     locale: "sv",
     colorTheme: "dark",
     isTransparent: true,
@@ -30,9 +30,9 @@ function buildWidgetConfig(option: MarketOption) {
     showMA: false,
     lineWidth: 2,
     lineColor: "rgba(10, 132, 255, 1)",
-    topColor: "rgba(10, 132, 255, 0.28)",
+    topColor: "rgba(10, 132, 255, 0.24)",
     bottomColor: "rgba(10, 132, 255, 0)",
-    gridLineColor: "rgba(255, 255, 255, 0.06)",
+    gridLineColor: "rgba(255, 255, 255, 0.05)",
     fontColor: "rgba(161, 161, 170, 1)",
   };
 }
@@ -46,6 +46,7 @@ export default function MarketToday({ compact = false }: Props) {
   const [selectedOption, setSelectedOption] = useState<MarketOption>(
     MARKET_OPTIONS[0],
   );
+  const widgetHeight = compact ? 280 : 420;
 
   useEffect(() => {
     const container = containerRef.current;
@@ -69,7 +70,7 @@ export default function MarketToday({ compact = false }: Props) {
     script.src = WIDGET_SCRIPT;
     script.async = true;
     script.type = "text/javascript";
-    script.innerHTML = JSON.stringify(buildWidgetConfig(selectedOption));
+    script.innerHTML = JSON.stringify(buildWidgetConfig(selectedOption, widgetHeight));
     widgetRoot.appendChild(script);
 
     const copyright = document.createElement("div");
@@ -80,45 +81,51 @@ export default function MarketToday({ compact = false }: Props) {
     widgetRoot.appendChild(copyright);
 
     container.appendChild(widgetRoot);
-  }, [selectedOption]);
+  }, [selectedOption, widgetHeight]);
 
   return (
-    <section className={`divlab-card ${compact ? "p-5" : "p-6"}`}>
-      <div className={compact ? "mb-4" : "mb-6"}>
-        <p className="mb-2 divlab-section-label">Marknadsläge</p>
-        <h2 className="text-base font-semibold text-divlab-text">Börsen idag</h2>
-        {!compact && (
-          <p className="mt-2 text-sm leading-6 text-divlab-text-secondary">
-            Följ marknaden via TradingView.
-          </p>
-        )}
-      </div>
+    <section className={`divlab-card ${compact ? "p-5 sm:p-6" : "p-6"}`}>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="divlab-section-label">Marknaden idag</p>
+          <h2 className="mt-2 text-xl font-semibold tracking-[-0.02em] text-divlab-text">
+            Börsen i korthet
+          </h2>
+          {!compact && (
+            <p className="mt-2 text-sm leading-6 text-divlab-text-secondary">
+              Följ marknaden via TradingView.
+            </p>
+          )}
+        </div>
 
-      <div className="mb-3 flex flex-wrap gap-2">
-        {MARKET_OPTIONS.map((option) => {
-          const isActive = selectedOption.id === option.id;
+        <div className="flex max-w-full gap-1.5 overflow-x-auto pb-1 sm:flex-wrap sm:justify-end sm:overflow-visible sm:pb-0">
+          {MARKET_OPTIONS.map((option) => {
+            const isActive = selectedOption.id === option.id;
 
-          return (
-            <button
-              key={option.id}
-              type="button"
-              onClick={() => setSelectedOption(option)}
-              className={`rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition ${
-                isActive
-                  ? "divlab-selected"
-                  : "border-transparent bg-divlab-surface text-divlab-text-muted hover:text-divlab-text-secondary"
-              }`}
-            >
-              {option.label}
-            </button>
-          );
-        })}
+            return (
+              <button
+                key={option.id}
+                type="button"
+                onClick={() => setSelectedOption(option)}
+                className={`shrink-0 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition ${
+                  isActive
+                    ? "divlab-selected"
+                    : "border-transparent bg-divlab-surface text-divlab-text-muted hover:text-divlab-text-secondary"
+                }`}
+              >
+                {option.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div
         key={selectedOption.id}
         ref={containerRef}
-        className="min-h-[420px] overflow-hidden rounded-xl border divlab-border-neutral bg-divlab-surface"
+        className={`mt-4 overflow-hidden rounded-xl border divlab-border-neutral bg-divlab-surface ${
+          compact ? "min-h-[280px]" : "min-h-[420px]"
+        }`}
       />
     </section>
   );
