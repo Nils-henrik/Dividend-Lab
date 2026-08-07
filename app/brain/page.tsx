@@ -14,6 +14,7 @@ import {
 
 type BrainPageSearchParams = {
   conversation?: string | string[];
+  archive?: string | string[];
 };
 
 type Props = {
@@ -66,6 +67,7 @@ export default async function DivBrainPage({ searchParams }: Props) {
     view = await loadDivBrainShellData({
       actorId: user.id,
       selectedConversationId,
+      archiveScope: resolvedSearchParams.archive,
       repository: repositoryResult.data,
       diagnose,
     });

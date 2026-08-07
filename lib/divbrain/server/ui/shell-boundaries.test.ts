@@ -191,21 +191,51 @@ describe("DivBrain shell legacy and product boundaries", () => {
     }
   });
 
-  it("brain page has no server action or API route wiring", () => {
+  it("brain page keeps API-route free and wires actions separately", () => {
     const page = read("app/brain/page.tsx");
     assert.equal(page.includes("use server"), false);
     assert.equal(page.includes("submitMessage"), false);
-    assert.equal(page.includes("createConversation"), false);
     assert.equal(existsSync(join(repoRoot, "app/api/brain")), false);
-    assert.equal(existsSync(join(repoRoot, "app/brain/actions.ts")), false);
+    assert.equal(existsSync(join(repoRoot, "app/brain/actions.ts")), true);
+
+    const actions = read("app/brain/actions.ts");
+    assert.equal(actions.includes('"use server"'), true);
+    assert.equal(actions.includes("createDivBrainAlphaApplicationService"), false);
+    assert.equal(actions.includes("createDivBrainAlphaAccessModule"), true);
   });
 
-  it("disabled composer has no enabled submit action", () => {
-    const composer = read("components/brain/DivBrainDisabledComposer.tsx");
-    assert.equal(composer.includes("disabled"), true);
-    assert.equal(composer.includes("onSubmit"), false);
-    assert.equal(composer.includes("action="), false);
-    assert.equal(composer.includes("type=\"submit\""), false);
+  it("archived composer remains read-only while active composer is functional", () => {
+    const archived = read("components/brain/DivBrainDisabledComposer.tsx");
+    assert.equal(archived.includes("Återställ"), true);
+    assert.equal(archived.includes("dangerouslySetInnerHTML"), false);
+
+    const composer = read("components/brain/DivBrainComposer.tsx");
+    assert.equal(composer.includes('"use client"'), true);
+    assert.equal(composer.includes("submitDivBrainMessageAction"), true);
+    assert.equal(composer.includes("aria-live"), true);
+    assert.equal(composer.includes("dangerouslySetInnerHTML"), false);
+    assert.equal(composer.includes("localStorage"), false);
+  });
+
+  it("rail and drawer expose active/archived scope and create action", () => {
+    const rail = read("components/brain/DivBrainConversationRail.tsx");
+    assert.equal(rail.includes("DivBrainScopeSwitch"), true);
+    assert.equal(rail.includes("DivBrainCreateConversationButton"), true);
+
+    const drawer = read("components/brain/DivBrainHistoryDrawer.tsx");
+    assert.equal(drawer.includes("DivBrainScopeSwitch"), true);
+    assert.equal(drawer.includes("DivBrainCreateConversationButton"), true);
+    assert.equal(drawer.includes("Aktiva"), false);
+  });
+
+  it("conversation actions require explicit delete confirmation", () => {
+    const actions = read("components/brain/DivBrainConversationActions.tsx");
+    assert.equal(actions.includes("Ta bort permanent"), true);
+    assert.equal(actions.includes('name="confirmDelete"'), true);
+    assert.equal(actions.includes('value="permanent"'), true);
+    assert.equal(actions.includes("aria-labelledby"), true);
+    assert.equal(actions.includes("aria-describedby"), true);
+    assert.equal(actions.includes("Escape"), true);
   });
 
   it("page authenticates and gates before repository construction", () => {

@@ -1,11 +1,15 @@
 /**
- * Browser-safe DivBrain shell view-model contracts (Ticket 1A-9a).
+ * Browser-safe DivBrain shell view-model contracts (Tickets 1A-9a / 1A-9b).
  *
  * Must never include actor/user/owner ids, emails, profiles, raw repository
  * errors, system messages, policy/context, or environment state.
  *
  * Server-only module — do not import from client components.
  */
+
+import type { DivBrainArchiveScope } from "../../brain-routes";
+
+export type { DivBrainArchiveScope };
 
 export const DIVBRAIN_SHELL_CONVERSATION_PAGE_SIZE = 30 as const;
 
@@ -112,18 +116,21 @@ export type DivBrainShellSelectedConversation = {
 export type DivBrainShellViewModel =
   | {
       state: "empty";
+      archiveScope: DivBrainArchiveScope;
       conversations: readonly DivBrainShellConversationListItem[];
       hasMoreConversations: boolean;
       selectedConversationId: null;
     }
   | {
       state: "ready";
+      archiveScope: DivBrainArchiveScope;
       conversations: readonly DivBrainShellConversationListItem[];
       hasMoreConversations: boolean;
       selectedConversation: DivBrainShellSelectedConversation;
     }
   | {
       state: "conversation_not_found";
+      archiveScope: DivBrainArchiveScope;
       conversations: readonly DivBrainShellConversationListItem[];
       hasMoreConversations: boolean;
     }

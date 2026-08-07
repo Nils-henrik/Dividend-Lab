@@ -1,5 +1,11 @@
 import Link from "next/link";
+import {
+  buildDivBrainHref,
+  type DivBrainArchiveScope,
+} from "@/lib/divbrain/brain-routes";
 import { formatDivBrainConversationTimestamp } from "@/lib/divbrain/dates";
+import DivBrainCreateConversationButton from "./DivBrainCreateConversationButton";
+import DivBrainScopeSwitch from "./DivBrainScopeSwitch";
 
 export type DivBrainConversationRailItem = {
   id: string;
@@ -12,12 +18,14 @@ type Props = {
   conversations: readonly DivBrainConversationRailItem[];
   selectedConversationId: string | null;
   hasMoreConversations: boolean;
+  archiveScope: DivBrainArchiveScope;
 };
 
 export default function DivBrainConversationRail({
   conversations,
   selectedConversationId,
   hasMoreConversations,
+  archiveScope,
 }: Props) {
   return (
     <nav
@@ -26,23 +34,16 @@ export default function DivBrainConversationRail({
     >
       <div className="border-b divlab-border-neutral px-4 py-4">
         <p className="divlab-section-label tracking-[0.18em]">Konversationer</p>
-        <button
-          type="button"
-          disabled
-          aria-disabled="true"
-          className="divlab-btn-ghost mt-3 flex w-full min-h-10 cursor-not-allowed items-center justify-between opacity-60"
-        >
-          <span>Ny konversation</span>
-          <span className="text-[10px] uppercase tracking-[0.14em] text-divlab-text-muted">
-            Nästa steg
-          </span>
-        </button>
+        <DivBrainCreateConversationButton className="mt-3" />
+        <DivBrainScopeSwitch archiveScope={archiveScope} />
       </div>
 
       <div className="flex-1 overflow-y-auto px-2 py-2">
         {conversations.length === 0 ? (
           <p className="px-3 py-4 text-sm leading-6 text-divlab-text-muted">
-            Inga konversationer ännu.
+            {archiveScope === "archived"
+              ? "Inga arkiverade konversationer."
+              : "Inga konversationer ännu."}
           </p>
         ) : (
           <ul className="space-y-1">
@@ -55,7 +56,10 @@ export default function DivBrainConversationRail({
               return (
                 <li key={conversation.id}>
                   <Link
-                    href={`/brain?conversation=${encodeURIComponent(conversation.id)}`}
+                    href={buildDivBrainHref({
+                      archiveScope,
+                      conversationId: conversation.id,
+                    })}
                     aria-current={selected ? "page" : undefined}
                     className={`block rounded-xl px-3 py-2.5 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-divlab-blue ${
                       selected
@@ -73,9 +77,7 @@ export default function DivBrainConversationRail({
                       >
                         {timestamp}
                       </time>
-                      {conversation.archived ? (
-                        <span>Arkiverad</span>
-                      ) : null}
+                      {conversation.archived ? <span>Arkiverad</span> : null}
                     </span>
                   </Link>
                 </li>
