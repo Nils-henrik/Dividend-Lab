@@ -7,19 +7,17 @@ const WIDGET_SCRIPT =
 
 const MARKET_OPTIONS = [
   { id: "omxs30", label: "OMXS30", symbol: "OMXSTO:OMXS30" },
-  { id: "sp500", label: "S&P 500", symbol: "FOREXCOM:SPXUSD", interval: "1D" },
-  { id: "nasdaq100", label: "Nasdaq 100", symbol: "FOREXCOM:NSXUSD", interval: "1D" },
-  { id: "dax", label: "DAX", symbol: "FOREXCOM:GRXEUR", interval: "1D" },
+  { id: "sp500", label: "S&P 500", symbol: "FOREXCOM:SPXUSD" },
+  { id: "nasdaq100", label: "Nasdaq 100", symbol: "FOREXCOM:NSXUSD" },
+  { id: "dax", label: "DAX", symbol: "FOREXCOM:GRXEUR" },
   { id: "gold", label: "Guld", symbol: "TVC:GOLD" },
 ] as const;
 
 type MarketOption = (typeof MARKET_OPTIONS)[number];
 
 function buildWidgetConfig(option: MarketOption, height: number) {
-  const suffix = "interval" in option ? option.interval : option.label;
-
   return {
-    symbols: [[`${option.symbol}|${suffix}`]],
+    symbols: [[option.label, `${option.symbol}|1D`]],
     chartOnly: false,
     width: "100%",
     height: String(height),
@@ -106,8 +104,10 @@ export default function MarketToday({ compact = false }: Props) {
               <button
                 key={option.id}
                 type="button"
+                aria-pressed={isActive}
+                aria-label={`Visa ${option.label} i marknadsgrafen`}
                 onClick={() => setSelectedOption(option)}
-                className={`shrink-0 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition ${
+                className={`shrink-0 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/40 ${
                   isActive
                     ? "divlab-selected"
                     : "border-transparent bg-divlab-surface text-divlab-text-muted hover:text-divlab-text-secondary"
