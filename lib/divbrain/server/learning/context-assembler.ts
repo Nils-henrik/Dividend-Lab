@@ -5,10 +5,13 @@
  * request and delegates all trust/budget/delimiter enforcement to the existing
  * context assembler. Retrieved article prose never becomes trusted policy.
  *
- * Intelligence v1 adds a bounded, deterministic follow-up fallback: when the
- * current question is referential and has no direct Learning match, the most
- * recent completed user turn may be combined with it for retrieval. This adds
- * no model call, embedding service or network dependency.
+ * Intelligence v1 adds bounded, deterministic follow-up retrieval: when the
+ * current question is short and referential, the most recent user turn from the
+ * same conversation is combined with it and preferred when that contextual
+ * query yields relevant Learning material. This prevents generic phrases such
+ * as "hur fungerar det då?" from being grounded in an unrelated article merely
+ * because the current words happen to match a heading. No model call, embedding
+ * service or network dependency is added.
  *
  * Server-only — must never be imported by client components.
  */
@@ -92,11 +95,7 @@ function retrieveLearningForContext(
     options,
   );
 
-  if (
-    !primary.ok ||
-    primary.data.sources.length > 0 ||
-    !isReferentialFollowUp(input.currentUserMessage)
-  ) {
+  if (!primary.ok || !isReferentialFollowUp(input.currentUserMessage)) {
     return primary;
   }
 
@@ -105,16 +104,16 @@ function retrieveLearningForContext(
     return primary;
   }
 
-  const fallback = retrieveDivBrainLearningSources(
+  const contextual = retrieveDivBrainLearningSources(
     `${previousUserContent}\n${input.currentUserMessage}`,
     options,
   );
 
-  if (!fallback.ok || fallback.data.sources.length === 0) {
-    return primary;
+  if (contextual.ok && contextual.data.sources.length > 0) {
+    return contextual;
   }
 
-  return fallback;
+  return primary;
 }
 
 /**
