@@ -237,7 +237,6 @@ begin
   else
     v_monthly_level := 'under_target';
   end if;
-
   insert into public.divbrain_usage_events (
     user_id,
     conversation_id,
@@ -357,7 +356,6 @@ begin
     finalized_at = p_now
   where id = p_reservation_id
     and status = 'reserved';
-
   if not found then
     return jsonb_build_object('ok', false, 'reason', 'finalize_race');
   end if;
