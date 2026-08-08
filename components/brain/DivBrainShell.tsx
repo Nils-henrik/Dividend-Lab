@@ -8,7 +8,6 @@ import DivBrainDisabledComposer from "./DivBrainDisabledComposer";
 import DivBrainEmptyState from "./DivBrainEmptyState";
 import DivBrainHeader from "./DivBrainHeader";
 import DivBrainHistoryDrawer from "./DivBrainHistoryDrawer";
-import DivBrainStatusNotice from "./DivBrainStatusNotice";
 import DivBrainTranscript from "./DivBrainTranscript";
 import DivBrainTrustNote from "./DivBrainTrustNote";
 
@@ -29,11 +28,6 @@ export default function DivBrainShell({ view }: Props) {
   return (
     <section className="flex flex-col gap-5">
       <DivBrainHeader />
-
-      <DivBrainStatusNotice
-        title="AI-motorn är inte ansluten ännu"
-        description="Du kan skapa privata konversationer och spara frågor. Inget AI-genererat svar skapas förrän AI-motorn kopplas in."
-      />
 
       <div className="lg:hidden">
         <DivBrainHistoryDrawer
