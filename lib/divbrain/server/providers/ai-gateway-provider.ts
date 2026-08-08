@@ -25,6 +25,7 @@ import type {
   DivBrainProviderResult,
   DivBrainProviderUsage,
 } from "./types";
+import { extractValidatedGatewayCostMicroUsd } from "./usage-accounting";
 import {
   normalizeDivBrainProviderUsage,
   validateDivBrainProviderRequest,
@@ -37,6 +38,11 @@ export type AiGatewayGenerateTextResult = {
     outputTokens?: number | undefined;
     totalTokens?: number | undefined;
   };
+  /**
+   * Opaque provider metadata. Only a narrow Gateway cost path is validated
+   * via `extractValidatedGatewayCostMicroUsd` — never stored raw.
+   */
+  providerMetadata?: unknown;
 };
 
 export type AiGatewayLanguageModel = string | Parameters<
@@ -139,6 +145,8 @@ async function defaultGenerateTextAdapter(
       outputTokens: result.usage.outputTokens,
       totalTokens: result.usage.totalTokens,
     },
+    // Pass through only for narrow validation; never log or persist raw.
+    providerMetadata: result.providerMetadata,
   };
 }
 
@@ -196,6 +204,8 @@ export class AiGatewayProvider implements DivBrainProvider {
       };
     }
 
+    const startedAt = Date.now();
+
     try {
       const result = await this.generateText({
         model: this.languageModel,
@@ -207,24 +217,42 @@ export class AiGatewayProvider implements DivBrainProvider {
         maxRetries: 0,
       });
 
+      const latencyMs = Math.max(0, Date.now() - startedAt);
+      const usage = toUsage(result.usage);
+      const gatewayCostMicroUsd = extractValidatedGatewayCostMicroUsd(
+        result.providerMetadata,
+      );
+
       const text = normalizeCompletedText(result.text);
       if (text === null) {
         return {
           status: "failed",
           error: createDivBrainError("internal_error"),
+          usage,
+          latencyMs,
+          ...(gatewayCostMicroUsd !== null
+            ? { gatewayCostMicroUsd }
+            : {}),
         };
       }
 
       return {
         status: "completed",
         text,
-        usage: toUsage(result.usage),
+        usage,
+        latencyMs,
+        ...(gatewayCostMicroUsd !== null ? { gatewayCostMicroUsd } : {}),
         ...(validated.data.sources.length > 0
           ? { sources: validated.data.sources }
           : {}),
       };
     } catch (error) {
-      return mapGatewayErrorToDivBrainProviderResult(error);
+      const latencyMs = Math.max(0, Date.now() - startedAt);
+      const mapped = mapGatewayErrorToDivBrainProviderResult(error);
+      return {
+        ...mapped,
+        latencyMs,
+      };
     }
   }
 }

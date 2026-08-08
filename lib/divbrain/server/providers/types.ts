@@ -57,13 +57,28 @@ export type DivBrainProviderMessage = {
 };
 
 /**
- * Optional normalized token counts. Cost/pricing is out of scope —
- * later layers may estimate cost from these hooks.
+ * Optional normalized token counts. Cost Guard / usage ledger may estimate
+ * or validate Gateway actual cost from these hooks + narrow metadata.
  */
 export type DivBrainProviderUsage = {
   inputTokens?: number;
   outputTokens?: number;
   totalTokens?: number;
+};
+
+/**
+ * Optional post-call accounting hooks. Never carry prompts, raw provider
+ * payloads, or unvalidated `providerMetadata` JSON.
+ */
+export type DivBrainProviderAccountingHooks = {
+  usage?: DivBrainProviderUsage;
+  /** Wall-clock latency for the provider attempt when known. */
+  latencyMs?: number;
+  /**
+   * Validated Gateway actual cost in integer micro-USD when safely extracted.
+   * Absence means the ledger must use a conservative estimate / fail-closed ceiling.
+   */
+  gatewayCostMicroUsd?: number;
 };
 
 /**
@@ -100,15 +115,17 @@ export type DivBrainProviderResult =
       text: string;
       usage: DivBrainProviderUsage;
       sources?: readonly DivBrainSource[];
+      latencyMs?: number;
+      gatewayCostMicroUsd?: number;
     }
-  | {
+  | ({
       status: "cancelled";
-    }
-  | {
+    } & DivBrainProviderAccountingHooks)
+  | ({
       status: "provider_unavailable";
       error: DivBrainError;
-    }
-  | {
+    } & DivBrainProviderAccountingHooks)
+  | ({
       status: "failed";
       error: DivBrainError;
-    };
+    } & DivBrainProviderAccountingHooks);

@@ -16,6 +16,11 @@ import type { DivBrainResult } from "../../results";
 import { divBrainFailureFromCode, divBrainSuccess } from "../../results";
 import type { DivBrainPersistencePort } from "./persistence";
 import { createSupabaseDivBrainPersistencePort } from "./supabase-persistence";
+import {
+  createDivBrainUsageLedgerRepository,
+  type DivBrainUsageLedgerRepository,
+} from "./usage-ledger";
+import { createSupabaseDivBrainUsageLedgerPort } from "./usage-ledger-persistence";
 
 export type CreateDivBrainServiceRolePersistencePortOptions = {
   /**
@@ -66,6 +71,48 @@ export function createDivBrainServiceRolePersistencePort(
     });
 
     return divBrainSuccess(createSupabaseDivBrainPersistencePort(client));
+  } catch {
+    options.onClientCreationThrow?.();
+    return divBrainFailureFromCode("internal_error");
+  }
+}
+
+/**
+ * Build a privileged usage-ledger repository for Cost Guard aggregates/writes.
+ *
+ * Returns only the repository — never the admin client or credentials.
+ * Missing configuration → safe `internal_error`.
+ */
+export function createDivBrainServiceRoleUsageLedgerRepository(
+  options: CreateDivBrainServiceRolePersistencePortOptions = {},
+): DivBrainResult<DivBrainUsageLedgerRepository> {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (
+    typeof supabaseUrl !== "string" ||
+    supabaseUrl.trim().length === 0 ||
+    typeof serviceRoleKey !== "string" ||
+    serviceRoleKey.trim().length === 0
+  ) {
+    options.onMissingConfiguration?.();
+    return divBrainFailureFromCode("internal_error");
+  }
+
+  try {
+    const client = createClient(supabaseUrl, serviceRoleKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      },
+    });
+
+    return divBrainSuccess(
+      createDivBrainUsageLedgerRepository({
+        port: createSupabaseDivBrainUsageLedgerPort(client),
+      }),
+    );
   } catch {
     options.onClientCreationThrow?.();
     return divBrainFailureFromCode("internal_error");
