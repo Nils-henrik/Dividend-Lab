@@ -12,6 +12,7 @@ import {
   isDivBrainError,
   toSafeDivBrainError,
 } from "../../errors";
+import { isDivBrainMicroUsd } from "./cost-units";
 import type {
   DivBrainProviderRequest,
   DivBrainProviderResult,
@@ -72,6 +73,58 @@ function normalizeProviderUsage(usage: unknown): DivBrainProviderUsage {
   }
 
   return normalized;
+}
+
+function normalizeOptionalLatencyMs(value: unknown): number | undefined {
+  if (
+    typeof value === "number" &&
+    Number.isInteger(value) &&
+    value >= 0 &&
+    Number.isSafeInteger(value)
+  ) {
+    return value;
+  }
+  return undefined;
+}
+
+function normalizeOptionalGatewayCostMicroUsd(
+  value: unknown,
+): number | undefined {
+  return isDivBrainMicroUsd(value) ? value : undefined;
+}
+
+function accountingHooksFromUnknown(value: {
+  usage?: unknown;
+  latencyMs?: unknown;
+  gatewayCostMicroUsd?: unknown;
+}): {
+  usage?: DivBrainProviderUsage;
+  latencyMs?: number;
+  gatewayCostMicroUsd?: number;
+} {
+  const hooks: {
+    usage?: DivBrainProviderUsage;
+    latencyMs?: number;
+    gatewayCostMicroUsd?: number;
+  } = {};
+
+  if (value.usage !== undefined) {
+    hooks.usage = normalizeProviderUsage(value.usage);
+  }
+
+  const latencyMs = normalizeOptionalLatencyMs(value.latencyMs);
+  if (latencyMs !== undefined) {
+    hooks.latencyMs = latencyMs;
+  }
+
+  const gatewayCostMicroUsd = normalizeOptionalGatewayCostMicroUsd(
+    value.gatewayCostMicroUsd,
+  );
+  if (gatewayCostMicroUsd !== undefined) {
+    hooks.gatewayCostMicroUsd = gatewayCostMicroUsd;
+  }
+
+  return hooks;
 }
 
 /**
@@ -178,16 +231,21 @@ export function normalizeDivBrainProviderResult(
 
   switch (value.status) {
     case "cancelled":
-      return { status: "cancelled" };
+      return {
+        status: "cancelled",
+        ...accountingHooksFromUnknown(value),
+      };
     case "provider_unavailable":
       return {
         status: "provider_unavailable",
         error: createDivBrainError("provider_unavailable"),
+        ...accountingHooksFromUnknown(value),
       };
     case "failed":
       return {
         status: "failed",
         error: createDivBrainError(value.error.code),
+        ...accountingHooksFromUnknown(value),
       };
     case "completed": {
       if (value.sources !== undefined && !Array.isArray(value.sources)) {
@@ -197,12 +255,20 @@ export function normalizeDivBrainProviderResult(
         };
       }
 
+      const hooks = accountingHooksFromUnknown(value);
+
       return {
         status: "completed",
         text: value.text,
         usage: normalizeProviderUsage(value.usage),
         ...(value.sources !== undefined
           ? { sources: [...value.sources] }
+          : {}),
+        ...(hooks.latencyMs !== undefined
+          ? { latencyMs: hooks.latencyMs }
+          : {}),
+        ...(hooks.gatewayCostMicroUsd !== undefined
+          ? { gatewayCostMicroUsd: hooks.gatewayCostMicroUsd }
           : {}),
       };
     }

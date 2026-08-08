@@ -112,8 +112,10 @@ Server-owned, provider-neutral generation boundary under `server/providers/`:
 - `unconfigured-provider.ts` — `UnconfiguredProvider` (explicit unconfigured state; **runtime default**)
 - `ai-gateway-provider.ts` — Vercel AI Gateway adapter (server-only; not wired into live `/brain` yet)
 - `factory.ts` / `config.ts` — fail-closed server config → unconfigured or gateway
-- `candidates.ts` / `cost.ts` — Phase 1B benchmark candidate catalog + USD estimate helpers
+- `candidates.ts` / `cost.ts` / `cost-units.ts` — Phase 1B candidate catalog + USD / micro-USD helpers
+- `cost-guard-config.ts` / `cost-guard.ts` / `usage-accounting.ts` — Issue #103 Cost Guard + post-call accounting
 - `server/benchmark/**` — deterministic multi-candidate harness + local rubric
+- `server/repository/usage-ledger*` — persistent usage ledger (micro-USD; service_role only)
 
 Canonical Founder runbook: [`docs/divbrain/provider-setup.md`](../../docs/divbrain/provider-setup.md).
 
@@ -133,8 +135,10 @@ generate(request) →
 - AI Gateway adapter uses the AI SDK (`ai`); model ids are server-configured only.
 - Invalid requests map to `failed` + `invalid_request`; already-aborted signals map to `cancelled`.
 - Gateway adapters map timeout/rate-limit/auth/outage/malformed failures to catalog errors — raw vendor payloads must not cross this boundary.
-- Token-usage fields are optional normalized integers; cost helpers estimate USD from the candidate catalog only.
+- Token-usage fields are optional normalized integers; Cost Guard projects/estimates from the candidate catalog and may record validated Gateway actual cost as integer micro-USD.
+- Real AI Gateway generation is blocked unless Cost Guard config + usage ledger pre-flight allow the request.
 - Live benchmark requires `DIVBRAIN_PROVIDER_BENCHMARK_LIVE=1` and is never part of CI.
+- Production default remains `UnconfiguredProvider` after Cost Guard merge.
 
 ## Persistence schema (Ticket 1A-6)
 

@@ -58,7 +58,34 @@ export {
 } from "./postgrest-failure";
 
 /**
- * Privileged wiring returns PersistencePort only — never a raw admin client.
- * Do not re-export any service-role SupabaseClient factory from this surface.
+ * Privileged wiring returns PersistencePort / usage ledger only — never a raw
+ * admin client. Do not re-export any service-role SupabaseClient factory.
  */
-export { createDivBrainServiceRolePersistencePort } from "./service-role-client";
+export {
+  createDivBrainServiceRolePersistencePort,
+  createDivBrainServiceRoleUsageLedgerRepository,
+} from "./service-role-client";
+
+export {
+  createDivBrainUsageLedgerRepository,
+  divBrainUtcDayRange,
+  divBrainUtcMonthRange,
+  type DivBrainUsageLedgerRepository,
+  type DivBrainUsageLedgerUtcRange,
+  type RecordDivBrainUsageEventParams,
+} from "./usage-ledger";
+
+export {
+  createSupabaseDivBrainUsageLedgerPort,
+  DIVBRAIN_USAGE_COST_SOURCES,
+  DIVBRAIN_USAGE_TERMINAL_STATUSES,
+  type DivBrainUsageCostSource,
+  type DivBrainUsageEventInsert,
+  type DivBrainUsageLedgerPort,
+  type DivBrainUsageTerminalStatus,
+} from "./usage-ledger-persistence";
+
+export {
+  createInMemoryDivBrainUsageLedgerPort,
+  type InMemoryDivBrainUsageLedgerState,
+} from "./usage-ledger-memory";

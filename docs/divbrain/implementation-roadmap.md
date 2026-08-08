@@ -556,6 +556,7 @@ Tickets are independently reviewable. Stack on `feature/divbrain-*` from `origin
 ### 1B-4 — Cost persistence + internal logging
 
 - Safe `provider_meta` / usage fields (allowed turns only) — **live** token/cost logging begins here
+- **Issue #103 (partial):** dedicated `divbrain_usage_events` ledger + post-call accounting landed; production provider remains unconfigured until Founder activation
 
 ### 1C-1 — Learning retriever
 
@@ -576,10 +577,12 @@ Tickets are independently reviewable. Stack on `feature/divbrain-*` from `origin
 ### 1D-2 — Rate limits + token budgets enforcement
 
 - Server-side counters
+- **Issue #103 (partial):** Cost Guard pre-flight enforces per-request / UTC-day / calendar-month hard limits before `provider.generate()`
 
 ### 1D-3 — Optional `divbrain_usage_events`
 
 - Migration + repository writes (dev → preview → prod approval path)
+- **Issue #103:** migration + least-privilege RLS/grants + aggregate RPC implemented in repo; apply remotely only after Founder review
 
 ### 2-1 — Swedish editorial pass on system-facing UI strings
 
