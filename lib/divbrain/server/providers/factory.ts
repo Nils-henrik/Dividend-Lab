@@ -4,7 +4,10 @@
  * Default remains UnconfiguredProvider. AI Gateway is constructed only when
  * server config explicitly selects it with a valid model id.
  *
- * Do not wire this into live `/brain` server actions in this ticket.
+ * When a dedicated AI_GATEWAY_API_KEY is present, pass it explicitly to the
+ * Gateway provider so API-key spend quotas are the effective external hard stop.
+ * Otherwise Vercel deployments may continue to use OIDC.
+ *
  * This module must never be imported by client components.
  */
 
@@ -31,7 +34,7 @@ export type CreateDivBrainProviderOptions = {
   env?: DivBrainProviderEnvSource;
   /** Test seam for the gateway generateText call. */
   generateText?: AiGatewayGenerateText;
-  /** Optional gateway constructor overrides (e.g. custom fetch). */
+  /** Optional gateway constructor overrides (e.g. explicit API key). */
   gatewayOptions?: Omit<
     AiGatewayProviderOptions,
     "modelId" | "maxOutputTokens" | "generateText"
@@ -42,6 +45,29 @@ export type DivBrainProviderFactoryResult = {
   provider: DivBrainProvider;
   config: DivBrainProviderConfig;
 };
+
+function readTrimmedApiKey(value: unknown): string | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
+/**
+ * Resolve Gateway API-key auth without ever logging or returning it outside the
+ * provider constructor. Explicit gatewayOptions win, then injected env, then
+ * process.env. If no key exists, the provider intentionally falls back to OIDC.
+ */
+function resolveGatewayApiKey(
+  options: CreateDivBrainProviderOptions,
+): string | undefined {
+  return (
+    readTrimmedApiKey(options.gatewayOptions?.apiKey) ??
+    readTrimmedApiKey(options.env?.AI_GATEWAY_API_KEY) ??
+    readTrimmedApiKey(process.env.AI_GATEWAY_API_KEY)
+  );
+}
 
 /**
  * Create the DivBrain provider selected by server configuration.
@@ -64,12 +90,13 @@ export function createDivBrainProvider(
   }
 
   if (config.kind === DIVBRAIN_PROVIDER_KIND_AI_GATEWAY) {
+    const apiKey = resolveGatewayApiKey(options);
     return {
       provider: createAiGatewayProvider({
         modelId: config.modelId,
         maxOutputTokens: config.maxOutputTokens,
         generateText: options.generateText,
-        ...options.gatewayOptions,
+        ...(apiKey ? { apiKey } : {}),
       }),
       config,
     };
