@@ -74,7 +74,8 @@ export function scoreDivBrainLearningSection(
     headingScore +
     descriptionScore +
     phraseBonus(normalizedQuery, record.title, W.titlePhrase) +
-    phraseBonus(normalizedQuery, section.heading ?? "", W.headingPhrase);
+    phraseBonus(normalizedQuery, section.heading ?? "", W.headingPhrase) +
+    phraseBonus(normalizedQuery, record.description, W.descriptionPhrase);
 
   const softScore =
     fieldScore(queryTokens, record.excerptTokens, W.excerpt) +
