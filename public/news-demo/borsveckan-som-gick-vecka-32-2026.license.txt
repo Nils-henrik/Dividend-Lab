@@ -1,0 +1,15 @@
+Börsnyheter cover: Börsveckan som gick – vecka 32 (DivLab)
+Local file:
+- public/news-demo/borsveckan-som-gick-vecka-32-2026.svg
+Created: 2026-08-08
+Creator: DivLab (original editorial illustration)
+
+Composition notes:
+- Original dark-navy DivLab editorial vector illustration.
+- Embedded headline: "BÖRSVECKAN SOM GICK".
+- Date line: "VECKA 32 · 3–7 AUGUSTI 2026".
+- Original vector market grid, candlestick/price line and generic Nordic city silhouette.
+- No third-party photography, stock imagery, company logos or externally licensed visual assets are used.
+- Native viewBox 1024×682 (approx. 3:2); scalable SVG keeps typography and chart geometry crisp at responsive sizes.
+
+Usage: Editorial news cover for DivLab Börsnyheter. Illustration: DivLab.
