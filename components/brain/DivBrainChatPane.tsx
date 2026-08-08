@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { DivBrainActionState } from "@/lib/divbrain/action-state";
-import type { DivBrainShellTranscriptView } from "@/lib/divbrain/server/ui";
+import type { DivBrainShellTranscriptView } from "@/lib/divbrain/ui-types";
 import DivBrainComposer from "./DivBrainComposer";
 import DivBrainTranscript, {
   type DivBrainOptimisticUserMessage,
