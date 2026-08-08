@@ -16,9 +16,9 @@ describe("DivBrain Intelligence v1 — Learning retrieval", () => {
     assert.equal(result.ok, true);
     if (!result.ok) return;
 
-    assert.ok(result.sources.length >= 1);
+    assert.ok(result.data.sources.length >= 1);
     assert.equal(
-      result.hits[0]?.slug,
+      result.data.hits[0]?.slug,
       "direktavkastning-och-utdelningssakerhet",
     );
   });
