@@ -39,7 +39,7 @@ export default function DivBrainTranscript({
       top: container.scrollHeight,
       behavior: optimisticUserMessage || showThinking ? "smooth" : "auto",
     });
-  }, [itemCount, optimisticUserMessage?.id, showThinking]);
+  }, [itemCount, optimisticUserMessage, showThinking]);
 
   return (
     <div
