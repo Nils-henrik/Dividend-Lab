@@ -9,7 +9,6 @@ import DivBrainEmptyState from "./DivBrainEmptyState";
 import DivBrainHeader from "./DivBrainHeader";
 import DivBrainHistoryDrawer from "./DivBrainHistoryDrawer";
 import DivBrainTranscript from "./DivBrainTranscript";
-import DivBrainTrustNote from "./DivBrainTrustNote";
 
 type Props = {
   view: DivBrainShellViewModel;
@@ -26,7 +25,7 @@ export default function DivBrainShell({ view }: Props) {
     view.state === "ready" ? view.selectedConversation.id : null;
 
   return (
-    <section className="flex flex-col gap-4 sm:gap-5">
+    <section className="flex flex-col gap-3">
       <DivBrainHeader />
 
       <div className="lg:hidden">
@@ -38,7 +37,7 @@ export default function DivBrainShell({ view }: Props) {
         />
       </div>
 
-      <div className="flex h-[calc(100dvh-14rem)] min-h-[28rem] max-h-[54rem] flex-col gap-4 lg:h-[calc(100dvh-16rem)] lg:max-h-none lg:flex-row lg:items-stretch lg:gap-5">
+      <div className="flex h-[calc(100dvh-11rem)] min-h-[30rem] flex-col gap-3 lg:h-[calc(100dvh-11.5rem)] lg:min-h-[34rem] lg:flex-row lg:items-stretch lg:gap-4">
         <aside className="hidden h-full w-full shrink-0 lg:sticky lg:top-24 lg:block lg:w-72 xl:w-80">
           <DivBrainConversationRail
             conversations={conversations}
@@ -73,7 +72,7 @@ export default function DivBrainShell({ view }: Props) {
 
           {view.state === "ready" ? (
             <>
-              <div className="z-10 shrink-0 border-b divlab-border-neutral bg-divlab-surface/95 px-4 py-3 backdrop-blur sm:px-6 sm:py-4">
+              <div className="z-10 shrink-0 border-b divlab-border-neutral bg-divlab-surface/95 px-4 py-3 backdrop-blur sm:px-6">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="flex min-w-0 flex-wrap items-center gap-2">
                     <h2 className="min-w-0 truncate text-base font-semibold tracking-[-0.03em] text-divlab-text sm:text-lg">
@@ -114,8 +113,6 @@ export default function DivBrainShell({ view }: Props) {
           ) : null}
         </div>
       </div>
-
-      <DivBrainTrustNote />
     </section>
   );
 }

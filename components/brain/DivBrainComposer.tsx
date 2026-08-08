@@ -22,6 +22,7 @@ type Props = {
   onSubmissionSettled?: (state: DivBrainActionState) => void;
 };
 
+const COMPOSER_MIN_HEIGHT_PX = 36;
 const COMPOSER_MAX_HEIGHT_PX = 176;
 
 export default function DivBrainComposer({
@@ -59,7 +60,7 @@ export default function DivBrainComposer({
 
     textarea.style.height = "0px";
     const nextHeight = Math.min(textarea.scrollHeight, COMPOSER_MAX_HEIGHT_PX);
-    textarea.style.height = `${Math.max(nextHeight, 48)}px`;
+    textarea.style.height = `${Math.max(nextHeight, COMPOSER_MIN_HEIGHT_PX)}px`;
     textarea.style.overflowY =
       textarea.scrollHeight > COMPOSER_MAX_HEIGHT_PX ? "auto" : "hidden";
   }, [content]);
@@ -110,14 +111,14 @@ export default function DivBrainComposer({
   }
 
   return (
-    <div className="sticky bottom-0 z-10 bg-gradient-to-t from-divlab-bg via-divlab-bg/95 to-transparent px-3 pb-4 pt-6 sm:px-5">
+    <div className="sticky bottom-0 z-10 bg-gradient-to-t from-divlab-bg via-divlab-bg/95 to-transparent px-3 pb-2 pt-3 sm:px-5 sm:pb-3">
       <form
         onSubmit={handleSubmit}
         className="mx-auto max-w-[48rem]"
         aria-busy={pending}
       >
         <input type="hidden" name="conversationId" value={conversationId} />
-        <div className="rounded-[1.65rem] border divlab-border-neutral bg-divlab-elevated shadow-sm transition focus-within:border-divlab-blue/45 focus-within:shadow-md">
+        <div className="rounded-[1.45rem] border divlab-border-neutral bg-divlab-elevated shadow-sm transition focus-within:border-divlab-blue/45 focus-within:shadow-md">
           <label htmlFor={fieldId} className="sr-only">
             Ställ en fråga till DivBrain
           </label>
@@ -133,10 +134,10 @@ export default function DivBrainComposer({
             onKeyDown={handleKeyDown}
             aria-describedby={statusId}
             placeholder="Fråga DivBrain…"
-            className="block min-h-12 w-full resize-none bg-transparent px-5 pb-2 pt-4 text-sm leading-6 text-divlab-text outline-none placeholder:text-divlab-text-muted"
+            className="block min-h-9 w-full resize-none bg-transparent px-5 pb-1 pt-3 text-sm leading-6 text-divlab-text outline-none placeholder:text-divlab-text-muted"
           />
-          <div className="flex items-end justify-between gap-3 px-3 pb-3 pl-5">
-            <p className="pb-1 text-[11px] leading-4 text-divlab-text-muted">
+          <div className="flex items-center justify-between gap-3 px-3 pb-2.5 pl-5">
+            <p className="text-[10px] leading-4 text-divlab-text-muted sm:text-[11px]">
               Enter skickar · Shift+Enter ger ny rad
             </p>
             <button
@@ -145,7 +146,7 @@ export default function DivBrainComposer({
               aria-disabled={!canSubmit}
               aria-label={pending ? "DivBrain tänker" : "Skicka meddelande"}
               title={pending ? "DivBrain tänker…" : "Skicka"}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-divlab-blue text-lg font-semibold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-35"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-divlab-blue text-base font-semibold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-35"
             >
               <span aria-hidden="true">↑</span>
             </button>
@@ -155,12 +156,12 @@ export default function DivBrainComposer({
           id={statusId}
           role="status"
           aria-live="polite"
-          className="min-h-5 px-3 pt-2 text-center text-[11px] leading-5 text-divlab-text-muted"
+          className="min-h-4 px-3 pt-1.5 text-center text-[10px] leading-4 text-divlab-text-muted sm:text-[11px]"
         >
           {statusMessage ??
             (pending
               ? "DivBrain arbetar med svaret…"
-              : "DivBrain kan göra misstag. Kontrollera viktig information.")}
+              : "Privat för ditt konto · DivBrain kan göra misstag. Kontrollera viktig information.")}
         </p>
       </form>
     </div>
