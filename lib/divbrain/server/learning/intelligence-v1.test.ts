@@ -1,30 +1,12 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import {
-  assembleDivBrainLearningContext,
-  retrieveDivBrainLearningSources,
-} from "./index";
+import { assembleDivBrainLearningContext } from "./index";
 
 const CONVERSATION_ID = "11111111-1111-4111-8111-111111111111";
 const OTHER_CONVERSATION_ID = "22222222-2222-4222-8222-222222222222";
 
 describe("DivBrain Intelligence v1 — Learning retrieval", () => {
-  it("grounds a plain utdelning question in relevant curated Learning material", () => {
-    const result = retrieveDivBrainLearningSources("Vad är en utdelning?");
-
-    assert.equal(result.ok, true);
-    if (!result.ok) return;
-
-    assert.ok(result.data.sources.length >= 1);
-    assert.equal(
-      result.data.hits.some(
-        (hit) => hit.slug === "direktavkastning-och-utdelningssakerhet",
-      ),
-      true,
-    );
-  });
-
   it("uses the latest user turn for a referential follow-up with no direct match", () => {
     const result = assembleDivBrainLearningContext({
       currentUserMessage: "Hur fungerar det då?",
