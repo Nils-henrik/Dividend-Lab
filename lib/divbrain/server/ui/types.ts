@@ -1,15 +1,18 @@
 /**
- * Browser-safe DivBrain shell view-model contracts (Tickets 1A-9a / 1A-9b / 1C-3).
- *
- * Must never include actor/user/owner ids, emails, profiles, raw repository
- * errors, system messages, policy/context, source excerpts, or environment state.
- *
- * Server-only module — do not import from client components.
+ * DivBrain shell UI server surface constants plus browser-safe view type
+ * re-exports. The serializable view contracts live outside `server/` so client
+ * components can consume them without importing a server-owned module.
  */
 
-import type { DivBrainArchiveScope } from "../../brain-routes";
-
-export type { DivBrainArchiveScope };
+export type {
+  DivBrainArchiveScope,
+  DivBrainShellConversationListItem,
+  DivBrainShellSelectedConversation,
+  DivBrainShellTranscriptItem,
+  DivBrainShellTranscriptSource,
+  DivBrainShellTranscriptView,
+  DivBrainShellViewModel,
+} from "../../ui-types";
 
 export const DIVBRAIN_SHELL_CONVERSATION_PAGE_SIZE = 30 as const;
 
@@ -24,128 +27,3 @@ export const DIVBRAIN_SHELL_TRANSCRIPT_RENDER_LIMIT = 100 as const;
  * Declared here for documentation and tests; loader uses repository max size.
  */
 export const DIVBRAIN_SHELL_TRANSCRIPT_MAX_SCANNED_ROWS = 500 as const;
-
-export type DivBrainShellConversationListItem = {
-  id: string;
-  title: string;
-  summary: string | null;
-  updatedAt: string;
-  archived: boolean;
-};
-
-/**
- * Minimal already-validated source metadata allowed across the shell boundary.
- * Source excerpts, record refs, retrieval diagnostics and hidden context remain
- * server-side. At most one of the two href fields is normally needed by UI.
- */
-export type DivBrainShellTranscriptSource = {
-  id: string;
-  title: string;
-  publisher?: string;
-  attribution?: string;
-  internalRoute?: string;
-  canonicalUrl?: string;
-};
-
-/** Safe transcript presentation kinds. Content is plain text only. */
-export type DivBrainShellTranscriptItem =
-  | {
-      kind: "user_message";
-      id: string;
-      content: string;
-      createdAt: string;
-    }
-  | {
-      kind: "assistant_message";
-      id: string;
-      content: string;
-      createdAt: string;
-      sources?: readonly DivBrainShellTranscriptSource[];
-    }
-  | {
-      kind: "provider_unavailable";
-      id: string;
-      /** Catalog-safe Swedish message. */
-      message: string;
-      createdAt: string;
-    }
-  | {
-      kind: "failed";
-      id: string;
-      message: string;
-      createdAt: string;
-    }
-  | {
-      kind: "cancelled";
-      id: string;
-      message: string;
-      createdAt: string;
-    }
-  | {
-      kind: "incomplete";
-      id: string;
-      message: string;
-      createdAt: string;
-    }
-  | {
-      kind: "blocked";
-      id: string;
-      message: string;
-      createdAt: string;
-    }
-  | {
-      kind: "unavailable";
-      id: string;
-      message: string;
-      createdAt: string;
-    };
-
-export type DivBrainShellTranscriptView =
-  | {
-      status: "ready";
-      items: readonly DivBrainShellTranscriptItem[];
-      historyTruncated: boolean;
-    }
-  | {
-      status: "empty";
-    }
-  | {
-      status: "data_unavailable";
-    };
-
-export type DivBrainShellSelectedConversation = {
-  id: string;
-  title: string;
-  archived: boolean;
-  updatedAt: string;
-  transcript: DivBrainShellTranscriptView;
-};
-
-/**
- * Discriminated browser-safe shell view model.
- * Never includes actor id, allowlist data, or repository internals.
- */
-export type DivBrainShellViewModel =
-  | {
-      state: "empty";
-      archiveScope: DivBrainArchiveScope;
-      conversations: readonly DivBrainShellConversationListItem[];
-      hasMoreConversations: boolean;
-      selectedConversationId: null;
-    }
-  | {
-      state: "ready";
-      archiveScope: DivBrainArchiveScope;
-      conversations: readonly DivBrainShellConversationListItem[];
-      hasMoreConversations: boolean;
-      selectedConversation: DivBrainShellSelectedConversation;
-    }
-  | {
-      state: "conversation_not_found";
-      archiveScope: DivBrainArchiveScope;
-      conversations: readonly DivBrainShellConversationListItem[];
-      hasMoreConversations: boolean;
-    }
-  | {
-      state: "data_unavailable";
-    };
