@@ -669,9 +669,9 @@ describe("DivBrain usage accounting", () => {
   it("validates gateway actual cost metadata narrowly", () => {
     assert.equal(
       extractValidatedGatewayCostMicroUsd({
-        gateway: { totalCost: 0.000123 },
+        gateway: { totalCost: 0.000125 },
       }),
-      123,
+      125,
     );
     assert.equal(
       extractValidatedGatewayCostMicroUsd({ gateway: { cost: 0 } }),

@@ -30,7 +30,9 @@ export function usdToMicroUsdCeil(usd: number): DivBrainMicroUsd | null {
     return null;
   }
 
-  const micro = Math.ceil(usd * DIVBRAIN_MICRO_USD_PER_USD);
+  // Stabilize binary floating error before ceil (e.g. 0.000123 * 1e6).
+  const scaled = Number((usd * DIVBRAIN_MICRO_USD_PER_USD).toFixed(6));
+  const micro = Math.ceil(scaled);
   if (!Number.isSafeInteger(micro) || micro <= 0) {
     return null;
   }
