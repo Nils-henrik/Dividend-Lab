@@ -1,0 +1,85 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import type { DivBrainActionState } from "@/lib/divbrain/action-state";
+import { isDivBrainOptimisticMessagePersisted } from "@/lib/divbrain/chat-ux";
+import type { DivBrainShellTranscriptView } from "@/lib/divbrain/ui-types";
+import DivBrainComposer from "./DivBrainComposer";
+import DivBrainTranscript, {
+  type DivBrainOptimisticUserMessage,
+} from "./DivBrainTranscript";
+
+type Props = {
+  conversationId: string;
+  transcript: DivBrainShellTranscriptView;
+};
+
+type PendingOptimisticMessage = DivBrainOptimisticUserMessage & {
+  previousPersistedUserMessageId: string | null;
+};
+
+function latestPersistedUserMessage(transcript: DivBrainShellTranscriptView) {
+  if (transcript.status !== "ready") {
+    return null;
+  }
+
+  for (let index = transcript.items.length - 1; index >= 0; index -= 1) {
+    const item = transcript.items[index];
+    if (item?.kind === "user_message") {
+      return item;
+    }
+  }
+
+  return null;
+}
+
+export default function DivBrainChatPane({ conversationId, transcript }: Props) {
+  const [optimisticMessage, setOptimisticMessage] =
+    useState<PendingOptimisticMessage | null>(null);
+  const [waitingForResponse, setWaitingForResponse] = useState(false);
+
+  const optimisticPersisted = useMemo(() => {
+    if (!optimisticMessage) {
+      return false;
+    }
+
+    return isDivBrainOptimisticMessagePersisted({
+      optimistic: optimisticMessage,
+      latestPersisted: latestPersistedUserMessage(transcript),
+    });
+  }, [optimisticMessage, transcript]);
+
+  function handleOptimisticSubmit(content: string) {
+    const latestUserMessage = latestPersistedUserMessage(transcript);
+
+    setOptimisticMessage({
+      id: `optimistic-${Date.now()}`,
+      content,
+      createdAt: new Date().toISOString(),
+      previousPersistedUserMessageId: latestUserMessage?.id ?? null,
+    });
+    setWaitingForResponse(true);
+  }
+
+  function handleSubmissionSettled(state: DivBrainActionState) {
+    setWaitingForResponse(false);
+    if (!state.persisted) {
+      setOptimisticMessage(null);
+    }
+  }
+
+  return (
+    <>
+      <DivBrainTranscript
+        transcript={transcript}
+        optimisticUserMessage={optimisticPersisted ? null : optimisticMessage}
+        showThinking={waitingForResponse}
+      />
+      <DivBrainComposer
+        conversationId={conversationId}
+        onOptimisticSubmit={handleOptimisticSubmit}
+        onSubmissionSettled={handleSubmissionSettled}
+      />
+    </>
+  );
+}

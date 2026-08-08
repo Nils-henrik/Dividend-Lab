@@ -1,56 +1,133 @@
+"use client";
+
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { formatDivBrainMessageTimestamp } from "@/lib/divbrain/dates";
 import type {
   DivBrainShellTranscriptItem,
   DivBrainShellTranscriptSource,
   DivBrainShellTranscriptView,
-} from "@/lib/divbrain/server/ui";
+} from "@/lib/divbrain/ui-types";
+
+export type DivBrainOptimisticUserMessage = {
+  id: string;
+  content: string;
+  createdAt: string;
+};
 
 type Props = {
   transcript: DivBrainShellTranscriptView;
+  optimisticUserMessage?: DivBrainOptimisticUserMessage | null;
+  showThinking?: boolean;
 };
 
-export default function DivBrainTranscript({ transcript }: Props) {
-  if (transcript.status === "data_unavailable") {
-    return (
-      <div className="flex flex-1 items-center px-5 py-8 sm:px-6">
-        <p className="text-sm leading-6 text-divlab-text-secondary">
-          Transkriptet kunde inte laddas just nu.
-        </p>
-      </div>
-    );
-  }
+export default function DivBrainTranscript({
+  transcript,
+  optimisticUserMessage = null,
+  showThinking = false,
+}: Props) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const itemCount = transcript.status === "ready" ? transcript.items.length : 0;
 
-  if (transcript.status === "empty") {
-    return (
-      <div className="flex flex-1 items-center px-5 py-8 sm:px-6">
-        <p className="max-w-xl text-sm leading-6 text-divlab-text-secondary">
-          Den här konversationen har inga meddelanden ännu. Ställ en fråga
-          nedan för att börja.
-        </p>
-      </div>
-    );
-  }
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (!container) {
+      return;
+    }
+
+    container.scrollTo({
+      top: container.scrollHeight,
+      behavior: optimisticUserMessage || showThinking ? "smooth" : "auto",
+    });
+  }, [itemCount, optimisticUserMessage, showThinking]);
 
   return (
-    <div className="flex-1 overflow-y-auto px-5 py-5 sm:px-6">
-      {transcript.historyTruncated ? (
-        <p
-          className="mb-4 rounded-xl border divlab-border-neutral bg-divlab-elevated/50 px-3 py-2 text-xs leading-5 text-divlab-text-muted"
-          role="status"
-        >
-          Äldre meddelanden visas inte i den här Alpha-vyn.
-        </p>
-      ) : null}
+    <div
+      ref={scrollRef}
+      className="min-h-0 flex-1 overflow-y-auto overscroll-contain scroll-smooth px-4 py-5 sm:px-6"
+    >
+      <div className="mx-auto flex min-h-full max-w-[48rem] flex-col justify-end">
+        {transcript.status === "data_unavailable" ? (
+          <div className="flex flex-1 items-center py-8">
+            <p className="text-sm leading-6 text-divlab-text-secondary">
+              Transkriptet kunde inte laddas just nu.
+            </p>
+          </div>
+        ) : null}
 
-      <ol className="mx-auto flex max-w-[42rem] list-none flex-col gap-4">
-        {transcript.items.map((item) => (
-          <li key={item.id}>
-            <DivBrainMessageItem item={item} />
-          </li>
-        ))}
-      </ol>
+        {transcript.status === "empty" && !optimisticUserMessage ? (
+          <div className="flex flex-1 items-center py-8">
+            <p className="max-w-xl text-sm leading-6 text-divlab-text-secondary">
+              Ställ en fråga nedan för att börja.
+            </p>
+          </div>
+        ) : null}
+
+        {transcript.status === "ready" && transcript.historyTruncated ? (
+          <p
+            className="mb-5 rounded-xl border divlab-border-neutral bg-divlab-elevated/50 px-3 py-2 text-xs leading-5 text-divlab-text-muted"
+            role="status"
+          >
+            Äldre meddelanden visas inte i den här Alpha-vyn.
+          </p>
+        ) : null}
+
+        <ol className="list-none space-y-6" aria-live="polite">
+          {transcript.status === "ready"
+            ? transcript.items.map((item) => (
+                <li key={item.id}>
+                  <DivBrainMessageItem item={item} />
+                </li>
+              ))
+            : null}
+
+          {optimisticUserMessage ? (
+            <li key={optimisticUserMessage.id}>
+              <OptimisticUserMessage message={optimisticUserMessage} />
+            </li>
+          ) : null}
+
+          {showThinking ? (
+            <li>
+              <DivBrainThinkingState />
+            </li>
+          ) : null}
+        </ol>
+      </div>
     </div>
+  );
+}
+
+function OptimisticUserMessage({
+  message,
+}: {
+  message: DivBrainOptimisticUserMessage;
+}) {
+  return (
+    <article className="ml-auto w-fit max-w-[88%] rounded-3xl bg-divlab-blue/10 px-4 py-3 sm:max-w-[78%]">
+      <p className="whitespace-pre-wrap break-words text-sm leading-6 text-divlab-text">
+        {message.content}
+      </p>
+      <span className="sr-only">Meddelandet skickas</span>
+    </article>
+  );
+}
+
+function DivBrainThinkingState() {
+  return (
+    <article className="mr-auto max-w-[90%] py-1" role="status">
+      <p className="mb-2 text-xs font-semibold text-divlab-text-secondary">
+        DivBrain
+      </p>
+      <div className="flex items-center gap-2 text-sm text-divlab-text-muted">
+        <span className="flex gap-1" aria-hidden="true">
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-current" />
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-current [animation-delay:140ms]" />
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-current [animation-delay:280ms]" />
+        </span>
+        <span>DivBrain tänker…</span>
+      </div>
+    </article>
   );
 }
 
@@ -59,12 +136,12 @@ function DivBrainMessageItem({ item }: { item: DivBrainShellTranscriptItem }) {
 
   if (item.kind === "user_message") {
     return (
-      <article className="ml-auto max-w-[90%] rounded-2xl border border-divlab-blue/20 bg-divlab-blue/10 px-4 py-3">
+      <article className="ml-auto w-fit max-w-[88%] rounded-3xl bg-divlab-blue/10 px-4 py-3 sm:max-w-[78%]">
         <p className="whitespace-pre-wrap break-words text-sm leading-6 text-divlab-text">
           {item.content}
         </p>
         <time
-          className="mt-2 block text-[11px] tabular-nums text-divlab-text-muted"
+          className="mt-1.5 block text-right text-[10px] tabular-nums text-divlab-text-muted"
           dateTime={item.createdAt}
         >
           {timestamp}
@@ -75,8 +152,8 @@ function DivBrainMessageItem({ item }: { item: DivBrainShellTranscriptItem }) {
 
   if (item.kind === "assistant_message") {
     return (
-      <article className="mr-auto max-w-[90%] rounded-2xl border divlab-border-neutral bg-divlab-elevated px-4 py-3">
-        <p className="mb-1 text-[11px] font-medium uppercase tracking-[0.14em] text-divlab-text-muted">
+      <article className="mr-auto w-full max-w-[44rem] py-1">
+        <p className="mb-2 text-xs font-semibold text-divlab-text-secondary">
           DivBrain
         </p>
         <p className="whitespace-pre-wrap break-words text-sm leading-6 text-divlab-text">
@@ -86,7 +163,7 @@ function DivBrainMessageItem({ item }: { item: DivBrainShellTranscriptItem }) {
           <DivBrainTranscriptSources sources={item.sources} />
         ) : null}
         <time
-          className="mt-2 block text-[11px] tabular-nums text-divlab-text-muted"
+          className="mt-2 block text-[10px] tabular-nums text-divlab-text-muted"
           dateTime={item.createdAt}
         >
           {timestamp}
@@ -140,7 +217,7 @@ function DivBrainTranscriptSources({
   sources: readonly DivBrainShellTranscriptSource[];
 }) {
   return (
-    <div className="mt-3 border-t divlab-border-neutral pt-3">
+    <div className="mt-4 border-t divlab-border-neutral pt-3">
       <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-divlab-text-muted">
         Källor
       </p>
