@@ -29,11 +29,11 @@ export const BORSVECKAN_SOM_GICK_VECKA_32_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-08-08T22:45:00+02:00",
   url: "/news/borsveckan-som-gick-vecka-32-2026",
   featured: true,
-  imageUrl: "/news-demo/borsveckan-som-gick-vecka-32-2026.webp",
+  imageUrl: "/news-demo/borsveckan-som-gick-vecka-32-2026.svg",
   thumbnailObjectPosition: "center 42%",
   mobileThumbnailObjectPosition: "center 34%",
   imageAlt:
-    "Mörk redaktionell börsbild med handelsmiljö, marknadsgrafer och rubriken Börsveckan som gick – vecka 32.",
+    "Mörk redaktionell börsbild med stadssiluett, marknadsgraf och rubriken Börsveckan som gick – vecka 32.",
   imageCaption: "Illustration: DivLab.",
   readingMinutes: 6,
   seoTitle: "Börsveckan som gick vecka 32: jobbchock och rapportvinnare",
@@ -99,7 +99,7 @@ export const BORSVECKAN_SOM_GICK_VECKA_32_2026_ARTICLE: NewsArticle = {
       heading: "Norge fick två rapporter som stack ut",
       paragraphs: [
         "Nordic Semiconductor ökade omsättningen med 33 procent till 218,6 miljoner dollar och förbättrade bruttomarginalen till 53,1 procent. Justerad ebitda steg nästan 75 procent till 36,3 miljoner dollar och bolaget guidar för fortsatt tillväxt i tredje kvartalet.",
-        "Hexagon Composites levererade en annan typ av förbättring. Omsättningen sjönk, men ebitda steg från 12 till 69 miljoner norska kronor. Bolaget höjde dessutom helårsprognosen för ebitda från tidigare över 200 miljoner till omkring 300 miljoner kronor.",
+        "Hexagon Composites levererade en annan typ av förbättring. Omsättningen sjönk, men ebitda steg från 12 till 69 miljoner norska kronor. Bolaget höjde dessutom helårsprognosen för ebitda från tidigare över 200 miljoner till omkring 300 miljoner norska kronor.",
         "Det var två exempel på varför rapportperioden fortfarande kan skapa stora bolagsspecifika rörelser även när den breda börsen står nära rekordnivåer.",
       ],
     },
@@ -109,7 +109,7 @@ export const BORSVECKAN_SOM_GICK_VECKA_32_2026_ARTICLE: NewsArticle = {
         "Novo Nordisks rapport var på pappret stark. Justerad försäljning ökade 7 procent i konstanta valutor och justerat rörelseresultat steg 11 procent. Bolaget höjde samtidigt sin helårsprognos till en utveckling på 0 till minus 6 procent i konstanta valutor.",
         "Ändå föll aktien 4,3 procent på onsdagen. Investerarna fokuserade bland annat på en försäljningsmiss och en försenad studie för nästa generations fetmaläkemedel CagriSema.",
         "På fredagen steg Novo i stället 3,9 procent när europeiska hälsovårdsaktier gick starkt.",
-        "Det sammanfattar veckan väl. Novo hade inte blivit ett dåligare bolag på två dagar. Marknadens bedömning av förväntningar, konkurrens och framtida tillväxt flyttades däremot snabbt.",
+        "Det sammanfattar veckan väl. Novo hade inte blivit ett sämre bolag på två dagar. Marknadens bedömning av förväntningar, konkurrens och framtida tillväxt flyttades däremot snabbt.",
       ],
     },
     {
