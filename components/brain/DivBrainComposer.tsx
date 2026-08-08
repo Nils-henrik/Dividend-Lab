@@ -22,7 +22,7 @@ type Props = {
   onSubmissionSettled?: (state: DivBrainActionState) => void;
 };
 
-const COMPOSER_MIN_HEIGHT_PX = 36;
+const COMPOSER_MIN_HEIGHT_PX = 42;
 const COMPOSER_MAX_HEIGHT_PX = 176;
 
 export default function DivBrainComposer({
@@ -111,14 +111,14 @@ export default function DivBrainComposer({
   }
 
   return (
-    <div className="sticky bottom-0 z-10 bg-gradient-to-t from-divlab-bg via-divlab-bg/95 to-transparent px-3 pb-2 pt-3 sm:px-5 sm:pb-3">
+    <div className="sticky bottom-0 z-10 bg-gradient-to-t from-divlab-bg via-divlab-bg/95 to-transparent px-3 pb-2.5 pt-4 sm:px-5 sm:pb-3.5">
       <form
         onSubmit={handleSubmit}
-        className="mx-auto max-w-[48rem]"
+        className="mx-auto max-w-[50rem]"
         aria-busy={pending}
       >
         <input type="hidden" name="conversationId" value={conversationId} />
-        <div className="rounded-[1.45rem] border divlab-border-neutral bg-divlab-elevated shadow-sm transition focus-within:border-divlab-blue/45 focus-within:shadow-md">
+        <div className="rounded-[1.65rem] border border-divlab-blue/25 bg-divlab-elevated/95 shadow-lg transition focus-within:border-divlab-blue/55 focus-within:shadow-xl">
           <label htmlFor={fieldId} className="sr-only">
             Ställ en fråga till DivBrain
           </label>
@@ -134,9 +134,9 @@ export default function DivBrainComposer({
             onKeyDown={handleKeyDown}
             aria-describedby={statusId}
             placeholder="Fråga DivBrain…"
-            className="block min-h-9 w-full resize-none bg-transparent px-5 pb-1 pt-3 text-sm leading-6 text-divlab-text outline-none placeholder:text-divlab-text-muted"
+            className="block min-h-10 w-full resize-none bg-transparent px-5 pb-1.5 pt-3.5 text-[15px] leading-6 text-divlab-text outline-none placeholder:text-divlab-text-muted"
           />
-          <div className="flex items-center justify-between gap-3 px-3 pb-2.5 pl-5">
+          <div className="flex items-center justify-between gap-3 px-3 pb-3 pl-5">
             <p className="text-[10px] leading-4 text-divlab-text-muted sm:text-[11px]">
               Enter skickar · Shift+Enter ger ny rad
             </p>
@@ -146,9 +146,11 @@ export default function DivBrainComposer({
               aria-disabled={!canSubmit}
               aria-label={pending ? "DivBrain tänker" : "Skicka meddelande"}
               title={pending ? "DivBrain tänker…" : "Skicka"}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-divlab-blue text-base font-semibold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-35"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-divlab-blue text-white shadow-sm transition hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-divlab-blue disabled:cursor-not-allowed disabled:opacity-30"
             >
-              <span aria-hidden="true">↑</span>
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" aria-hidden="true">
+                <path d="M12 19V5m0 0-5 5m5-5 5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
             </button>
           </div>
         </div>
@@ -161,7 +163,7 @@ export default function DivBrainComposer({
           {statusMessage ??
             (pending
               ? "DivBrain arbetar med svaret…"
-              : "Privat för ditt konto · DivBrain kan göra misstag. Kontrollera viktig information.")}
+              : "Privat för ditt konto · Kontrollera viktig information.")}
         </p>
       </form>
     </div>
