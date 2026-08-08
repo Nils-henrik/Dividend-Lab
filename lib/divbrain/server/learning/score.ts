@@ -10,7 +10,9 @@ import {
   DIVBRAIN_LEARNING_SCORE_WEIGHTS as W,
 } from "./constants";
 import {
+  countLongCompoundTokenOverlap,
   countTokenOverlap,
+  expandDivBrainLearningQueryTokens,
   matchedUniqueQueryTokens,
   normalizeDivBrainLearningText,
   tokenizeDivBrainLearningText,
@@ -28,6 +30,13 @@ export type DivBrainLearningScoredCandidate = {
   strongScore: number;
 };
 
+/**
+ * Compound matches are intentionally weaker than exact lexical matches.
+ * A long query term such as `utdelning` may match `utdelningssäkerhet`, but it
+ * must not outrank a true exact title/heading hit solely because of fuzziness.
+ */
+const COMPOUND_MATCH_WEIGHT_FACTOR = 0.6;
+
 function fieldScore(
   queryTokens: readonly string[],
   fieldTokens: readonly string[],
@@ -36,8 +45,15 @@ function fieldScore(
   if (queryTokens.length === 0 || fieldTokens.length === 0 || weight <= 0) {
     return 0;
   }
+
   const freq = tokenFrequencyMap(fieldTokens);
-  return countTokenOverlap(queryTokens, freq) * weight;
+  const exact = countTokenOverlap(queryTokens, freq) * weight;
+  const compound =
+    countLongCompoundTokenOverlap(queryTokens, fieldTokens) *
+    weight *
+    COMPOUND_MATCH_WEIGHT_FACTOR;
+
+  return exact + compound;
 }
 
 function phraseBonus(normalizedQuery: string, fieldText: string, bonus: number): number {
@@ -52,12 +68,16 @@ function phraseBonus(normalizedQuery: string, fieldText: string, bonus: number):
  * Score one article section against a tokenized query.
  * Strong fields: title, slug, heading, description.
  * Soft fields: excerpt, category, intro, section body.
+ *
+ * `coverageQueryTokens` lets callers use query-expanded scoring terms while
+ * calculating coverage only from terms the user actually wrote.
  */
 export function scoreDivBrainLearningSection(
   queryTokens: readonly string[],
   normalizedQuery: string,
   record: DivBrainLearningCorpusRecord,
   section: DivBrainLearningCorpusSection,
+  coverageQueryTokens: readonly string[] = queryTokens,
 ): DivBrainLearningScoredCandidate {
   const titleScore = fieldScore(queryTokens, record.titleTokens, W.title);
   const slugScore = fieldScore(queryTokens, record.slugTokens, W.slug);
@@ -87,11 +107,11 @@ export function scoreDivBrainLearningSection(
     ...record.slugTokens,
     ...section.headingTokens,
   ];
-  const uniqueQuery = new Set(queryTokens).size;
+  const uniqueQuery = new Set(coverageQueryTokens).size;
   const coverage =
     uniqueQuery === 0
       ? 0
-      : (matchedUniqueQueryTokens(queryTokens, coverageTokens) / uniqueQuery) *
+      : (matchedUniqueQueryTokens(coverageQueryTokens, coverageTokens) / uniqueQuery) *
         W.coverage;
 
   const score = strongScore + softScore + coverage;
@@ -106,6 +126,8 @@ export function scoreDivBrainLearningSection(
 
 /**
  * Score every section in the corpus; return candidates above threshold.
+ * Finance-equivalent terms are added only for scoring. Diagnostics continue to
+ * expose the user's original normalized query tokens.
  */
 export function scoreDivBrainLearningCorpus(
   query: string,
@@ -117,6 +139,7 @@ export function scoreDivBrainLearningCorpus(
 } {
   const normalizedQuery = normalizeDivBrainLearningText(query);
   const queryTokens = tokenizeDivBrainLearningText(query);
+  const scoringTokens = expandDivBrainLearningQueryTokens(queryTokens);
 
   if (queryTokens.length === 0) {
     return { queryTokens, normalizedQuery, candidates: [] };
@@ -133,10 +156,11 @@ export function scoreDivBrainLearningCorpus(
         bodyTokens: record.introTokens,
       };
       const scored = scoreDivBrainLearningSection(
-        queryTokens,
+        scoringTokens,
         normalizedQuery,
         record,
         synthetic,
+        queryTokens,
       );
       if (meetsRetrievalThreshold(scored)) {
         candidates.push(scored);
@@ -146,10 +170,11 @@ export function scoreDivBrainLearningCorpus(
 
     for (const section of record.sections) {
       const scored = scoreDivBrainLearningSection(
-        queryTokens,
+        scoringTokens,
         normalizedQuery,
         record,
         section,
+        queryTokens,
       );
       if (meetsRetrievalThreshold(scored)) {
         candidates.push(scored);
