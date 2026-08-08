@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
 
 import { createInMemoryDivBrainUsageLedgerPort } from "./usage-ledger-memory";
+import type { DivBrainUsageEventRow } from "./usage-ledger-persistence";
 import { createDivBrainUsageLedgerRepository } from "./usage-ledger";
 
 const ACTOR = "11111111-1111-4111-8111-111111111111";
@@ -16,7 +17,7 @@ const migrationsDir = join(__dirname, "../../../../supabase/migrations");
 
 describe("DivBrain usage reconciliation hard-limit accounting", () => {
   it("raises hard-limit reservation when reconciled actual cost is higher", async () => {
-    const state = { events: [] };
+    const state: { events: DivBrainUsageEventRow[] } = { events: [] };
     const ledger = createDivBrainUsageLedgerRepository({
       port: createInMemoryDivBrainUsageLedgerPort(state),
       now: () => NOW,
