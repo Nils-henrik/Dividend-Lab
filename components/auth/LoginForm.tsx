@@ -84,8 +84,8 @@ export default function LoginForm({
             Kontot är skapat
           </p>
           <p className="mt-1 text-sm leading-6 text-divlab-text-secondary">
-            Verifiera först din e-post via länken i välkomstmejlet. Därefter kan
-            du logga in här med din e-post och ditt lösenord.
+            Verifiera din e-post via länken i välkomstmejlet innan du loggar in.
+            När verifieringen är klar tas du vidare till DivLab.
           </p>
         </div>
       )}
