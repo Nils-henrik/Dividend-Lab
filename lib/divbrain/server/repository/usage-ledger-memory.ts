@@ -106,7 +106,7 @@ export function createInMemoryDivBrainUsageLedgerPort(
   state: InMemoryDivBrainUsageLedgerState = { events: [] },
 ): DivBrainUsageLedgerPort {
   let seq = 0;
-  /** Serialize reserves to mirror DB advisory-lock admission. */
+  /** Serialize reserve/finalize to mirror the DB advisory-lock budget critical section. */
   let admissionChain: Promise<void> = Promise.resolve();
 
   const runExclusive = async <T>(fn: () => T | Promise<T>): Promise<T> => {
@@ -225,37 +225,45 @@ export function createInMemoryDivBrainUsageLedgerPort(
     },
 
     async finalizeBudget(input: DivBrainFinalizeBudgetInput) {
-      if (state.finalizeUnavailable) {
-        return { ok: false, error: { kind: "unavailable" as const } };
-      }
+      return runExclusive(() => {
+        if (state.finalizeUnavailable) {
+          return { ok: false, error: { kind: "unavailable" as const } };
+        }
 
-      const row = state.events.find((event) => event.id === input.reservationId);
-      if (!row) {
-        return { ok: false, error: { kind: "not_found" as const } };
-      }
+        const row = state.events.find((event) => event.id === input.reservationId);
+        if (!row) {
+          return { ok: false, error: { kind: "not_found" as const } };
+        }
 
-      if (row.status === "finalized") {
+        if (row.status === "finalized") {
+          return { ok: true, data: { reservationId: row.id } };
+        }
+
+        if (row.status !== "reserved") {
+          return { ok: false, error: { kind: "query_failed" as const } };
+        }
+
+        // Hard-limit accounting must never be lower than reconciled actual/estimate.
+        // Finalization may raise the reservation, but must never reduce it.
+        row.reserved_cost_micro_usd = Math.max(
+          row.reserved_cost_micro_usd,
+          input.accountedCostMicroUsd,
+        );
+        row.accounted_cost_micro_usd = input.accountedCostMicroUsd;
+        row.cost_source = input.costSource;
+        row.terminal_status = input.terminalStatus;
+        row.input_tokens = input.inputTokens;
+        row.output_tokens = input.outputTokens;
+        row.total_tokens = input.totalTokens;
+        row.latency_ms = input.latencyMs;
+        if (input.messageId !== null) {
+          row.message_id = input.messageId;
+        }
+        row.status = "finalized";
+        row.finalized_at = input.nowIso;
+
         return { ok: true, data: { reservationId: row.id } };
-      }
-
-      if (row.status !== "reserved") {
-        return { ok: false, error: { kind: "query_failed" as const } };
-      }
-
-      row.accounted_cost_micro_usd = input.accountedCostMicroUsd;
-      row.cost_source = input.costSource;
-      row.terminal_status = input.terminalStatus;
-      row.input_tokens = input.inputTokens;
-      row.output_tokens = input.outputTokens;
-      row.total_tokens = input.totalTokens;
-      row.latency_ms = input.latencyMs;
-      if (input.messageId !== null) {
-        row.message_id = input.messageId;
-      }
-      row.status = "finalized";
-      row.finalized_at = input.nowIso;
-
-      return { ok: true, data: { reservationId: row.id } };
+      });
     },
 
     async sumReservedCostMicroUsd(query: DivBrainUsageSumQuery) {
