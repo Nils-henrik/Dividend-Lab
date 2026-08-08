@@ -258,9 +258,19 @@ describe("DivBrain Cost Guard atomic reservation", () => {
       port: mem,
       now: () => new Date(iso()),
     });
+    const projected = projectDivBrainRequestCostMicroUsd({
+      request: baseRequest(),
+      modelId: "openai/gpt-5.6-luna",
+      maxOutputTokens: 16,
+    });
+    assert.ok(projected.projectedCostMicroUsd !== null);
+    const unit = projected.projectedCostMicroUsd!;
     const config = validConfig({
-      DIVBRAIN_COST_GUARD_DAILY_HARD_LIMIT_MICRO_USD: "100",
-      DIVBRAIN_COST_GUARD_MAX_REQUEST_MICRO_USD: "80",
+      DIVBRAIN_COST_GUARD_MAX_REQUEST_MICRO_USD: String(unit),
+      DIVBRAIN_COST_GUARD_DAILY_HARD_LIMIT_MICRO_USD: String(unit),
+      DIVBRAIN_COST_GUARD_MONTHLY_TARGET_MICRO_USD: String(unit),
+      DIVBRAIN_COST_GUARD_MONTHLY_WARNING_MICRO_USD: String(unit),
+      DIVBRAIN_COST_GUARD_MONTHLY_HARD_LIMIT_MICRO_USD: String(unit),
     });
     const guard = createDivBrainCostGuard({ config, usageLedger: ledger });
 
@@ -289,21 +299,53 @@ describe("DivBrain Cost Guard atomic reservation", () => {
   });
 
   it("denies when monthly hard limit would be exceeded", async () => {
-    const mem = createInMemoryDivBrainUsageLedgerPort();
+    const projected = projectDivBrainRequestCostMicroUsd({
+      request: baseRequest(),
+      modelId: "openai/gpt-5.6-luna",
+      maxOutputTokens: 16,
+    });
+    assert.ok(projected.projectedCostMicroUsd !== null);
+    const unit = projected.projectedCostMicroUsd!;
+
+    // Prior spend earlier in the same UTC month but previous UTC day so today's
+    // day-sum is empty while month-sum is already at the hard cap.
+    const mem = createInMemoryDivBrainUsageLedgerPort({
+      events: [
+        {
+          id: "eeeeeeee-eeee-4eee-8eee-000000000010",
+          user_id: ACTOR,
+          conversation_id: null,
+          message_id: null,
+          provider_id: "ai-gateway",
+          model_id: "openai/gpt-5.6-luna",
+          input_tokens: null,
+          output_tokens: null,
+          total_tokens: null,
+          reserved_cost_micro_usd: unit,
+          accounted_cost_micro_usd: unit,
+          cost_source: "conservative_estimate",
+          latency_ms: null,
+          terminal_status: "completed",
+          status: "finalized",
+          created_at: "2026-08-01T12:00:00.000Z",
+          finalized_at: "2026-08-01T12:00:01.000Z",
+        },
+      ],
+    });
     const ledger = createDivBrainUsageLedgerRepository({
       port: mem,
       now: () => new Date(iso()),
     });
     const config = validConfig({
-      DIVBRAIN_COST_GUARD_DAILY_HARD_LIMIT_MICRO_USD: "500000",
-      DIVBRAIN_COST_GUARD_MONTHLY_HARD_LIMIT_MICRO_USD: "100",
-      DIVBRAIN_COST_GUARD_MONTHLY_WARNING_MICRO_USD: "90",
-      DIVBRAIN_COST_GUARD_MONTHLY_TARGET_MICRO_USD: "80",
-      DIVBRAIN_COST_GUARD_MAX_REQUEST_MICRO_USD: "80",
+      DIVBRAIN_COST_GUARD_MAX_REQUEST_MICRO_USD: String(unit),
+      DIVBRAIN_COST_GUARD_DAILY_HARD_LIMIT_MICRO_USD: String(unit),
+      DIVBRAIN_COST_GUARD_MONTHLY_TARGET_MICRO_USD: String(unit),
+      DIVBRAIN_COST_GUARD_MONTHLY_WARNING_MICRO_USD: String(unit),
+      DIVBRAIN_COST_GUARD_MONTHLY_HARD_LIMIT_MICRO_USD: String(unit),
     });
     const guard = createDivBrainCostGuard({ config, usageLedger: ledger });
 
-    const first = await guard.reserve({
+    const decision = await guard.reserve({
       actorId: ACTOR,
       conversationId: CONV,
       providerId: "ai-gateway",
@@ -311,19 +353,9 @@ describe("DivBrain Cost Guard atomic reservation", () => {
       modelId: "openai/gpt-5.6-luna",
       maxOutputTokens: 16,
     });
-    assert.equal(first.allow, true);
-
-    const second = await guard.reserve({
-      actorId: ACTOR,
-      conversationId: CONV,
-      providerId: "ai-gateway",
-      request: baseRequest(),
-      modelId: "openai/gpt-5.6-luna",
-      maxOutputTokens: 16,
-    });
-    assert.equal(second.allow, false);
-    if (!second.allow) {
-      assert.equal(second.reason, "monthly_hard_limit");
+    assert.equal(decision.allow, false);
+    if (!decision.allow) {
+      assert.equal(decision.reason, "monthly_hard_limit");
     }
   });
 

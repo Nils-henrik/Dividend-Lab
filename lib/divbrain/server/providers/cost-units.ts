@@ -70,15 +70,16 @@ export function decimalUsdStringToMicroUsdCeil(
 
   const fracPadded = (fracPart + "000000").slice(0, 6);
   const discarded = fracPart.slice(6);
-  let micro = BigInt(wholePart) * BigInt(DIVBRAIN_MICRO_USD_PER_USD) +
+  let micro =
+    BigInt(wholePart) * BigInt(DIVBRAIN_MICRO_USD_PER_USD) +
     BigInt(fracPadded.length > 0 ? fracPadded : "0");
 
   // Conservative ceil when truncating beyond micro-USD precision.
   if (discarded.length > 0 && /[1-9]/.test(discarded)) {
-    micro += 1n;
+    micro += BigInt(1);
   }
 
-  if (micro <= 0n) {
+  if (micro <= BigInt(0)) {
     return null;
   }
 
