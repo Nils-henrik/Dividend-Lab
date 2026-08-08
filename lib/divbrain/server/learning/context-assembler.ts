@@ -35,7 +35,7 @@ const DIVBRAIN_LEARNING_FOLLOW_UP_MAX_CHARS = 240;
 const DIVBRAIN_LEARNING_FALLBACK_HISTORY_MAX_CHARS = 600;
 
 const REFERENTIAL_FOLLOW_UP_PATTERN =
-  /\b(det|den|detta|denna|där|då|samma|sådan|sådant|sådana|it|that|this|there|then|same)\b/iu;
+  /(?:^|[^\p{L}\p{N}_])(?:det|den|detta|denna|där|då|samma|sådan|sådant|sådana|it|that|this|there|then|same)(?=$|[^\p{L}\p{N}_])/iu;
 
 function isReferentialFollowUp(message: string): boolean {
   const normalized = message.normalize("NFC").trim();
