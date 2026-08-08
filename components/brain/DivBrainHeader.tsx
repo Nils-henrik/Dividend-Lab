@@ -1,6 +1,6 @@
 export default function DivBrainHeader() {
   return (
-    <header className="divlab-card px-5 py-5 sm:px-6">
+    <header className="px-1 py-1 sm:px-2 sm:py-2">
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-3xl font-semibold tracking-[-0.04em] text-divlab-text sm:text-4xl">
           DivBrain
@@ -9,7 +9,7 @@ export default function DivBrainHeader() {
           Intern Alpha
         </span>
       </div>
-      <p className="mt-3 max-w-2xl text-sm leading-6 text-divlab-text-secondary">
+      <p className="mt-2 max-w-2xl text-sm leading-6 text-divlab-text-secondary">
         Svensk förklaring och finansiell förståelse med tydliga gränser. Ingen
         personlig rådgivning.
       </p>
