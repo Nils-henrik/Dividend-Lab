@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import type { DivBrainActionState } from "@/lib/divbrain/action-state";
 import { isDivBrainOptimisticMessagePersisted } from "@/lib/divbrain/chat-ux";
 import type { DivBrainShellTranscriptView } from "@/lib/divbrain/ui-types";
@@ -43,18 +43,11 @@ export default function DivBrainChatPane({ conversationId, transcript }: Props) 
       return false;
     }
 
-    const latestUserMessage = latestPersistedUserMessage(transcript);
     return isDivBrainOptimisticMessagePersisted({
       optimistic: optimisticMessage,
-      latestPersisted: latestUserMessage,
+      latestPersisted: latestPersistedUserMessage(transcript),
     });
   }, [optimisticMessage, transcript]);
-
-  useEffect(() => {
-    if (optimisticPersisted) {
-      setOptimisticMessage(null);
-    }
-  }, [optimisticPersisted]);
 
   function handleOptimisticSubmit(content: string) {
     const latestUserMessage = latestPersistedUserMessage(transcript);
