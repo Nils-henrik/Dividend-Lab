@@ -13,6 +13,7 @@ import {
   DIVBRAIN_ACTION_STATE_IDLE,
   type DivBrainActionState,
 } from "@/lib/divbrain/action-state";
+import { shouldSubmitDivBrainComposerKey } from "@/lib/divbrain/chat-ux";
 import { DIVBRAIN_MESSAGE_CONTENT_MAX_LENGTH } from "@/lib/divbrain/constants";
 
 type Props = {
@@ -89,16 +90,21 @@ export default function DivBrainComposer({
   }
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (
-      event.key !== "Enter" ||
-      event.shiftKey ||
-      event.nativeEvent.isComposing
-    ) {
-      return;
+    const plainEnter =
+      event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing;
+
+    if (plainEnter) {
+      event.preventDefault();
     }
 
-    event.preventDefault();
-    if (canSubmit) {
+    if (
+      shouldSubmitDivBrainComposerKey({
+        key: event.key,
+        shiftKey: event.shiftKey,
+        isComposing: event.nativeEvent.isComposing,
+        canSubmit,
+      })
+    ) {
       event.currentTarget.form?.requestSubmit();
     }
   }
