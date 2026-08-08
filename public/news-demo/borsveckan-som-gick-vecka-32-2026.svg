@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="682" viewBox="0 0 1024 682" role="img" aria-labelledby="title desc">
+  <title id="title">Börsveckan som gick – vecka 32</title>
+  <desc id="desc">DivLab-redaktionell börsbild med mörk nordisk stadssiluett, marknadsgraf och rubriken Börsveckan som gick.</desc>
+  <defs>
+    <radialGradient id="bg" cx="72%" cy="24%" r="85%">
+      <stop offset="0" stop-color="#10284a"/>
+      <stop offset="0.45" stop-color="#08172c"/>
+      <stop offset="1" stop-color="#050c17"/>
+    </radialGradient>
+    <linearGradient id="line" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#347df2" stop-opacity="0.7"/>
+      <stop offset="1" stop-color="#6aa8ff"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="4" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1024" height="682" fill="url(#bg)"/>
+
+  <g stroke="#5c8fc7" stroke-opacity="0.17" stroke-width="1">
+    <path d="M45 190V630M109 190V630M173 190V630M237 190V630M301 190V630M365 190V630M429 190V630M493 190V630M557 190V630M621 190V630M685 190V630M749 190V630M813 190V630M877 190V630M941 190V630"/>
+    <path d="M45 235H989M45 283H989M45 331H989M45 379H989M45 427H989M45 475H989M45 523H989M45 571H989M45 619H989"/>
+  </g>
+
+  <g fill="#050d19">
+    <rect x="0" y="518" width="55" height="57"/>
+    <rect x="63" y="492" width="64" height="83"/>
+    <rect x="137" y="526" width="51" height="49"/>
+    <rect x="198" y="462" width="72" height="113"/>
+    <rect x="280" y="510" width="50" height="65"/>
+    <rect x="340" y="452" width="76" height="123"/>
+    <rect x="425" y="492" width="63" height="83"/>
+    <rect x="497" y="466" width="58" height="109"/>
+    <rect x="565" y="514" width="55" height="61"/>
+    <rect x="629" y="451" width="67" height="124"/>
+    <rect x="705" y="488" width="56" height="87"/>
+    <rect x="773" y="434" width="74" height="141"/>
+    <rect x="858" y="496" width="62" height="79"/>
+    <rect x="932" y="522" width="92" height="53"/>
+    <rect x="775" y="410" width="30" height="165"/>
+    <path d="M762 410h56l-28-50z"/>
+    <rect x="787" y="343" width="6" height="24"/>
+  </g>
+
+  <g fill="#63a2ff" fill-opacity="0.75">
+    <rect x="92" y="531" width="5" height="5"/><rect x="111" y="548" width="5" height="5"/>
+    <rect x="218" y="494" width="5" height="5"/><rect x="244" y="514" width="5" height="5"/>
+    <rect x="365" y="487" width="5" height="5"/><rect x="389" y="531" width="5" height="5"/>
+    <rect x="516" y="503" width="5" height="5"/><rect x="646" y="476" width="5" height="5"/>
+    <rect x="724" y="524" width="5" height="5"/><rect x="884" y="526" width="5" height="5"/>
+  </g>
+
+  <g stroke-linecap="round">
+    <path d="M55 433 L90 448 L125 434 L160 451 L195 455 L230 461 L265 480 L300 487 L335 493 L370 497 L405 498 L440 497 L475 478 L510 496 L545 501 L580 494 L615 469 L650 463 L685 446 L720 450 L755 434 L790 429 L825 420 L860 417 L895 409 L930 411 L970 415"
+          fill="none" stroke="#1b5fca" stroke-opacity="0.4" stroke-width="10" filter="url(#glow)"/>
+    <path d="M55 433 L90 448 L125 434 L160 451 L195 455 L230 461 L265 480 L300 487 L335 493 L370 497 L405 498 L440 497 L475 478 L510 496 L545 501 L580 494 L615 469 L650 463 L685 446 L720 450 L755 434 L790 429 L825 420 L860 417 L895 409 L930 411 L970 415"
+          fill="none" stroke="url(#line)" stroke-width="3"/>
+  </g>
+
+  <g stroke-width="2">
+    <g stroke="#38aa79" fill="#38aa79">
+      <path d="M55 421v25"/><rect x="50" y="429" width="10" height="8" rx="2"/>
+      <path d="M125 420v28"/><rect x="120" y="429" width="10" height="12" rx="2"/>
+      <path d="M195 441v27"/><rect x="190" y="450" width="10" height="8" rx="2"/>
+      <path d="M300 466v34"/><rect x="295" y="475" width="10" height="17" rx="2"/>
+      <path d="M440 482v24"/><rect x="435" y="490" width="10" height="10" rx="2"/>
+      <path d="M475 459v35"/><rect x="470" y="470" width="10" height="20" rx="2"/>
+      <path d="M580 477v26"/><rect x="575" y="485" width="10" height="14" rx="2"/>
+      <path d="M615 452v35"/><rect x="610" y="461" width="10" height="22" rx="2"/>
+      <path d="M685 431v32"/><rect x="680" y="439" width="10" height="18" rx="2"/>
+      <path d="M755 420v30"/><rect x="750" y="428" width="10" height="16" rx="2"/>
+      <path d="M825 405v27"/><rect x="820" y="414" width="10" height="12" rx="2"/>
+      <path d="M860 402v27"/><rect x="855" y="411" width="10" height="11" rx="2"/>
+      <path d="M895 394v29"/><rect x="890" y="402" width="10" height="14" rx="2"/>
+    </g>
+    <g stroke="#df5260" fill="#df5260">
+      <path d="M90 426v38"/><rect x="85" y="437" width="10" height="17" rx="2"/>
+      <path d="M160 423v42"/><rect x="155" y="435" width="10" height="20" rx="2"/>
+      <path d="M230 447v31"/><rect x="225" y="454" width="10" height="17" rx="2"/>
+      <path d="M265 459v38"/><rect x="260" y="468" width="10" height="20" rx="2"/>
+      <path d="M335 478v30"/><rect x="330" y="486" width="10" height="13" rx="2"/>
+      <path d="M370 481v29"/><rect x="365" y="489" width="10" height="13" rx="2"/>
+      <path d="M405 484v25"/><rect x="400" y="492" width="10" height="9" rx="2"/>
+      <path d="M510 476v35"/><rect x="505" y="484" width="10" height="19" rx="2"/>
+      <path d="M545 484v29"/><rect x="540" y="493" width="10" height="10" rx="2"/>
+      <path d="M650 449v27"/><rect x="645" y="457" width="10" height="12" rx="2"/>
+      <path d="M720 437v25"/><rect x="715" y="445" width="10" height="10" rx="2"/>
+      <path d="M930 399v27"/><rect x="925" y="407" width="10" height="10" rx="2"/>
+      <path d="M970 404v23"/><rect x="965" y="411" width="10" height="8" rx="2"/>
+    </g>
+  </g>
+
+  <rect x="42" y="42" width="686" height="142" rx="18" fill="#030912" fill-opacity="0.94" stroke="#497fc7" stroke-opacity="0.65" stroke-width="2"/>
+  <text x="68" y="77" fill="#5ba0ff" font-family="Inter, Arial, sans-serif" font-size="17" font-weight="700" letter-spacing="1.2">DIVLAB · BÖRSNYHETER</text>
+  <text x="68" y="132" fill="#f6f8fc" font-family="Inter, Arial, sans-serif" font-size="43" font-weight="800" letter-spacing="0.3">BÖRSVECKAN SOM GICK</text>
+  <text x="69" y="163" fill="#b4c7e1" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="700" letter-spacing="0.7">VECKA 32 · 3–7 AUGUSTI 2026</text>
+
+  <rect x="56" y="603" width="432" height="42" rx="12" fill="#09162a" fill-opacity="0.96" stroke="#377ee8" stroke-opacity="0.8"/>
+  <text x="76" y="630" fill="#dce7f5" font-family="Inter, Arial, sans-serif" font-size="16" letter-spacing="0.35">REKORDJAKT · RAPPORTER · USA-JOBB</text>
+</svg>
