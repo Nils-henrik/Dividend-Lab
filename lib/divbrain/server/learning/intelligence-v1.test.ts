@@ -5,6 +5,7 @@ import { assembleDivBrainLearningContext } from "./index";
 
 const CONVERSATION_ID = "11111111-1111-4111-8111-111111111111";
 const OTHER_CONVERSATION_ID = "22222222-2222-4222-8222-222222222222";
+const REFERENTIAL_FOLLOW_UP = "Vad menar du med det?";
 
 function hasIndexFundSource(
   result: ReturnType<typeof assembleDivBrainLearningContext>,
@@ -20,7 +21,7 @@ function hasIndexFundSource(
 describe("DivBrain Intelligence v1 — Learning follow-ups", () => {
   it("prefers same-conversation topic context for a referential follow-up", () => {
     const result = assembleDivBrainLearningContext({
-      currentUserMessage: "Hur fungerar det då?",
+      currentUserMessage: REFERENTIAL_FOLLOW_UP,
       conversationId: CONVERSATION_ID,
       history: [
         {
@@ -59,7 +60,7 @@ describe("DivBrain Intelligence v1 — Learning follow-ups", () => {
 
   it("never borrows retrieval context from another conversation", () => {
     const result = assembleDivBrainLearningContext({
-      currentUserMessage: "Hur fungerar det då?",
+      currentUserMessage: REFERENTIAL_FOLLOW_UP,
       conversationId: CONVERSATION_ID,
       history: [
         {
