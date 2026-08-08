@@ -48,6 +48,22 @@ function phraseBonus(normalizedQuery: string, fieldText: string, bonus: number):
   return normalizedField.includes(normalizedQuery) ? bonus : 0;
 }
 
+function singleTopicDescriptionBonus(
+  queryTokens: readonly string[],
+  descriptionTokens: readonly string[],
+): number {
+  if (queryTokens.length !== 1) {
+    return 0;
+  }
+
+  const topic = queryTokens[0];
+  if (!topic || topic.length < 6) {
+    return 0;
+  }
+
+  return descriptionTokens.includes(topic) ? W.singleTopicDescription : 0;
+}
+
 /**
  * Score one article section against a tokenized query.
  * Strong fields: title, slug, heading, description.
@@ -75,7 +91,8 @@ export function scoreDivBrainLearningSection(
     descriptionScore +
     phraseBonus(normalizedQuery, record.title, W.titlePhrase) +
     phraseBonus(normalizedQuery, section.heading ?? "", W.headingPhrase) +
-    phraseBonus(normalizedQuery, record.description, W.descriptionPhrase);
+    phraseBonus(normalizedQuery, record.description, W.descriptionPhrase) +
+    singleTopicDescriptionBonus(queryTokens, record.descriptionTokens);
 
   const softScore =
     fieldScore(queryTokens, record.excerptTokens, W.excerpt) +
