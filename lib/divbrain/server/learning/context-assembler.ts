@@ -1,17 +1,16 @@
 /**
- * DivBrain Learning-aware context assembly (Tickets 1C-2 / Intelligence v1).
+ * DivBrain internal-content-aware context assembly (Learning + Börsnyheter).
  *
- * Retrieves relevant published DivLab Learning sources for an allowed user
- * request and delegates all trust/budget/delimiter enforcement to the existing
- * context assembler. Retrieved article prose never becomes trusted policy.
+ * Retrieves relevant published DivLab Learning and dated Börsnyheter sources
+ * for an allowed user request and delegates all trust/budget/delimiter
+ * enforcement to the existing context assembler. Retrieved editorial prose
+ * always remains untrusted context; it never becomes system policy.
  *
- * Intelligence v1 adds bounded, deterministic follow-up retrieval: when the
- * current question is short and referential, the most recent user turn from the
- * same conversation is combined with it and preferred when that contextual
- * query yields relevant Learning material. This prevents generic phrases such
- * as "hur fungerar det då?" from being grounded in an unrelated article merely
- * because the current words happen to match a heading. No model call, embedding
- * service or network dependency is added.
+ * Intelligence v1 adds bounded, deterministic follow-up retrieval from the
+ * most recent same-conversation user turn. Intelligence v3 extends that same
+ * mechanism to DivLab Börsnyheter and adds an explicit freshness warning when
+ * dated news is included. No extra model call, embedding service or network
+ * dependency is added.
  *
  * Server-only — must never be imported by client components.
  */
@@ -23,6 +22,10 @@ import type {
   DivBrainContextAssemblyInput,
   DivBrainContextHistoryTurnInput,
 } from "../context/types";
+import {
+  retrieveDivBrainNewsSources,
+  type DivBrainNewsRetrievalResult,
+} from "../news/retrieve";
 import { retrieveDivBrainLearningSources } from "./retrieve";
 import type {
   DivBrainLearningRetrievalResult,
@@ -30,12 +33,14 @@ import type {
 } from "./types";
 
 export type CreateDivBrainLearningContextAssemblerOptions = {
-  /** Optional deterministic retrieval override for tests. */
+  /** Optional deterministic Learning retrieval override for tests. */
   retrievalOptions?: DivBrainLearningRetrieveOptions;
 };
 
 const DIVBRAIN_LEARNING_FOLLOW_UP_MAX_CHARS = 240;
 const DIVBRAIN_LEARNING_FALLBACK_HISTORY_MAX_CHARS = 600;
+const DIVBRAIN_DATED_NEWS_WARNING =
+  "DivLab Börsnyheter i underlaget är daterad redaktionell information med angivet publiceringsdatum. Behandla den inte som livekurs, live-marknadsdata eller som bekräftelse på vad som hänt efter publiceringen.";
 
 const REFERENTIAL_FOLLOW_UP_PATTERN =
   /(?:^|[^\p{L}\p{N}_])(?:det|den|detta|denna|där|då|samma|sådan|sådant|sådana|it|that|this|there|then|same)(?=$|[^\p{L}\p{N}_])/iu;
@@ -86,67 +91,101 @@ function getLatestUserHistoryContent(
   return null;
 }
 
+function contextualQuery(input: DivBrainContextAssemblyInput): string | null {
+  if (!isReferentialFollowUp(input.currentUserMessage)) {
+    return null;
+  }
+  const previousUserContent = getLatestUserHistoryContent(input);
+  return previousUserContent
+    ? `${previousUserContent}\n${input.currentUserMessage}`
+    : null;
+}
+
 function retrieveLearningForContext(
   input: DivBrainContextAssemblyInput,
   options: DivBrainLearningRetrieveOptions | undefined,
 ): DivBrainResult<DivBrainLearningRetrievalResult> {
-  const primary = retrieveDivBrainLearningSources(
-    input.currentUserMessage,
-    options,
-  );
-
-  if (!primary.ok || !isReferentialFollowUp(input.currentUserMessage)) {
+  const primary = retrieveDivBrainLearningSources(input.currentUserMessage, options);
+  if (!primary.ok) {
     return primary;
   }
 
-  const previousUserContent = getLatestUserHistoryContent(input);
-  if (!previousUserContent) {
+  const contextualText = contextualQuery(input);
+  if (!contextualText) {
     return primary;
   }
 
-  const contextual = retrieveDivBrainLearningSources(
-    `${previousUserContent}\n${input.currentUserMessage}`,
-    options,
-  );
+  const contextual = retrieveDivBrainLearningSources(contextualText, options);
+  return contextual.ok && contextual.data.sources.length > 0 ? contextual : primary;
+}
 
-  if (contextual.ok && contextual.data.sources.length > 0) {
-    return contextual;
+function retrieveNewsForContext(
+  input: DivBrainContextAssemblyInput,
+): DivBrainResult<DivBrainNewsRetrievalResult> {
+  const primary = retrieveDivBrainNewsSources(input.currentUserMessage);
+  if (!primary.ok) {
+    return primary;
   }
 
-  return primary;
+  const contextualText = contextualQuery(input);
+  if (!contextualText) {
+    return primary;
+  }
+
+  const contextual = retrieveDivBrainNewsSources(contextualText);
+  return contextual.ok && contextual.data.sources.length > 0 ? contextual : primary;
 }
 
 /**
- * Retrieve Learning sources and assemble one provider-neutral DivBrain context.
+ * Retrieve DivLab internal sources and assemble one provider-neutral context.
  *
- * Existing caller-supplied sources are preserved and Learning sources are added
- * after them. The canonical assembler validates, deduplicates, budgets and wraps
- * every source as `untrusted_context`.
+ * If dated news is relevant, reserve up to two of the three default source
+ * slots for news and one for Learning. Otherwise Learning keeps its existing
+ * source capacity. Caller-supplied sources always remain first.
  */
 export function assembleDivBrainLearningContext(
   input: DivBrainContextAssemblyInput,
   options: CreateDivBrainLearningContextAssemblerOptions = {},
 ): DivBrainResult<DivBrainAssembledContext> {
-  const retrieval = retrieveLearningForContext(
-    input,
-    options.retrievalOptions,
-  );
-
-  if (!retrieval.ok) {
-    return retrieval;
+  const learning = retrieveLearningForContext(input, options.retrievalOptions);
+  if (!learning.ok) {
+    return learning;
   }
+
+  const news = retrieveNewsForContext(input);
+  if (!news.ok) {
+    return news;
+  }
+
+  const hasNews = news.data.sources.length > 0;
+  const learningSources = hasNews
+    ? learning.data.sources.slice(0, 1)
+    : learning.data.sources;
+
+  const existingWarnings = input.optional?.freshnessWarnings ?? [];
+  const optional = hasNews
+    ? {
+        ...(input.optional ?? {}),
+        freshnessWarnings: [
+          ...existingWarnings,
+          DIVBRAIN_DATED_NEWS_WARNING,
+        ],
+      }
+    : input.optional;
 
   return assembleDivBrainContext({
     ...input,
+    ...(optional !== undefined ? { optional } : {}),
     sources: [
       ...(input.sources ?? []),
-      ...retrieval.data.sources,
+      ...learningSources,
+      ...news.data.sources,
     ],
   });
 }
 
 /**
- * Application-service compatible context assembler used by Internal Alpha.
+ * Application-service compatible internal-content assembler used by Alpha.
  * Retrieval is local/deterministic and performs no model or network calls.
  */
 export function createDivBrainLearningContextAssembler(
