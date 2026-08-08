@@ -53,8 +53,8 @@ export default function DivBrainComposer({ conversationId }: Props) {
         />
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="max-w-md text-xs leading-5 text-divlab-text-muted">
-            Frågan sparas privat i den här konversationen. AI-motorn är ännu
-            inte ansluten.
+            Frågan sparas privat i den här konversationen. DivBrain kan använda
+            relevant material från DivLab när det finns.
           </p>
           <button
             type="submit"
