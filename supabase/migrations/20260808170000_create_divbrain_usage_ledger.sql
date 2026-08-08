@@ -7,6 +7,8 @@
 --     under a transaction advisory lock before any provider/network generate.
 --   - Hard-limit accounting uses reserved_cost_micro_usd for both reserved and
 --     finalized rows (conservative over-reservation; never double-counts).
+--   - Finalization takes the same budget advisory lock and may only raise
+--     reserved_cost_micro_usd to max(reserved, reconciled actual/estimate).
 --   - accounted_cost_micro_usd stores reconciled actual/estimate for ops only
 --     and must never reduce hard-limit totals.
 --   - user_id is nullable ON DELETE SET NULL so account deletion preserves spend.
@@ -268,7 +270,8 @@ $$;
 -- Finalize reservation after provider attempt (durable cost representation)
 -- ---------------------------------------------------------------------------
 -- Idempotent for already-finalized rows. Never deletes or reduces reserved_cost.
--- accounted_cost may be lower/higher than reserved; hard limits stay on reserved.
+-- Takes the same transaction advisory lock as reservation so reconciliation and
+-- new admissions cannot race. Hard-limit cost becomes max(reserved, accounted).
 
 create or replace function public.divbrain_finalize_usage_budget(
   p_reservation_id uuid,
@@ -315,6 +318,10 @@ begin
     return jsonb_build_object('ok', false, 'reason', 'invalid_finalize');
   end if;
 
+  -- Serialize reconciliation with admission. If actual/estimated accounted cost
+  -- raises the hard-limit amount, no concurrent reserve can observe the old sum.
+  perform pg_advisory_xact_lock(hashtext('divbrain_usage_budget_v1'));
+
   select status into v_status
   from public.divbrain_usage_events
   where id = p_reservation_id
@@ -334,6 +341,10 @@ begin
 
   update public.divbrain_usage_events
   set
+    reserved_cost_micro_usd = greatest(
+      reserved_cost_micro_usd,
+      p_accounted_cost_micro_usd
+    ),
     accounted_cost_micro_usd = p_accounted_cost_micro_usd,
     cost_source = p_cost_source,
     terminal_status = p_terminal_status,
