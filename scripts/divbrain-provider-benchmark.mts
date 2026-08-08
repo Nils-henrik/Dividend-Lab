@@ -5,6 +5,7 @@
  * - Requires DIVBRAIN_PROVIDER_BENCHMARK_LIVE=1
  * - Requires gateway auth material (AI_GATEWAY_API_KEY or VERCEL_OIDC_TOKEN)
  * - Hard-caps cases and output tokens
+ * - Uses an explicit representative case set (education + advice boundary + safety)
  * - Never runs as part of npm test / Quality Gate / build / Vercel deploy
  *
  * Usage:
@@ -23,6 +24,7 @@ import {
   runDivBrainProviderBenchmark,
   serializeDivBrainBenchmarkReport,
 } from "../lib/divbrain/server/benchmark";
+import { DIVBRAIN_BENCHMARK_LIVE_CASES } from "../lib/divbrain/server/benchmark/live-cases";
 
 function fail(message: string): never {
   console.error(`[divbrain-benchmark] ${message}`);
@@ -53,6 +55,7 @@ async function main(): Promise<void> {
     maxCases: DIVBRAIN_BENCHMARK_LIVE_MAX_CASES,
     maxOutputTokens: DIVBRAIN_BENCHMARK_LIVE_MAX_OUTPUT_TOKENS,
     candidates: DIVBRAIN_BENCHMARK_CANDIDATES,
+    cases: DIVBRAIN_BENCHMARK_LIVE_CASES,
     providerFactory: ({ modelId, maxOutputTokens }) =>
       createAiGatewayProvider({
         modelId,
