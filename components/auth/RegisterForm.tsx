@@ -68,7 +68,9 @@ export default function RegisterForm({ redirectTo }: Props) {
     }
 
     if (result.needsEmailConfirmation) {
-      router.replace("/register/check-email");
+      router.replace(
+        `/login?registered=check-email&redirect=${encodeURIComponent(redirectTo)}`,
+      );
       return;
     }
 
