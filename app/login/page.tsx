@@ -12,12 +12,14 @@ type Props = {
   searchParams: Promise<{
     redirect?: string;
     reset?: string;
+    registered?: string;
   }>;
 };
 
 export default async function LoginPage({ searchParams }: Props) {
-  const { redirect: redirectParam, reset } = await searchParams;
+  const { redirect: redirectParam, reset, registered } = await searchParams;
   const resetSuccess = reset === "success";
+  const registrationPending = registered === "check-email";
   const redirectTo = getSafeRedirectPath(redirectParam);
   const user = await getAuthenticatedUser();
   const cookieStore = await cookies();
@@ -38,7 +40,11 @@ export default async function LoginPage({ searchParams }: Props) {
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-divlab-bg px-6 py-12 text-divlab-text">
-      <LoginForm redirectTo={redirectTo} resetSuccess={resetSuccess} />
+      <LoginForm
+        redirectTo={redirectTo}
+        resetSuccess={resetSuccess}
+        registrationPending={registrationPending}
+      />
     </main>
   );
 }

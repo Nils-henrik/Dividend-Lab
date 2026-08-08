@@ -11,9 +11,14 @@ import { DIVLAB_BRAND_NAME } from "@/lib/site/brand";
 type Props = {
   redirectTo: string;
   resetSuccess?: boolean;
+  registrationPending?: boolean;
 };
 
-export default function LoginForm({ redirectTo, resetSuccess = false }: Props) {
+export default function LoginForm({
+  redirectTo,
+  resetSuccess = false,
+  registrationPending = false,
+}: Props) {
   const router = useRouter();
   const errorId = useId();
   const [email, setEmail] = useState("");
@@ -69,6 +74,21 @@ export default function LoginForm({ redirectTo, resetSuccess = false }: Props) {
           personliga DivLab-miljö.
         </p>
       </div>
+
+      {registrationPending && (
+        <div
+          role="status"
+          className="mb-5 rounded-xl border border-divlab-blue/20 bg-divlab-blue/5 px-4 py-3"
+        >
+          <p className="text-sm font-medium text-divlab-text">
+            Kontot är skapat
+          </p>
+          <p className="mt-1 text-sm leading-6 text-divlab-text-secondary">
+            Verifiera din e-post via länken i välkomstmejlet innan du loggar in.
+            När verifieringen är klar tas du vidare till DivLab.
+          </p>
+        </div>
+      )}
 
       {resetSuccess && (
         <p className="mb-5 rounded-xl border border-divlab-blue/20 bg-divlab-blue/5 px-4 py-3 text-sm leading-6 text-divlab-text-secondary">

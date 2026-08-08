@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { type FormEvent, useId, useState } from "react";
 import { registerUser } from "@/app/register/actions";
 import PrimaryButton from "@/components/ui/Button";
@@ -13,6 +14,7 @@ type Props = {
 };
 
 export default function RegisterForm({ redirectTo }: Props) {
+  const router = useRouter();
   const errorId = useId();
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
@@ -20,13 +22,11 @@ export default function RegisterForm({ redirectTo }: Props) {
   const [showPassword, setShowPassword] = useState(false);
   const [legalAccepted, setLegalAccepted] = useState(false);
   const [error, setError] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
-    setSuccessMessage("");
 
     const normalizedEmail = email.trim().toLowerCase();
     const usernameResult = validateUsername(username, { required: true });
@@ -61,23 +61,21 @@ export default function RegisterForm({ redirectTo }: Props) {
       redirectTo,
     });
 
-    setIsLoading(false);
-
     if (!result.ok) {
+      setIsLoading(false);
       setError(result.message);
       return;
     }
 
     if (result.needsEmailConfirmation) {
-      setSuccessMessage(
-        "Bekräfta ditt konto via e-post och logga sedan in på DivLab.",
+      router.replace(
+        `/login?registered=check-email&redirect=${encodeURIComponent(redirectTo)}`,
       );
       return;
     }
 
-    setSuccessMessage(
-      "Ditt konto är klart. Du kan nu öppna din DivLab-miljö.",
-    );
+    router.replace(redirectTo);
+    router.refresh();
   }
 
   return (
@@ -104,7 +102,6 @@ export default function RegisterForm({ redirectTo }: Props) {
             onChange={(event) => {
               setEmail(event.target.value);
               setError("");
-              setSuccessMessage("");
             }}
             autoComplete="email"
             required
@@ -131,7 +128,6 @@ export default function RegisterForm({ redirectTo }: Props) {
               onChange={(event) => {
                 setUsername(event.target.value);
                 setError("");
-                setSuccessMessage("");
               }}
               autoComplete="username"
               minLength={3}
@@ -159,7 +155,6 @@ export default function RegisterForm({ redirectTo }: Props) {
               onChange={(event) => {
                 setPassword(event.target.value);
                 setError("");
-                setSuccessMessage("");
               }}
               autoComplete="new-password"
               minLength={8}
@@ -189,7 +184,6 @@ export default function RegisterForm({ redirectTo }: Props) {
             onChange={(event) => {
               setLegalAccepted(event.target.checked);
               setError("");
-              setSuccessMessage("");
             }}
             className="mt-1 h-4 w-4 shrink-0 rounded border divlab-border-neutral bg-divlab-surface text-divlab-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/40"
           />
@@ -226,15 +220,6 @@ export default function RegisterForm({ redirectTo }: Props) {
             className="rounded-xl border divlab-border-neutral divlab-inset px-4 py-3 text-sm leading-6 text-divlab-text-secondary"
           >
             {error}
-          </p>
-        )}
-
-        {successMessage && (
-          <p
-            role="status"
-            className="rounded-xl border border-divlab-blue/20 bg-divlab-blue/5 px-4 py-3 text-sm leading-6 text-divlab-text-secondary"
-          >
-            {successMessage}
           </p>
         )}
 
