@@ -13,6 +13,10 @@ type Props = {
   transcript: DivBrainShellTranscriptView;
 };
 
+type PendingOptimisticMessage = DivBrainOptimisticUserMessage & {
+  previousPersistedUserMessageId: string | null;
+};
+
 function latestPersistedUserMessage(transcript: DivBrainShellTranscriptView) {
   if (transcript.status !== "ready") {
     return null;
@@ -30,7 +34,7 @@ function latestPersistedUserMessage(transcript: DivBrainShellTranscriptView) {
 
 export default function DivBrainChatPane({ conversationId, transcript }: Props) {
   const [optimisticMessage, setOptimisticMessage] =
-    useState<DivBrainOptimisticUserMessage | null>(null);
+    useState<PendingOptimisticMessage | null>(null);
   const [waitingForResponse, setWaitingForResponse] = useState(false);
 
   const optimisticPersisted = useMemo(() => {
@@ -39,7 +43,11 @@ export default function DivBrainChatPane({ conversationId, transcript }: Props) 
     }
 
     const latestUserMessage = latestPersistedUserMessage(transcript);
-    if (!latestUserMessage || latestUserMessage.content !== optimisticMessage.content) {
+    if (
+      !latestUserMessage ||
+      latestUserMessage.id === optimisticMessage.previousPersistedUserMessageId ||
+      latestUserMessage.content !== optimisticMessage.content
+    ) {
       return false;
     }
 
@@ -60,10 +68,13 @@ export default function DivBrainChatPane({ conversationId, transcript }: Props) 
   }, [optimisticPersisted]);
 
   function handleOptimisticSubmit(content: string) {
+    const latestUserMessage = latestPersistedUserMessage(transcript);
+
     setOptimisticMessage({
       id: `optimistic-${Date.now()}`,
       content,
       createdAt: new Date().toISOString(),
+      previousPersistedUserMessageId: latestUserMessage?.id ?? null,
     });
     setWaitingForResponse(true);
   }
