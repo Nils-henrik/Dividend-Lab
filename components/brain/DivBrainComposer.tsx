@@ -31,6 +31,7 @@ export default function DivBrainComposer({
   const fieldId = useId();
   const statusId = useId();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const submittedContentRef = useRef<string | null>(null);
   const [content, setContent] = useState("");
 
   const [state, formAction, pending] = useActionState<
@@ -38,6 +39,13 @@ export default function DivBrainComposer({
     FormData
   >(async (previous, formData) => {
     const next = await submitDivBrainMessageAction(previous, formData);
+    const submittedContent = submittedContentRef.current;
+
+    if (!next.persisted && next.status !== "blocked" && submittedContent) {
+      setContent((current) => (current.length === 0 ? submittedContent : current));
+    }
+
+    submittedContentRef.current = null;
     onSubmissionSettled?.(next);
     return next;
   }, DIVBRAIN_ACTION_STATE_IDLE);
@@ -71,6 +79,7 @@ export default function DivBrainComposer({
       return;
     }
 
+    submittedContentRef.current = submittedContent;
     onOptimisticSubmit?.(submittedContent);
     setContent("");
 
