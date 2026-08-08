@@ -5,6 +5,7 @@ import {
 } from "@/lib/divbrain/brain-routes";
 import { formatDivBrainConversationTimestamp } from "@/lib/divbrain/dates";
 import DivBrainCreateConversationButton from "./DivBrainCreateConversationButton";
+import scrollStyles from "./DivBrainScrollArea.module.css";
 import DivBrainScopeSwitch from "./DivBrainScopeSwitch";
 
 export type DivBrainConversationRailItem = {
@@ -38,7 +39,9 @@ export default function DivBrainConversationRail({
         <DivBrainScopeSwitch archiveScope={archiveScope} />
       </div>
 
-      <div className="flex-1 overflow-y-auto px-2 py-2">
+      <div
+        className={`${scrollStyles.scrollArea} flex-1 overflow-y-auto px-2 py-2`}
+      >
         {conversations.length === 0 ? (
           <p className="px-3 py-4 text-sm leading-6 text-divlab-text-muted">
             {archiveScope === "archived"

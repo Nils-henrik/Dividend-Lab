@@ -8,6 +8,7 @@ import type {
   DivBrainShellTranscriptSource,
   DivBrainShellTranscriptView,
 } from "@/lib/divbrain/ui-types";
+import scrollStyles from "./DivBrainScrollArea.module.css";
 
 export type DivBrainOptimisticUserMessage = {
   id: string;
@@ -44,7 +45,7 @@ export default function DivBrainTranscript({
   return (
     <div
       ref={scrollRef}
-      className="min-h-0 flex-1 overflow-y-auto overscroll-contain scroll-smooth px-4 py-5 sm:px-6"
+      className={`${scrollStyles.scrollArea} min-h-0 flex-1 overflow-y-auto overscroll-contain scroll-smooth px-4 py-5 sm:px-6`}
     >
       <div className="mx-auto flex min-h-full max-w-[48rem] flex-col justify-end">
         {transcript.status === "data_unavailable" ? (
