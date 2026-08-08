@@ -50,13 +50,6 @@ export const DIVBRAIN_LEARNING_SCORE_WEIGHTS = {
   titlePhrase: 15,
   /** Bonus when the full normalized query appears in a heading. */
   headingPhrase: 10,
-  /** Bonus when the full normalized query appears in the curated description. */
-  descriptionPhrase: 8,
-  /**
-   * A single, specific content term can use curated description metadata as a
-   * stronger topic signal. Generic short terms remain below this path.
-   */
-  singleTopicDescription: 6,
   /** Max bonus for query-token coverage over title+heading+slug. */
   coverage: 8,
 } as const;
