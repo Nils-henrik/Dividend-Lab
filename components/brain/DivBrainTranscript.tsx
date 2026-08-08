@@ -65,7 +65,7 @@ export default function DivBrainTranscript({
               Vad vill du förstå bättre?
             </p>
             <p className="mt-1 max-w-md text-sm leading-6 text-divlab-text-muted">
-              Fråga om börsen, fonder, sparande eller privatekonomi.
+              Ställ en fråga om börsen, fonder, sparande eller privatekonomi.
             </p>
           </div>
         ) : null}
