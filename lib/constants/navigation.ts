@@ -1,13 +1,10 @@
 import type { NavigationItem } from "@/types/navigation";
 
-/**
- * Authenticated primary navigation.
- * Unfinished Portfölj / Bevakningslista are omitted from primary nav —
- * they remain reachable by direct URL with clear early-status copy.
- */
+/** Authenticated primary navigation. */
 export const appNavigation: NavigationItem[] = [
   { label: "Översikt", href: "/dashboard", icon: "dashboard" },
   { label: "Börsnyheter", href: "/news", icon: "news" },
+  { label: "Portföljer", href: "/portfolios", icon: "portfolio", statusLabel: "Ny" },
   { label: "Forum", href: "/forum", icon: "forum" },
   { label: "Utbildning", href: "/learning", icon: "learning" },
   {
@@ -62,7 +59,8 @@ export const pageTitles: Record<string, string> = {
   "/messages/new": "Nytt meddelande",
   "/contacts": "Kontakter",
   "/news": "Börsnyheter",
-  "/portfolio": "Portfölj",
+  "/portfolio": "Modellportföljer",
+  "/portfolios": "Modellportföljer",
   "/settings": "Inställningar",
   "/watchlist": "Bevakningslista",
   "/profile": "Profil",
@@ -71,7 +69,7 @@ export const pageTitles: Record<string, string> = {
   "/dashboard/forum": "Forum",
   "/dashboard/goals": "Mål",
   "/dashboard/learning": "Utbildning",
-  "/dashboard/portfolio": "Portfölj",
+  "/dashboard/portfolio": "Modellportföljer",
   "/dashboard/settings": "Inställningar",
   "/dashboard/watchlist": "Bevakningslista",
 };
