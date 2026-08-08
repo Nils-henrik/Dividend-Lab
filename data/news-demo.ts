@@ -3,6 +3,7 @@ import { AKTIEREKAR_INFOR_NASTA_VECKA_MICROSOFT_META_AMAZON_SINCH_ARTICLE } from
 import { AMAZON_RUSAR_MICRON_TVAVANDER_AI_BOOMEN_WALL_STREET_ARTICLE } from "@/data/news-articles/amazon-rusar-micron-tvavander-ai-boomen-wall-street";
 import { BORSVECKA_32_INVESTOR_INFLATION_USA_JOBB_ARTICLE } from "@/data/news-articles/borsvecka-32-investor-inflation-usa-jobb";
 import { BORSVECKAN_I_KORTHET_AI_FROSSA_OLJERUSNING_RANTEHOT_ARTICLE } from "@/data/news-articles/borsveckan-i-korthet-ai-frossa-oljerusning-rantehot";
+import { BORSVECKAN_SOM_GICK_VECKA_32_2026_ARTICLE } from "@/data/news-articles/borsveckan-som-gick-vecka-32-2026";
 import { IRAN_OLJEPRIS_HORMUZ_BORSEN_ARTICLE } from "@/data/news-articles/iran-oljepris-hormuz-borsen";
 import { NOKIA_OVERRASKAR_AI_FORSALJNINGEN_FORDUBBLADES_ARTICLE } from "@/data/news-articles/nokia-overraskar-ai-forsaljningen-fordubblades";
 import { NORDEN_I_CENTRUM_4_AUGUSTI_2026_ARTICLE } from "@/data/news-articles/norden-i-centrum-4-augusti-2026";
@@ -20,6 +21,7 @@ import { USA_BORSEN_FALLER_ALPHABET_TESLA_OLJA_ARTICLE } from "@/data/news-artic
  * Image assets currently live under /public/news-demo/ for historical path stability.
  */
 export const DEMO_NEWS_ARTICLES: NewsArticle[] = [
+  BORSVECKAN_SOM_GICK_VECKA_32_2026_ARTICLE,
   NORDEN_I_CENTRUM_7_AUGUSTI_2026_ARTICLE,
   NORDEN_I_CENTRUM_6_AUGUSTI_2026_ARTICLE,
   NORDEN_I_CENTRUM_5_AUGUSTI_2026_ARTICLE,
