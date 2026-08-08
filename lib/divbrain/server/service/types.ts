@@ -13,12 +13,14 @@ import type {
   DivBrainContextAssemblyInput,
 } from "../context/types";
 import type { MapAssembledContextToProviderRequestOptions } from "../context/to-provider-request";
+import type { DivBrainCostGuard } from "../providers/cost-guard";
 import type { DivBrainProvider } from "../providers/provider";
 import type { DivBrainProviderRequest } from "../providers/types";
 import type {
   DivBrainConversationRepository,
   DivBrainTrustedActorId,
 } from "../repository/repository";
+import type { DivBrainUsageLedgerRepository } from "../repository/usage-ledger";
 
 /** Trusted actor resolution — session/auth layer only. Never browser-supplied. */
 export type DivBrainActorResolver = {
@@ -64,6 +66,20 @@ export type CreateDivBrainApplicationServiceDeps = {
   providerRequestMapper: DivBrainProviderRequestMapper;
   provider: DivBrainProvider;
   providerTimeoutMs: number;
+  /**
+   * Required before paid AI Gateway generation. Missing/invalid guard for a
+   * real provider fails closed with zero provider calls.
+   */
+  costGuard?: DivBrainCostGuard;
+  /** Persistent usage ledger for atomic reserve + durable finalize accounting. */
+  usageLedger?: DivBrainUsageLedgerRepository;
+  /**
+   * Server-configured model id for Cost Guard pricing (AI Gateway).
+   * Never accepted from browser input.
+   */
+  providerModelId?: string;
+  /** Server-configured max output tokens for conservative projection. */
+  providerMaxOutputTokens?: number;
 };
 
 /** Trusted server-only options — never part of the browser JSON payload. */

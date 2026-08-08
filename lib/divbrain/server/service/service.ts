@@ -1,12 +1,17 @@
 /**
- * DivBrain application-service orchestration (Ticket 1A-7b).
+ * DivBrain application-service orchestration (Ticket 1A-7b / Issue #105).
  *
  * Canonical submitMessage lifecycle:
  * authenticate → access gate → validate → guardrails →
- * blocked (no persist) | allowed (ownership → history → persist user →
- * context → map → provider → persist terminal assistant → safe response).
+ * blocked (no persist / no reservation) | allowed (ownership → history →
+ * persist user → context → map → Cost Guard atomic reserve → provider →
+ * finalize usage accounting → persist terminal assistant → safe response).
  *
- * Phase 1A uses UnconfiguredProvider — honest provider_unavailable only.
+ * Real AI Gateway generation is impossible without a successful reservation.
+ * Accounting finalizes before assistant persistence so paid attempts remain
+ * represented even if transcript persistence fails. Provider generate is
+ * invoked at most once (no retry path).
+ * Production default remains UnconfiguredProvider until Founder activation.
  * This module must never be imported by client components.
  */
 
@@ -28,17 +33,32 @@ import { assembleDivBrainContext } from "../context/assemble";
 import { mapAssembledContextToProviderRequest } from "../context/to-provider-request";
 import { evaluateDivBrainGuardrails } from "../guardrails";
 import {
+  DIVBRAIN_PROVIDER_MAX_OUTPUT_TOKENS_DEFAULT,
+  DIVBRAIN_PROVIDER_MAX_OUTPUT_TOKENS_HARD_CAP,
+  DIVBRAIN_PROVIDER_MAX_OUTPUT_TOKENS_MIN,
+} from "../providers/candidates";
+import {
+  createDenyAllDivBrainCostGuard,
+  providerRequiresDivBrainCostGuard,
+  type DivBrainCostGuardDecision,
+} from "../providers/cost-guard";
+import {
   mapUnknownToDivBrainProviderResult,
   normalizeDivBrainProviderResult,
 } from "../providers/provider";
 import type { DivBrainProvider } from "../providers/provider";
-import type { DivBrainProviderResult } from "../providers/types";
+import type {
+  DivBrainProviderResult,
+  DivBrainProviderUsage,
+} from "../providers/types";
 import {
   DIVBRAIN_PROVIDER_TIMEOUT_MS_MAX,
   DIVBRAIN_PROVIDER_TIMEOUT_MS_MIN,
 } from "../providers/types";
 import { createUnconfiguredProvider } from "../providers/unconfigured-provider";
+import { accountDivBrainProviderUsage } from "../providers/usage-accounting";
 import type { DivBrainConversationRepository } from "../repository/repository";
+import type { DivBrainUsageTerminalStatus } from "../repository/usage-ledger-persistence";
 import { loadBoundedDivBrainHistory } from "./history";
 import { parseDivBrainSubmitMessageInput } from "./input";
 import type {
@@ -56,6 +76,80 @@ function isFiniteTimeoutMs(value: unknown): value is number {
     value >= DIVBRAIN_PROVIDER_TIMEOUT_MS_MIN &&
     value <= DIVBRAIN_PROVIDER_TIMEOUT_MS_MAX
   );
+}
+
+function resolveProviderModelId(
+  deps: CreateDivBrainApplicationServiceDeps,
+): string | null {
+  if (
+    typeof deps.providerModelId === "string" &&
+    deps.providerModelId.trim().length > 0
+  ) {
+    return deps.providerModelId.trim();
+  }
+
+  const provider = deps.provider as DivBrainProvider & {
+    getModelId?: () => string;
+  };
+  if (typeof provider.getModelId === "function") {
+    const modelId = provider.getModelId();
+    if (typeof modelId === "string" && modelId.trim().length > 0) {
+      return modelId.trim();
+    }
+  }
+
+  return null;
+}
+
+function resolveProviderMaxOutputTokens(
+  deps: CreateDivBrainApplicationServiceDeps,
+): number {
+  if (
+    typeof deps.providerMaxOutputTokens === "number" &&
+    Number.isInteger(deps.providerMaxOutputTokens) &&
+    deps.providerMaxOutputTokens >= DIVBRAIN_PROVIDER_MAX_OUTPUT_TOKENS_MIN &&
+    deps.providerMaxOutputTokens <= DIVBRAIN_PROVIDER_MAX_OUTPUT_TOKENS_HARD_CAP
+  ) {
+    return deps.providerMaxOutputTokens;
+  }
+
+  const provider = deps.provider as DivBrainProvider & {
+    getMaxOutputTokens?: () => number;
+  };
+  if (typeof provider.getMaxOutputTokens === "function") {
+    const value = provider.getMaxOutputTokens();
+    if (
+      typeof value === "number" &&
+      Number.isInteger(value) &&
+      value >= DIVBRAIN_PROVIDER_MAX_OUTPUT_TOKENS_MIN &&
+      value <= DIVBRAIN_PROVIDER_MAX_OUTPUT_TOKENS_HARD_CAP
+    ) {
+      return value;
+    }
+  }
+
+  return DIVBRAIN_PROVIDER_MAX_OUTPUT_TOKENS_DEFAULT;
+}
+
+function usageFromProviderResult(
+  providerResult: DivBrainProviderResult,
+): DivBrainProviderUsage | undefined {
+  return providerResult.usage;
+}
+
+function terminalStatusForUsage(
+  providerResult: DivBrainProviderResult,
+): DivBrainUsageTerminalStatus {
+  if (providerResult.status === "completed") {
+    return "completed";
+  }
+  if (providerResult.status === "cancelled") {
+    return "cancelled";
+  }
+  if (providerResult.status === "provider_unavailable") {
+    return "provider_unavailable";
+  }
+  return "failed";
 }
 
 function assertServiceDeps(
@@ -76,6 +170,23 @@ function assertServiceDeps(
     !isFiniteTimeoutMs(deps.providerTimeoutMs)
   ) {
     throw new Error("DivBrain application service: invalid dependencies");
+  }
+
+  if (
+    deps.costGuard !== undefined &&
+    typeof deps.costGuard.reserve !== "function"
+  ) {
+    throw new Error("DivBrain application service: invalid cost guard");
+  }
+
+  if (
+    deps.usageLedger !== undefined &&
+    (typeof deps.usageLedger.reserveBudget !== "function" ||
+      typeof deps.usageLedger.finalizeBudget !== "function" ||
+      typeof deps.usageLedger.sumReservedCostMicroUsdForUtcDay !== "function" ||
+      typeof deps.usageLedger.sumReservedCostMicroUsdForUtcMonth !== "function")
+  ) {
+    throw new Error("DivBrain application service: invalid usage ledger");
   }
 }
 
@@ -384,16 +495,101 @@ export function createDivBrainApplicationService(
         });
       }
 
+      const requiresCostGuard = providerRequiresDivBrainCostGuard(
+        deps.provider.id,
+      );
+      let costGuardDecision: DivBrainCostGuardDecision | null = null;
+
+      if (requiresCostGuard) {
+        const modelId = resolveProviderModelId(deps);
+        const maxOutputTokens = resolveProviderMaxOutputTokens(deps);
+        const costGuard =
+          deps.costGuard ?? createDenyAllDivBrainCostGuard("config_invalid");
+
+        if (!modelId || !deps.usageLedger) {
+          costGuardDecision = { allow: false, reason: "config_invalid" };
+        } else {
+          costGuardDecision = await costGuard.reserve({
+            actorId,
+            conversationId,
+            providerId: deps.provider.id,
+            request: providerRequestResult.data,
+            modelId,
+            maxOutputTokens,
+          });
+        }
+
+        if (!costGuardDecision.allow) {
+          // Budget / config denial: zero provider/network calls; calm rate_limited.
+          const deniedResult: DivBrainProviderResult = {
+            status: "failed",
+            error: createDivBrainError("rate_limited"),
+          };
+
+          const assistantResult = await persistTerminalAssistant({
+            repository: deps.repository,
+            actorId,
+            conversationId,
+            assessment,
+            providerResult: deniedResult,
+          });
+
+          if (!assistantResult.ok) {
+            return divBrainFailureFromCode("persistence_failed");
+          }
+
+          return divBrainSuccess(
+            toTerminalOutcome({
+              status: "failed",
+              assessment,
+              userMessage,
+              assistantMessage: assistantResult.data,
+            }),
+          );
+        }
+      }
+
       let providerResult: DivBrainProviderResult;
       try {
         if (options?.signal?.aborted) {
           providerResult = { status: "cancelled" };
         } else {
+          // Single generate attempt — no retry path that could double-bill.
           const raw = await deps.provider.generate(providerRequestResult.data);
           providerResult = normalizeDivBrainProviderResult(raw);
         }
       } catch (error) {
         providerResult = mapUnknownToDivBrainProviderResult(error);
+      }
+
+      // Finalize reserved spend BEFORE assistant persistence so a transcript
+      // failure cannot erase paid/attempted cost from hard-limit accounting.
+      // Hard limits continue to use reserved_cost even if finalize fails.
+      if (requiresCostGuard && costGuardDecision?.allow && deps.usageLedger) {
+        const modelId = resolveProviderModelId(deps);
+        if (modelId) {
+          const maxOutputTokens = resolveProviderMaxOutputTokens(deps);
+          const accounted = accountDivBrainProviderUsage({
+            modelId,
+            usage: usageFromProviderResult(providerResult),
+            gatewayCostMicroUsd: providerResult.gatewayCostMicroUsd,
+            failClosedCeilingMicroUsd: costGuardDecision.projectedCostMicroUsd,
+            estimatedInputTokens: costGuardDecision.estimatedInputTokens,
+            maxOutputTokens,
+          });
+
+          await deps.usageLedger.finalizeBudget({
+            reservationId: costGuardDecision.reservationId,
+            accountedCostMicroUsd: accounted.costMicroUsd,
+            costSource: accounted.costSource,
+            terminalStatus: terminalStatusForUsage(providerResult),
+            inputTokens: accounted.inputTokens,
+            outputTokens: accounted.outputTokens,
+            totalTokens: accounted.totalTokens,
+            latencyMs: providerResult.latencyMs ?? null,
+            messageId: null,
+          });
+        }
       }
 
       // Malformed completed text / sources become a failed terminal via
@@ -407,6 +603,7 @@ export function createDivBrainApplicationService(
       });
 
       if (!assistantResult.ok) {
+        // Cost already reserved (+ ideally finalized). Do not retry generate.
         return divBrainFailureFromCode("persistence_failed");
       }
 
@@ -481,6 +678,10 @@ export function createDivBrainApplicationServiceDeps(params: {
   guardrailEvaluator?: CreateDivBrainApplicationServiceDeps["guardrailEvaluator"];
   contextAssembler?: CreateDivBrainApplicationServiceDeps["contextAssembler"];
   providerRequestMapper?: CreateDivBrainApplicationServiceDeps["providerRequestMapper"];
+  costGuard?: CreateDivBrainApplicationServiceDeps["costGuard"];
+  usageLedger?: CreateDivBrainApplicationServiceDeps["usageLedger"];
+  providerModelId?: string;
+  providerMaxOutputTokens?: number;
 }): CreateDivBrainApplicationServiceDeps {
   return {
     actorResolver: params.actorResolver,
@@ -499,5 +700,15 @@ export function createDivBrainApplicationServiceDeps(params: {
     providerRequestMapper: params.providerRequestMapper ?? {
       map: mapAssembledContextToProviderRequest,
     },
+    ...(params.costGuard !== undefined ? { costGuard: params.costGuard } : {}),
+    ...(params.usageLedger !== undefined
+      ? { usageLedger: params.usageLedger }
+      : {}),
+    ...(params.providerModelId !== undefined
+      ? { providerModelId: params.providerModelId }
+      : {}),
+    ...(params.providerMaxOutputTokens !== undefined
+      ? { providerMaxOutputTokens: params.providerMaxOutputTokens }
+      : {}),
   };
 }
