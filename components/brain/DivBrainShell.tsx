@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { buildDivBrainHref } from "@/lib/divbrain/brain-routes";
 import type { DivBrainShellViewModel } from "@/lib/divbrain/server/ui";
-import DivBrainComposer from "./DivBrainComposer";
+import DivBrainChatPane from "./DivBrainChatPane";
 import DivBrainConversationActions from "./DivBrainConversationActions";
 import DivBrainConversationRail from "./DivBrainConversationRail";
 import DivBrainDisabledComposer from "./DivBrainDisabledComposer";
@@ -26,7 +26,7 @@ export default function DivBrainShell({ view }: Props) {
     view.state === "ready" ? view.selectedConversation.id : null;
 
   return (
-    <section className="flex flex-col gap-5">
+    <section className="flex flex-col gap-4 sm:gap-5">
       <DivBrainHeader />
 
       <div className="lg:hidden">
@@ -38,8 +38,8 @@ export default function DivBrainShell({ view }: Props) {
         />
       </div>
 
-      <div className="flex min-h-[28rem] flex-col gap-5 lg:flex-row lg:items-stretch">
-        <aside className="hidden w-full shrink-0 lg:block lg:w-72 xl:w-80">
+      <div className="flex h-[calc(100dvh-14rem)] min-h-[28rem] max-h-[54rem] flex-col gap-4 lg:h-[calc(100dvh-16rem)] lg:max-h-none lg:flex-row lg:items-stretch lg:gap-5">
+        <aside className="hidden h-full w-full shrink-0 lg:sticky lg:top-24 lg:block lg:w-72 xl:w-80">
           <DivBrainConversationRail
             conversations={conversations}
             selectedConversationId={selectedConversationId}
@@ -48,7 +48,7 @@ export default function DivBrainShell({ view }: Props) {
           />
         </aside>
 
-        <div className="divlab-card flex min-w-0 flex-1 flex-col">
+        <div className="divlab-card flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
           {view.state === "data_unavailable" ? (
             <DivBrainUnavailablePanel
               title="DivBrain kunde inte laddas"
@@ -73,10 +73,10 @@ export default function DivBrainShell({ view }: Props) {
 
           {view.state === "ready" ? (
             <>
-              <div className="border-b divlab-border-neutral px-5 py-4 sm:px-6">
+              <div className="z-10 shrink-0 border-b divlab-border-neutral bg-divlab-surface/95 px-4 py-3 backdrop-blur sm:px-6 sm:py-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="flex min-w-0 flex-wrap items-center gap-2">
-                    <h2 className="min-w-0 truncate text-lg font-semibold tracking-[-0.03em] text-divlab-text">
+                    <h2 className="min-w-0 truncate text-base font-semibold tracking-[-0.03em] text-divlab-text sm:text-lg">
                       {view.selectedConversation.title}
                     </h2>
                     {view.selectedConversation.archived ? (
@@ -94,18 +94,20 @@ export default function DivBrainShell({ view }: Props) {
                 </div>
               </div>
 
-              <DivBrainTranscript
-                transcript={view.selectedConversation.transcript}
-              />
-
               {view.selectedConversation.archived ? (
-                <DivBrainDisabledComposer
-                  conversationId={view.selectedConversation.id}
-                  archived
-                />
+                <>
+                  <DivBrainTranscript
+                    transcript={view.selectedConversation.transcript}
+                  />
+                  <DivBrainDisabledComposer
+                    conversationId={view.selectedConversation.id}
+                    archived
+                  />
+                </>
               ) : (
-                <DivBrainComposer
+                <DivBrainChatPane
                   conversationId={view.selectedConversation.id}
+                  transcript={view.selectedConversation.transcript}
                 />
               )}
             </>
@@ -130,7 +132,7 @@ function DivBrainUnavailablePanel({
   linkLabel: string;
 }) {
   return (
-    <div className="flex flex-1 flex-col items-start justify-center gap-4 px-5 py-10 sm:px-8">
+    <div className="flex flex-1 flex-col items-start justify-center gap-4 overflow-y-auto px-5 py-10 sm:px-8">
       <h2 className="text-2xl font-semibold tracking-[-0.03em] text-divlab-text">
         {title}
       </h2>
