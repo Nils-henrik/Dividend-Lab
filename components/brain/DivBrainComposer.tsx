@@ -30,6 +30,9 @@ export default function DivBrainComposer({ conversationId }: Props) {
 
   const trimmed = content.trim();
   const canSubmit = trimmed.length > 0 && !pending;
+  const statusMessage = pending
+    ? "DivBrain arbetar med svaret…"
+    : state.safeMessage;
 
   return (
     <div className="border-t divlab-border-neutral px-4 py-4 sm:px-5">
@@ -62,7 +65,7 @@ export default function DivBrainComposer({ conversationId }: Props) {
             aria-disabled={!canSubmit}
             className="divlab-btn-primary min-h-10 px-4 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {pending ? "Skickar…" : "Skicka"}
+            {pending ? "Tänker…" : "Skicka"}
           </button>
         </div>
         <p
@@ -71,7 +74,7 @@ export default function DivBrainComposer({ conversationId }: Props) {
           aria-live="polite"
           className="min-h-5 text-xs leading-5 text-divlab-text-secondary"
         >
-          {state.safeMessage}
+          {statusMessage}
         </p>
       </form>
     </div>
