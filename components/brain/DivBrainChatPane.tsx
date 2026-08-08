@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { DivBrainActionState } from "@/lib/divbrain/action-state";
+import { isDivBrainOptimisticMessagePersisted } from "@/lib/divbrain/chat-ux";
 import type { DivBrainShellTranscriptView } from "@/lib/divbrain/ui-types";
 import DivBrainComposer from "./DivBrainComposer";
 import DivBrainTranscript, {
@@ -43,22 +44,10 @@ export default function DivBrainChatPane({ conversationId, transcript }: Props) 
     }
 
     const latestUserMessage = latestPersistedUserMessage(transcript);
-    if (
-      !latestUserMessage ||
-      latestUserMessage.id === optimisticMessage.previousPersistedUserMessageId ||
-      latestUserMessage.content !== optimisticMessage.content
-    ) {
-      return false;
-    }
-
-    const persistedAt = Date.parse(latestUserMessage.createdAt);
-    const optimisticAt = Date.parse(optimisticMessage.createdAt);
-
-    return (
-      Number.isFinite(persistedAt) &&
-      Number.isFinite(optimisticAt) &&
-      persistedAt >= optimisticAt - 5_000
-    );
+    return isDivBrainOptimisticMessagePersisted({
+      optimistic: optimisticMessage,
+      latestPersisted: latestUserMessage,
+    });
   }, [optimisticMessage, transcript]);
 
   useEffect(() => {
