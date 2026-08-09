@@ -28,6 +28,18 @@ function tradeLabel(type: string): string {
   return "Avgift";
 }
 
+function decisionLabel(type: string): string {
+  const labels: Record<string, string> = {
+    buy: "Köp",
+    sell: "Sälj",
+    hold: "Behåll",
+    rebalance: "Ombalansera",
+    trim: "Minska",
+    deposit: "Insättning",
+  };
+  return labels[type] ?? type;
+}
+
 function evidenceItems(value: unknown): Array<Record<string, unknown>> {
   if (Array.isArray(value)) return value.filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object");
   if (value && typeof value === "object") {
@@ -129,7 +141,7 @@ export default function TradeDetailView({ detail }: { detail: PortfolioTradeDeta
           <dl className="mt-5 space-y-4 text-xs">
             <Row label="Portfölj" value={portfolio.name} />
             <Row label="Riskprofil" value={portfolio.riskLabel} />
-            <Row label="Beslut" value={decision ? tradeLabel(decision.decisionType) : tradeLabel(trade.transactionType)} />
+            <Row label="Beslut" value={decision ? decisionLabel(decision.decisionType) : tradeLabel(trade.transactionType)} />
             <Row label="Status" value={decision?.status ?? "Genomförd"} />
             <Row label="AI-modell" value={decision?.modelName ?? "Ej sparad"} />
             <Row label="Provider" value={decision?.modelProvider ?? "Ej sparad"} />
