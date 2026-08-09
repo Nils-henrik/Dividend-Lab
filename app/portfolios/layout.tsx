@@ -42,11 +42,19 @@ export default function PortfoliosLayout({ children }: { children: ReactNode }) 
           overflow-wrap: anywhere;
         }
 
-        /* The replacement note is rendered by this route layout so the copy
-           stays exact without coupling the mobile containment hotfix to the
-           model-portfolio data component. */
-        main:has(a[href="#ai-process"]) section:last-child {
-          display: none;
+        /* Keep the information note in its existing position while updating
+           the visible copy requested for the portfolio page. */
+        main:has(a[href="#ai-process"]) section:last-child > p {
+          font-size: 0;
+          line-height: 0;
+        }
+
+        main:has(a[href="#ai-process"]) section:last-child > p::after {
+          content: "Modellportföljerna uppdateras minst 1 gång per handelsdag. Vid händelser kan AI:n göra riktade omprövningar, med en hård gräns på totalt 4 beslutskörningar per portfölj och dag. Alla genomförda affärer sparas i historiken.";
+          display: block;
+          font-size: 0.75rem;
+          line-height: 1.25rem;
+          overflow-wrap: anywhere;
         }
 
         @media (min-width: 1280px) {
@@ -56,17 +64,6 @@ export default function PortfoliosLayout({ children }: { children: ReactNode }) 
         }
       `}</style>
       {children}
-      <section className="mx-auto mt-5 flex w-full max-w-[1560px] min-w-0 items-start gap-3 border border-divlab-blue/20 bg-divlab-blue/[0.08] px-4 py-3 text-xs leading-5 text-divlab-text-secondary">
-        <span className="mt-0.5 shrink-0 text-divlab-blue" aria-hidden="true">
-          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8">
-            <circle cx="12" cy="12" r="9" />
-            <path d="M12 10v6M12 7h.01" />
-          </svg>
-        </span>
-        <p className="min-w-0 overflow-wrap-anywhere">
-          Modellportföljerna uppdateras minst 1 gång per handelsdag. Vid händelser kan AI:n göra riktade omprövningar, med en hård gräns på totalt 4 beslutskörningar per portfölj och dag. Alla genomförda affärer sparas i historiken.
-        </p>
-      </section>
     </>
   );
 }
