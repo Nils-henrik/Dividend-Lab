@@ -42,17 +42,23 @@ export type PortfolioDryRunResult =
         | "invalid_evidence_references";
     };
 
-const EXPECTED_PRIMARY_INPUT_TOKENS = 18_000;
-const EXPECTED_ESCALATION_INPUT_TOKENS = 24_000;
+// Tool-enabled runs may use two model steps: one bounded tool-inspection step
+// and one final structured-decision step. Budget the full envelope up front.
+const EXPECTED_PRIMARY_INPUT_TOKENS_PER_STEP = 18_000;
+const EXPECTED_ESCALATION_INPUT_TOKENS_PER_STEP = 24_000;
 
 export function estimateDryRunCallCost(useEscalationModel: boolean): number {
   const model: ModelPortfolioAiModel = useEscalationModel
     ? "openai/gpt-5.6-terra"
     : "openai/gpt-5.6-luna";
+  const maxSteps = MODEL_PORTFOLIO_AI_BUDGET.maxCallsPerPortfolioRun;
   return estimateAiCostUsdMicros({
     model,
-    inputTokens: useEscalationModel ? EXPECTED_ESCALATION_INPUT_TOKENS : EXPECTED_PRIMARY_INPUT_TOKENS,
-    outputTokens: MODEL_PORTFOLIO_AI_BUDGET.maxOutputTokensPerCall,
+    inputTokens:
+      (useEscalationModel
+        ? EXPECTED_ESCALATION_INPUT_TOKENS_PER_STEP
+        : EXPECTED_PRIMARY_INPUT_TOKENS_PER_STEP) * maxSteps,
+    outputTokens: MODEL_PORTFOLIO_AI_BUDGET.maxOutputTokensPerCall * maxSteps,
   });
 }
 
@@ -122,6 +128,7 @@ export async function runPortfolioDryRun(request: PortfolioDryRunRequest): Promi
     runKind: request.runKind,
     portfolioSnapshot: request.portfolioSnapshot,
     candidateSnapshot: compactCandidates(rankedCandidates),
+    candidates: rankedCandidates,
     evidence: request.evidence,
     useEscalationModel: Boolean(request.useEscalationModel),
   });
