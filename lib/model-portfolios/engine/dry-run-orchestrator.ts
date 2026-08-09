@@ -7,13 +7,21 @@ import { createDryRunEodhdBudget, type EodhdCallBudgetSnapshot } from "./eodhd-b
 import { fetchDailyHistory, fetchDelayedQuotes } from "./eodhd";
 import type { ModelPortfolioStrategyKey } from "./policy";
 import { buildMarketResearchCandidate } from "./research-market";
+import type { TechnicalAnalysisSnapshot } from "./technical-analysis";
 
+// Seven instruments keeps the free EODHD dry-run envelope at exactly eight
+// possible calls: one batched delayed-quote request + seven history requests.
+// The mix intentionally covers quality/compounders, cyclicals, financials,
+// telecom/dividend and a higher-beta growth candidate so the four mandates do
+// not all receive an identical style universe.
 const BOOTSTRAP_RESEARCH_UNIVERSE = [
   { symbol: "INVE-B", name: "Investor AB ser. B", market: "SE" as const },
   { symbol: "VOLV-B", name: "Volvo AB ser. B", market: "SE" as const },
   { symbol: "ATCO-A", name: "Atlas Copco AB ser. A", market: "SE" as const },
   { symbol: "SEB-A", name: "SEB AB ser. A", market: "SE" as const },
   { symbol: "ERIC-B", name: "Ericsson AB ser. B", market: "SE" as const },
+  { symbol: "EVO", name: "Evolution AB", market: "SE" as const },
+  { symbol: "TEL2-B", name: "Tele2 AB ser. B", market: "SE" as const },
 ] as const;
 
 type PortfolioRow = {
@@ -92,6 +100,23 @@ function buildPortfolioSnapshot(input: {
   ].join("\n");
 }
 
+function technicalEvidenceSummary(technical: TechnicalAnalysisSnapshot | undefined): string[] {
+  if (!technical || technical.sessions === 0) return ["Teknisk analys: otillräcklig historik."];
+  const values = [
+    `Teknisk regim ${technical.trend.regime}.`,
+    `Teknisk komposit ${technical.scores.composite.toFixed(3)}.`,
+    `Trend ${technical.scores.trend.toFixed(3)}, momentum ${technical.scores.momentum.toFixed(3)}, volym ${technical.scores.volume.toFixed(3)}, breakout ${technical.scores.breakout.toFixed(3)}, stabilitet ${technical.scores.stability.toFixed(3)}.`,
+  ];
+  if (Number.isFinite(technical.momentum.rsi14)) {
+    values.push(`RSI14 ${(technical.momentum.rsi14 as number).toFixed(1)}.`);
+  }
+  if (Number.isFinite(technical.trend.adx14)) {
+    values.push(`ADX14 ${(technical.trend.adx14 as number).toFixed(1)}.`);
+  }
+  if (technical.signals.length) values.push(`Sammanfattade signaler: ${technical.signals.slice(0, 3).join(" ")}`);
+  return values;
+}
+
 function marketEvidence(input: {
   symbol: string;
   name: string;
@@ -100,21 +125,24 @@ function marketEvidence(input: {
   volume: number | null;
   changePct: number | null;
   historyBars: number;
+  technical?: TechnicalAnalysisSnapshot;
 }): ModelPortfolioEvidence {
   const publishedAt = input.quoteAsOf ?? new Date().toISOString();
   return {
     id: `market:${input.symbol}:ST:${publishedAt}`,
     kind: "market_data",
-    publisher: "EODHD",
+    publisher: "EODHD + DivLab deterministic TA",
     publishedAt,
     verifiedAt: new Date().toISOString(),
-    title: `${input.name} – fördröjd marknadsdata`,
+    title: `${input.name} (${input.symbol}.ST) – fördröjd marknadsdata och tekniska signaler`,
     summary: [
       `Symbol ${input.symbol}.ST.`,
       `Senaste fördröjda close ${input.close ?? "saknas"}.`,
       `Volym ${input.volume ?? "saknas"}.`,
       `Dagsförändring ${input.changePct ?? "saknas"}%.`,
       `Historik ${input.historyBars} dagsstaplar.`,
+      ...technicalEvidenceSummary(input.technical),
+      "Tekniska signaler är deterministiskt härledda från samma historiska OHLCV-serie och är endast beslutsunderlag, aldrig en fristående köpsignal.",
       "Datan är research-only och får inte användas som exakt exekveringskurs.",
     ].join(" "),
   };
@@ -155,7 +183,9 @@ export async function runAllModelPortfoliosDryRun(now = new Date()): Promise<Dry
   );
   const quoteBySymbol = new Map(quotes.map((quote) => [quote.symbol, quote]));
 
-  const from = new Date(now.getTime() - 120 * 24 * 60 * 60 * 1_000);
+  // ~420 calendar days typically supplies enough sessions for SMA200 and
+  // 52-week context while still costing one history request per instrument.
+  const from = new Date(now.getTime() - 420 * 24 * 60 * 60 * 1_000);
   const candidates = [];
   const evidence: ModelPortfolioEvidence[] = [];
   const candidateDiagnostics: DryRunOrchestrationResult["candidates"] = [];
@@ -171,15 +201,14 @@ export async function runAllModelPortfoliosDryRun(now = new Date()): Promise<Dry
     }
 
     if (quote || history.length) {
-      candidates.push(
-        buildMarketResearchCandidate({
-          symbol: instrument.symbol,
-          exchange: "ST",
-          history,
-          quote,
-          fxToSek: 1,
-        }),
-      );
+      const candidate = buildMarketResearchCandidate({
+        symbol: instrument.symbol,
+        exchange: "ST",
+        history,
+        quote,
+        fxToSek: 1,
+      });
+      candidates.push(candidate);
       evidence.push(
         marketEvidence({
           symbol: instrument.symbol,
@@ -189,6 +218,7 @@ export async function runAllModelPortfoliosDryRun(now = new Date()): Promise<Dry
           volume: quote?.volume ?? history.at(-1)?.volume ?? null,
           changePct: quote?.changePct ?? null,
           historyBars: history.length,
+          technical: candidate.technicalAnalysis,
         }),
       );
     }

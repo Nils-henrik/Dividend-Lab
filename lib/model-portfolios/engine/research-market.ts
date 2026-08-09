@@ -1,9 +1,10 @@
 import type { DailyBar, DelayedQuote } from "./eodhd";
 import type { ResearchCandidate } from "./research";
+import { analyzeTechnicalSignals } from "./technical-analysis";
 
 export type ResearchMarketSignals = Pick<
   ResearchCandidate,
-  "avgDailyTurnoverSek" | "priceMomentum20d" | "priceMomentum60d" | "volatility20d"
+  "avgDailyTurnoverSek" | "priceMomentum20d" | "priceMomentum60d" | "volatility20d" | "technicalAnalysis"
 >;
 
 function average(values: readonly number[]): number | null {
@@ -63,6 +64,7 @@ export function deriveResearchMarketSignals(input: {
     priceMomentum20d: momentum(history, 20),
     priceMomentum60d: momentum(history, 60),
     volatility20d: dailyVol === null ? undefined : dailyVol * Math.sqrt(252),
+    technicalAnalysis: analyzeTechnicalSignals(history),
   };
 }
 
