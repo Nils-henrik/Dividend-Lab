@@ -1,5 +1,3 @@
-import "server-only";
-
 /**
  * DivBrain Finance Intelligence v4.
  *
@@ -147,7 +145,6 @@ function classifyToolMeaning(text: string): FinanceToolMeaning {
 }
 
 function classifyIntent(text: string): FinanceIntent {
-  // Specific analytical domains win over generic platform/trading vocabulary.
   const priority: FinanceIntent[] = [
     "technical_analysis", "valuation", "fundamental_analysis", "accounting", "derivatives",
     "fixed_income", "macro", "portfolio_risk", "funds_etfs", "dividends", "tax_legal",
