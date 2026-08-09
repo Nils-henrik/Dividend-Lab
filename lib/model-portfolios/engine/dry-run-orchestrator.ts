@@ -2,6 +2,7 @@ import "server-only";
 
 import { createModelPortfolioAdminClient } from "../admin";
 import type { ModelPortfolioEvidence } from "./decision";
+import { buildDecisionAuditRow, persistDecisionAuditBatch, type DecisionAuditRow } from "./decision-audit";
 import { runPortfolioDryRun } from "./dry-run";
 import { createDryRunEodhdBudget, type EodhdCallBudgetSnapshot } from "./eodhd-budget";
 import { fetchDailyHistory, fetchDelayedQuotes } from "./eodhd";
@@ -9,11 +10,6 @@ import type { ModelPortfolioStrategyKey } from "./policy";
 import { buildMarketResearchCandidate } from "./research-market";
 import type { TechnicalAnalysisSnapshot } from "./technical-analysis";
 
-// Seven instruments keeps the free EODHD dry-run envelope at exactly eight
-// possible calls: one batched delayed-quote request + seven history requests.
-// The mix intentionally covers quality/compounders, cyclicals, financials,
-// telecom/dividend and a higher-beta growth candidate so the four mandates do
-// not all receive an identical style universe.
 const BOOTSTRAP_RESEARCH_UNIVERSE = [
   { symbol: "INVE-B", name: "Investor AB ser. B", market: "SE" as const },
   { symbol: "VOLV-B", name: "Volvo AB ser. B", market: "SE" as const },
@@ -68,9 +64,15 @@ export type DryRunOrchestrationResult = {
     rationale?: string;
     model?: string;
     estimatedCostUsdMicros?: number;
+    decisionId?: string;
     reason?: string;
   }>;
   totalEstimatedAiCostUsdMicros: number;
+  auditPersisted: boolean;
+};
+
+export type DryRunAuditOptions = {
+  runId: string;
 };
 
 function isoDate(date: Date): string {
@@ -148,9 +150,13 @@ function marketEvidence(input: {
   };
 }
 
-export async function runAllModelPortfoliosDryRun(now = new Date()): Promise<DryRunOrchestrationResult> {
+export async function runAllModelPortfoliosDryRun(
+  now = new Date(),
+  audit?: DryRunAuditOptions,
+): Promise<DryRunOrchestrationResult> {
   const supabase = createModelPortfolioAdminClient();
   if (!supabase) throw new Error("model_portfolio_admin_unavailable");
+  if (audit && !audit.runId.trim()) throw new Error("invalid_dry_run_audit_run_id");
 
   const [portfolioResult, holdingResult, cashResult] = await Promise.all([
     supabase
@@ -183,8 +189,6 @@ export async function runAllModelPortfoliosDryRun(now = new Date()): Promise<Dry
   );
   const quoteBySymbol = new Map(quotes.map((quote) => [quote.symbol, quote]));
 
-  // ~420 calendar days typically supplies enough sessions for SMA200 and
-  // 52-week context while still costing one history request per instrument.
   const from = new Date(now.getTime() - 420 * 24 * 60 * 60 * 1_000);
   const candidates = [];
   const evidence: ModelPortfolioEvidence[] = [];
@@ -235,17 +239,20 @@ export async function runAllModelPortfoliosDryRun(now = new Date()): Promise<Dry
   if (!candidates.length) throw new Error("dry_run_no_market_candidates");
 
   const portfolioResults: DryRunOrchestrationResult["portfolios"] = [];
+  const auditRows: DecisionAuditRow[] = [];
   let spentTodayUsdMicros = 0;
 
   for (const portfolio of portfolios) {
+    const portfolioSnapshot = buildPortfolioSnapshot({
+      portfolio,
+      cashMinor: cashByPortfolio.get(portfolio.id) ?? 0,
+      holdings: holdings.filter((holding) => holding.portfolio_id === portfolio.id),
+    });
+
     const result = await runPortfolioDryRun({
       strategyKey: portfolio.strategy_key,
       runKind: "primary",
-      portfolioSnapshot: buildPortfolioSnapshot({
-        portfolio,
-        cashMinor: cashByPortfolio.get(portfolio.id) ?? 0,
-        holdings: holdings.filter((holding) => holding.portfolio_id === portfolio.id),
-      }),
+      portfolioSnapshot,
       candidates,
       evidence,
       spentTodayUsdMicros,
@@ -275,6 +282,37 @@ export async function runAllModelPortfoliosDryRun(now = new Date()): Promise<Dry
       model: result.model,
       estimatedCostUsdMicros: result.estimatedCostUsdMicros,
     });
+
+    if (audit) {
+      auditRows.push(
+        buildDecisionAuditRow({
+          runId: audit.runId,
+          portfolioId: portfolio.id,
+          strategyKey: portfolio.strategy_key,
+          decision: result.decision,
+          evidence,
+          rankedCandidates: result.rankedCandidates,
+          modelName: result.model,
+          estimatedCostUsdMicros: result.estimatedCostUsdMicros,
+          usage: result.usage,
+          portfolioSnapshot,
+          executionAllowed: false,
+        }),
+      );
+    }
+  }
+
+  let auditPersisted = false;
+  if (audit) {
+    const allPortfoliosSucceeded = portfolios.length > 0 && portfolioResults.length === portfolios.length && portfolioResults.every((item) => item.ok);
+    if (!allPortfoliosSucceeded || auditRows.length !== portfolios.length) {
+      throw new Error("decision_audit_requires_complete_portfolio_run");
+    }
+    const decisionIds = await persistDecisionAuditBatch({ supabase, rows: auditRows });
+    portfolioResults.forEach((result) => {
+      result.decisionId = decisionIds.get(result.id);
+    });
+    auditPersisted = true;
   }
 
   return {
@@ -285,5 +323,6 @@ export async function runAllModelPortfoliosDryRun(now = new Date()): Promise<Dry
     candidates: candidateDiagnostics,
     portfolios: portfolioResults,
     totalEstimatedAiCostUsdMicros: spentTodayUsdMicros,
+    auditPersisted,
   };
 }
