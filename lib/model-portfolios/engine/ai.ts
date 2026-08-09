@@ -1,9 +1,11 @@
 import "server-only";
 
-import { generateObject } from "ai";
+import { generateText, Output, stepCountIs, tool } from "ai";
+import { z } from "zod";
 import { modelPortfolioDecisionSchema, type ModelPortfolioDecision, type ModelPortfolioEvidence } from "./decision";
 import { buildModelPortfolioSystemMandate } from "./mandates";
 import type { ModelPortfolioStrategyKey } from "./policy";
+import type { RankedResearchCandidate } from "./research";
 
 export const MODEL_PORTFOLIO_AI_MODELS = {
   primary: "openai/gpt-5.6-luna",
@@ -16,7 +18,7 @@ export type ModelPortfolioAiModel =
 // Conservative internal cost estimates based on the selected AI Gateway models.
 // The hard cap is expressed in USD micros so it is independent of floating point
 // money math. 300_000 micros = USD 0.30, intentionally targeting roughly the
-// middle of Henrik's 2-4 SEK/day operating budget rather than spending the ceiling.
+// middle of the 2-4 SEK/day operating budget rather than spending the ceiling.
 export const MODEL_PORTFOLIO_AI_BUDGET = {
   targetDailyUsdMicros: 150_000,
   hardDailyUsdMicros: 300_000,
@@ -133,6 +135,7 @@ export type PortfolioAiDecisionRequest = {
   runKind: "primary" | "event";
   portfolioSnapshot: string;
   candidateSnapshot: string;
+  candidates: readonly RankedResearchCandidate[];
   evidence: readonly ModelPortfolioEvidence[];
   useEscalationModel: boolean;
 };
@@ -145,6 +148,184 @@ function compactEvidence(evidence: readonly ModelPortfolioEvidence[]): string {
         `[${item.id}] ${item.kind} | ${item.publisher} | ${item.publishedAt} | ${item.title}\n${item.summary}`,
     )
     .join("\n\n");
+}
+
+function candidateKey(candidate: Pick<RankedResearchCandidate, "symbol" | "exchange">): string {
+  return `${candidate.symbol}.${candidate.exchange}`.toUpperCase();
+}
+
+function findCandidate(
+  candidates: readonly RankedResearchCandidate[],
+  symbol: string,
+): RankedResearchCandidate | null {
+  const normalized = symbol.trim().toUpperCase();
+  return candidates.find((candidate) =>
+    candidate.symbol.toUpperCase() === normalized || candidateKey(candidate) === normalized,
+  ) ?? null;
+}
+
+function compactCandidateResearch(candidate: RankedResearchCandidate) {
+  return {
+    symbol: candidate.symbol,
+    exchange: candidate.exchange,
+    deterministicScore: candidate.deterministicScore,
+    reasons: candidate.reasons,
+    marketCapSek: candidate.marketCapSek ?? null,
+    avgDailyTurnoverSek: candidate.avgDailyTurnoverSek ?? null,
+    priceMomentum20d: candidate.priceMomentum20d ?? null,
+    priceMomentum60d: candidate.priceMomentum60d ?? null,
+    volatility20d: candidate.volatility20d ?? null,
+    earningsRevisionScore: candidate.earningsRevisionScore ?? null,
+    qualityScore: candidate.qualityScore ?? null,
+    valuationScore: candidate.valuationScore ?? null,
+    dividendQualityScore: candidate.dividendQualityScore ?? null,
+    catalystScore: candidate.catalystScore ?? null,
+    balanceSheetScore: candidate.balanceSheetScore ?? null,
+  };
+}
+
+function buildManagerTools(
+  candidates: readonly RankedResearchCandidate[],
+  evidence: readonly ModelPortfolioEvidence[],
+) {
+  const symbolSchema = z.object({
+    symbol: z.string().trim().min(1).max(40).describe("Ticker, optionally with exchange suffix, e.g. INVE-B.ST"),
+  });
+
+  return {
+    inspectTechnicalAnalysis: tool({
+      description:
+        "Inspect the full deterministic technical-analysis snapshot for one shortlisted stock. Use this before relying on trend, momentum, breakout, volume, support/resistance or mean-reversion claims.",
+      inputSchema: symbolSchema,
+      execute: async ({ symbol }) => {
+        const candidate = findCandidate(candidates, symbol);
+        if (!candidate) return { found: false, symbol };
+        return {
+          found: true,
+          symbol: candidateKey(candidate),
+          technicalAnalysis: candidate.technicalAnalysis ?? null,
+        };
+      },
+    }),
+    inspectCandidateResearch: tool({
+      description:
+        "Inspect all currently available deterministic research scores for one shortlisted candidate. Missing values are returned as null and must never be invented.",
+      inputSchema: symbolSchema,
+      execute: async ({ symbol }) => {
+        const candidate = findCandidate(candidates, symbol);
+        return candidate
+          ? { found: true, candidate: compactCandidateResearch(candidate) }
+          : { found: false, symbol };
+      },
+    }),
+    inspectRiskAndLiquidity: tool({
+      description:
+        "Inspect volatility, drawdown, ATR, liquidity, support distance and technical stability for one candidate. Use this to challenge a proposed BUY or assess whether a technically attractive stock carries unacceptable risk.",
+      inputSchema: symbolSchema,
+      execute: async ({ symbol }) => {
+        const candidate = findCandidate(candidates, symbol);
+        if (!candidate) return { found: false, symbol };
+        const technical = candidate.technicalAnalysis;
+        return {
+          found: true,
+          symbol: candidateKey(candidate),
+          avgDailyTurnoverSek: candidate.avgDailyTurnoverSek ?? null,
+          volatility20d: candidate.volatility20d ?? null,
+          atrPct14: technical?.volatility.atrPct14 ?? null,
+          maxDrawdown252: technical?.volatility.maxDrawdown252 ?? null,
+          supportDistancePct: technical?.levels.supportDistancePct ?? null,
+          resistanceDistancePct: technical?.levels.resistanceDistancePct ?? null,
+          stabilityScore: technical?.scores.stability ?? null,
+          regime: technical?.trend.regime ?? "insufficient_data",
+        };
+      },
+    }),
+    compareShortlistedCandidates: tool({
+      description:
+        "Compare two to six shortlisted candidates side by side using deterministic research and technical scores. Useful when several stocks look plausible and capital must be allocated to the strongest mandate fit.",
+      inputSchema: z.object({
+        symbols: z.array(z.string().trim().min(1).max(40)).min(2).max(6),
+      }),
+      execute: async ({ symbols }) => ({
+        candidates: symbols.map((symbol) => {
+          const candidate = findCandidate(candidates, symbol);
+          if (!candidate) return { found: false, symbol };
+          return {
+            found: true,
+            ...compactCandidateResearch(candidate),
+            technical: candidate.technicalAnalysis
+              ? {
+                  regime: candidate.technicalAnalysis.trend.regime,
+                  composite: candidate.technicalAnalysis.scores.composite,
+                  trend: candidate.technicalAnalysis.scores.trend,
+                  momentum: candidate.technicalAnalysis.scores.momentum,
+                  volume: candidate.technicalAnalysis.scores.volume,
+                  breakout: candidate.technicalAnalysis.scores.breakout,
+                  stability: candidate.technicalAnalysis.scores.stability,
+                  rsi14: candidate.technicalAnalysis.momentum.rsi14 ?? null,
+                  adx14: candidate.technicalAnalysis.trend.adx14 ?? null,
+                }
+              : null,
+          };
+        }),
+      }),
+    }),
+    inspectEvidenceForCandidate: tool({
+      description:
+        "Return stored verified evidence whose title or summary mentions a candidate. This tool never searches the open web and never creates new facts.",
+      inputSchema: symbolSchema,
+      execute: async ({ symbol }) => {
+        const candidate = findCandidate(candidates, symbol);
+        const terms = new Set(
+          [symbol, candidate?.symbol, candidate ? candidateKey(candidate) : null]
+            .filter((value): value is string => Boolean(value))
+            .map((value) => value.toLowerCase()),
+        );
+        const matches = evidence.filter((item) => {
+          const haystack = `${item.title} ${item.summary}`.toLowerCase();
+          return [...terms].some((term) => haystack.includes(term));
+        });
+        return {
+          symbol: candidate ? candidateKey(candidate) : symbol,
+          evidence: matches.slice(0, 8),
+        };
+      },
+    }),
+    inspectContradictions: tool({
+      description:
+        "Search the supplied verified evidence for negative or cautionary language connected to a candidate. Use this as a disconfirming check before BUY. It is a deterministic text filter, not sentiment AI.",
+      inputSchema: symbolSchema,
+      execute: async ({ symbol }) => {
+        const candidate = findCandidate(candidates, symbol);
+        const terms = [symbol, candidate?.symbol]
+          .filter((value): value is string => Boolean(value))
+          .map((value) => value.toLowerCase());
+        const cautionTerms = [
+          "risk",
+          "warning",
+          "sänkt",
+          "sänker",
+          "svag",
+          "decline",
+          "down",
+          "cut",
+          "miss",
+          "debt",
+          "regulatory",
+          "investigation",
+        ];
+        const matches = evidence.filter((item) => {
+          const haystack = `${item.title} ${item.summary}`.toLowerCase();
+          return terms.some((term) => haystack.includes(term)) && cautionTerms.some((term) => haystack.includes(term));
+        });
+        return {
+          symbol: candidate ? candidateKey(candidate) : symbol,
+          cautionaryEvidence: matches.slice(0, 8),
+          note: "No matches does not prove that no risks exist; it only means the supplied evidence contained no matching caution terms.",
+        };
+      },
+    }),
+  };
 }
 
 export async function generatePortfolioAiDecision(
@@ -168,25 +349,38 @@ export async function generatePortfolioAiDecision(
     request.candidateSnapshot.slice(0, 16_000),
     "VERIFIERAD EVIDENS:",
     compactEvidence(request.evidence),
+    "VERKTYGSDISCIPLIN:",
+    "Du har lokala, kostnadsfria analysverktyg för kandidatdata, teknisk analys, risk/likviditet, jämförelser, evidens och motsägande evidens.",
+    "Om du överväger BUY/SELL/TRIM/REBALANCE ska du använda relevanta verktyg för att kontrollera teknisk bild och nedsiderisk innan slutbeslutet. En enskild indikator får aldrig ensam avgöra affären.",
+    "Verktygen kan bara läsa redan hämtad verifierad data; null betyder okänt och får inte fyllas i med antaganden.",
     "Lämna exakt ett strukturerat beslut enligt schemat. Om underlaget inte tydligt motiverar en förändring: välj HOLD.",
   ].join("\n\n");
 
-  const result = await generateObject({
+  const result = await generateText({
     model,
-    schema: modelPortfolioDecisionSchema,
+    output: Output.object({
+      schema: modelPortfolioDecisionSchema,
+      name: "model_portfolio_decision",
+      description: "One auditable DivLab model-portfolio decision after optional bounded tool inspection.",
+    }),
     system,
     prompt,
+    tools: buildManagerTools(request.candidates, request.evidence),
+    toolChoice: "auto",
+    stopWhen: stepCountIs(MODEL_PORTFOLIO_AI_BUDGET.maxCallsPerPortfolioRun),
     maxOutputTokens: MODEL_PORTFOLIO_AI_BUDGET.maxOutputTokensPerCall,
     temperature: 0.1,
     providerOptions: {
       gateway: {
-        tags: ["divlab", "model-portfolios", request.strategyKey, request.runKind],
+        tags: ["divlab", "model-portfolios", request.strategyKey, request.runKind, "tool-enabled"],
       },
     },
   });
 
-  const inputTokens = Number(result.usage?.inputTokens ?? 0);
-  const outputTokens = Number(result.usage?.outputTokens ?? 0);
+  if (!result.output) throw new Error("model_portfolio_decision_output_missing");
+
+  const inputTokens = Number(result.totalUsage?.inputTokens ?? 0);
+  const outputTokens = Number(result.totalUsage?.outputTokens ?? 0);
   const estimatedCostUsdMicros = estimateAiCostUsdMicros({
     model,
     inputTokens,
@@ -194,7 +388,7 @@ export async function generatePortfolioAiDecision(
   });
 
   return {
-    decision: result.object,
+    decision: result.output,
     model,
     estimatedCostUsdMicros,
     usage: { inputTokens, outputTokens },
