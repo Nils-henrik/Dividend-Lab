@@ -20,6 +20,21 @@ export async function POST(request: Request) {
     return NextResponse.json({ status: "outside_window" }, { status: 202 });
   }
 
+  // Only the opening slot is allowed to perform the full daily universe scan.
+  // Midday/US-open/close are reserved for future *material event* reruns. Until
+  // the event detector is wired to this route they must fail closed here rather
+  // than repeating the eight-call EODHD research pass and wasting the free quota.
+  if (slot.slotId !== "open") {
+    return NextResponse.json(
+      {
+        status: "skipped",
+        reason: "material_event_required",
+        slot: slot.slotId,
+      },
+      { status: 202 },
+    );
+  }
+
   const supabase = createModelPortfolioAdminClient();
   if (!supabase) {
     return NextResponse.json({ status: "unavailable" }, { status: 503 });
