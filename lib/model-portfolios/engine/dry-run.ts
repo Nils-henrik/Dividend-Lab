@@ -10,6 +10,7 @@ import {
 import { validateEvidenceReferences, type ModelPortfolioDecision, type ModelPortfolioEvidence } from "./decision";
 import type { ModelPortfolioStrategyKey } from "./policy";
 import { rankResearchUniverse, selectDeepResearchCandidates, type ResearchCandidate } from "./research";
+import type { TechnicalAnalysisSnapshot } from "./technical-analysis";
 
 export type PortfolioDryRunRequest = {
   strategyKey: ModelPortfolioStrategyKey;
@@ -55,6 +56,35 @@ export function estimateDryRunCallCost(useEscalationModel: boolean): number {
   });
 }
 
+function formatNumber(value: number | undefined, digits = 4): string {
+  return Number.isFinite(value) ? (value as number).toFixed(digits) : "n/a";
+}
+
+function compactTechnical(technical: TechnicalAnalysisSnapshot | undefined): string {
+  if (!technical || technical.sessions === 0) return "technical=n/a";
+  return [
+    `taVersion=${technical.version}`,
+    `taRegime=${technical.trend.regime}`,
+    `taComposite=${formatNumber(technical.scores.composite, 3)}`,
+    `taTrend=${formatNumber(technical.scores.trend, 3)}`,
+    `taMomentum=${formatNumber(technical.scores.momentum, 3)}`,
+    `taVolume=${formatNumber(technical.scores.volume, 3)}`,
+    `taBreakout=${formatNumber(technical.scores.breakout, 3)}`,
+    `taStability=${formatNumber(technical.scores.stability, 3)}`,
+    `rsi14=${formatNumber(technical.momentum.rsi14, 1)}`,
+    `macdHist=${formatNumber(technical.trend.macdHistogram, 4)}`,
+    `adx14=${formatNumber(technical.trend.adx14, 1)}`,
+    `atrPct14=${formatNumber(technical.volatility.atrPct14, 4)}`,
+    `stoch14=${formatNumber(technical.momentum.stochastic14, 1)}`,
+    `volRatio20=${formatNumber(technical.volume.volumeRatio20, 2)}`,
+    `cmf20=${formatNumber(technical.volume.chaikinMoneyFlow20, 3)}`,
+    `range55=${formatNumber(technical.levels.rangePosition55, 3)}`,
+    `z20=${formatNumber(technical.meanReversion.zScore20, 2)}`,
+    `drawdown252=${formatNumber(technical.volatility.maxDrawdown252, 3)}`,
+    `taSignals=${technical.signals.slice(0, 5).join(" / ")}`,
+  ].join(" | ");
+}
+
 function compactCandidates(candidates: ReturnType<typeof selectDeepResearchCandidates>): string {
   return candidates
     .map((candidate, index) =>
@@ -66,6 +96,7 @@ function compactCandidates(candidates: ReturnType<typeof selectDeepResearchCandi
         `momentum60=${candidate.priceMomentum60d ?? "n/a"}`,
         `volatility20=${candidate.volatility20d ?? "n/a"}`,
         `turnoverSek=${candidate.avgDailyTurnoverSek ?? "n/a"}`,
+        compactTechnical(candidate.technicalAnalysis),
       ].join(" | "),
     )
     .join("\n");
