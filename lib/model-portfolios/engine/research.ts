@@ -1,4 +1,5 @@
 import type { ModelPortfolioStrategyKey } from "./policy";
+import type { TechnicalAnalysisSnapshot } from "./technical-analysis";
 
 export type ResearchCandidate = {
   symbol: string;
@@ -14,6 +15,7 @@ export type ResearchCandidate = {
   dividendQualityScore?: number;
   catalystScore?: number;
   balanceSheetScore?: number;
+  technicalAnalysis?: TechnicalAnalysisSnapshot;
 };
 
 export type RankedResearchCandidate = ResearchCandidate & {
@@ -63,61 +65,101 @@ function scoreForProfile(candidate: ResearchCandidate, strategy: ModelPortfolioS
   const momentum20 = normalizeMomentum(candidate.priceMomentum20d);
   const momentum60 = normalizeMomentum(candidate.priceMomentum60d);
   const lowVolatility = inverseVolatility(candidate.volatility20d);
+  const technical = candidate.technicalAnalysis;
+  const technicalComposite = clamp01(technical?.scores.composite);
+  const technicalTrend = clamp01(technical?.scores.trend);
+  const technicalMomentum = clamp01(technical?.scores.momentum);
+  const technicalVolume = clamp01(technical?.scores.volume);
+  const technicalBreakout = clamp01(technical?.scores.breakout);
+  const technicalStability = clamp01(technical?.scores.stability);
 
   if (strategy === "conservative") {
     return {
       score: weightedScore([
-        [quality, 0.26],
-        [balanceSheet, 0.24],
-        [lowVolatility, 0.18],
-        [valuation, 0.16],
-        [revisions, 0.1],
-        [momentum60, 0.06],
+        [quality, 0.24],
+        [balanceSheet, 0.22],
+        [lowVolatility, 0.15],
+        [valuation, 0.14],
+        [revisions, 0.09],
+        [momentum60, 0.04],
+        [technicalTrend, 0.06],
+        [technicalStability, 0.06],
       ]),
-      reasons: ["kvalitet", "balansräkning", "lägre volatilitet", "värdering"],
+      reasons: [
+        "kvalitet",
+        "balansräkning",
+        "lägre volatilitet",
+        "värdering",
+        "teknisk risk- och trendbekräftelse",
+      ],
     };
   }
 
   if (strategy === "high_risk") {
     return {
       score: weightedScore([
-        [catalyst, 0.26],
-        [revisions, 0.22],
-        [momentum20, 0.18],
-        [momentum60, 0.12],
-        [quality, 0.1],
-        [valuation, 0.07],
-        [balanceSheet, 0.05],
+        [catalyst, 0.22],
+        [revisions, 0.18],
+        [momentum20, 0.13],
+        [momentum60, 0.09],
+        [quality, 0.08],
+        [valuation, 0.05],
+        [balanceSheet, 0.04],
+        [technicalTrend, 0.08],
+        [technicalMomentum, 0.07],
+        [technicalVolume, 0.06],
+        [technicalBreakout, 0.1],
       ]),
-      reasons: ["katalysator", "vinstrevideringar", "momentum", "asymmetri"],
+      reasons: [
+        "katalysator",
+        "vinstrevideringar",
+        "momentum",
+        "volym och breakout",
+        "asymmetri",
+      ],
     };
   }
 
   if (strategy === "dividend") {
     return {
       score: weightedScore([
-        [dividend, 0.34],
-        [balanceSheet, 0.22],
-        [quality, 0.18],
-        [valuation, 0.14],
-        [revisions, 0.08],
-        [lowVolatility, 0.04],
+        [dividend, 0.31],
+        [balanceSheet, 0.21],
+        [quality, 0.17],
+        [valuation, 0.13],
+        [revisions, 0.07],
+        [lowVolatility, 0.03],
+        [technicalStability, 0.05],
+        [technicalTrend, 0.03],
       ]),
-      reasons: ["utdelningskvalitet", "balansräkning", "kassaflödeskvalitet", "värdering"],
+      reasons: [
+        "utdelningskvalitet",
+        "balansräkning",
+        "kassaflödeskvalitet",
+        "värdering",
+        "teknisk stabilitet",
+      ],
     };
   }
 
   return {
     score: weightedScore([
-      [quality, 0.22],
-      [valuation, 0.2],
-      [revisions, 0.18],
-      [balanceSheet, 0.14],
-      [catalyst, 0.12],
-      [momentum60, 0.08],
-      [lowVolatility, 0.06],
+      [quality, 0.2],
+      [valuation, 0.18],
+      [revisions, 0.16],
+      [balanceSheet, 0.13],
+      [catalyst, 0.1],
+      [momentum60, 0.07],
+      [lowVolatility, 0.05],
+      [technicalComposite, 0.11],
     ]),
-    reasons: ["kvalitet", "värdering", "revideringar", "balanserad risk/reward"],
+    reasons: [
+      "kvalitet",
+      "värdering",
+      "revideringar",
+      "teknisk bekräftelse",
+      "balanserad risk/reward",
+    ],
   };
 }
 
