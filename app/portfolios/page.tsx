@@ -16,7 +16,10 @@ export default async function ModelPortfoliosPage() {
   return (
     <AppShell>
       {result.ok ? (
-        <ModelPortfoliosOverview portfolios={result.portfolios} />
+        <ModelPortfoliosOverview
+          portfolios={result.portfolios}
+          recentTransactions={result.recentTransactions}
+        />
       ) : (
         <section className="divlab-card px-5 py-8 sm:px-7">
           <h1 className="text-2xl font-semibold tracking-[-0.03em] text-divlab-text">
