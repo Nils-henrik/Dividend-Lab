@@ -236,7 +236,7 @@ function PortfolioCard({ portfolio }: { portfolio: ModelPortfolioOverview }) {
           <MetricRow label="Senaste AI-beslut" value={portfolio.latestDecision ? formatDate(portfolio.latestDecision.createdAt) : statusLabel(portfolio.status)} />
         </dl>
 
-        <div className="mt-5 border-t divlab-border-neutral pt-4">
+        <div className="mt-5 pt-2">
           <p className="line-clamp-2 min-h-10 text-xs leading-5 text-divlab-text-secondary">{portfolio.latestDecision?.rationale ?? portfolio.objective}</p>
           <p className={`mt-2 text-[11px] font-semibold ${style.accent}`}>Öppna strategi och historik →</p>
         </div>
