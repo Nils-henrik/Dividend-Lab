@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createModelPortfolioAdminClient } from "@/lib/model-portfolios/admin";
 import { resolveModelPortfolioMarketDataConfig } from "@/lib/model-portfolios/engine/config";
+import { runAllModelPortfoliosDryRun } from "@/lib/model-portfolios/engine/dry-run-orchestrator";
 import { resolveModelPortfolioEvaluationSlot } from "@/lib/model-portfolios/engine/schedule";
 
 export const runtime = "nodejs";
@@ -34,6 +35,7 @@ export async function POST(request: Request) {
         scheduler: "supabase-cron-v1",
         slot: slot.slotId,
         stockholm_date: slot.stockholmDate,
+        mode: "dry_run",
       },
     })
     .select("id")
@@ -63,20 +65,68 @@ export async function POST(request: Request) {
     );
   }
 
-  // The execution engine is intentionally still closed. A verified market-data
-  // adapter, candidate universe, post-model validator and separate AI budget
-  // guard must land before this branch can perform any portfolio AI call.
-  await supabase
-    .from("model_portfolio_runs")
-    .update({
-      status: "skipped",
-      error_code: "execution_engine_not_enabled",
-      completed_at: now.toISOString(),
-    })
-    .eq("id", run.id);
+  if (process.env.MODEL_PORTFOLIO_DRY_RUN_ENABLED !== "true") {
+    await supabase
+      .from("model_portfolio_runs")
+      .update({
+        status: "skipped",
+        error_code: "dry_run_not_enabled",
+        completed_at: now.toISOString(),
+      })
+      .eq("id", run.id);
 
-  return NextResponse.json(
-    { status: "skipped", reason: "execution_engine_not_enabled" },
-    { status: 202 },
-  );
+    return NextResponse.json(
+      { status: "skipped", reason: "dry_run_not_enabled" },
+      { status: 202 },
+    );
+  }
+
+  try {
+    const dryRun = await runAllModelPortfoliosDryRun(now);
+    await supabase
+      .from("model_portfolio_runs")
+      .update({
+        status: "completed",
+        market_data_as_of: now.toISOString(),
+        source_snapshot: {
+          scheduler: "supabase-cron-v1",
+          slot: slot.slotId,
+          stockholm_date: slot.stockholmDate,
+          ...dryRun,
+        },
+        completed_at: new Date().toISOString(),
+      })
+      .eq("id", run.id);
+
+    return NextResponse.json({
+      status: "completed",
+      mode: "dry_run",
+      executionAllowed: false,
+      eodhdBudget: dryRun.eodhdBudget,
+      totalEstimatedAiCostUsdMicros: dryRun.totalEstimatedAiCostUsdMicros,
+      portfolioResults: dryRun.portfolios.map((portfolio) => ({
+        slug: portfolio.slug,
+        ok: portfolio.ok,
+        action: portfolio.action,
+        symbol: portfolio.symbol,
+        convictionScore: portfolio.convictionScore,
+        reason: portfolio.reason,
+      })),
+    });
+  } catch (error) {
+    const errorCode = error instanceof Error ? error.message.slice(0, 120) : "dry_run_failed";
+    await supabase
+      .from("model_portfolio_runs")
+      .update({
+        status: "failed",
+        error_code: errorCode,
+        completed_at: new Date().toISOString(),
+      })
+      .eq("id", run.id);
+
+    return NextResponse.json(
+      { status: "failed", reason: errorCode },
+      { status: 503 },
+    );
+  }
 }

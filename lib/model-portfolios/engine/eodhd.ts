@@ -1,6 +1,7 @@
 import "server-only";
 
 import { resolveModelPortfolioMarketDataConfig } from "./config";
+import type { EodhdCallBudget } from "./eodhd-budget";
 import type { ModelPortfolioMarket } from "./sources";
 
 const EODHD_BASE_URL = "https://eodhd.com/api";
@@ -122,7 +123,8 @@ function buildUrl(path: string, apiKey: string, params: Record<string, string> =
   return url.toString();
 }
 
-async function getJson(url: string, revalidate: number): Promise<unknown> {
+async function getJson(url: string, revalidate: number, budget?: EodhdCallBudget): Promise<unknown> {
+  budget?.consume();
   const response = await fetch(url, {
     headers: { Accept: "application/json" },
     next: { revalidate },
@@ -204,13 +206,17 @@ export function toEodhdTicker(symbol: string, market: ModelPortfolioMarket): str
   return `${clean}.${EODHD_EXCHANGE_BY_MARKET[market]}`;
 }
 
-export async function fetchEodhdUniverse(market: ModelPortfolioMarket): Promise<EodhdInstrument[]> {
+export async function fetchEodhdUniverse(
+  market: ModelPortfolioMarket,
+  budget?: EodhdCallBudget,
+): Promise<EodhdInstrument[]> {
   const config = resolveModelPortfolioMarketDataConfig();
   if (!config.configured) throw new Error(config.reason);
   const exchange = EODHD_EXCHANGE_BY_MARKET[market];
   const payload = await getJson(
     buildUrl(`/exchange-symbol-list/${exchange}`, config.apiKey),
     UNIVERSE_REVALIDATE_SECONDS,
+    budget,
   );
   if (!Array.isArray(payload)) throw new Error("eodhd_invalid_universe_payload");
   return payload
@@ -220,6 +226,7 @@ export async function fetchEodhdUniverse(market: ModelPortfolioMarket): Promise<
 
 export async function fetchDelayedQuotes(
   instruments: readonly { symbol: string; market: ModelPortfolioMarket }[],
+  budget?: EodhdCallBudget,
 ): Promise<DelayedQuote[]> {
   const config = resolveModelPortfolioMarketDataConfig();
   if (!config.configured) throw new Error(config.reason);
@@ -232,6 +239,7 @@ export async function fetchDelayedQuotes(
     const payload = await getJson(
       buildUrl(`/real-time/${encodeURIComponent(primary)}`, config.apiKey, rest.length ? { s: rest.join(",") } : {}),
       QUOTE_REVALIDATE_SECONDS,
+      budget,
     );
     const rows = Array.isArray(payload) ? payload : [payload];
     rows.forEach((row, index) => {
@@ -247,6 +255,7 @@ export async function fetchDailyHistory(
   market: ModelPortfolioMarket,
   from: string,
   to: string,
+  budget?: EodhdCallBudget,
 ): Promise<DailyBar[]> {
   const config = resolveModelPortfolioMarketDataConfig();
   if (!config.configured) throw new Error(config.reason);
@@ -259,6 +268,7 @@ export async function fetchDailyHistory(
       order: "a",
     }),
     HISTORY_REVALIDATE_SECONDS,
+    budget,
   );
   if (!Array.isArray(payload)) throw new Error("eodhd_invalid_history_payload");
   return payload
