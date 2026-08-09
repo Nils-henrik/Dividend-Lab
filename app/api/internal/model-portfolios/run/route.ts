@@ -82,7 +82,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const dryRun = await runAllModelPortfoliosDryRun(now);
+    const dryRun = await runAllModelPortfoliosDryRun(now, { runId: run.id });
     await supabase
       .from("model_portfolio_runs")
       .update({
@@ -102,6 +102,7 @@ export async function POST(request: Request) {
       status: "completed",
       mode: "dry_run",
       executionAllowed: false,
+      auditPersisted: dryRun.auditPersisted,
       eodhdBudget: dryRun.eodhdBudget,
       totalEstimatedAiCostUsdMicros: dryRun.totalEstimatedAiCostUsdMicros,
       portfolioResults: dryRun.portfolios.map((portfolio) => ({
@@ -110,6 +111,7 @@ export async function POST(request: Request) {
         action: portfolio.action,
         symbol: portfolio.symbol,
         convictionScore: portfolio.convictionScore,
+        decisionId: portfolio.decisionId,
         reason: portfolio.reason,
       })),
     });
