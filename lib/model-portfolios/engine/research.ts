@@ -125,13 +125,17 @@ export function rankResearchUniverse(
   universe: readonly ResearchCandidate[],
   strategy: ModelPortfolioStrategyKey,
 ): RankedResearchCandidate[] {
-  return universe
-    .filter((candidate) => {
-      const marketCapOk = !Number.isFinite(candidate.marketCapSek) || (candidate.marketCapSek as number) >= MIN_MARKET_CAP_SEK;
-      const liquidityOk = !Number.isFinite(candidate.avgDailyTurnoverSek) || (candidate.avgDailyTurnoverSek as number) >= MIN_DAILY_TURNOVER_SEK;
-      return Boolean(candidate.symbol.trim() && candidate.exchange.trim() && marketCapOk && liquidityOk);
-    })
-    .slice(0, RESEARCH_BUDGET.maxUniverseSize)
+  const eligible = universe.filter((candidate) => {
+    const marketCapOk =
+      !Number.isFinite(candidate.marketCapSek) ||
+      (candidate.marketCapSek as number) >= MIN_MARKET_CAP_SEK;
+    const liquidityOk =
+      !Number.isFinite(candidate.avgDailyTurnoverSek) ||
+      (candidate.avgDailyTurnoverSek as number) >= MIN_DAILY_TURNOVER_SEK;
+    return Boolean(candidate.symbol.trim() && candidate.exchange.trim() && marketCapOk && liquidityOk);
+  });
+
+  const ranked = eligible
     .map((candidate) => {
       const profile = scoreForProfile(candidate, strategy);
       return {
@@ -140,8 +144,9 @@ export function rankResearchUniverse(
         reasons: profile.reasons,
       };
     })
-    .sort((a, b) => b.deterministicScore - a.deterministicScore)
-    .slice(0, RESEARCH_BUDGET.maxShortlistSize);
+    .sort((a, b) => b.deterministicScore - a.deterministicScore);
+
+  return ranked.slice(0, RESEARCH_BUDGET.maxUniverseSize).slice(0, RESEARCH_BUDGET.maxShortlistSize);
 }
 
 export function selectDeepResearchCandidates(
