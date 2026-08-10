@@ -1,40 +1,15 @@
 import "server-only";
 
 import { createModelPortfolioAdminClient } from "../admin";
-import type { ModelPortfolioEvidence } from "./decision";
+import { aggregatePortfolioAiUsage, type ModelPortfolioAiUsage, type ModelPortfolioBatchAiUsage } from "./ai-usage";
 import { buildDecisionAuditRow, persistDecisionAuditBatch, type DecisionAuditRow } from "./decision-audit";
 import { runPortfolioDryRun } from "./dry-run";
-import {
-  aggregatePortfolioAiUsage,
-  type ModelPortfolioAiUsage,
-  type ModelPortfolioBatchAiUsage,
-} from "./ai-usage";
-import {
-  canFetchHistoryWithFundamentalsReserve,
-  createDryRunEodhdBudget,
-  type EodhdCallBudgetSnapshot,
-} from "./eodhd-budget";
-import { fetchDailyHistory, fetchDelayedQuotes, fetchEodhdFundamentals, type DelayedQuote } from "./eodhd";
+import type { EodhdCallBudgetSnapshot, ModelPortfolioResearchPass } from "./eodhd-budget";
+import type { DelayedQuote } from "./eodhd";
 import type { ModelPortfolioStrategyKey } from "./policy";
 import { buildFollowerTradePayload } from "./pricing";
-import {
-  mergeFundamentalScores,
-  parseEodhdFundamentalsPayload,
-  scoreEodhdFundamentals,
-} from "./research-fundamentals";
-import { buildMarketResearchCandidate } from "./research-market";
+import { runModelPortfolioResearchPipeline, type ResearchCandidateDiagnostic } from "./research-pipeline";
 import { settleModelPortfolioDecision } from "./settle-service";
-import type { TechnicalAnalysisSnapshot } from "./technical-analysis";
-
-const BOOTSTRAP_RESEARCH_UNIVERSE = [
-  { symbol: "INVE-B", name: "Investor AB ser. B", market: "SE" as const },
-  { symbol: "VOLV-B", name: "Volvo AB ser. B", market: "SE" as const },
-  { symbol: "ATCO-A", name: "Atlas Copco AB ser. A", market: "SE" as const },
-  { symbol: "SEB-A", name: "SEB AB ser. A", market: "SE" as const },
-  { symbol: "ERIC-B", name: "Ericsson AB ser. B", market: "SE" as const },
-  { symbol: "EVO", name: "Evolution AB", market: "SE" as const },
-  { symbol: "TEL2-B", name: "Tele2 AB ser. B", market: "SE" as const },
-] as const;
 
 type PortfolioRow = {
   id: string;
@@ -67,16 +42,11 @@ type TransactionTimeRow = {
 export type DryRunOrchestrationResult = {
   mode: "dry_run" | "live_simulation";
   executionAllowed: boolean;
-  marketDataProvider: "eodhd";
+  researchPass: ModelPortfolioResearchPass;
+  marketDataProvider: "yahoo_eodhd";
+  researchSummary: string;
   eodhdBudget: EodhdCallBudgetSnapshot;
-  candidates: Array<{
-    symbol: string;
-    exchange: string;
-    quoteAsOf: string | null;
-    historyBars: number;
-    historyError?: string;
-    fundamentalsSource?: "none" | "unavailable" | "market_only" | "eodhd";
-  }>;
+  candidates: ResearchCandidateDiagnostic[];
   portfolios: Array<{
     id: string;
     slug: string;
@@ -104,10 +74,11 @@ export type DryRunOrchestrationResult = {
 export type DryRunAuditOptions = {
   runId: string;
   executionAllowed?: boolean;
+  researchPass?: ModelPortfolioResearchPass;
 };
 
-function isoDate(date: Date): string {
-  return date.toISOString().slice(0, 10);
+function instrumentKey(symbol: string, exchange: string): string {
+  return `${symbol}.${exchange}`.toUpperCase();
 }
 
 function buildPortfolioSnapshot(input: {
@@ -134,69 +105,6 @@ function buildPortfolioSnapshot(input: {
   ].join("\n");
 }
 
-function technicalEvidenceSummary(technical: TechnicalAnalysisSnapshot | undefined): string[] {
-  if (!technical || technical.sessions === 0) return ["Teknisk analys: otillräcklig historik."];
-  const values = [
-    `Teknisk regim ${technical.trend.regime}.`,
-    `Teknisk komposit ${technical.scores.composite.toFixed(3)}.`,
-    `Trend ${technical.scores.trend.toFixed(3)}, momentum ${technical.scores.momentum.toFixed(3)}, volym ${technical.scores.volume.toFixed(3)}, breakout ${technical.scores.breakout.toFixed(3)}, stabilitet ${technical.scores.stability.toFixed(3)}.`,
-  ];
-  if (Number.isFinite(technical.momentum.rsi14)) {
-    values.push(`RSI14 ${(technical.momentum.rsi14 as number).toFixed(1)}.`);
-  }
-  if (Number.isFinite(technical.trend.adx14)) {
-    values.push(`ADX14 ${(technical.trend.adx14 as number).toFixed(1)}.`);
-  }
-  if (technical.signals.length) values.push(`Sammanfattade signaler: ${technical.signals.slice(0, 3).join(" ")}`);
-  return values;
-}
-
-function marketEvidence(input: {
-  symbol: string;
-  name: string;
-  quoteAsOf: string | null;
-  close: number | null;
-  volume: number | null;
-  changePct: number | null;
-  historyBars: number;
-  technical?: TechnicalAnalysisSnapshot;
-  qualityScore?: number;
-  valuationScore?: number;
-  earningsRevisionScore?: number;
-  dividendQualityScore?: number;
-  catalystScore?: number;
-  balanceSheetScore?: number;
-  fundamentalsSource?: "none" | "unavailable" | "market_only" | "eodhd";
-}): ModelPortfolioEvidence {
-  const publishedAt = input.quoteAsOf ?? new Date().toISOString();
-  const fundamentalsSource = input.fundamentalsSource ?? "unavailable";
-  const fundamentalsNote =
-    fundamentalsSource === "eodhd"
-      ? "Fundamentala poäng är härledda från verifierad EODHD fundamentals-data. De ersätter inte en fullständig bolagsanalys."
-      : "Fundamentala poäng saknas: ingen verifierad EODHD fundamentals-data har berikat kandidaten i denna pass. Marknads-/TA-data används inte som proxy för fundamentalvärden.";
-  return {
-    id: `market:${input.symbol}:ST:${publishedAt}`,
-    kind: "market_data",
-    publisher: "EODHD + DivLab deterministic TA/fundamentals",
-    publishedAt,
-    verifiedAt: new Date().toISOString(),
-    title: `${input.name} (${input.symbol}.ST) – fördröjd marknadsdata, tekniska signaler och researchpoäng`,
-    summary: [
-      `Symbol ${input.symbol}.ST.`,
-      `Senaste fördröjda close ${input.close ?? "saknas"}.`,
-      `Volym ${input.volume ?? "saknas"}.`,
-      `Dagsförändring ${input.changePct ?? "saknas"}%.`,
-      `Historik ${input.historyBars} dagsstaplar.`,
-      ...technicalEvidenceSummary(input.technical),
-      `Researchkälla ${fundamentalsSource}.`,
-      `Kvalitet ${input.qualityScore ?? "saknas"}, värdering ${input.valuationScore ?? "saknas"}, revideringar ${input.earningsRevisionScore ?? "saknas"}, utdelningskvalitet ${input.dividendQualityScore ?? "saknas"}, katalysator ${input.catalystScore ?? "saknas"}, balansräkning ${input.balanceSheetScore ?? "saknas"}.`,
-      fundamentalsNote,
-      "Tekniska signaler är deterministiskt härledda från samma historiska OHLCV-serie och är endast beslutsunderlag, aldrig en fristående köpsignal.",
-      "Vid simulerad settlement används den fördröjda close-kursen explicit märkt SIMULATED – aldrig som verklig mäklarfill.",
-    ].join(" "),
-  };
-}
-
 function parseRiskRules(raw: Record<string, unknown> | null): {
   maxSinglePositionPct: number;
   minCashPct: number;
@@ -214,14 +122,16 @@ function parseRiskRules(raw: Record<string, unknown> | null): {
 
 function quoteToSimulatedFill(quote: DelayedQuote, instrumentName: string) {
   if (quote.close === null || !Number.isFinite(quote.close) || quote.close <= 0) return null;
+  const exchange = quote.exchange.toUpperCase();
+  const nativeCurrency = exchange === "US" || exchange === "NASDAQ" || exchange === "NYSE" ? "USD" : "SEK";
   return {
     symbol: quote.symbol,
     exchange: quote.exchange,
     instrumentName,
-    nativeCurrency: "SEK",
+    nativeCurrency,
     nativePriceMinor: Math.round(quote.close * 100),
     asOf: quote.timestamp,
-    sourcePublisher: "EODHD delayed quote",
+    sourcePublisher: "Yahoo Finance market data",
     delayed: true as const,
   };
 }
@@ -237,23 +147,17 @@ async function markDecisionSettlementRejected(
     .select("input_snapshot")
     .eq("id", decisionId)
     .maybeSingle();
-
   const previousSnapshot =
     data?.input_snapshot && typeof data.input_snapshot === "object"
       ? (data.input_snapshot as Record<string, unknown>)
       : {};
-
   await supabase
     .from("model_portfolio_decisions")
     .update({
       status,
       input_snapshot: {
         ...previousSnapshot,
-        settlement_outcome: {
-          status,
-          reason,
-          at: new Date().toISOString(),
-        },
+        settlement_outcome: { status, reason, at: new Date().toISOString() },
       },
     })
     .eq("id", decisionId)
@@ -269,22 +173,13 @@ export async function runAllModelPortfoliosDryRun(
   if (audit && !audit.runId.trim()) throw new Error("invalid_dry_run_audit_run_id");
 
   const executionAllowed = Boolean(audit?.executionAllowed);
+  const researchPass = audit?.researchPass ?? "us_1550";
 
   const [portfolioResult, holdingResult, cashResult, recentTxResult] = await Promise.all([
-    supabase
-      .from("model_portfolios")
-      .select("id,slug,name,strategy_key,objective,status,strategy_rules")
-      .order("sort_order", { ascending: true }),
-    supabase
-      .from("model_portfolio_holdings")
-      .select("portfolio_id,instrument_symbol,exchange,instrument_name,quantity,average_cost_minor,last_price_minor")
-      .gt("quantity", 0),
+    supabase.from("model_portfolios").select("id,slug,name,strategy_key,objective,status,strategy_rules").order("sort_order", { ascending: true }),
+    supabase.from("model_portfolio_holdings").select("portfolio_id,instrument_symbol,exchange,instrument_name,quantity,average_cost_minor,last_price_minor").gt("quantity", 0),
     supabase.from("model_portfolio_cash_ledger").select("portfolio_id,amount_minor"),
-    supabase
-      .from("model_portfolio_transactions")
-      .select("portfolio_id,instrument_symbol,exchange,executed_at")
-      .order("executed_at", { ascending: false })
-      .limit(200),
+    supabase.from("model_portfolio_transactions").select("portfolio_id,instrument_symbol,exchange,executed_at").order("executed_at", { ascending: false }).limit(200),
   ]);
   if (portfolioResult.error || holdingResult.error || cashResult.error || recentTxResult.error) {
     throw new Error("model_portfolio_state_unavailable");
@@ -300,128 +195,12 @@ export async function runAllModelPortfoliosDryRun(
     cashByPortfolio.set(row.portfolio_id, (cashByPortfolio.get(row.portfolio_id) ?? 0) + Number(row.amount_minor));
   }
 
-  const budget = createDryRunEodhdBudget();
-  const quotes = await fetchDelayedQuotes(
-    BOOTSTRAP_RESEARCH_UNIVERSE.map((instrument) => ({ symbol: instrument.symbol, market: instrument.market })),
-    budget,
-  );
-  const quoteBySymbol = new Map(quotes.map((quote) => [quote.symbol, quote]));
-
-  const from = new Date(now.getTime() - 420 * 24 * 60 * 60 * 1_000);
-  const candidates = [];
-  const evidence: ModelPortfolioEvidence[] = [];
-  const candidateDiagnostics: DryRunOrchestrationResult["candidates"] = [];
-  const instrumentNameBySymbol = new Map<string, string>(
-    BOOTSTRAP_RESEARCH_UNIVERSE.map((instrument) => [instrument.symbol, instrument.name]),
-  );
-
-  for (const instrument of BOOTSTRAP_RESEARCH_UNIVERSE) {
-    const quote = quoteBySymbol.get(instrument.symbol) ?? null;
-    let history = [] as Awaited<ReturnType<typeof fetchDailyHistory>>;
-    let historyError: string | undefined;
-    // Reserve the final EODHD call for verified fundamentals enrichment.
-    if (canFetchHistoryWithFundamentalsReserve(budget.snapshot())) {
-      try {
-        history = await fetchDailyHistory(instrument.symbol, instrument.market, isoDate(from), isoDate(now), budget);
-      } catch (error) {
-        historyError = error instanceof Error ? error.message : "history_fetch_failed";
-      }
-    }
-
-    const fundamentalsSource =
-      quote || history.length ? ("market_only" as const) : ("unavailable" as const);
-
-    if (quote || history.length) {
-      const candidate = buildMarketResearchCandidate({
-        symbol: instrument.symbol,
-        exchange: "ST",
-        history,
-        quote,
-        fxToSek: 1,
-      });
-      candidates.push(candidate);
-      evidence.push(
-        marketEvidence({
-          symbol: instrument.symbol,
-          name: instrument.name,
-          quoteAsOf: quote?.timestamp ?? null,
-          close: quote?.close ?? history.at(-1)?.close ?? null,
-          volume: quote?.volume ?? history.at(-1)?.volume ?? null,
-          changePct: quote?.changePct ?? null,
-          historyBars: history.length,
-          technical: candidate.technicalAnalysis,
-          qualityScore: candidate.qualityScore,
-          valuationScore: candidate.valuationScore,
-          earningsRevisionScore: candidate.earningsRevisionScore,
-          dividendQualityScore: candidate.dividendQualityScore,
-          catalystScore: candidate.catalystScore,
-          balanceSheetScore: candidate.balanceSheetScore,
-          fundamentalsSource,
-        }),
-      );
-    }
-
-    candidateDiagnostics.push({
-      symbol: instrument.symbol,
-      exchange: "ST",
-      quoteAsOf: quote?.timestamp ?? null,
-      historyBars: history.length,
-      fundamentalsSource,
-      ...(historyError ? { historyError } : {}),
-    });
-  }
-
-  if (!candidates.length) throw new Error("dry_run_no_market_candidates");
-
-  // Reserved EODHD fundamentals enrichment: one verified request for the strongest shortlisted name.
-  if (budget.snapshot().remaining > 0) {
-    const enrichmentTarget = [...candidates]
-      .sort((a, b) => (b.avgDailyTurnoverSek ?? 0) - (a.avgDailyTurnoverSek ?? 0))
-      .find((candidate) => Boolean(candidate.symbol));
-    if (enrichmentTarget) {
-      try {
-        const payload = await fetchEodhdFundamentals(enrichmentTarget.symbol, "SE", budget);
-        const parsed = parseEodhdFundamentalsPayload(payload);
-        if (parsed) {
-          const scored = scoreEodhdFundamentals(parsed, 1);
-          const hasVerifiedFundamentalValues = Object.values(scored).some(
-            (value) => value !== undefined && value !== null,
-          );
-          if (hasVerifiedFundamentalValues) {
-            const index = candidates.findIndex((candidate) => candidate.symbol === enrichmentTarget.symbol);
-            if (index >= 0) {
-              const merged = mergeFundamentalScores(candidates[index], scored);
-              candidates[index] = { ...candidates[index], ...merged };
-              const diagnostic = candidateDiagnostics.find((row) => row.symbol === enrichmentTarget.symbol);
-              if (diagnostic) diagnostic.fundamentalsSource = "eodhd";
-              const evidenceIndex = evidence.findIndex((item) => item.id.includes(`:${enrichmentTarget.symbol}:`));
-              if (evidenceIndex >= 0) {
-                evidence[evidenceIndex] = marketEvidence({
-                  symbol: enrichmentTarget.symbol,
-                  name: instrumentNameBySymbol.get(enrichmentTarget.symbol) ?? enrichmentTarget.symbol,
-                  quoteAsOf: quoteBySymbol.get(enrichmentTarget.symbol)?.timestamp ?? null,
-                  close: quoteBySymbol.get(enrichmentTarget.symbol)?.close ?? null,
-                  volume: quoteBySymbol.get(enrichmentTarget.symbol)?.volume ?? null,
-                  changePct: quoteBySymbol.get(enrichmentTarget.symbol)?.changePct ?? null,
-                  historyBars: diagnostic?.historyBars ?? 0,
-                  technical: candidates[index].technicalAnalysis,
-                  qualityScore: candidates[index].qualityScore,
-                  valuationScore: candidates[index].valuationScore,
-                  earningsRevisionScore: candidates[index].earningsRevisionScore,
-                  dividendQualityScore: candidates[index].dividendQualityScore,
-                  catalystScore: candidates[index].catalystScore,
-                  balanceSheetScore: candidates[index].balanceSheetScore,
-                  fundamentalsSource: "eodhd",
-                });
-              }
-            }
-          }
-        }
-      } catch {
-        // Fail closed on fundamentals enrichment: leave fundamental fields null.
-      }
-    }
-  }
+  const research = await runModelPortfolioResearchPipeline({
+    supabase,
+    pass: researchPass,
+    holdings,
+    now,
+  });
 
   const portfolioResults: DryRunOrchestrationResult["portfolios"] = [];
   const auditRows: DecisionAuditRow[] = [];
@@ -430,34 +209,25 @@ export async function runAllModelPortfoliosDryRun(
   for (const portfolio of portfolios) {
     const portfolioHoldings = holdings.filter((holding) => holding.portfolio_id === portfolio.id);
     const cashMinor = cashByPortfolio.get(portfolio.id) ?? 0;
-    const portfolioSnapshot = buildPortfolioSnapshot({
-      portfolio,
-      cashMinor,
-      holdings: portfolioHoldings,
-    });
+    const portfolioSnapshot = buildPortfolioSnapshot({ portfolio, cashMinor, holdings: portfolioHoldings });
 
     const result = await runPortfolioDryRun({
       strategyKey: portfolio.strategy_key,
       runKind: "primary",
       portfolioSnapshot,
-      candidates,
-      evidence,
+      candidates: research.candidates,
+      evidence: research.evidence,
       spentTodayUsdMicros,
       runId: audit?.runId ?? null,
     });
 
     if (!result.ok) {
-      portfolioResults.push({
-        id: portfolio.id,
-        slug: portfolio.slug,
-        name: portfolio.name,
-        ok: false,
-        reason: result.reason,
-      });
+      portfolioResults.push({ id: portfolio.id, slug: portfolio.slug, name: portfolio.name, ok: false, reason: result.reason });
       continue;
     }
 
     spentTodayUsdMicros += result.estimatedCostUsdMicros;
+    const rationale = `${research.summary} Beslut: ${result.decision.rationale}`;
     portfolioResults.push({
       id: portfolio.id,
       slug: portfolio.slug,
@@ -466,7 +236,7 @@ export async function runAllModelPortfoliosDryRun(
       action: result.decision.action,
       symbol: result.decision.symbol,
       convictionScore: result.decision.convictionScore,
-      rationale: result.decision.rationale,
+      rationale,
       model: result.model,
       estimatedCostUsdMicros: result.estimatedCostUsdMicros,
       usage: result.usage,
@@ -474,21 +244,20 @@ export async function runAllModelPortfoliosDryRun(
     });
 
     if (audit) {
-      auditRows.push(
-        buildDecisionAuditRow({
-          runId: audit.runId,
-          portfolioId: portfolio.id,
-          strategyKey: portfolio.strategy_key,
-          decision: result.decision,
-          evidence,
-          rankedCandidates: result.rankedCandidates,
-          modelName: result.model,
-          estimatedCostUsdMicros: result.estimatedCostUsdMicros,
-          usage: result.usage,
-          portfolioSnapshot,
-          executionAllowed,
-        }),
-      );
+      auditRows.push(buildDecisionAuditRow({
+        runId: audit.runId,
+        portfolioId: portfolio.id,
+        strategyKey: portfolio.strategy_key,
+        decision: result.decision,
+        evidence: research.evidence,
+        rankedCandidates: result.rankedCandidates,
+        modelName: result.model,
+        estimatedCostUsdMicros: result.estimatedCostUsdMicros,
+        usage: result.usage,
+        portfolioSnapshot,
+        executionAllowed,
+        researchSummary: research.summary,
+      }));
     }
   }
 
@@ -499,9 +268,7 @@ export async function runAllModelPortfoliosDryRun(
       throw new Error("decision_audit_requires_complete_portfolio_run");
     }
     const decisionIds = await persistDecisionAuditBatch({ supabase, rows: auditRows });
-    portfolioResults.forEach((result) => {
-      result.decisionId = decisionIds.get(result.id);
-    });
+    portfolioResults.forEach((result) => { result.decisionId = decisionIds.get(result.id); });
     auditPersisted = true;
 
     if (executionAllowed) {
@@ -519,26 +286,16 @@ export async function runAllModelPortfoliosDryRun(
         if (!portfolio || !auditRow || !auditRow.instrument_symbol || !auditRow.exchange) {
           portfolioResult.settlementStatus = "rejected";
           portfolioResult.settlementReason = "missing_decision_instrument";
-          await markDecisionSettlementRejected(
-            supabase,
-            portfolioResult.decisionId,
-            "missing_decision_instrument",
-          );
+          await markDecisionSettlementRejected(supabase, portfolioResult.decisionId, "missing_decision_instrument");
           continue;
         }
 
-        const quote = quoteBySymbol.get(auditRow.instrument_symbol);
-        const fill = quote
-          ? quoteToSimulatedFill(quote, auditRow.instrument_name ?? auditRow.instrument_symbol)
-          : null;
+        const quote = research.quotes.get(instrumentKey(auditRow.instrument_symbol, auditRow.exchange));
+        const fill = quote ? quoteToSimulatedFill(quote, auditRow.instrument_name ?? auditRow.instrument_symbol) : null;
         if (!fill) {
           portfolioResult.settlementStatus = "rejected";
           portfolioResult.settlementReason = "missing_simulated_quote";
-          await markDecisionSettlementRejected(
-            supabase,
-            portfolioResult.decisionId,
-            "missing_simulated_quote",
-          );
+          await markDecisionSettlementRejected(supabase, portfolioResult.decisionId, "missing_simulated_quote");
           continue;
         }
 
@@ -550,23 +307,16 @@ export async function runAllModelPortfoliosDryRun(
           if (!Number.isFinite(quantity) || !Number.isFinite(price) || quantity <= 0) return sum;
           return sum + Math.round(quantity * price);
         }, 0);
-        const currentHoldingRow = portfolioHoldings.find(
-          (holding) =>
-            holding.instrument_symbol === auditRow.instrument_symbol &&
-            holding.exchange === auditRow.exchange,
+        const currentHoldingRow = portfolioHoldings.find((holding) =>
+          holding.instrument_symbol === auditRow.instrument_symbol && holding.exchange === auditRow.exchange,
         );
-        const lastTrade = recentTx.find(
-          (row) =>
-            row.portfolio_id === portfolio.id &&
-            row.instrument_symbol === auditRow.instrument_symbol &&
-            row.exchange === auditRow.exchange,
+        const lastTrade = recentTx.find((row) =>
+          row.portfolio_id === portfolio.id && row.instrument_symbol === auditRow.instrument_symbol && row.exchange === auditRow.exchange,
         );
-        const hoursSince = lastTrade
-          ? (now.getTime() - Date.parse(lastTrade.executed_at)) / (60 * 60 * 1_000)
-          : null;
-
+        const hoursSince = lastTrade ? (now.getTime() - Date.parse(lastTrade.executed_at)) / (60 * 60 * 1_000) : null;
         const side = action === "buy" ? "buy" : "sell";
         const targetWeightPct = Number(auditRow.input_snapshot.proposed_portfolio_pct ?? 0);
+
         const settlement = await settleModelPortfolioDecision(supabase, {
           decisionId: portfolioResult.decisionId,
           portfolioStatus: portfolio.status,
@@ -606,23 +356,20 @@ export async function runAllModelPortfoliosDryRun(
         portfolioResult.followerEvent = buildFollowerTradePayload({
           symbol: fill.symbol,
           exchange: fill.exchange,
-          currency: "SEK",
+          currency: settlement.plan.nativeCurrency,
           side,
           executionPriceMinor: settlement.plan.priceSekMinor,
           priceBasis: "last_trade",
           marketTimestamp: fill.asOf,
           receivedAt: now.toISOString(),
-          provider: "eodhd",
+          provider: "yahoo_finance",
           transactionId: settlement.transactionId,
           portfolioId: portfolio.id,
           quantity: settlement.plan.quantity,
           executedAt: now.toISOString(),
           rationale: auditRow.rationale,
         });
-        cashByPortfolio.set(
-          portfolio.id,
-          (cashByPortfolio.get(portfolio.id) ?? 0) + settlement.plan.cashDeltaMinor,
-        );
+        cashByPortfolio.set(portfolio.id, (cashByPortfolio.get(portfolio.id) ?? 0) + settlement.plan.cashDeltaMinor);
       }
     }
   }
@@ -630,19 +377,17 @@ export async function runAllModelPortfoliosDryRun(
   const aiUsage = aggregatePortfolioAiUsage({
     runId: audit?.runId ?? null,
     timestamp: now.toISOString(),
-    portfolios: portfolioResults.map((portfolio) => ({
-      portfolioId: portfolio.id,
-      slug: portfolio.slug,
-      usage: portfolio.usage,
-    })),
+    portfolios: portfolioResults.map((portfolio) => ({ portfolioId: portfolio.id, slug: portfolio.slug, usage: portfolio.usage })),
   });
 
   return {
     mode: executionAllowed ? "live_simulation" : "dry_run",
     executionAllowed,
-    marketDataProvider: "eodhd",
-    eodhdBudget: budget.snapshot(),
-    candidates: candidateDiagnostics,
+    researchPass,
+    marketDataProvider: "yahoo_eodhd",
+    researchSummary: research.summary,
+    eodhdBudget: research.eodhdBudget,
+    candidates: research.diagnostics,
     portfolios: portfolioResults,
     totalEstimatedAiCostUsdMicros: spentTodayUsdMicros,
     aiUsage,

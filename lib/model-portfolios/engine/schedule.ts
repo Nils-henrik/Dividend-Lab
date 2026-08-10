@@ -2,10 +2,10 @@ const STOCKHOLM_TIME_ZONE = "Europe/Stockholm";
 const WINDOW_MINUTES = 9;
 
 export const MODEL_PORTFOLIO_EVALUATION_SLOTS = [
-  { id: "open", hour: 9, minute: 0 },
-  { id: "midday", hour: 13, minute: 30 },
-  { id: "us-open", hour: 17, minute: 30 },
-  { id: "close", hour: 22, minute: 30 },
+  { id: "nordic_morning", hour: 9, minute: 20 },
+  { id: "us_1550", hour: 15, minute: 50 },
+  { id: "us_1830", hour: 18, minute: 30 },
+  { id: "us_2130", hour: 21, minute: 30 },
 ] as const;
 
 export type ModelPortfolioEvaluationSlotId =
@@ -25,9 +25,7 @@ type StockholmParts = {
 };
 
 function stockholmParts(now: Date): StockholmParts | null {
-  if (!Number.isFinite(now.getTime())) {
-    return null;
-  }
+  if (!Number.isFinite(now.getTime())) return null;
 
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: STOCKHOLM_TIME_ZONE,
@@ -50,32 +48,16 @@ function stockholmParts(now: Date): StockholmParts | null {
   const hour = Number(value("hour"));
   const minute = Number(value("minute"));
 
-  if (
-    !year ||
-    !month ||
-    !day ||
-    !weekday ||
-    !Number.isInteger(hour) ||
-    !Number.isInteger(minute)
-  ) {
+  if (!year || !month || !day || !weekday || !Number.isInteger(hour) || !Number.isInteger(minute)) {
     return null;
   }
 
-  return {
-    date: `${year}-${month}-${day}`,
-    weekday,
-    hour,
-    minute,
-  };
+  return { date: `${year}-${month}-${day}`, weekday, hour, minute };
 }
 
-export function resolveModelPortfolioEvaluationSlot(
-  now: Date,
-): ModelPortfolioResolvedSlot | null {
+export function resolveModelPortfolioEvaluationSlot(now: Date): ModelPortfolioResolvedSlot | null {
   const local = stockholmParts(now);
-  if (!local || local.weekday === "Sat" || local.weekday === "Sun") {
-    return null;
-  }
+  if (!local || local.weekday === "Sat" || local.weekday === "Sun") return null;
 
   const localMinuteOfDay = local.hour * 60 + local.minute;
   for (const slot of MODEL_PORTFOLIO_EVALUATION_SLOTS) {
@@ -89,6 +71,5 @@ export function resolveModelPortfolioEvaluationSlot(
       };
     }
   }
-
   return null;
 }

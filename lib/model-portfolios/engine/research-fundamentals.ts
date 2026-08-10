@@ -1,10 +1,9 @@
 import type { ResearchCandidate } from "./research";
 
 /**
- * Verified fundamental scores from EODHD fundamentals payloads only.
- * Technical / price / volume proxies must never populate these fields.
- * When EODHD fundamentals are unavailable or incomplete, leave values undefined
- * and fail closed.
+ * Normalized fundamental scores. Only real provider/accounting values may
+ * populate these fields. Technical, price and volume proxies must never be
+ * substituted for missing fundamentals.
  */
 export type ResearchFundamentalScores = Pick<
   ResearchCandidate,
@@ -42,7 +41,6 @@ function clamp01(value: number): number {
 
 function scorePe(value: number | null | undefined): number | undefined {
   if (!Number.isFinite(value) || (value as number) <= 0) return undefined;
-  // Prefer moderate multiples; extreme cheap/expensive both score lower.
   const pe = value as number;
   if (pe < 6) return 0.45;
   if (pe > 55) return 0.25;
@@ -52,7 +50,6 @@ function scorePe(value: number | null | undefined): number | undefined {
 function scoreYield(value: number | null | undefined): number | undefined {
   if (!Number.isFinite(value) || (value as number) < 0) return undefined;
   const y = value as number;
-  // 2-5% is healthy for Nordic dividend names; >9% often signals stress.
   if (y > 0.09) return 0.25;
   if (y < 0.005) return 0.35;
   return clamp01((y - 0.005) / 0.045);
@@ -81,7 +78,7 @@ function scoreRoe(value: number | null | undefined): number | undefined {
   return clamp01((value as number) / 0.25);
 }
 
-export function scoreEodhdFundamentals(
+export function scoreNormalizedFundamentals(
   snapshot: EodhdFundamentalsSnapshot,
   fxToSek: number,
 ): ResearchFundamentalScores {
@@ -123,22 +120,31 @@ export function scoreEodhdFundamentals(
     ? dividendParts.reduce((sum, value) => sum + value, 0) / dividendParts.length
     : undefined;
 
-  const catalystParts = [earningsGrowth, revenueGrowth, Number.isFinite(snapshot.pegRatio) && (snapshot.pegRatio as number) > 0
-    ? clamp01(1 - Math.min(3, snapshot.pegRatio as number) / 3)
-    : undefined].filter((value): value is number => value !== undefined);
+  const catalystParts = [
+    earningsGrowth,
+    revenueGrowth,
+    Number.isFinite(snapshot.pegRatio) && (snapshot.pegRatio as number) > 0
+      ? clamp01(1 - Math.min(3, snapshot.pegRatio as number) / 3)
+      : undefined,
+  ].filter((value): value is number => value !== undefined);
   const catalystScore = catalystParts.length
     ? catalystParts.reduce((sum, value) => sum + value, 0) / catalystParts.length
     : undefined;
 
-  const balanceParts = [roa, operating, payoutScore === undefined ? undefined : 1 - Math.abs((payoutScore ?? 0.5) - 0.55)].filter(
-    (value): value is number => value !== undefined,
-  );
+  const balanceParts = [
+    roa,
+    operating,
+    payoutScore === undefined ? undefined : 1 - Math.abs((payoutScore ?? 0.5) - 0.55),
+  ].filter((value): value is number => value !== undefined);
   const balanceSheetScore = balanceParts.length
     ? balanceParts.reduce((sum, value) => sum + value, 0) / balanceParts.length
     : undefined;
 
   const marketCapSek =
-    Number.isFinite(snapshot.marketCap) && (snapshot.marketCap as number) > 0 && Number.isFinite(fxToSek) && fxToSek > 0
+    Number.isFinite(snapshot.marketCap) &&
+    (snapshot.marketCap as number) > 0 &&
+    Number.isFinite(fxToSek) &&
+    fxToSek > 0
       ? Math.round((snapshot.marketCap as number) * fxToSek)
       : undefined;
 
@@ -154,6 +160,14 @@ export function scoreEodhdFundamentals(
     catalystScore: round(catalystScore),
     balanceSheetScore: round(balanceSheetScore),
   };
+}
+
+/** Backwards-compatible EODHD-specific name used by the existing adapter. */
+export function scoreEodhdFundamentals(
+  snapshot: EodhdFundamentalsSnapshot,
+  fxToSek: number,
+): ResearchFundamentalScores {
+  return scoreNormalizedFundamentals(snapshot, fxToSek);
 }
 
 export function mergeFundamentalScores(

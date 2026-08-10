@@ -6,7 +6,7 @@ import type { ModelPortfolioAiUsage } from "./ai-usage";
 import { MODEL_PORTFOLIO_AI_PROVIDER } from "./ai-usage";
 import type { RankedResearchCandidate } from "./research";
 
-export const MODEL_PORTFOLIO_PROMPT_VERSION = "portfolio-manager-tools-v1" as const;
+export const MODEL_PORTFOLIO_PROMPT_VERSION = "portfolio-manager-tools-v2" as const;
 export const MODEL_PORTFOLIO_MODEL_PROVIDER = MODEL_PORTFOLIO_AI_PROVIDER;
 
 export type DecisionAuditInput = {
@@ -21,6 +21,7 @@ export type DecisionAuditInput = {
   usage: ModelPortfolioAiUsage;
   portfolioSnapshot: string;
   executionAllowed: boolean;
+  researchSummary?: string;
 };
 
 export type DecisionAuditRow = {
@@ -87,6 +88,10 @@ function referencedEvidence(
 
 export function buildDecisionAuditRow(input: DecisionAuditInput): DecisionAuditRow {
   if (!input.runId.trim() || !input.portfolioId.trim()) throw new Error("invalid_decision_audit_identity");
+  const researchSummary = input.researchSummary?.trim() ?? "";
+  const rationale = researchSummary
+    ? `${researchSummary} Beslut: ${input.decision.rationale}`
+    : input.decision.rationale;
 
   return {
     portfolio_id: input.portfolioId,
@@ -96,16 +101,17 @@ export function buildDecisionAuditRow(input: DecisionAuditInput): DecisionAuditR
     instrument_symbol: input.decision.symbol,
     exchange: input.decision.exchange,
     instrument_name: input.decision.instrumentName,
-    rationale: input.decision.rationale,
+    rationale: rationale.slice(0, 4000),
     model_provider: MODEL_PORTFOLIO_MODEL_PROVIDER,
     model_name: input.modelName,
     prompt_version: MODEL_PORTFOLIO_PROMPT_VERSION,
     market_data_as_of: latestMarketDataTimestamp(input.evidence),
     evidence: referencedEvidence(input.decision, input.evidence),
     input_snapshot: {
-      audit_version: 1,
+      audit_version: 2,
       strategy_key: input.strategyKey,
       execution_allowed_at_decision_time: input.executionAllowed,
+      research_summary: researchSummary || null,
       original_action: input.decision.action,
       proposed_portfolio_pct: input.decision.proposedPortfolioPct,
       conviction_score: input.decision.convictionScore,
@@ -141,15 +147,12 @@ export async function persistDecisionAuditBatch(input: {
   rows: readonly DecisionAuditRow[];
 }): Promise<Map<string, string>> {
   if (!input.rows.length) return new Map();
-
   const { data, error } = await input.supabase
     .from("model_portfolio_decisions")
     .insert([...input.rows])
     .select("id,portfolio_id");
-
   if (error || !data || data.length !== input.rows.length) {
     throw new Error(`decision_audit_batch_insert_failed:${error?.code ?? "incomplete"}`);
   }
-
   return new Map(data.map((row) => [String(row.portfolio_id), String(row.id)]));
 }

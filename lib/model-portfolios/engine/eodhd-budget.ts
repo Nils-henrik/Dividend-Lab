@@ -51,9 +51,7 @@ export class EodhdCallBudget {
   }
 }
 
-/**
- * History fetches must leave the reserved fundamentals slot intact.
- */
+/** History fetches must leave the reserved fundamentals slot intact. */
 export function canFetchHistoryWithFundamentalsReserve(
   budget: EodhdCallBudgetSnapshot,
   reservedFundamentalsCalls = MODEL_PORTFOLIO_EODHD_RESERVED_FUNDAMENTALS_CALLS,
@@ -73,7 +71,10 @@ export function createScheduledEodhdBudget(pass: ModelPortfolioResearchPass): Eo
 }
 
 export function scheduledEodhdDailyLimit(): number {
-  return Object.values(MODEL_PORTFOLIO_EODHD_PASS_LIMITS).reduce((sum, calls) => sum + calls, 0);
+  return Object.values(MODEL_PORTFOLIO_EODHD_PASS_LIMITS).reduce<number>(
+    (sum, calls) => sum + calls,
+    0,
+  );
 }
 
 if (scheduledEodhdDailyLimit() > EODHD_FREE_ACCOUNT_DAILY_LIMIT) {
