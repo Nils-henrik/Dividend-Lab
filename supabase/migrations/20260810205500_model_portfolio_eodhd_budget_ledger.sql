@@ -14,6 +14,7 @@ create table if not exists public.model_portfolio_eodhd_budget_claims (
 
 alter table public.model_portfolio_eodhd_budget_claims enable row level security;
 revoke all on table public.model_portfolio_eodhd_budget_claims from anon, authenticated;
+grant select, insert, update, delete on table public.model_portfolio_eodhd_budget_claims to service_role;
 
 comment on table public.model_portfolio_eodhd_budget_claims is
   'Service-role-only EODHD daily/pass budget ledger for model-portfolio research.';

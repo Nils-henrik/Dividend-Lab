@@ -23,7 +23,7 @@ export type ModelPortfolioAiModel =
 export const MODEL_PORTFOLIO_AI_BUDGET = {
   targetDailyUsdMicros: 150_000,
   hardDailyUsdMicros: 300_000,
-  maxCallsPerPortfolioRun: 2,
+  maxCallsPerPortfolioRun: 3,
   maxOutputTokensPerCall: 1_800,
   reserveUsdMicrosForEventRuns: 80_000,
 } as const;
@@ -354,6 +354,7 @@ export async function generatePortfolioAiDecision(
     "VERKTYGSDISCIPLIN:",
     "Du har lokala, kostnadsfria analysverktyg för kandidatdata, teknisk analys, risk/likviditet, jämförelser, evidens och motsägande evidens.",
     "Om du överväger BUY/SELL/TRIM/REBALANCE ska du använda relevanta verktyg för att kontrollera teknisk bild och nedsiderisk innan slutbeslutet. En enskild indikator får aldrig ensam avgöra affären.",
+    "Använd högst två verktygssteg och lämna därefter alltid slutbeslutet; fastna aldrig i upprepade verktygsanrop.",
     "Verktygen kan bara läsa redan hämtad verifierad data; null betyder okänt och får inte fyllas i med antaganden.",
     "Lämna exakt ett strukturerat beslut enligt schemat. Om underlaget inte tydligt motiverar en förändring: välj HOLD.",
   ].join("\n\n");
