@@ -12,7 +12,7 @@ export default async function MarketPulse({ compact = false }: Props) {
   const visibleItems = compact ? items.slice(0, 3) : items;
 
   return (
-    <section className={`divlab-card ${compact ? "p-5 sm:p-6" : "p-6"}`}>
+    <section className={`divlab-card h-full ${compact ? "p-5 sm:p-6" : "p-6"}`}>
       <div>
         <p className="divlab-section-label">Marknadsnytt</p>
         <h2 className="mt-2 text-xl font-semibold tracking-[-0.02em] text-divlab-text">

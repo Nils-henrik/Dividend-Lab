@@ -82,7 +82,7 @@ export default function MarketToday({ compact = false }: Props) {
   }, [selectedOption, widgetHeight]);
 
   return (
-    <section className={`divlab-card ${compact ? "p-5 sm:p-6" : "p-6"}`}>
+    <section className={`divlab-card h-full ${compact ? "p-5 sm:p-6" : "p-6"}`}>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="divlab-section-label">Marknaden idag</p>

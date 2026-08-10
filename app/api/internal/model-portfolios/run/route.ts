@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { createModelPortfolioAdminClient } from "@/lib/model-portfolios/admin";
-import { resolveModelPortfolioMarketDataConfig } from "@/lib/model-portfolios/engine/config";
+import {
+  resolveModelPortfolioExecutionConfig,
+  resolveModelPortfolioMarketDataConfig,
+} from "@/lib/model-portfolios/engine/config";
 import { runAllModelPortfoliosDryRun } from "@/lib/model-portfolios/engine/dry-run-orchestrator";
 import { resolveModelPortfolioEvaluationSlot } from "@/lib/model-portfolios/engine/schedule";
 
@@ -41,6 +44,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ status: "unavailable" }, { status: 503 });
   }
 
+  const executionConfig = resolveModelPortfolioExecutionConfig();
+  const runMode = executionConfig.executionEnabled ? "live_simulation" : "dry_run";
+
   const { data: run, error: insertError } = await supabase
     .from("model_portfolio_runs")
     .insert({
@@ -51,7 +57,7 @@ export async function POST(request: Request) {
         scheduler: "supabase-cron-v1",
         slot: slotId,
         stockholm_date: localDate,
-        mode: "dry_run",
+        mode: runMode,
       },
     })
     .select("id")
@@ -81,24 +87,27 @@ export async function POST(request: Request) {
     );
   }
 
-  if (process.env.MODEL_PORTFOLIO_DRY_RUN_ENABLED !== "true") {
+  if (!executionConfig.dryRunEnabled && !executionConfig.executionEnabled) {
     await supabase
       .from("model_portfolio_runs")
       .update({
         status: "skipped",
-        error_code: "dry_run_not_enabled",
+        error_code: "portfolio_run_not_enabled",
         completed_at: now.toISOString(),
       })
       .eq("id", run.id);
 
     return NextResponse.json(
-      { status: "skipped", reason: "dry_run_not_enabled" },
+      { status: "skipped", reason: "portfolio_run_not_enabled" },
       { status: 202 },
     );
   }
 
   try {
-    const dryRun = await runAllModelPortfoliosDryRun(now, { runId: run.id });
+    const evaluation = await runAllModelPortfoliosDryRun(now, {
+      runId: run.id,
+      executionAllowed: executionConfig.executionEnabled,
+    });
     await supabase
       .from("model_portfolio_runs")
       .update({
@@ -108,7 +117,7 @@ export async function POST(request: Request) {
           scheduler: "supabase-cron-v1",
           slot: slotId,
           stockholm_date: localDate,
-          ...dryRun,
+          ...evaluation,
         },
         completed_at: new Date().toISOString(),
       })
@@ -116,23 +125,26 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       status: "completed",
-      mode: "dry_run",
-      executionAllowed: false,
-      auditPersisted: dryRun.auditPersisted,
-      eodhdBudget: dryRun.eodhdBudget,
-      totalEstimatedAiCostUsdMicros: dryRun.totalEstimatedAiCostUsdMicros,
-      portfolioResults: dryRun.portfolios.map((portfolio) => ({
+      mode: evaluation.mode,
+      executionAllowed: evaluation.executionAllowed,
+      auditPersisted: evaluation.auditPersisted,
+      eodhdBudget: evaluation.eodhdBudget,
+      totalEstimatedAiCostUsdMicros: evaluation.totalEstimatedAiCostUsdMicros,
+      portfolioResults: evaluation.portfolios.map((portfolio) => ({
         slug: portfolio.slug,
         ok: portfolio.ok,
         action: portfolio.action,
         symbol: portfolio.symbol,
         convictionScore: portfolio.convictionScore,
         decisionId: portfolio.decisionId,
+        settlementStatus: portfolio.settlementStatus,
+        settlementReason: portfolio.settlementReason,
+        transactionId: portfolio.transactionId,
         reason: portfolio.reason,
       })),
     });
   } catch (error) {
-    const errorCode = error instanceof Error ? error.message.slice(0, 120) : "dry_run_failed";
+    const errorCode = error instanceof Error ? error.message.slice(0, 120) : "portfolio_run_failed";
     await supabase
       .from("model_portfolio_runs")
       .update({

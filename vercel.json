@@ -1,6 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "env": {
-    "MODEL_PORTFOLIO_DRY_RUN_ENABLED": "true"
+    "MODEL_PORTFOLIO_DRY_RUN_ENABLED": "true",
+    "MODEL_PORTFOLIO_EXECUTION_ENABLED": "true"
   }
 }

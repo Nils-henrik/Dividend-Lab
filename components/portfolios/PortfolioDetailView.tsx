@@ -1,5 +1,7 @@
 import Link from "next/link";
+import MarketLiveBadge from "@/components/portfolios/MarketLiveBadge";
 import { MODEL_PORTFOLIO_MANDATES } from "@/lib/model-portfolios/engine/mandates";
+import { resolveMarketLiveStatus } from "@/lib/model-portfolios/engine/market-status";
 import { MODEL_PORTFOLIO_TURNOVER_POLICY } from "@/lib/model-portfolios/engine/policy";
 import type { PortfolioTransparencyDetail } from "@/lib/model-portfolios/transparency";
 
@@ -39,6 +41,7 @@ export default function PortfolioDetailView({ detail }: { detail: PortfolioTrans
   const mandate = MODEL_PORTFOLIO_MANDATES[detail.strategyKey];
   const turnover = MODEL_PORTFOLIO_TURNOVER_POLICY[detail.strategyKey];
   const accent = accentBySlug[detail.slug] ?? accentBySlug.forsiktig;
+  const marketStatus = resolveMarketLiveStatus(new Date());
 
   return (
     <div className="mx-auto w-full max-w-[1380px] space-y-6 pb-8">
@@ -53,11 +56,15 @@ export default function PortfolioDetailView({ detail }: { detail: PortfolioTrans
           <div className="max-w-3xl">
             <div className="flex flex-wrap items-center gap-3">
               <h1 className="text-3xl font-semibold tracking-[-0.04em] text-divlab-text">{detail.name}</h1>
+              <MarketLiveBadge initialStatus={marketStatus} />
               <span className="border border-current/40 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em]">
                 {detail.riskLabel}
               </span>
             </div>
             <p className="mt-3 text-sm leading-6 text-divlab-text-secondary">{detail.description}</p>
+            <p className="mt-2 text-xs leading-5 text-divlab-text-muted">
+              Simulerad modellportfölj i SEK. Inte personlig rådgivning eller verkliga mäklaraffärer. Varje köp kostar 10 kr i simulerad courtage.
+            </p>
           </div>
           <div className="text-right text-xs text-divlab-text-muted">
             <p>Strategiversion {detail.strategyVersion}</p>
