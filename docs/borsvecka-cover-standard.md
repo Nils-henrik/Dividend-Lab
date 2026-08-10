@@ -1,6 +1,6 @@
 # DivLab Börsvecka — omslagsstandard
 
-Den fotobaserade omslagsbilden för `public/news-demo/borsvecka-33.webp` är den visuella referensen för framtida artiklar i serien **Börsvecka**.
+Den godkända fotobaserade kompositionen för Börsvecka 33 är den visuella referensen för framtida artiklar i serien **Börsvecka**. Den nuvarande källan ligger i `public/news-demo/borsvecka-33.svg`, där det godkända WebP-originalet finns inbäddat. Webbläsaren ska däremot inte få SVG-wrappen; Börsvecka 33 levereras som en validerad native WebP-response via `/api/news-images/borsvecka-33`.
 
 ## Fast visuell riktning
 
@@ -12,10 +12,12 @@ Den fotobaserade omslagsbilden för `public/news-demo/borsvecka-33.webp` är den
 - Behåll ren svensk typografi och korta, redaktionella formuleringar.
 - Undvik glödande börslinjer, futuristiska 3D-effekter, överdriven grafik och andra uttryck som gör bilden AI-genererad.
 - Bilden ska fungera i både artikelhero och mobil beskärning.
-- Publicera den slutliga omslagsbilden som en vanlig rasterfil (`.webp` eller `.png`) i `public/`; bädda inte in rasterbilder som base64 inuti SVG eftersom det kan ge felaktig rendering i mobilwebbläsare.
+- För framtida Börsvecka-omslag ska den slutliga godkända bilden sparas direkt som en riktig rasterfil (`.webp` eller `.png`) i `public/`. Bädda inte in rasterbilder som base64 inuti SVG för browserleverans.
 
 ## Referens
 
-Canonical visual reference: `public/news-demo/borsvecka-33.webp`.
+Canonical visual reference: den godkända Börsvecka 33-kompositionen i `public/news-demo/borsvecka-33.svg`.
+
+Current browser delivery: `/api/news-images/borsvecka-33` (native `image/webp`).
 
 Vid kommande Börsvecka-artiklar ska samma komposition och fotografiska känsla användas, medan veckonummer, datum och dagsinnehåll uppdateras för aktuell vecka.
