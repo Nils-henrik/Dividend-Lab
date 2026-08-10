@@ -17,17 +17,12 @@ import { SIVERS_RUSAR_AI_FOTONIK_USA_IMPORTREGLER_ARTICLE } from "@/data/news-ar
 import { UKRAINA_WILDBERRIES_RYSSLAND_BENSIN_INFLATION_ARTICLE } from "@/data/news-articles/ukraina-wildberries-ryssland-bensin-inflation";
 import { USA_BORSEN_FALLER_ALPHABET_TESLA_OLJA_ARTICLE } from "@/data/news-articles/usa-borsen-faller-alphabet-tesla-olja";
 
-const BORSVECKA_33_STATIC_ARTICLE: NewsArticle = {
-  ...BORSVECKA_33_ARTICLE,
-  imageUrl: "/news-demo/borsvecka-33-stockholm.webp",
-};
-
 /**
  * Published Börsnyheter articles.
  * Image assets currently live under /public/news-demo/ for historical path stability.
  */
 export const DEMO_NEWS_ARTICLES: NewsArticle[] = [
-  BORSVECKA_33_STATIC_ARTICLE,
+  BORSVECKA_33_ARTICLE,
   BORSVECKAN_SOM_GICK_VECKA_32_2026_ARTICLE,
   NORDEN_I_CENTRUM_7_AUGUSTI_2026_ARTICLE,
   NORDEN_I_CENTRUM_6_AUGUSTI_2026_ARTICLE,
