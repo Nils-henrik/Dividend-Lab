@@ -50,6 +50,7 @@ export default function NewsArticleView({ article }: Props) {
   const sections = article.sections ?? [];
   const sources = article.sources ?? [];
   const showDisclaimer = article.showDisclaimer ?? false;
+  const bypassImageOptimization = article.imageUrl?.startsWith("/api/news-images/") ?? false;
 
   return (
     <article className="mx-auto w-full max-w-3xl space-y-8 px-4 sm:px-6 lg:px-8">
@@ -64,6 +65,7 @@ export default function NewsArticleView({ article }: Props) {
               width={1600}
               height={900}
               priority
+              unoptimized={bypassImageOptimization}
               sizes="(max-width: 768px) 100vw, 768px"
               className={`h-auto w-full object-cover ${RESPONSIVE_THUMBNAIL_POSITION_CLASS}`}
               style={getResponsiveThumbnailPositionStyle({
