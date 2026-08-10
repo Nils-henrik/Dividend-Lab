@@ -9,6 +9,7 @@ const MAX_BATCH_SIZE = 20;
 const QUOTE_REVALIDATE_SECONDS = 60;
 const UNIVERSE_REVALIDATE_SECONDS = 86_400;
 const HISTORY_REVALIDATE_SECONDS = 3_600;
+const FUNDAMENTALS_REVALIDATE_SECONDS = 86_400;
 
 export const EODHD_EXCHANGE_BY_MARKET: Record<ModelPortfolioMarket, string> = {
   US: "US",
@@ -274,4 +275,21 @@ export async function fetchDailyHistory(
   return payload
     .map((row) => parseDailyBar(row as EodhdDailyRow))
     .filter((row): row is DailyBar => Boolean(row));
+}
+
+export async function fetchEodhdFundamentals(
+  symbol: string,
+  market: ModelPortfolioMarket,
+  budget?: EodhdCallBudget,
+): Promise<unknown> {
+  const config = resolveModelPortfolioMarketDataConfig();
+  if (!config.configured) throw new Error(config.reason);
+  const ticker = toEodhdTicker(symbol, market);
+  return getJson(
+    buildUrl(`/fundamentals/${encodeURIComponent(ticker)}`, config.apiKey, {
+      filter: "Highlights,Valuation,SplitsDividends",
+    }),
+    FUNDAMENTALS_REVALIDATE_SECONDS,
+    budget,
+  );
 }

@@ -1,5 +1,9 @@
 import type { DailyBar, DelayedQuote } from "./eodhd";
 import type { ResearchCandidate } from "./research";
+import {
+  mergeFundamentalScores,
+  type ResearchFundamentalScores,
+} from "./research-fundamentals";
 import { analyzeTechnicalSignals } from "./technical-analysis";
 
 export type ResearchMarketSignals = Pick<
@@ -58,13 +62,14 @@ export function deriveResearchMarketSignals(input: {
 
   const returns = dailyReturns(history.slice(-21));
   const dailyVol = standardDeviation(returns);
+  const technicalAnalysis = analyzeTechnicalSignals(history);
 
   return {
     avgDailyTurnoverSek: average(turnovers) ?? undefined,
     priceMomentum20d: momentum(history, 20),
     priceMomentum60d: momentum(history, 60),
     volatility20d: dailyVol === null ? undefined : dailyVol * Math.sqrt(252),
-    technicalAnalysis: analyzeTechnicalSignals(history),
+    technicalAnalysis,
   };
 }
 
@@ -75,11 +80,19 @@ export function buildMarketResearchCandidate(input: {
   quote: DelayedQuote | null;
   fxToSek: number;
   base?: Partial<ResearchCandidate>;
+  fundamentalOverlay?: ResearchFundamentalScores | null;
 }): ResearchCandidate {
+  const market = deriveResearchMarketSignals({
+    history: input.history,
+    quote: input.quote,
+    fxToSek: input.fxToSek,
+  });
+  const verifiedFundamentals = mergeFundamentalScores(null, input.fundamentalOverlay);
   return {
     ...input.base,
     symbol: input.symbol,
     exchange: input.exchange,
-    ...deriveResearchMarketSignals({ history: input.history, quote: input.quote, fxToSek: input.fxToSek }),
+    ...market,
+    ...verifiedFundamentals,
   };
 }

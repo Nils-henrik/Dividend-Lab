@@ -2,10 +2,12 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ModelPortfolioDecision, ModelPortfolioEvidence } from "./decision";
+import type { ModelPortfolioAiUsage } from "./ai-usage";
+import { MODEL_PORTFOLIO_AI_PROVIDER } from "./ai-usage";
 import type { RankedResearchCandidate } from "./research";
 
 export const MODEL_PORTFOLIO_PROMPT_VERSION = "portfolio-manager-tools-v1" as const;
-export const MODEL_PORTFOLIO_MODEL_PROVIDER = "vercel-ai-gateway" as const;
+export const MODEL_PORTFOLIO_MODEL_PROVIDER = MODEL_PORTFOLIO_AI_PROVIDER;
 
 export type DecisionAuditInput = {
   runId: string;
@@ -16,7 +18,7 @@ export type DecisionAuditInput = {
   rankedCandidates: readonly RankedResearchCandidate[];
   modelName: string;
   estimatedCostUsdMicros: number;
-  usage: { inputTokens: number; outputTokens: number };
+  usage: ModelPortfolioAiUsage;
   portfolioSnapshot: string;
   executionAllowed: boolean;
 };
@@ -118,9 +120,17 @@ export function buildDecisionAuditRow(input: DecisionAuditInput): DecisionAuditR
       portfolio_snapshot: input.portfolioSnapshot,
       ranked_candidates: candidateAuditSnapshot(input.rankedCandidates),
       ai_usage: {
+        provider: input.usage.provider,
+        model: input.usage.model,
         input_tokens: input.usage.inputTokens,
+        cached_input_tokens: input.usage.cachedInputTokens,
         output_tokens: input.usage.outputTokens,
-        estimated_cost_usd_micros: input.estimatedCostUsdMicros,
+        total_tokens: input.usage.totalTokens,
+        estimated_cost_usd_micros: input.usage.estimatedCostUsdMicros,
+        estimated_cost_usd: input.usage.estimatedCostUsdMicros / 1_000_000,
+        cost_source: input.usage.costSource,
+        timestamp: input.usage.timestamp,
+        run_id: input.usage.runId ?? input.runId,
       },
     },
   };

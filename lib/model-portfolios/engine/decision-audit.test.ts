@@ -69,7 +69,18 @@ describe("model portfolio decision audit", () => {
       rankedCandidates,
       modelName: "openai/gpt-5.6-luna",
       estimatedCostUsdMicros: 1234,
-      usage: { inputTokens: 1000, outputTokens: 200 },
+      usage: {
+        provider: "vercel-ai-gateway",
+        model: "openai/gpt-5.6-luna",
+        inputTokens: 1000,
+        cachedInputTokens: 100,
+        outputTokens: 200,
+        totalTokens: 1300,
+        estimatedCostUsdMicros: 1234,
+        costSource: "catalog_estimate",
+        timestamp: "2026-08-10T12:00:00.000Z",
+        runId: "run-1",
+      },
       portfolioSnapshot: "cash=1000000",
       executionAllowed: false,
     });
@@ -81,6 +92,19 @@ describe("model portfolio decision audit", () => {
     assert.deepEqual(row.evidence.map((item) => item.id), ["market:INVE-B", "market:VOLV-B"]);
     assert.equal(row.market_data_as_of, "2026-08-10T07:06:00.000Z");
     assert.equal(row.input_snapshot.execution_allowed_at_decision_time, false);
+    assert.deepEqual(row.input_snapshot.ai_usage, {
+      provider: "vercel-ai-gateway",
+      model: "openai/gpt-5.6-luna",
+      input_tokens: 1000,
+      cached_input_tokens: 100,
+      output_tokens: 200,
+      total_tokens: 1300,
+      estimated_cost_usd_micros: 1234,
+      estimated_cost_usd: 0.001234,
+      cost_source: "catalog_estimate",
+      timestamp: "2026-08-10T12:00:00.000Z",
+      run_id: "run-1",
+    });
   });
 
   it("preserves trim semantics while using the existing database decision type", () => {
@@ -109,7 +133,18 @@ describe("model portfolio decision audit", () => {
       rankedCandidates,
       modelName: "openai/gpt-5.6-luna",
       estimatedCostUsdMicros: 1000,
-      usage: { inputTokens: 800, outputTokens: 150 },
+      usage: {
+        provider: "vercel-ai-gateway",
+        model: "openai/gpt-5.6-luna",
+        inputTokens: 800,
+        cachedInputTokens: null,
+        outputTokens: 150,
+        totalTokens: 950,
+        estimatedCostUsdMicros: 1000,
+        costSource: "catalog_estimate",
+        timestamp: "2026-08-10T12:00:00.000Z",
+        runId: "run-2",
+      },
       portfolioSnapshot: "holding=EVO",
       executionAllowed: false,
     });
