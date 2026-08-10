@@ -3,6 +3,9 @@ import type { NewsArticle } from "@/types/news";
 /**
  * Börsnyheter — lunchupplaga 10 augusti 2026.
  * Marknadsläget faktakontrollerat vid publicering; intradagsnivåer kan förändras.
+ *
+ * Cover: DivLab editorial composite with embedded title and company panels.
+ * See norden-i-centrum-10-augusti-2026.license.txt.
  */
 export const NORDEN_I_CENTRUM_10_AUGUSTI_2026_ARTICLE: NewsArticle = {
   id: "norden-i-centrum-10-augusti-2026",
@@ -15,6 +18,12 @@ export const NORDEN_I_CENTRUM_10_AUGUSTI_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-08-10T12:20:00+02:00",
   url: "/news/norden-i-centrum-10-augusti-2026",
   featured: true,
+  imageUrl: "/news-demo/norden-i-centrum-10-augusti-2026.webp",
+  thumbnailObjectPosition: "center 34%",
+  mobileThumbnailObjectPosition: "center 21%",
+  imageAlt:
+    "Omslagsbild för Norden i centrum den 10 augusti med Nilörngruppen, Equinor, Aker BP, Vår Energi, Novo Nordisk och Nokia.",
+  imageCaption: "Illustration: DivLab.",
   readingMinutes: 5,
   seoTitle: "Norden i centrum 10 augusti: olja, Novo Nordisk och Nilörngruppen",
   seoDescription:

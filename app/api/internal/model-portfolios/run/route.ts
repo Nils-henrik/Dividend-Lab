@@ -130,6 +130,7 @@ export async function POST(request: Request) {
       auditPersisted: evaluation.auditPersisted,
       eodhdBudget: evaluation.eodhdBudget,
       totalEstimatedAiCostUsdMicros: evaluation.totalEstimatedAiCostUsdMicros,
+      aiUsage: evaluation.aiUsage,
       portfolioResults: evaluation.portfolios.map((portfolio) => ({
         slug: portfolio.slug,
         ok: portfolio.ok,
@@ -140,6 +141,22 @@ export async function POST(request: Request) {
         settlementStatus: portfolio.settlementStatus,
         settlementReason: portfolio.settlementReason,
         transactionId: portfolio.transactionId,
+        model: portfolio.model,
+        usage: portfolio.usage
+          ? {
+              provider: portfolio.usage.provider,
+              model: portfolio.usage.model,
+              inputTokens: portfolio.usage.inputTokens,
+              cachedInputTokens: portfolio.usage.cachedInputTokens,
+              outputTokens: portfolio.usage.outputTokens,
+              totalTokens: portfolio.usage.totalTokens,
+              estimatedCostUsdMicros: portfolio.usage.estimatedCostUsdMicros,
+              estimatedCostUsd: portfolio.usage.estimatedCostUsdMicros / 1_000_000,
+              costSource: portfolio.usage.costSource,
+              timestamp: portfolio.usage.timestamp,
+              runId: portfolio.usage.runId,
+            }
+          : null,
         reason: portfolio.reason,
       })),
     });

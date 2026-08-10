@@ -2,6 +2,7 @@ import "server-only";
 
 import { generateText, Output, stepCountIs, tool } from "ai";
 import { z } from "zod";
+import { extractModelPortfolioAiUsage, type ModelPortfolioAiUsage } from "./ai-usage";
 import { modelPortfolioDecisionSchema, type ModelPortfolioDecision, type ModelPortfolioEvidence } from "./decision";
 import { buildModelPortfolioSystemMandate } from "./mandates";
 import type { ModelPortfolioStrategyKey } from "./policy";
@@ -138,6 +139,7 @@ export type PortfolioAiDecisionRequest = {
   candidates: readonly RankedResearchCandidate[];
   evidence: readonly ModelPortfolioEvidence[];
   useEscalationModel: boolean;
+  runId?: string | null;
 };
 
 function compactEvidence(evidence: readonly ModelPortfolioEvidence[]): string {
@@ -334,7 +336,7 @@ export async function generatePortfolioAiDecision(
   decision: ModelPortfolioDecision;
   model: ModelPortfolioAiModel;
   estimatedCostUsdMicros: number;
-  usage: { inputTokens: number; outputTokens: number };
+  usage: ModelPortfolioAiUsage;
 }> {
   const config = resolveModelPortfolioAiConfig();
   if (!config.configured) throw new Error(config.reason);
@@ -379,18 +381,25 @@ export async function generatePortfolioAiDecision(
 
   if (!result.output) throw new Error("model_portfolio_decision_output_missing");
 
-  const inputTokens = Number(result.totalUsage?.inputTokens ?? 0);
-  const outputTokens = Number(result.totalUsage?.outputTokens ?? 0);
-  const estimatedCostUsdMicros = estimateAiCostUsdMicros({
+  const catalogEstimatedCostUsdMicros = estimateAiCostUsdMicros({
     model,
-    inputTokens,
-    outputTokens,
+    inputTokens: Number((result.usage ?? result.totalUsage)?.inputTokens ?? 0),
+    outputTokens: Number((result.usage ?? result.totalUsage)?.outputTokens ?? 0),
+  });
+
+  const usage = extractModelPortfolioAiUsage({
+    model,
+    usage: result.usage,
+    totalUsage: result.totalUsage,
+    providerMetadata: result.providerMetadata,
+    catalogEstimatedCostUsdMicros,
+    runId: request.runId ?? null,
   });
 
   return {
     decision: result.output,
     model,
-    estimatedCostUsdMicros,
-    usage: { inputTokens, outputTokens },
+    estimatedCostUsdMicros: usage.estimatedCostUsdMicros,
+    usage,
   };
 }

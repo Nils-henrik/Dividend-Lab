@@ -7,6 +7,7 @@ import {
   generatePortfolioAiDecision,
   type ModelPortfolioAiModel,
 } from "./ai";
+import type { ModelPortfolioAiUsage } from "./ai-usage";
 import { validateEvidenceReferences, type ModelPortfolioDecision, type ModelPortfolioEvidence } from "./decision";
 import type { ModelPortfolioStrategyKey } from "./policy";
 import { rankResearchUniverse, selectDeepResearchCandidates, type ResearchCandidate } from "./research";
@@ -20,6 +21,7 @@ export type PortfolioDryRunRequest = {
   evidence: readonly ModelPortfolioEvidence[];
   spentTodayUsdMicros: number;
   useEscalationModel?: boolean;
+  runId?: string | null;
 };
 
 export type PortfolioDryRunResult =
@@ -29,7 +31,7 @@ export type PortfolioDryRunResult =
       rankedCandidates: ReturnType<typeof selectDeepResearchCandidates>;
       model: ModelPortfolioAiModel;
       estimatedCostUsdMicros: number;
-      usage: { inputTokens: number; outputTokens: number };
+      usage: ModelPortfolioAiUsage;
       executionAllowed: false;
     }
   | {
@@ -102,6 +104,13 @@ function compactCandidates(candidates: ReturnType<typeof selectDeepResearchCandi
         `momentum60=${candidate.priceMomentum60d ?? "n/a"}`,
         `volatility20=${candidate.volatility20d ?? "n/a"}`,
         `turnoverSek=${candidate.avgDailyTurnoverSek ?? "n/a"}`,
+        `marketCapSek=${candidate.marketCapSek ?? "n/a"}`,
+        `quality=${candidate.qualityScore ?? "n/a"}`,
+        `valuation=${candidate.valuationScore ?? "n/a"}`,
+        `revisions=${candidate.earningsRevisionScore ?? "n/a"}`,
+        `dividendQuality=${candidate.dividendQualityScore ?? "n/a"}`,
+        `catalyst=${candidate.catalystScore ?? "n/a"}`,
+        `balanceSheet=${candidate.balanceSheetScore ?? "n/a"}`,
         compactTechnical(candidate.technicalAnalysis),
       ].join(" | "),
     )
@@ -131,6 +140,7 @@ export async function runPortfolioDryRun(request: PortfolioDryRunRequest): Promi
     candidates: rankedCandidates,
     evidence: request.evidence,
     useEscalationModel: Boolean(request.useEscalationModel),
+    runId: request.runId ?? null,
   });
 
   const evidenceValidation = validateEvidenceReferences(generated.decision, request.evidence);
