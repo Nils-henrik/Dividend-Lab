@@ -8,17 +8,33 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const SCHEDULER_HEADER = "supabase-cron-v1";
+const STOCKHOLM_TIME_ZONE = "Europe/Stockholm";
+
+function stockholmDate(now: Date): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: STOCKHOLM_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(now);
+}
 
 export async function POST(request: Request) {
   if (request.headers.get("x-divlab-scheduler") !== SCHEDULER_HEADER) {
     return new NextResponse(null, { status: 404 });
   }
 
+  const body = (await request.json().catch(() => ({}))) as { manualTest?: unknown };
+  const manualTest = body.manualTest === true;
   const now = new Date();
   const slot = resolveModelPortfolioEvaluationSlot(now);
-  if (!slot) {
+  if (!manualTest && !slot) {
     return NextResponse.json({ status: "outside_window" }, { status: 202 });
   }
+
+  const slotId = manualTest ? "manual-test" : slot!.slotId;
+  const localDate = manualTest ? stockholmDate(now) : slot!.stockholmDate;
+  const triggerKey = manualTest ? `manual:${now.toISOString()}` : slot!.triggerKey;
 
   const supabase = createModelPortfolioAdminClient();
   if (!supabase) {
@@ -28,13 +44,13 @@ export async function POST(request: Request) {
   const { data: run, error: insertError } = await supabase
     .from("model_portfolio_runs")
     .insert({
-      run_type: "scheduled",
+      run_type: manualTest ? "manual" : "scheduled",
       status: "started",
-      trigger_key: slot.triggerKey,
+      trigger_key: triggerKey,
       source_snapshot: {
         scheduler: "supabase-cron-v1",
-        slot: slot.slotId,
-        stockholm_date: slot.stockholmDate,
+        slot: slotId,
+        stockholm_date: localDate,
         mode: "dry_run",
       },
     })
@@ -90,8 +106,8 @@ export async function POST(request: Request) {
         market_data_as_of: now.toISOString(),
         source_snapshot: {
           scheduler: "supabase-cron-v1",
-          slot: slot.slotId,
-          stockholm_date: slot.stockholmDate,
+          slot: slotId,
+          stockholm_date: localDate,
           ...dryRun,
         },
         completed_at: new Date().toISOString(),

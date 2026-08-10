@@ -2,10 +2,10 @@ const STOCKHOLM_TIME_ZONE = "Europe/Stockholm";
 const WINDOW_MINUTES = 9;
 
 export const MODEL_PORTFOLIO_EVALUATION_SLOTS = [
-  { id: "open", hour: 9, minute: 20 },
-  { id: "midday", hour: 12, minute: 0 },
-  { id: "us-open", hour: 15, minute: 45 },
-  { id: "close", hour: 17, minute: 15 },
+  { id: "open", hour: 9, minute: 0 },
+  { id: "midday", hour: 13, minute: 30 },
+  { id: "us-open", hour: 17, minute: 30 },
+  { id: "close", hour: 22, minute: 30 },
 ] as const;
 
 export type ModelPortfolioEvaluationSlotId =

@@ -1,5 +1,8 @@
 export const EODHD_FREE_ACCOUNT_DAILY_LIMIT = 20;
-export const MODEL_PORTFOLIO_DRY_RUN_EODHD_LIMIT = 8;
+// Four scheduled research passes per weekday must remain below the provider's
+// free-account daily ceiling. Each pass uses one batched quote call plus up to
+// three history calls; remaining candidates still participate with quote data.
+export const MODEL_PORTFOLIO_DRY_RUN_EODHD_LIMIT = 4;
 
 export type EodhdCallBudgetSnapshot = {
   limit: number;

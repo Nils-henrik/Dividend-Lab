@@ -8,10 +8,10 @@ import {
 } from "./eodhd-budget";
 
 describe("EODHD call budget", () => {
-  it("keeps the internal dry-run budget below the free account ceiling", () => {
+  it("keeps four weekday dry runs below the free account ceiling", () => {
     assert.equal(EODHD_FREE_ACCOUNT_DAILY_LIMIT, 20);
-    assert.equal(MODEL_PORTFOLIO_DRY_RUN_EODHD_LIMIT, 8);
-    assert.ok(MODEL_PORTFOLIO_DRY_RUN_EODHD_LIMIT < EODHD_FREE_ACCOUNT_DAILY_LIMIT);
+    assert.equal(MODEL_PORTFOLIO_DRY_RUN_EODHD_LIMIT, 4);
+    assert.ok(MODEL_PORTFOLIO_DRY_RUN_EODHD_LIMIT * 4 < EODHD_FREE_ACCOUNT_DAILY_LIMIT);
   });
 
   it("tracks usage and stops before an extra external call", () => {
@@ -24,9 +24,9 @@ describe("EODHD call budget", () => {
 
   it("creates the standard dry-run budget", () => {
     assert.deepEqual(createDryRunEodhdBudget().snapshot(), {
-      limit: 8,
+      limit: 4,
       used: 0,
-      remaining: 8,
+      remaining: 4,
     });
   });
 });
