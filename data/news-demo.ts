@@ -19,7 +19,7 @@ import { USA_BORSEN_FALLER_ALPHABET_TESLA_OLJA_ARTICLE } from "@/data/news-artic
 
 const BORSVECKA_33_CACHE_BUSTED_ARTICLE: NewsArticle = {
   ...BORSVECKA_33_ARTICLE,
-  imageUrl: "/api/news-images/borsvecka-33/",
+  imageUrl: "/api/news-images/borsvecka-33/?v=20260810-0849",
 };
 
 /**
