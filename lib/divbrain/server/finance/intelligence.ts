@@ -118,7 +118,8 @@ const INTENT_TERMS: Record<Exclude<FinanceIntent, "general_finance">, readonly s
   ],
   market_data: [
     "aktiekurs", "kurs idag", "livekurs", "realtid", "realtime", "börskurs", "historisk kurs",
-    "market data", "marknadsdata", "orderdjup", "nivå 2", "level 2",
+    "market data", "marknadsdata", "orderdjup", "nivå 2", "level 2", "primärkälla", "primärkäll",
+    "datakälla", "data source", "aggregator", "filing", "årsredovisning", "sec edgar", "data api",
   ],
 };
 
@@ -136,6 +137,17 @@ const PLATFORM_WORDS = [
   "tjänst", "terminal", "mjukvara", "screeners", "screener",
 ];
 
+const DERIVATIVES_HIGH_SIGNAL_TERMS = [
+  "option", "covered call", "protective put", "straddle", "strangle", "delta", "gamma", "theta", "vega",
+  "implied volatility", "implicit volatilitet", "futures", "forward", "warrant", "turbo", "certifikat", "knock-out",
+] as const;
+
+const MARKET_DATA_HIGH_SIGNAL_TERMS = [
+  "primärkälla", "primärkäll", "datakälla", "data source", "aggregator", "filing", "årsredovisning",
+  "sec edgar", "market data", "marknadsdata", "aktiekurs", "kurs idag", "livekurs", "realtid", "realtime",
+  "börskurs", "historisk kurs", "orderdjup", "nivå 2", "level 2", "data api",
+] as const;
+
 function classifyToolMeaning(text: string): FinanceToolMeaning {
   const methods = hasAny(text, METHOD_WORDS);
   const platforms = hasAny(text, PLATFORM_WORDS);
@@ -145,6 +157,12 @@ function classifyToolMeaning(text: string): FinanceToolMeaning {
 }
 
 function classifyIntent(text: string): FinanceIntent {
+  // High-signal instrument/data semantics must beat generic analysis vocabulary.
+  // This prevents e.g. RSI inside an options question from hijacking the route,
+  // while avoiding ambiguous terms such as a bare "spread" as an override.
+  if (hasAny(text, DERIVATIVES_HIGH_SIGNAL_TERMS)) return "derivatives";
+  if (hasAny(text, MARKET_DATA_HIGH_SIGNAL_TERMS)) return "market_data";
+
   const priority: FinanceIntent[] = [
     "technical_analysis", "valuation", "fundamental_analysis", "accounting", "derivatives",
     "fixed_income", "macro", "portfolio_risk", "funds_etfs", "dividends", "tax_legal",
