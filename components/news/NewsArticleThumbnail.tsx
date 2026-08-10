@@ -23,7 +23,6 @@ export default function NewsArticleThumbnail({
 }: Props) {
   const isFeatured = variant === "featured";
   const fallbackDesktop = isFeatured ? "center 40%" : "center";
-  const bypassImageOptimization = imageUrl.startsWith("/api/news-images/");
 
   return (
     <div
@@ -38,7 +37,6 @@ export default function NewsArticleThumbnail({
         alt=""
         fill
         priority={priority}
-        unoptimized={bypassImageOptimization}
         sizes={
           isFeatured
             ? "(max-width: 768px) 100vw, 288px"

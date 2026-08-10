@@ -80,12 +80,6 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   images: {
     formats: ["image/avif", "image/webp"],
-    localPatterns: [
-      {
-        pathname: "/**",
-        search: "",
-      },
-    ],
   },
   async headers() {
     return [
