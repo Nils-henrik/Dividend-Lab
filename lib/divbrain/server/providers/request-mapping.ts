@@ -4,9 +4,14 @@
  * Context blocks stay server-side system instructions. They must never be
  * echoed back to the browser or written into benchmark artifacts.
  *
+ * Finance Intelligence v4 adds one deterministic, query-specific specialist
+ * playbook before generation. It performs no network request and no extra
+ * model call, preserving the existing Cost Guard request model.
+ *
  * This module must never be imported by client components.
  */
 
+import { buildFinanceIntelligencePlan } from "../finance/intelligence";
 import type {
   DivBrainProviderContextBlock,
   DivBrainProviderMessage,
@@ -49,8 +54,6 @@ function mapConversationMessage(
   message: DivBrainProviderMessage,
 ): DivBrainGatewayPromptMessage | null {
   if (message.role === "system") {
-    // System turns in the conversation channel are unexpected at this boundary;
-    // fold them into the caller-owned system assembly instead of dropping.
     return { role: "system", content: message.content };
   }
 
@@ -58,6 +61,16 @@ function mapConversationMessage(
     return { role: message.role, content: message.content };
   }
 
+  return null;
+}
+
+function latestUserMessage(messages: readonly DivBrainGatewayPromptMessage[]): string | null {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+    if (message?.role === "user" && message.content.trim()) {
+      return message.content;
+    }
+  }
   return null;
 }
 
@@ -81,9 +94,7 @@ export function mapDivBrainRequestToGatewayPrompt(
 
   for (const message of request.messages) {
     const mapped = mapConversationMessage(message);
-    if (!mapped) {
-      continue;
-    }
+    if (!mapped) continue;
     if (mapped.role === "system") {
       extraSystem.push(mapped.content);
       continue;
@@ -91,12 +102,20 @@ export function mapDivBrainRequestToGatewayPrompt(
     conversation.push(mapped);
   }
 
-  if (conversation.length === 0) {
-    return null;
-  }
+  if (conversation.length === 0) return null;
+
+  const currentUserMessage = latestUserMessage(conversation);
+  const financePlan = currentUserMessage
+    ? buildFinanceIntelligencePlan(currentUserMessage)
+    : null;
 
   const systemParts = [
     ...(systemFromBlocks ? [systemFromBlocks] : []),
+    ...(financePlan
+      ? [
+          `[Finance specialist context — ${financePlan.version}]\n${financePlan.context}`,
+        ]
+      : []),
     ...extraSystem,
   ];
 
