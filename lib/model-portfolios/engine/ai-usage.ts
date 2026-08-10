@@ -44,10 +44,6 @@ function nonNegativeInt(value: unknown): number | null {
   return value;
 }
 
-/**
- * Prefer validated AI Gateway actual-cost metadata when present.
- * Never trust arbitrary providerMetadata blobs; never treat missing cost as $0.
- */
 export function extractGatewayCostUsdMicros(providerMetadata: unknown): number | null {
   if (typeof providerMetadata !== "object" || providerMetadata === null) return null;
   const gateway = (providerMetadata as { gateway?: unknown }).gateway;
@@ -92,9 +88,7 @@ export function extractModelPortfolioAiUsage(input: {
   const inputTokens = nonNegativeInt(primary.inputTokens) ?? 0;
   const outputTokens = nonNegativeInt(primary.outputTokens) ?? 0;
   const cachedInputTokens = nonNegativeInt(details.cacheReadTokens);
-  const totalTokens =
-    nonNegativeInt(primary.totalTokens) ??
-    inputTokens + outputTokens + (cachedInputTokens ?? 0);
+  const totalTokens = nonNegativeInt(primary.totalTokens) ?? inputTokens + outputTokens;
 
   const gatewayCost = extractGatewayCostUsdMicros(input.providerMetadata);
   const estimatedCostUsdMicros = gatewayCost ?? input.catalogEstimatedCostUsdMicros;
@@ -138,16 +132,10 @@ export function aggregatePortfolioAiUsage(input: {
     }));
 
   const inputTokens = perPortfolio.reduce((sum, row) => sum + row.inputTokens, 0);
-  const cachedInputTokens = perPortfolio.reduce(
-    (sum, row) => sum + (row.cachedInputTokens ?? 0),
-    0,
-  );
+  const cachedInputTokens = perPortfolio.reduce((sum, row) => sum + (row.cachedInputTokens ?? 0), 0);
   const outputTokens = perPortfolio.reduce((sum, row) => sum + row.outputTokens, 0);
   const totalTokens = perPortfolio.reduce((sum, row) => sum + row.totalTokens, 0);
-  const estimatedCostUsdMicros = perPortfolio.reduce(
-    (sum, row) => sum + row.estimatedCostUsdMicros,
-    0,
-  );
+  const estimatedCostUsdMicros = perPortfolio.reduce((sum, row) => sum + row.estimatedCostUsdMicros, 0);
 
   return {
     provider: MODEL_PORTFOLIO_AI_PROVIDER,

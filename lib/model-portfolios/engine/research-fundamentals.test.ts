@@ -1,8 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { deriveResearchMarketSignals } from "./research-market";
+import { buildMarketResearchCandidate, deriveResearchMarketSignals } from "./research-market";
 import {
-  deriveMarketFundamentalScores,
   parseEodhdFundamentalsPayload,
   scoreEodhdFundamentals,
 } from "./research-fundamentals";
@@ -21,19 +20,40 @@ function makeBars(count: number, start = 100, drift = 0.4, volume = 1_000_000) {
 }
 
 describe("research fundamental enrichment", () => {
-  it("derives non-null fundamental scores from verified market history", () => {
+  it("keeps market-derived technical signals separate from missing fundamentals", () => {
     const history = makeBars(80);
     const signals = deriveResearchMarketSignals({ history, quote: null, fxToSek: 1 });
-    assert.ok(Number.isFinite(signals.qualityScore));
-    assert.ok(Number.isFinite(signals.valuationScore));
-    assert.ok(Number.isFinite(signals.earningsRevisionScore));
-    assert.ok(Number.isFinite(signals.dividendQualityScore));
-    assert.ok(Number.isFinite(signals.catalystScore));
-    assert.ok(Number.isFinite(signals.balanceSheetScore));
-    assert.ok((signals.marketCapSek ?? 0) > 0);
+    assert.ok(Number.isFinite(signals.priceMomentum20d));
+    assert.ok(Number.isFinite(signals.priceMomentum60d));
+    assert.ok(Number.isFinite(signals.volatility20d));
+    assert.ok(signals.technicalAnalysis);
+    assert.equal("marketCapSek" in signals, false);
+    assert.equal("qualityScore" in signals, false);
+    assert.equal("valuationScore" in signals, false);
+    assert.equal("earningsRevisionScore" in signals, false);
+    assert.equal("dividendQualityScore" in signals, false);
+    assert.equal("catalystScore" in signals, false);
+    assert.equal("balanceSheetScore" in signals, false);
   });
 
-  it("lets high-risk and dividend rankings diverge once catalyst/dividend scores differ", () => {
+  it("does not let technical market data satisfy fundamental fields without a verified overlay", () => {
+    const candidate = buildMarketResearchCandidate({
+      symbol: "ATCO-A",
+      exchange: "ST",
+      history: makeBars(80),
+      quote: null,
+      fxToSek: 1,
+    });
+    assert.equal(candidate.marketCapSek, undefined);
+    assert.equal(candidate.qualityScore, undefined);
+    assert.equal(candidate.valuationScore, undefined);
+    assert.equal(candidate.earningsRevisionScore, undefined);
+    assert.equal(candidate.dividendQualityScore, undefined);
+    assert.equal(candidate.catalystScore, undefined);
+    assert.equal(candidate.balanceSheetScore, undefined);
+  });
+
+  it("lets high-risk and dividend rankings diverge when verified strategy fields differ", () => {
     const calm = {
       symbol: "TEL2-B",
       exchange: "ST",
@@ -69,7 +89,7 @@ describe("research fundamental enrichment", () => {
     assert.equal(highRisk[0]?.symbol, "EVO");
   });
 
-  it("scores EODHD fundamentals payloads into strategy-relevant fields", () => {
+  it("scores verified EODHD fundamentals payloads into strategy-relevant fields", () => {
     const parsed = parseEodhdFundamentalsPayload({
       Highlights: {
         MarketCapitalization: 100_000_000,
@@ -98,16 +118,5 @@ describe("research fundamental enrichment", () => {
     assert.ok((scored.dividendQualityScore ?? 0) > 0.4);
     assert.ok((scored.qualityScore ?? 0) > 0.4);
     assert.ok((scored.catalystScore ?? 0) > 0.4);
-  });
-
-  it("returns null market-derived scores when history is too thin", () => {
-    assert.equal(
-      deriveMarketFundamentalScores({
-        history: makeBars(5),
-        quote: null,
-        fxToSek: 1,
-      }),
-      null,
-    );
   });
 });
