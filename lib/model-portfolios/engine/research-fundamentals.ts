@@ -1,14 +1,10 @@
-import type { DailyBar, DelayedQuote } from "./eodhd";
 import type { ResearchCandidate } from "./research";
-import type { TechnicalAnalysisSnapshot } from "./technical-analysis";
 
 /**
- * Deterministic fundamental-style scores derived from verified market history / TA.
- * These are not GAAP accounting facts. They exist so strategy ranking and the
- * portfolio manager can distinguish high-risk vs dividend profiles when EODHD
- * fundamentals are unavailable within the call budget.
- *
- * Never invent missing values: return undefined when the underlying series is too short.
+ * Verified fundamental scores from EODHD fundamentals payloads only.
+ * Technical / price / volume proxies must never populate these fields.
+ * When EODHD fundamentals are unavailable or incomplete, leave values undefined
+ * and fail closed.
  */
 export type ResearchFundamentalScores = Pick<
   ResearchCandidate,
@@ -42,112 +38,6 @@ export type EodhdFundamentalsSnapshot = {
 function clamp01(value: number): number {
   if (!Number.isFinite(value)) return 0.5;
   return Math.max(0, Math.min(1, value));
-}
-
-function average(values: readonly number[]): number | null {
-  if (!values.length) return null;
-  return values.reduce((sum, value) => sum + value, 0) / values.length;
-}
-
-function priceAt(bars: readonly DailyBar[], offsetFromEnd: number): number | null {
-  const bar = bars.at(-(offsetFromEnd + 1));
-  if (!bar) return null;
-  const price = bar.adjustedClose ?? bar.close;
-  return Number.isFinite(price) && price > 0 ? price : null;
-}
-
-function momentumBetween(bars: readonly DailyBar[], shortSessions: number, longSessions: number): number | undefined {
-  const short = priceAt(bars, 0);
-  const mid = priceAt(bars, shortSessions);
-  const long = priceAt(bars, longSessions);
-  if (short === null || mid === null || long === null || mid <= 0 || long <= 0) return undefined;
-  const shortMom = short / mid - 1;
-  const longMom = short / long - 1;
-  return shortMom - longMom / (longSessions / shortSessions);
-}
-
-export function deriveMarketFundamentalScores(input: {
-  history: readonly DailyBar[];
-  quote: DelayedQuote | null;
-  technical?: TechnicalAnalysisSnapshot;
-  fxToSek: number;
-}): ResearchFundamentalScores | null {
-  const { history, quote, technical, fxToSek } = input;
-  if (!Number.isFinite(fxToSek) || fxToSek <= 0) return null;
-  if (history.length < 25 && !technical) return null;
-
-  const vol = technical?.volatility.annualized20;
-  const drawdown = technical?.volatility.maxDrawdown252;
-  const stability = technical?.scores.stability;
-  const trend = technical?.scores.trend;
-  const momentum = technical?.scores.momentum;
-  const breakout = technical?.scores.breakout;
-  const volume = technical?.scores.volume;
-  const composite = technical?.scores.composite;
-  const rangePosition = technical?.levels.rangePosition55;
-  const zScore20 = technical?.meanReversion.zScore20;
-  const rsi14 = technical?.momentum.rsi14;
-
-  const lastClose = quote?.close ?? history.at(-1)?.adjustedClose ?? history.at(-1)?.close ?? null;
-  const avgVolume20 =
-    technical?.volume.averageVolume20 ??
-    average(history.slice(-20).map((bar) => bar.volume));
-
-  // Approximate free-float market value when shares outstanding are unknown:
-  // use a liquidity-scaled turnover proxy only as a soft size signal for ranking gates.
-  const marketCapSek =
-    lastClose !== null && avgVolume20 !== null && Number.isFinite(lastClose) && Number.isFinite(avgVolume20)
-      ? Math.round(lastClose * avgVolume20 * 60 * fxToSek)
-      : undefined;
-
-  const qualityScore = clamp01(
-    0.45 * (stability ?? 0.5) +
-      0.25 * (trend ?? 0.5) +
-      0.2 * (Number.isFinite(vol) ? clamp01(1 - (vol as number) / 0.7) : 0.5) +
-      0.1 * (Number.isFinite(drawdown) ? clamp01(1 - Math.abs(drawdown as number) / 0.55) : 0.5),
-  );
-
-  const valuationScore = clamp01(
-    0.5 * (Number.isFinite(zScore20) ? clamp01(0.5 - (zScore20 as number) / 4) : 0.5) +
-      0.3 * (Number.isFinite(rangePosition) ? 1 - (rangePosition as number) : 0.5) +
-      0.2 * (Number.isFinite(rsi14) ? clamp01(1 - ((rsi14 as number) - 30) / 50) : 0.5),
-  );
-
-  const revisionAcceleration = momentumBetween(history, 20, 60);
-  const earningsRevisionScore = clamp01(
-    0.55 * (Number.isFinite(revisionAcceleration) ? clamp01(((revisionAcceleration as number) + 0.08) / 0.16) : 0.5) +
-      0.45 * (momentum ?? 0.5),
-  );
-
-  const dividendQualityScore = clamp01(
-    0.4 * (stability ?? 0.5) +
-      0.25 * (Number.isFinite(vol) ? clamp01(1 - (vol as number) / 0.45) : 0.5) +
-      0.2 * (Number.isFinite(drawdown) ? clamp01(1 - Math.abs(drawdown as number) / 0.4) : 0.5) +
-      0.15 * (qualityScore),
-  );
-
-  const catalystScore = clamp01(
-    0.35 * (breakout ?? 0.5) +
-      0.25 * (volume ?? 0.5) +
-      0.25 * (momentum ?? 0.5) +
-      0.15 * (composite ?? 0.5),
-  );
-
-  const balanceSheetScore = clamp01(
-    0.4 * (Number.isFinite(drawdown) ? clamp01(1 - Math.abs(drawdown as number) / 0.5) : 0.5) +
-      0.35 * (stability ?? 0.5) +
-      0.25 * (Number.isFinite(vol) ? clamp01(1 - (vol as number) / 0.55) : 0.5),
-  );
-
-  return {
-    marketCapSek,
-    qualityScore: Math.round(qualityScore * 10_000) / 10_000,
-    valuationScore: Math.round(valuationScore * 10_000) / 10_000,
-    earningsRevisionScore: Math.round(earningsRevisionScore * 10_000) / 10_000,
-    dividendQualityScore: Math.round(dividendQualityScore * 10_000) / 10_000,
-    catalystScore: Math.round(catalystScore * 10_000) / 10_000,
-    balanceSheetScore: Math.round(balanceSheetScore * 10_000) / 10_000,
-  };
 }
 
 function scorePe(value: number | null | undefined): number | undefined {
