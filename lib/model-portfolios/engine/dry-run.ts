@@ -40,12 +40,11 @@ export type PortfolioDryRunResult =
         | "no_candidates"
         | "no_evidence"
         | "daily_ai_budget_exhausted"
-        | "event_reserve_protected"
-        | "invalid_evidence_references";
+        | "event_reserve_protected";
     };
 
-// Tool-enabled runs may use two model steps: one bounded tool-inspection step
-// and one final structured-decision step. Budget the full envelope up front.
+// Tool-enabled runs may use up to three model steps: bounded inspection plus a
+// final structured decision. Budget the full envelope up front.
 const EXPECTED_PRIMARY_INPUT_TOKENS_PER_STEP = 18_000;
 const EXPECTED_ESCALATION_INPUT_TOKENS_PER_STEP = 24_000;
 
@@ -117,6 +116,31 @@ function compactCandidates(candidates: ReturnType<typeof selectDeepResearchCandi
     .join("\n");
 }
 
+function failClosedHold(evidence: readonly ModelPortfolioEvidence[]): ModelPortfolioDecision {
+  return {
+    action: "hold",
+    symbol: null,
+    exchange: null,
+    instrumentName: null,
+    proposedPortfolioPct: 0,
+    convictionScore: 0.25,
+    materialThesisBreak: false,
+    thesis:
+      "Det finns screenade kandidater, men AI-svaret klarade inte DivLabs evidensvalidering och får därför inte ligga till grund för en affär.",
+    bearCase:
+      "Ett köp eller sälj utan fullständigt spårbara evidensreferenser kan skapa ett felaktigt eller otillräckligt underbyggt portföljbeslut.",
+    catalyst:
+      "Ny verifierad research eller ett nytt giltigt AI-beslut krävs innan portföljen ändras.",
+    valuationView:
+      "Ingen värderingsslutsats används när evidensreferenserna i AI-svaret inte kan valideras.",
+    keyRisks: ["Otillräckligt spårbart beslutsunderlag i den aktuella AI-körningen."],
+    evidenceIds: evidence.slice(0, 3).map((item) => item.id),
+    disconfirmingEvidenceIds: [],
+    rationale:
+      "Körningen hittade kandidater men AI-svaret refererade inte evidensen på ett validerbart sätt. Portföljen gör därför ingen affär i denna körning; HOLD används som säkerhetsbeslut tills nästa sökning ger ett fullständigt spårbart underlag.",
+  };
+}
+
 export async function runPortfolioDryRun(request: PortfolioDryRunRequest): Promise<PortfolioDryRunResult> {
   const rankedCandidates = selectDeepResearchCandidates(
     rankResearchUniverse(request.candidates, request.strategyKey),
@@ -144,11 +168,13 @@ export async function runPortfolioDryRun(request: PortfolioDryRunRequest): Promi
   });
 
   const evidenceValidation = validateEvidenceReferences(generated.decision, request.evidence);
-  if (!evidenceValidation.ok) return { ok: false, reason: "invalid_evidence_references" };
+  const decision = evidenceValidation.ok
+    ? generated.decision
+    : failClosedHold(request.evidence);
 
   return {
     ok: true,
-    decision: generated.decision,
+    decision,
     rankedCandidates,
     model: generated.model,
     estimatedCostUsdMicros: generated.estimatedCostUsdMicros,
