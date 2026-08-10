@@ -34,7 +34,7 @@ export const MODEL_PORTFOLIO_TURNOVER_POLICY: Record<
   conservative: {
     maxRunsPerTradingDay: 4,
     maxAdditionalEventRuns: 3,
-    minTradePctOfPortfolio: 3,
+    minTradePctOfPortfolio: 8,
     replacementThresholdScore: 0.82,
     trimThresholdScore: 0.72,
     cooldownHours: 120,

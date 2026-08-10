@@ -116,6 +116,36 @@ describe("model portfolio simulated settlement", () => {
     assert.equal(plan.reason, "execution_not_allowed");
   });
 
+  it("enforces the conservative 8% minimum trade and 120-hour cooldown in settlement", () => {
+    const tooSmall = planSimulatedSettlement({
+      ...baseBuyInput,
+      strategyKey: "conservative",
+      targetWeightPct: 5,
+      convictionScore: 0.95,
+    });
+    assert.equal(tooSmall.ok, false);
+    if (!tooSmall.ok) assert.equal(tooSmall.reason, "trade_too_small");
+
+    const coolingDown = planSimulatedSettlement({
+      ...baseBuyInput,
+      strategyKey: "conservative",
+      targetWeightPct: 10,
+      convictionScore: 0.95,
+      hoursSinceLastTradeInInstrument: 100,
+    });
+    assert.equal(coolingDown.ok, false);
+    if (!coolingDown.ok) assert.equal(coolingDown.reason, "instrument_cooldown");
+
+    const allowed = planSimulatedSettlement({
+      ...baseBuyInput,
+      strategyKey: "conservative",
+      targetWeightPct: 10,
+      convictionScore: 0.95,
+      hoursSinceLastTradeInInstrument: 120,
+    });
+    assert.equal(allowed.ok, true);
+  });
+
   it("rejects when FX is unavailable for USD", () => {
     const plan = planSimulatedSettlement({
       ...baseBuyInput,

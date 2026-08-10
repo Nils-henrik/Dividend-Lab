@@ -53,7 +53,22 @@ describe("EODHD call budget", () => {
 
     const nordic = createScheduledEodhdBudget("nordic_morning");
     assert.equal(nordic.snapshot().limit, 0);
+    assert.equal(nordic.snapshot().used, 0);
     assert.throws(() => nordic.consume(), /eodhd_call_budget_exhausted/);
+    assert.equal(nordic.snapshot().used, 0);
+  });
+
+  it("keeps US afternoon/evening passes functional and bounded within the daily ceiling", () => {
+    const usPasses = ["us_1550", "us_1830", "us_2130"] as const;
+    let allocated = 0;
+    for (const pass of usPasses) {
+      const budget = createScheduledEodhdBudget(pass);
+      assert.ok(budget.snapshot().limit > 0);
+      allocated += budget.snapshot().limit;
+      for (let index = 0; index < budget.snapshot().limit; index += 1) budget.consume();
+      assert.equal(budget.snapshot().remaining, 0);
+    }
+    assert.equal(allocated + MODEL_PORTFOLIO_EODHD_PASS_LIMITS.nordic_morning, EODHD_FREE_ACCOUNT_DAILY_LIMIT);
   });
 
   it("reserves the final call for fundamentals after quote + max histories", () => {

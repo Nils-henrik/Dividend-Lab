@@ -36,28 +36,29 @@ describe("model portfolio engine safety", () => {
   });
 
   it("resolves exactly the four Stockholm market-day windows", () => {
+    // Europe/Stockholm is UTC+2 in August.
     assert.equal(
-      resolveModelPortfolioEvaluationSlot(new Date("2026-08-07T07:05:00Z"))?.slotId,
-      "open",
+      resolveModelPortfolioEvaluationSlot(new Date("2026-08-07T07:20:00Z"))?.slotId,
+      "nordic_morning",
     );
     assert.equal(
-      resolveModelPortfolioEvaluationSlot(new Date("2026-08-07T11:35:00Z"))?.slotId,
-      "midday",
+      resolveModelPortfolioEvaluationSlot(new Date("2026-08-07T13:50:00Z"))?.slotId,
+      "us_1550",
     );
     assert.equal(
-      resolveModelPortfolioEvaluationSlot(new Date("2026-08-07T15:35:00Z"))?.slotId,
-      "us-open",
+      resolveModelPortfolioEvaluationSlot(new Date("2026-08-07T16:30:00Z"))?.slotId,
+      "us_1830",
     );
     assert.equal(
-      resolveModelPortfolioEvaluationSlot(new Date("2026-08-07T20:35:00Z"))?.slotId,
-      "close",
+      resolveModelPortfolioEvaluationSlot(new Date("2026-08-07T19:30:00Z"))?.slotId,
+      "us_2130",
     );
     assert.equal(
-      resolveModelPortfolioEvaluationSlot(new Date("2026-08-07T07:20:00Z")),
+      resolveModelPortfolioEvaluationSlot(new Date("2026-08-07T07:05:00Z")),
       null,
     );
     assert.equal(
-      resolveModelPortfolioEvaluationSlot(new Date("2026-08-08T07:05:00Z")),
+      resolveModelPortfolioEvaluationSlot(new Date("2026-08-08T07:20:00Z")),
       null,
     );
   });
