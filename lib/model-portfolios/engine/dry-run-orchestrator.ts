@@ -9,7 +9,11 @@ import {
   type ModelPortfolioAiUsage,
   type ModelPortfolioBatchAiUsage,
 } from "./ai-usage";
-import { createDryRunEodhdBudget, type EodhdCallBudgetSnapshot } from "./eodhd-budget";
+import {
+  canFetchHistoryWithFundamentalsReserve,
+  createDryRunEodhdBudget,
+  type EodhdCallBudgetSnapshot,
+} from "./eodhd-budget";
 import { fetchDailyHistory, fetchDelayedQuotes, fetchEodhdFundamentals, type DelayedQuote } from "./eodhd";
 import type { ModelPortfolioStrategyKey } from "./policy";
 import { buildFollowerTradePayload } from "./pricing";
@@ -71,7 +75,7 @@ export type DryRunOrchestrationResult = {
     quoteAsOf: string | null;
     historyBars: number;
     historyError?: string;
-    fundamentalsSource?: "market_derived" | "eodhd" | "merged";
+    fundamentalsSource?: "none" | "unavailable" | "market_only" | "eodhd";
   }>;
   portfolios: Array<{
     id: string;
@@ -162,9 +166,14 @@ function marketEvidence(input: {
   dividendQualityScore?: number;
   catalystScore?: number;
   balanceSheetScore?: number;
-  fundamentalsSource?: string;
+  fundamentalsSource?: "none" | "unavailable" | "market_only" | "eodhd";
 }): ModelPortfolioEvidence {
   const publishedAt = input.quoteAsOf ?? new Date().toISOString();
+  const fundamentalsSource = input.fundamentalsSource ?? "unavailable";
+  const fundamentalsNote =
+    fundamentalsSource === "eodhd"
+      ? "Fundamentala poäng är härledda från verifierad EODHD fundamentals-data. De ersätter inte en fullständig bolagsanalys."
+      : "Fundamentala poäng saknas: ingen verifierad EODHD fundamentals-data har berikat kandidaten i denna pass. Marknads-/TA-data används inte som proxy för fundamentalvärden.";
   return {
     id: `market:${input.symbol}:ST:${publishedAt}`,
     kind: "market_data",
@@ -179,9 +188,9 @@ function marketEvidence(input: {
       `Dagsförändring ${input.changePct ?? "saknas"}%.`,
       `Historik ${input.historyBars} dagsstaplar.`,
       ...technicalEvidenceSummary(input.technical),
-      `Researchkälla ${input.fundamentalsSource ?? "market_derived"}.`,
+      `Researchkälla ${fundamentalsSource}.`,
       `Kvalitet ${input.qualityScore ?? "saknas"}, värdering ${input.valuationScore ?? "saknas"}, revideringar ${input.earningsRevisionScore ?? "saknas"}, utdelningskvalitet ${input.dividendQualityScore ?? "saknas"}, katalysator ${input.catalystScore ?? "saknas"}, balansräkning ${input.balanceSheetScore ?? "saknas"}.`,
-      "Fundamental-liknande poäng är deterministiskt härledda från verifierad marknads-/TA-data och, när budget tillåter, EODHD fundamentals. De ersätter inte en fullständig bolagsanalys.",
+      fundamentalsNote,
       "Tekniska signaler är deterministiskt härledda från samma historiska OHLCV-serie och är endast beslutsunderlag, aldrig en fristående köpsignal.",
       "Vid simulerad settlement används den fördröjda close-kursen explicit märkt SIMULATED – aldrig som verklig mäklarfill.",
     ].join(" "),
@@ -310,11 +319,17 @@ export async function runAllModelPortfoliosDryRun(
     const quote = quoteBySymbol.get(instrument.symbol) ?? null;
     let history = [] as Awaited<ReturnType<typeof fetchDailyHistory>>;
     let historyError: string | undefined;
-    try {
-      history = await fetchDailyHistory(instrument.symbol, instrument.market, isoDate(from), isoDate(now), budget);
-    } catch (error) {
-      historyError = error instanceof Error ? error.message : "history_fetch_failed";
+    // Reserve the final EODHD call for verified fundamentals enrichment.
+    if (canFetchHistoryWithFundamentalsReserve(budget.snapshot())) {
+      try {
+        history = await fetchDailyHistory(instrument.symbol, instrument.market, isoDate(from), isoDate(now), budget);
+      } catch (error) {
+        historyError = error instanceof Error ? error.message : "history_fetch_failed";
+      }
     }
+
+    const fundamentalsSource =
+      quote || history.length ? ("market_only" as const) : ("unavailable" as const);
 
     if (quote || history.length) {
       const candidate = buildMarketResearchCandidate({
@@ -341,7 +356,7 @@ export async function runAllModelPortfoliosDryRun(
           dividendQualityScore: candidate.dividendQualityScore,
           catalystScore: candidate.catalystScore,
           balanceSheetScore: candidate.balanceSheetScore,
-          fundamentalsSource: "market_derived",
+          fundamentalsSource,
         }),
       );
     }
@@ -351,14 +366,14 @@ export async function runAllModelPortfoliosDryRun(
       exchange: "ST",
       quoteAsOf: quote?.timestamp ?? null,
       historyBars: history.length,
-      fundamentalsSource: quote || history.length ? "market_derived" : undefined,
+      fundamentalsSource,
       ...(historyError ? { historyError } : {}),
     });
   }
 
   if (!candidates.length) throw new Error("dry_run_no_market_candidates");
 
-  // Opportunistic EODHD fundamentals enrichment while the free-tier budget still allows it.
+  // Reserved EODHD fundamentals enrichment: one verified request for the strongest shortlisted name.
   if (budget.snapshot().remaining > 0) {
     const enrichmentTarget = [...candidates]
       .sort((a, b) => (b.avgDailyTurnoverSek ?? 0) - (a.avgDailyTurnoverSek ?? 0))
@@ -369,36 +384,41 @@ export async function runAllModelPortfoliosDryRun(
         const parsed = parseEodhdFundamentalsPayload(payload);
         if (parsed) {
           const scored = scoreEodhdFundamentals(parsed, 1);
-          const index = candidates.findIndex((candidate) => candidate.symbol === enrichmentTarget.symbol);
-          if (index >= 0) {
-            const merged = mergeFundamentalScores(candidates[index], scored);
-            candidates[index] = { ...candidates[index], ...merged };
-            const diagnostic = candidateDiagnostics.find((row) => row.symbol === enrichmentTarget.symbol);
-            if (diagnostic) diagnostic.fundamentalsSource = "merged";
-            const evidenceIndex = evidence.findIndex((item) => item.id.includes(`:${enrichmentTarget.symbol}:`));
-            if (evidenceIndex >= 0) {
-              evidence[evidenceIndex] = marketEvidence({
-                symbol: enrichmentTarget.symbol,
-                name: instrumentNameBySymbol.get(enrichmentTarget.symbol) ?? enrichmentTarget.symbol,
-                quoteAsOf: quoteBySymbol.get(enrichmentTarget.symbol)?.timestamp ?? null,
-                close: quoteBySymbol.get(enrichmentTarget.symbol)?.close ?? null,
-                volume: quoteBySymbol.get(enrichmentTarget.symbol)?.volume ?? null,
-                changePct: quoteBySymbol.get(enrichmentTarget.symbol)?.changePct ?? null,
-                historyBars: diagnostic?.historyBars ?? 0,
-                technical: candidates[index].technicalAnalysis,
-                qualityScore: candidates[index].qualityScore,
-                valuationScore: candidates[index].valuationScore,
-                earningsRevisionScore: candidates[index].earningsRevisionScore,
-                dividendQualityScore: candidates[index].dividendQualityScore,
-                catalystScore: candidates[index].catalystScore,
-                balanceSheetScore: candidates[index].balanceSheetScore,
-                fundamentalsSource: "merged",
-              });
+          const hasVerifiedFundamentalValues = Object.values(scored).some(
+            (value) => value !== undefined && value !== null,
+          );
+          if (hasVerifiedFundamentalValues) {
+            const index = candidates.findIndex((candidate) => candidate.symbol === enrichmentTarget.symbol);
+            if (index >= 0) {
+              const merged = mergeFundamentalScores(candidates[index], scored);
+              candidates[index] = { ...candidates[index], ...merged };
+              const diagnostic = candidateDiagnostics.find((row) => row.symbol === enrichmentTarget.symbol);
+              if (diagnostic) diagnostic.fundamentalsSource = "eodhd";
+              const evidenceIndex = evidence.findIndex((item) => item.id.includes(`:${enrichmentTarget.symbol}:`));
+              if (evidenceIndex >= 0) {
+                evidence[evidenceIndex] = marketEvidence({
+                  symbol: enrichmentTarget.symbol,
+                  name: instrumentNameBySymbol.get(enrichmentTarget.symbol) ?? enrichmentTarget.symbol,
+                  quoteAsOf: quoteBySymbol.get(enrichmentTarget.symbol)?.timestamp ?? null,
+                  close: quoteBySymbol.get(enrichmentTarget.symbol)?.close ?? null,
+                  volume: quoteBySymbol.get(enrichmentTarget.symbol)?.volume ?? null,
+                  changePct: quoteBySymbol.get(enrichmentTarget.symbol)?.changePct ?? null,
+                  historyBars: diagnostic?.historyBars ?? 0,
+                  technical: candidates[index].technicalAnalysis,
+                  qualityScore: candidates[index].qualityScore,
+                  valuationScore: candidates[index].valuationScore,
+                  earningsRevisionScore: candidates[index].earningsRevisionScore,
+                  dividendQualityScore: candidates[index].dividendQualityScore,
+                  catalystScore: candidates[index].catalystScore,
+                  balanceSheetScore: candidates[index].balanceSheetScore,
+                  fundamentalsSource: "eodhd",
+                });
+              }
             }
           }
         }
       } catch {
-        // Fail closed on fundamentals enrichment: keep market-derived scores.
+        // Fail closed on fundamentals enrichment: leave fundamental fields null.
       }
     }
   }
