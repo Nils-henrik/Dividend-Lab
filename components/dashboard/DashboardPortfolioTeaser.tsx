@@ -139,15 +139,72 @@ export default async function DashboardPortfolioTeaser() {
         })}
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] text-divlab-text-secondary">
-        <span>AI-drivna beslut</span>
-        <span>4 analyser/dag</span>
-        <span>Månadsspar den 25:e</span>
-        <span>Simulerade modellportföljer</span>
+      <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px] text-divlab-text-secondary">
+        <FeatureItem icon="bolt">AI-drivna beslut</FeatureItem>
+        <FeatureItem icon="refresh">Live-uppdateringar 4x/dag</FeatureItem>
+        <FeatureItem icon="calendar">Automatiskt månadsspar 25:e</FeatureItem>
+        <FeatureItem icon="bell">Följ och få notiser</FeatureItem>
         <Link href="/portfolios" className="ml-auto font-semibold text-divlab-blue transition hover:text-divlab-blue-muted">
           Se portföljerna →
         </Link>
       </div>
     </section>
+  );
+}
+
+function FeatureItem({
+  icon,
+  children,
+}: {
+  icon: "bolt" | "refresh" | "calendar" | "bell";
+  children: React.ReactNode;
+}) {
+  return (
+    <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+      <span className="text-divlab-blue" aria-hidden="true">
+        <FeatureIcon type={icon} />
+      </span>
+      <span>{children}</span>
+    </span>
+  );
+}
+
+function FeatureIcon({ type }: { type: "bolt" | "refresh" | "calendar" | "bell" }) {
+  const common = "h-3.5 w-3.5";
+
+  if (type === "refresh") {
+    return (
+      <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M20 11a8 8 0 0 0-14.7-4.4L3 9" />
+        <path d="M3 4v5h5" />
+        <path d="M4 13a8 8 0 0 0 14.7 4.4L21 15" />
+        <path d="M21 20v-5h-5" />
+      </svg>
+    );
+  }
+
+  if (type === "calendar") {
+    return (
+      <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="5" width="18" height="16" rx="2" />
+        <path d="M16 3v4M8 3v4M3 10h18" />
+        <path d="M8 14h3M8 17h5" />
+      </svg>
+    );
+  }
+
+  if (type === "bell") {
+    return (
+      <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
+        <path d="M10 21h4" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="m13 2-8 12h7l-1 8 8-12h-7l1-8Z" />
+    </svg>
   );
 }
