@@ -1,12 +1,12 @@
 /**
  * DivBrain application-service contracts (Ticket 1A-7b).
- *
  * Server-only orchestration types. Must never be imported by client components.
  */
 
 import type { DivBrainError } from "../../errors";
 import type { DivBrainGuardrailAssessment } from "../../guardrails";
 import type { DivBrainResult } from "../../results";
+import type { DivBrainSource } from "../../sources";
 import type { DivBrainMessage } from "../../types";
 import type {
   DivBrainAssembledContext,
@@ -22,19 +22,12 @@ import type {
 } from "../repository/repository";
 import type { DivBrainUsageLedgerRepository } from "../repository/usage-ledger";
 
-/** Trusted actor resolution — session/auth layer only. Never browser-supplied. */
 export type DivBrainActorResolver = {
   resolveActor(): Promise<DivBrainResult<{ actorId: DivBrainTrustedActorId }>>;
 };
 
-/**
- * Internal Alpha access gate.
- * Ticket 1A-8 owns the concrete `DIVBRAIN_ALPHA_USER_IDS` implementation.
- */
 export type DivBrainAccessGate = {
-  checkAccess(
-    actorId: DivBrainTrustedActorId,
-  ): Promise<DivBrainResult<void>>;
+  checkAccess(actorId: DivBrainTrustedActorId): Promise<DivBrainResult<void>>;
 };
 
 export type DivBrainGuardrailEvaluator = {
@@ -42,9 +35,12 @@ export type DivBrainGuardrailEvaluator = {
 };
 
 export type DivBrainContextAssembler = {
-  assemble(
-    input: DivBrainContextAssemblyInput,
-  ): DivBrainResult<DivBrainAssembledContext>;
+  assemble(input: DivBrainContextAssemblyInput): DivBrainResult<DivBrainAssembledContext>;
+};
+
+/** Optional server-only grounding loader. It may fail closed by returning []. */
+export type DivBrainSupplementalSourceLoader = {
+  load(query: string): Promise<readonly DivBrainSource[]>;
 };
 
 export type DivBrainProviderRequestMapper = {
@@ -54,7 +50,6 @@ export type DivBrainProviderRequestMapper = {
   ): DivBrainResult<DivBrainProviderRequest>;
 };
 
-/** Phase 1A default provider timeout (ms). Server-controlled only. */
 export const DIVBRAIN_APPLICATION_PROVIDER_TIMEOUT_MS_DEFAULT = 30_000;
 
 export type CreateDivBrainApplicationServiceDeps = {
@@ -66,31 +61,17 @@ export type CreateDivBrainApplicationServiceDeps = {
   providerRequestMapper: DivBrainProviderRequestMapper;
   provider: DivBrainProvider;
   providerTimeoutMs: number;
-  /**
-   * Required before paid AI Gateway generation. Missing/invalid guard for a
-   * real provider fails closed with zero provider calls.
-   */
+  sourceLoader?: DivBrainSupplementalSourceLoader;
   costGuard?: DivBrainCostGuard;
-  /** Persistent usage ledger for atomic reserve + durable finalize accounting. */
   usageLedger?: DivBrainUsageLedgerRepository;
-  /**
-   * Server-configured model id for Cost Guard pricing (AI Gateway).
-   * Never accepted from browser input.
-   */
   providerModelId?: string;
-  /** Server-configured max output tokens for conservative projection. */
   providerMaxOutputTokens?: number;
 };
 
-/** Trusted server-only options — never part of the browser JSON payload. */
 export type DivBrainSubmitMessageOptions = {
   signal?: AbortSignal;
 };
 
-/**
- * Safe lifecycle outcome. Pre-lifecycle failures use `DivBrainResult` failure.
- * Blocked and terminal statuses are expected outcomes (`ok: true`).
- */
 export type DivBrainSubmitMessageOutcome =
   | {
       status: "blocked";
@@ -99,11 +80,7 @@ export type DivBrainSubmitMessageOutcome =
       guardrailAssessment: DivBrainGuardrailAssessment;
     }
   | {
-      status:
-        | "completed"
-        | "provider_unavailable"
-        | "failed"
-        | "cancelled";
+      status: "completed" | "provider_unavailable" | "failed" | "cancelled";
       persisted: true;
       guardrailAssessment: DivBrainGuardrailAssessment;
       userMessage: DivBrainMessage;
@@ -111,10 +88,6 @@ export type DivBrainSubmitMessageOutcome =
     };
 
 export type DivBrainApplicationService = {
-  /**
-   * Execute one user message through the canonical request lifecycle.
-   * Never fabricates assistant answers when the provider is unconfigured.
-   */
   submitMessage(
     input: unknown,
     options?: DivBrainSubmitMessageOptions,
