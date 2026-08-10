@@ -1,0 +1,23 @@
+Börsnyheter cover: Norden i centrum, 10 Augusti (DivLab)
+Local file:
+- public/news-demo/norden-i-centrum-10-augusti-2026.webp
+Created: 2026-08-10
+Creator: DivLab (editorial illustration)
+
+Composition notes:
+- DivLab editorial composite cover with embedded headline "NORDEN I CENTRUM",
+  date "10 AUGUSTI", Nordic flags (Sweden, Denmark, Norway, Finland), company
+  name panels (Nilörngruppen, Equinor, Aker BP, Vår Energi, Novo Nordisk, Nokia)
+  and category footer strip.
+- Scenery and panel backgrounds are original DivLab editorial imagery.
+  Masthead, headline, date, flags, company names and captions were applied
+  through a deterministic SVG + sharp composition workflow
+  (scripts/compose-norden-i-centrum-10-augusti-cover.mjs). Company identities
+  use correctly spelled typography rather than fabricated logo marks.
+- Native size 1024×682 (approx. 3:2), WebP quality ~86. List/hero object-cover
+  uses article thumbnailObjectPosition "center 34%" so the headline and date
+  stay readable.
+- Mobile list/hero crops use mobileThumbnailObjectPosition "center 21%" to
+  keep "NORDEN I CENTRUM" and "10 AUGUSTI" readable without shrinking panel copy.
+
+Usage: Editorial news cover for DivLab Börsnyheter. Illustration: DivLab.
