@@ -14,7 +14,10 @@ export type ModelPortfolioTransaction = {
   quantity: number;
   priceMinor: number | null;
   grossAmountMinor: number;
+  feeMinor: number;
   currency: string;
+  nativeCurrency: string | null;
+  fxToSek: number | null;
   executedAt: string;
   rationale: string;
 };
@@ -106,7 +109,10 @@ type TransactionRow = {
   quantity: number | string;
   price_minor: number | null;
   gross_amount_minor: number;
+  fee_minor?: number | null;
   currency: string;
+  native_currency?: string | null;
+  fx_to_sek?: number | string | null;
   executed_at: string;
   rationale: string;
 };
@@ -149,7 +155,7 @@ export async function loadModelPortfoliosOverview(): Promise<ModelPortfoliosOver
     supabase
       .from("model_portfolio_transactions")
       .select(
-        "id,portfolio_id,transaction_type,instrument_symbol,exchange,instrument_name,quantity,price_minor,gross_amount_minor,currency,executed_at,rationale",
+        "id,portfolio_id,transaction_type,instrument_symbol,exchange,instrument_name,quantity,price_minor,gross_amount_minor,fee_minor,currency,executed_at,rationale",
       )
       .order("executed_at", { ascending: false })
       .limit(50),
@@ -273,7 +279,10 @@ export async function loadModelPortfoliosOverview(): Promise<ModelPortfoliosOver
       quantity: Number(row.quantity),
       priceMinor: row.price_minor === null ? null : Number(row.price_minor),
       grossAmountMinor: Number(row.gross_amount_minor),
+      feeMinor: Number(row.fee_minor ?? 0),
       currency: row.currency,
+      nativeCurrency: null,
+      fxToSek: null,
       executedAt: row.executed_at,
       rationale: row.rationale,
     } satisfies ModelPortfolioTransaction;

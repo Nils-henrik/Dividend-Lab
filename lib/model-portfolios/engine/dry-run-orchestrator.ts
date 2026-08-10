@@ -6,6 +6,7 @@ import { buildDecisionAuditRow, persistDecisionAuditBatch, type DecisionAuditRow
 import { runPortfolioDryRun } from "./dry-run";
 import { createDryRunEodhdBudget, type EodhdCallBudgetSnapshot } from "./eodhd-budget";
 import { fetchDailyHistory, fetchDelayedQuotes } from "./eodhd";
+import { courtagePromptLine, MODEL_PORTFOLIO_COURTAGE_MINOR } from "./fees";
 import type { ModelPortfolioStrategyKey } from "./policy";
 import { buildMarketResearchCandidate } from "./research-market";
 import type { TechnicalAnalysisSnapshot } from "./technical-analysis";
@@ -97,6 +98,8 @@ function buildPortfolioSnapshot(input: {
     `Status: ${input.portfolio.status}`,
     `Mål: ${input.portfolio.objective}`,
     `Tillgänglig modellkassa (minor SEK): ${input.cashMinor}`,
+    `Courtage per modellköp/sälj (minor SEK): ${MODEL_PORTFOLIO_COURTAGE_MINOR}`,
+    courtagePromptLine(),
     "Befintliga innehav:",
     ...holdingLines,
   ].join("\n");

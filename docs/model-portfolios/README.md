@@ -40,6 +40,24 @@ A portfolio must remain fail-closed until all of the following are true:
 9. separate model-portfolio AI spend limits are configured;
 10. production Alpha verification passes before portfolio status changes from `draft` to `active`.
 
+## Settlement layer (simulated)
+
+Model trade settlement is **simulated only** — never brokerage execution.
+
+- Fixed courtage: exactly **10 SEK** (`fee_minor = 1000`) on every BUY/SELL.
+- Whole-share sizing from proposed weight and available SEK cash (fee reserved first).
+- FX: portfolio accounting stays SEK; native price + `fx_to_sek` stored on transactions.
+- Dividends: verified corporate-action payments only; idempotent by portfolio + instrument + payment event.
+- Idempotency: `settle:decision:<decisionId>` prevents double settlement.
+- Enable persistence path with `MODEL_PORTFOLIO_SETTLEMENT_ENABLED=true` after execution-quote validation.
+
+Pure planning lives in `lib/model-portfolios/engine/settlement.ts` and `dividends.ts`.
+DB writes live in `lib/model-portfolios/settlement-store.ts`.
+
+## Live market status
+
+`lib/model-portfolios/engine/market-hours.ts` resolves Nasdaq Stockholm and US regular sessions with deterministic holiday calendars (including movable Easter). UI: `LiveMarketStatus` on overview cards and detail headers.
+
 ## Scheduler direction
 
 Use Supabase Cron to trigger the portfolio evaluation workflow rather than depending on Vercel Hobby cron frequency. Scheduled market evaluations should target four defined market-day windows plus verified report events. Missing/stale market data must produce a logged `skipped` run and zero AI calls.

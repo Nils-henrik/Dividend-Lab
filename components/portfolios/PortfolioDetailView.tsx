@@ -1,5 +1,7 @@
 import Link from "next/link";
+import LiveMarketStatus from "@/components/portfolios/LiveMarketStatus";
 import { MODEL_PORTFOLIO_MANDATES } from "@/lib/model-portfolios/engine/mandates";
+import type { CombinedMarketStatus } from "@/lib/model-portfolios/engine/market-hours";
 import { MODEL_PORTFOLIO_TURNOVER_POLICY } from "@/lib/model-portfolios/engine/policy";
 import type { PortfolioTransparencyDetail } from "@/lib/model-portfolios/transparency";
 
@@ -35,7 +37,13 @@ function tradeLabel(type: string): string {
   return "Avgift";
 }
 
-export default function PortfolioDetailView({ detail }: { detail: PortfolioTransparencyDetail }) {
+export default function PortfolioDetailView({
+  detail,
+  marketStatus,
+}: {
+  detail: PortfolioTransparencyDetail;
+  marketStatus: CombinedMarketStatus;
+}) {
   const mandate = MODEL_PORTFOLIO_MANDATES[detail.strategyKey];
   const turnover = MODEL_PORTFOLIO_TURNOVER_POLICY[detail.strategyKey];
   const accent = accentBySlug[detail.slug] ?? accentBySlug.forsiktig;
@@ -56,6 +64,9 @@ export default function PortfolioDetailView({ detail }: { detail: PortfolioTrans
               <span className="border border-current/40 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em]">
                 {detail.riskLabel}
               </span>
+            </div>
+            <div className="mt-3">
+              <LiveMarketStatus initialStatus={marketStatus} />
             </div>
             <p className="mt-3 text-sm leading-6 text-divlab-text-secondary">{detail.description}</p>
           </div>
@@ -101,6 +112,7 @@ export default function PortfolioDetailView({ detail }: { detail: PortfolioTrans
         <aside className="border divlab-border-neutral bg-divlab-surface/45 px-5 py-6">
           <h2 className="text-base font-semibold text-divlab-text">Handelsdisciplin</h2>
           <dl className="mt-4 space-y-4 text-xs">
+            <PolicyRow label="Courtage per affär" value="10 SEK" />
             <PolicyRow label="Max beslutskörningar/dag" value={String(turnover.maxRunsPerTradingDay)} />
             <PolicyRow label="Eventkörningar utöver primär" value={String(turnover.maxAdditionalEventRuns)} />
             <PolicyRow label="Minsta affär" value={`${turnover.minTradePctOfPortfolio}% av portföljen`} />
@@ -108,7 +120,7 @@ export default function PortfolioDetailView({ detail }: { detail: PortfolioTrans
             <PolicyRow label="Cooldown per instrument" value={`${turnover.cooldownHours} timmar`} />
           </dl>
           <p className="mt-6 text-xs leading-5 text-divlab-text-muted">
-            Ett beslut att inte handla är ett fullvärdigt utfall. Riskregler och verifiering kan stoppa ett AI-förslag innan någon modellaffär bokförs.
+            Ett beslut att inte handla är ett fullvärdigt utfall. Riskregler och verifiering kan stoppa ett AI-förslag innan någon modellaffär bokförs. Varje modellköp och -sälj beläggs med 10 SEK courtage.
           </p>
         </aside>
       </section>
@@ -137,6 +149,7 @@ export default function PortfolioDetailView({ detail }: { detail: PortfolioTrans
                 <th className="py-3 pr-4 font-medium">Typ</th>
                 <th className="py-3 pr-4 font-medium">Aktie</th>
                 <th className="py-3 pr-4 font-medium">Belopp</th>
+                <th className="py-3 pr-4 font-medium">Courtage</th>
                 <th className="py-3 pr-4 font-medium">Antal</th>
                 <th className="py-3 pr-4 font-medium">Kurs</th>
                 <th className="py-3 font-medium">AI-anledning</th>
@@ -145,19 +158,24 @@ export default function PortfolioDetailView({ detail }: { detail: PortfolioTrans
             <tbody>
               {detail.trades.length ? detail.trades.map((trade) => {
                 const href = `/portfolios/${detail.slug}/trades/${trade.id}`;
+                const feeLabel =
+                  trade.transactionType === "buy" || trade.transactionType === "sell"
+                    ? formatSek(trade.feeMinor)
+                    : "—";
                 return (
                   <tr key={trade.id} className="border-b divlab-border-neutral last:border-b-0 hover:bg-white/[0.025]">
                     <Cell href={href}>{formatDate(trade.executedAt)}</Cell>
-                    <Cell href={href} className={trade.transactionType === "buy" ? "text-emerald-400" : trade.transactionType === "sell" ? "text-red-400" : ""}>{tradeLabel(trade.transactionType)}</Cell>
+                    <Cell href={href} className={trade.transactionType === "buy" ? "text-emerald-400" : trade.transactionType === "sell" ? "text-red-400" : trade.transactionType === "dividend" ? "text-divlab-blue" : ""}>{tradeLabel(trade.transactionType)}</Cell>
                     <Cell href={href}><span className="text-divlab-text">{trade.instrumentName}</span> <span className="text-divlab-text-muted">({trade.instrumentSymbol})</span></Cell>
                     <Cell href={href}>{formatSek(trade.grossAmountMinor)}</Cell>
-                    <Cell href={href}>{new Intl.NumberFormat("sv-SE", { maximumFractionDigits: 4 }).format(trade.quantity)}</Cell>
+                    <Cell href={href}>{feeLabel}</Cell>
+                    <Cell href={href}>{trade.transactionType === "dividend" ? "—" : new Intl.NumberFormat("sv-SE", { maximumFractionDigits: 4 }).format(trade.quantity)}</Cell>
                     <Cell href={href}>{trade.priceMinor === null ? "—" : `${formatSek(trade.priceMinor)} / st`}</Cell>
                     <Cell href={href} className="max-w-[300px] truncate">{trade.rationale}</Cell>
                   </tr>
                 );
               }) : (
-                <tr><td colSpan={7} className="py-12 text-center text-sm text-divlab-text-muted">Inga affärer har genomförts ännu.</td></tr>
+                <tr><td colSpan={8} className="py-12 text-center text-sm text-divlab-text-muted">Inga affärer har genomförts ännu.</td></tr>
               )}
             </tbody>
           </table>

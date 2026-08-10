@@ -1,4 +1,5 @@
 import { buildDecisionFramework } from "./decision";
+import { courtagePromptLine } from "./fees";
 import type { ModelPortfolioStrategyKey } from "./policy";
 
 export type ModelPortfolioMandate = {
@@ -99,6 +100,7 @@ export function buildModelPortfolioSystemMandate(strategyKey: ModelPortfolioStra
     ...mandate.behavior.map((item) => `GÖR: ${item}`),
     ...mandate.explicitDoNot.map((item) => `GÖR INTE: ${item}`),
     buildDecisionFramework(strategyKey),
+    courtagePromptLine(),
     "Du lämnar endast strukturerade förslag. Du kan aldrig kringgå den deterministiska riskvalidatorn eller själv skriva portföljdata.",
     "Detta är en standardiserad modellportfölj och aldrig personlig investeringsrådgivning.",
   ].join("\n");

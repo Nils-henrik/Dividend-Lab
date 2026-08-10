@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { setModelPortfolioFollowAction } from "@/app/portfolios/actions";
+import LiveMarketStatus from "@/components/portfolios/LiveMarketStatus";
+import type { CombinedMarketStatus } from "@/lib/model-portfolios/engine/market-hours";
 import type {
   ModelPortfolioOverview,
   ModelPortfolioTransaction,
@@ -83,19 +85,26 @@ function transactionLabel(type: ModelPortfolioTransaction["transactionType"]): s
 export default function ModelPortfoliosOverview({
   portfolios,
   recentTransactions,
+  marketStatus,
 }: {
   portfolios: readonly ModelPortfolioOverview[];
   recentTransactions: readonly ModelPortfolioTransaction[];
+  marketStatus: CombinedMarketStatus;
 }) {
   return (
     <div className="mx-auto w-full max-w-[1560px] space-y-5 pb-4">
       <section className="px-0.5 pt-1">
-        <h1 className="text-[28px] font-semibold tracking-[-0.04em] text-divlab-text sm:text-[32px]">
-          Modellportföljer
-        </h1>
-        <p className="mt-1.5 text-sm text-divlab-text-secondary">
-          AI-förvaltade modellportföljer med olika risknivåer och strategier.
-        </p>
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h1 className="text-[28px] font-semibold tracking-[-0.04em] text-divlab-text sm:text-[32px]">
+              Modellportföljer
+            </h1>
+            <p className="mt-1.5 text-sm text-divlab-text-secondary">
+              AI-förvaltade modellportföljer med olika risknivåer och strategier.
+            </p>
+          </div>
+          <LiveMarketStatus initialStatus={marketStatus} />
+        </div>
       </section>
 
       <section className="grid overflow-hidden border divlab-border-neutral bg-divlab-surface/55 lg:grid-cols-[1fr_1fr_1.2fr]">
@@ -119,7 +128,7 @@ export default function ModelPortfoliosOverview({
 
       <section className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
         {portfolios.map((portfolio) => (
-          <PortfolioCard key={portfolio.id} portfolio={portfolio} />
+          <PortfolioCard key={portfolio.id} portfolio={portfolio} marketStatus={marketStatus} />
         ))}
       </section>
 
@@ -200,7 +209,13 @@ function TopMetric({ label, value, sub }: { label: string; value: string; sub: s
   );
 }
 
-function PortfolioCard({ portfolio }: { portfolio: ModelPortfolioOverview }) {
+function PortfolioCard({
+  portfolio,
+  marketStatus,
+}: {
+  portfolio: ModelPortfolioOverview;
+  marketStatus: CombinedMarketStatus;
+}) {
   const style = portfolioStyle[portfolio.slug] ?? portfolioStyle.forsiktig;
   const positive = portfolio.performancePct >= 0;
   const href = `/portfolios/${portfolio.slug}`;
@@ -216,7 +231,11 @@ function PortfolioCard({ portfolio }: { portfolio: ModelPortfolioOverview }) {
           <span className={`ml-auto border px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] ${style.badge}`}>{portfolio.riskLabel}</span>
         </div>
 
-        <div className="mt-7 flex items-end justify-between gap-4">
+        <div className="pointer-events-none mt-3">
+          <LiveMarketStatus initialStatus={marketStatus} compact className="max-w-full" />
+        </div>
+
+        <div className="mt-5 flex items-end justify-between gap-4">
           <div>
             <p className="text-[31px] font-semibold leading-none tracking-[-0.04em] tabular-nums text-divlab-text">{formatSek(portfolio.totalValueMinor)}</p>
             <div className="mt-2 flex items-center gap-2">
@@ -265,8 +284,20 @@ function MetricRow({ label, value }: { label: string; value: string }) {
 function TransactionRow({ transaction }: { transaction: ModelPortfolioTransaction }) {
   const style = portfolioStyle[transaction.portfolioSlug] ?? portfolioStyle.forsiktig;
   const isBuy = transaction.transactionType === "buy";
-  const typeClass = transaction.transactionType === "sell" ? "text-red-400" : isBuy ? "text-emerald-400" : "text-divlab-text-secondary";
+  const isDividend = transaction.transactionType === "dividend";
+  const typeClass = transaction.transactionType === "sell"
+    ? "text-red-400"
+    : isBuy
+      ? "text-emerald-400"
+      : isDividend
+        ? "text-divlab-blue"
+        : "text-divlab-text-secondary";
   const href = `/portfolios/${transaction.portfolioSlug}/trades/${transaction.id}`;
+  const feeNote =
+    (transaction.transactionType === "buy" || transaction.transactionType === "sell") &&
+    transaction.feeMinor > 0
+      ? ` · courtage ${formatSek(transaction.feeMinor)}`
+      : "";
 
   return (
     <tr className="border-b divlab-border-neutral text-divlab-text-secondary last:border-b-0 hover:bg-white/[0.025]">
@@ -274,8 +305,11 @@ function TransactionRow({ transaction }: { transaction: ModelPortfolioTransactio
       <TradeCell href={href} className={`whitespace-nowrap font-semibold ${style.accent}`}>{transaction.portfolioName}</TradeCell>
       <TradeCell href={href} className={`whitespace-nowrap font-semibold ${typeClass}`}>{transactionLabel(transaction.transactionType)}</TradeCell>
       <TradeCell href={href}><span className="text-divlab-text">{transaction.instrumentName}</span> <span className="text-divlab-text-muted">({transaction.instrumentSymbol})</span></TradeCell>
-      <TradeCell href={href} className="whitespace-nowrap">{formatSek(transaction.grossAmountMinor)}</TradeCell>
-      <TradeCell href={href} className="whitespace-nowrap">{formatNumber(transaction.quantity)}</TradeCell>
+      <TradeCell href={href} className="whitespace-nowrap">
+        {formatSek(transaction.grossAmountMinor)}
+        {feeNote ? <span className="text-divlab-text-muted">{feeNote}</span> : null}
+      </TradeCell>
+      <TradeCell href={href} className="whitespace-nowrap">{isDividend ? "—" : formatNumber(transaction.quantity)}</TradeCell>
       <TradeCell href={href} className="whitespace-nowrap">{transaction.priceMinor === null ? "—" : `${formatSek(transaction.priceMinor)} / st`}</TradeCell>
       <TradeCell href={href} className="max-w-[280px] truncate" title={transaction.rationale}>{transaction.rationale}</TradeCell>
     </tr>

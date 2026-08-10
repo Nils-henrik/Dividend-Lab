@@ -89,9 +89,37 @@ export default function TradeDetailView({ detail }: { detail: PortfolioTradeDeta
         <div className="mt-7 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           <Metric label="Kurs" value={trade.priceMinor === null ? "—" : `${formatSek(trade.priceMinor)} / st`} />
           <Metric label="Antal" value={new Intl.NumberFormat("sv-SE", { maximumFractionDigits: 4 }).format(trade.quantity)} />
-          <Metric label="Avgift" value={formatSek(trade.feeMinor)} />
+          <Metric
+            label={trade.transactionType === "buy" || trade.transactionType === "sell" ? "Courtage" : "Avgift"}
+            value={formatSek(trade.feeMinor)}
+          />
           <Metric label="Marknadsdata" value={formatDate(trade.marketDataAsOf)} />
         </div>
+
+        {trade.nativeCurrency && trade.nativeCurrency !== "SEK" ? (
+          <div className="mt-5 grid gap-5 sm:grid-cols-3 border-t divlab-border-neutral pt-5">
+            <Metric
+              label="Belopp i lokal valuta"
+              value={
+                trade.grossNativeMinor === null
+                  ? "—"
+                  : `${new Intl.NumberFormat("sv-SE", { maximumFractionDigits: 2 }).format(trade.grossNativeMinor / 100)} ${trade.nativeCurrency}`
+              }
+            />
+            <Metric
+              label="Valutakurs till SEK"
+              value={trade.fxToSek === null ? "—" : trade.fxToSek.toFixed(4).replace(".", ",")}
+            />
+            <Metric
+              label="Kurs i lokal valuta"
+              value={
+                trade.nativePriceMinor === null
+                  ? "—"
+                  : `${new Intl.NumberFormat("sv-SE", { maximumFractionDigits: 2 }).format(trade.nativePriceMinor / 100)} ${trade.nativeCurrency}`
+              }
+            />
+          </div>
+        ) : null}
       </section>
 
       <section className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
