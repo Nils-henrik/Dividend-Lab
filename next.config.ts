@@ -85,10 +85,6 @@ const nextConfig: NextConfig = {
         pathname: "/**",
         search: "",
       },
-      {
-        pathname: "/api/news-images/borsvecka-33/**",
-        search: "?v=20260810-0849",
-      },
     ],
   },
   async headers() {
