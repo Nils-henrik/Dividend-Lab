@@ -20,6 +20,13 @@ export type PortfolioTransparencyTrade = {
   executedAt: string;
   marketDataAsOf: string | null;
   rationale: string;
+  nativeCurrency: string | null;
+  nativePriceMinor: number | null;
+  nativeGrossAmountMinor: number | null;
+  fxRateToSek: number | null;
+  fxAsOf: string | null;
+  fxSourcePublisher: string | null;
+  fillLabel: string | null;
 };
 
 export type PortfolioTransparencyDetail = {
@@ -97,6 +104,13 @@ function mapTrade(row: Record<string, unknown>): PortfolioTransparencyTrade {
     executedAt: String(row.executed_at),
     marketDataAsOf: row.market_data_as_of ? String(row.market_data_as_of) : null,
     rationale: String(row.rationale),
+    nativeCurrency: row.native_currency == null ? null : String(row.native_currency),
+    nativePriceMinor: row.native_price_minor == null ? null : Number(row.native_price_minor),
+    nativeGrossAmountMinor: row.native_gross_amount_minor == null ? null : Number(row.native_gross_amount_minor),
+    fxRateToSek: row.fx_rate_to_sek == null ? null : Number(row.fx_rate_to_sek),
+    fxAsOf: row.fx_as_of == null ? null : String(row.fx_as_of),
+    fxSourcePublisher: row.fx_source_publisher == null ? null : String(row.fx_source_publisher),
+    fillLabel: row.fill_label == null ? null : String(row.fill_label),
   };
 }
 
@@ -129,7 +143,7 @@ export async function loadPortfolioTransparencyDetail(
   const [tradeResult, decisionResult] = await Promise.all([
     supabase
       .from("model_portfolio_transactions")
-      .select("id,decision_id,transaction_type,instrument_symbol,exchange,instrument_name,quantity,price_minor,gross_amount_minor,fee_minor,currency,executed_at,market_data_as_of,rationale", { count: "exact" })
+      .select("id,decision_id,transaction_type,instrument_symbol,exchange,instrument_name,quantity,price_minor,gross_amount_minor,fee_minor,currency,executed_at,market_data_as_of,rationale,native_currency,native_price_minor,native_gross_amount_minor,fx_rate_to_sek,fx_as_of,fx_source_publisher,fill_label", { count: "exact" })
       .eq("portfolio_id", portfolio.id)
       .order("executed_at", { ascending: false })
       .range(from, to),
@@ -194,7 +208,7 @@ export async function loadPortfolioTradeDetail(
 
   const { data: tradeRow, error: tradeError } = await supabase
     .from("model_portfolio_transactions")
-    .select("id,decision_id,transaction_type,instrument_symbol,exchange,instrument_name,quantity,price_minor,gross_amount_minor,fee_minor,currency,executed_at,market_data_as_of,rationale")
+    .select("id,decision_id,transaction_type,instrument_symbol,exchange,instrument_name,quantity,price_minor,gross_amount_minor,fee_minor,currency,executed_at,market_data_as_of,rationale,native_currency,native_price_minor,native_gross_amount_minor,fx_rate_to_sek,fx_as_of,fx_source_publisher,fill_label")
     .eq("id", transactionId)
     .eq("portfolio_id", portfolio.id)
     .maybeSingle();

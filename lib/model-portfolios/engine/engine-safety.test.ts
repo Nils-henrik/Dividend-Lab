@@ -9,7 +9,7 @@ describe("model portfolio engine safety", () => {
   it("keeps market data fail-closed until both provider and key are present", () => {
     assert.deepEqual(resolveModelPortfolioMarketDataConfig({}), {
       configured: false,
-      reason: "provider_missing",
+      reason: "api_key_missing",
     });
     assert.deepEqual(
       resolveModelPortfolioMarketDataConfig({
@@ -37,27 +37,27 @@ describe("model portfolio engine safety", () => {
 
   it("resolves exactly the four Stockholm market-day windows", () => {
     assert.equal(
-      resolveModelPortfolioEvaluationSlot(new Date("2026-08-07T07:20:00Z"))?.slotId,
+      resolveModelPortfolioEvaluationSlot(new Date("2026-08-07T07:05:00Z"))?.slotId,
       "open",
     );
     assert.equal(
-      resolveModelPortfolioEvaluationSlot(new Date("2026-08-07T10:00:00Z"))?.slotId,
+      resolveModelPortfolioEvaluationSlot(new Date("2026-08-07T11:35:00Z"))?.slotId,
       "midday",
     );
     assert.equal(
-      resolveModelPortfolioEvaluationSlot(new Date("2026-08-07T13:45:00Z"))?.slotId,
+      resolveModelPortfolioEvaluationSlot(new Date("2026-08-07T15:35:00Z"))?.slotId,
       "us-open",
     );
     assert.equal(
-      resolveModelPortfolioEvaluationSlot(new Date("2026-08-07T15:15:00Z"))?.slotId,
+      resolveModelPortfolioEvaluationSlot(new Date("2026-08-07T20:35:00Z"))?.slotId,
       "close",
     );
     assert.equal(
-      resolveModelPortfolioEvaluationSlot(new Date("2026-08-07T07:10:00Z")),
+      resolveModelPortfolioEvaluationSlot(new Date("2026-08-07T07:20:00Z")),
       null,
     );
     assert.equal(
-      resolveModelPortfolioEvaluationSlot(new Date("2026-08-08T07:20:00Z")),
+      resolveModelPortfolioEvaluationSlot(new Date("2026-08-08T07:05:00Z")),
       null,
     );
   });

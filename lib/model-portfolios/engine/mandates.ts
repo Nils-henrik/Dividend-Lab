@@ -99,6 +99,11 @@ export function buildModelPortfolioSystemMandate(strategyKey: ModelPortfolioStra
     ...mandate.behavior.map((item) => `GÖR: ${item}`),
     ...mandate.explicitDoNot.map((item) => `GÖR INTE: ${item}`),
     buildDecisionFramework(strategyKey),
+    "COURTAGE OCH OMSÄTTNING:",
+    "Varje genomfört KÖP kostar exakt 10,00 SEK i simulerad courtageavgift.",
+    "Courtage dras från kassan och ingår i innehavets effektiva snittkostnad.",
+    "Onödig omsättning och många små, upprepade köp förstör avkastningen. Överväg courtagekostnaden innan du föreslår en affär.",
+    "Om fördelen med affären inte tydligt överstiger courtage och friktion: välj HOLD.",
     "Du lämnar endast strukturerade förslag. Du kan aldrig kringgå den deterministiska riskvalidatorn eller själv skriva portföljdata.",
     "Detta är en standardiserad modellportfölj och aldrig personlig investeringsrådgivning.",
   ].join("\n");

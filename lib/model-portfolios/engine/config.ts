@@ -9,6 +9,11 @@ export type ModelPortfolioMarketDataConfig =
       reason: "provider_unsupported" | "api_key_missing";
     };
 
+export type ModelPortfolioExecutionConfig = {
+  dryRunEnabled: boolean;
+  executionEnabled: boolean;
+};
+
 type EnvironmentMap = Readonly<Record<string, string | undefined>>;
 
 export function resolveModelPortfolioMarketDataConfig(
@@ -28,5 +33,14 @@ export function resolveModelPortfolioMarketDataConfig(
     configured: true,
     provider: "eodhd",
     apiKey,
+  };
+}
+
+export function resolveModelPortfolioExecutionConfig(
+  env: EnvironmentMap = process.env,
+): ModelPortfolioExecutionConfig {
+  return {
+    dryRunEnabled: env.MODEL_PORTFOLIO_DRY_RUN_ENABLED === "true",
+    executionEnabled: env.MODEL_PORTFOLIO_EXECUTION_ENABLED === "true",
   };
 }

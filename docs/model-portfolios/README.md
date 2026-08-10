@@ -25,7 +25,10 @@ Production verification on 2026-08-08:
 - persisted monthly-contribution rows remained 0;
 - cron job `divlab-model-portfolios-monthly-contribution` is active at `5 0 * * *` UTC.
 
-## AI launch gates
+## Live simulation (2026-08-10)
+
+Settlement, SEK-10 courtage, FX audit fields, dividend credit foundation and market LIVE badges are documented in [`live-simulation-activation-20260810.md`](./live-simulation-activation-20260810.md). Automated corporate-action ingestion remains fail-closed.
+
 
 A portfolio must remain fail-closed until all of the following are true:
 

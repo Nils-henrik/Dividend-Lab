@@ -89,9 +89,29 @@ export default function TradeDetailView({ detail }: { detail: PortfolioTradeDeta
         <div className="mt-7 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           <Metric label="Kurs" value={trade.priceMinor === null ? "—" : `${formatSek(trade.priceMinor)} / st`} />
           <Metric label="Antal" value={new Intl.NumberFormat("sv-SE", { maximumFractionDigits: 4 }).format(trade.quantity)} />
-          <Metric label="Avgift" value={formatSek(trade.feeMinor)} />
+          <Metric label="Courtage" value={formatSek(trade.feeMinor)} />
           <Metric label="Marknadsdata" value={formatDate(trade.marketDataAsOf)} />
         </div>
+        {trade.nativeCurrency && trade.nativeCurrency !== "SEK" ? (
+          <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-4 border-t divlab-border-neutral pt-5">
+            <Metric
+              label="Ursprungskurs"
+              value={
+                trade.nativePriceMinor === null
+                  ? "—"
+                  : `${new Intl.NumberFormat("sv-SE", { maximumFractionDigits: 2 }).format(trade.nativePriceMinor / 100)} ${trade.nativeCurrency}`
+              }
+            />
+            <Metric
+              label="FX till SEK"
+              value={trade.fxRateToSek === null ? "—" : trade.fxRateToSek.toFixed(4)}
+            />
+            <Metric label="FX-källa" value={trade.fxSourcePublisher ?? "—"} />
+            <Metric label="Fill" value={trade.fillLabel ?? "SIMULATED"} />
+          </div>
+        ) : trade.fillLabel ? (
+          <p className="mt-4 text-xs text-divlab-text-muted">Simulerad modellfill ({trade.fillLabel}), inte verklig mäklarorder.</p>
+        ) : null}
       </section>
 
       <section className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">

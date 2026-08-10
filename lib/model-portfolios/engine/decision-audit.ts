@@ -18,7 +18,7 @@ export type DecisionAuditInput = {
   estimatedCostUsdMicros: number;
   usage: { inputTokens: number; outputTokens: number };
   portfolioSnapshot: string;
-  executionAllowed: false;
+  executionAllowed: boolean;
 };
 
 export type DecisionAuditRow = {

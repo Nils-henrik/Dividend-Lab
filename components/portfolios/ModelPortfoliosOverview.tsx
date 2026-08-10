@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { setModelPortfolioFollowAction } from "@/app/portfolios/actions";
+import MarketLiveBadge from "@/components/portfolios/MarketLiveBadge";
+import { resolveMarketLiveStatus } from "@/lib/model-portfolios/engine/market-status";
 import type {
   ModelPortfolioOverview,
   ModelPortfolioTransaction,
@@ -87,6 +89,8 @@ export default function ModelPortfoliosOverview({
   portfolios: readonly ModelPortfolioOverview[];
   recentTransactions: readonly ModelPortfolioTransaction[];
 }) {
+  const marketStatus = resolveMarketLiveStatus(new Date());
+
   return (
     <div className="mx-auto w-full max-w-[1560px] space-y-5 pb-4">
       <section className="px-0.5 pt-1">
@@ -94,7 +98,7 @@ export default function ModelPortfoliosOverview({
           Modellportföljer
         </h1>
         <p className="mt-1.5 text-sm text-divlab-text-secondary">
-          AI-förvaltade modellportföljer med olika risknivåer och strategier.
+          Simulerade AI-förvaltade modellportföljer med olika risknivåer och strategier. Inte personlig rådgivning eller verkliga mäklaraffärer.
         </p>
       </section>
 
@@ -119,7 +123,11 @@ export default function ModelPortfoliosOverview({
 
       <section className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
         {portfolios.map((portfolio) => (
-          <PortfolioCard key={portfolio.id} portfolio={portfolio} />
+          <PortfolioCard
+            key={portfolio.id}
+            portfolio={portfolio}
+            marketStatus={marketStatus}
+          />
         ))}
       </section>
 
@@ -154,7 +162,7 @@ export default function ModelPortfoliosOverview({
                 ) : (
                   <tr>
                     <td colSpan={8} className="py-12 text-center text-sm text-divlab-text-muted">
-                      Inga affärer har genomförts ännu. Historiken fylls automatiskt och kan inte redigeras från den här vyn när AI-förvaltningen aktiveras.
+                      Inga affärer har genomförts ännu. Historiken fylls automatiskt när simulerade modellaffärer bokförs och kan inte redigeras från den här vyn.
                     </td>
                   </tr>
                 )}
@@ -183,7 +191,7 @@ export default function ModelPortfoliosOverview({
       <section className="flex items-start gap-3 border border-divlab-blue/20 bg-divlab-blue/[0.08] px-4 py-3 text-xs leading-5 text-divlab-text-secondary">
         <span className="mt-0.5 text-divlab-blue"><InfoIcon /></span>
         <p>
-          Modellportföljerna uppdateras minst 1 gång per handelsdag. Vid materiella händelser kan AI:n göra riktade omprövningar, med en hård gräns på totalt 4 beslutskörningar per portfölj och dag. Alla genomförda affärer sparas i historiken.
+          Modellportföljerna är simulerade och uppdateras minst 1 gång per handelsdag. Varje köp belastar kassan med 10 kr i simulerad courtage. Vid materiella händelser kan AI:n göra riktade omprövningar, med en hård gräns på totalt 4 beslutskörningar per portfölj och dag. Alla genomförda affärer sparas i historiken. Detta är inte personlig investeringsrådgivning.
         </p>
       </section>
     </div>
@@ -200,7 +208,13 @@ function TopMetric({ label, value, sub }: { label: string; value: string; sub: s
   );
 }
 
-function PortfolioCard({ portfolio }: { portfolio: ModelPortfolioOverview }) {
+function PortfolioCard({
+  portfolio,
+  marketStatus,
+}: {
+  portfolio: ModelPortfolioOverview;
+  marketStatus: ReturnType<typeof resolveMarketLiveStatus>;
+}) {
   const style = portfolioStyle[portfolio.slug] ?? portfolioStyle.forsiktig;
   const positive = portfolio.performancePct >= 0;
   const href = `/portfolios/${portfolio.slug}`;
@@ -213,7 +227,10 @@ function PortfolioCard({ portfolio }: { portfolio: ModelPortfolioOverview }) {
         <div className="flex items-center gap-3">
           <span className={style.accent}><PortfolioIcon type={style.icon} /></span>
           <h2 className="text-xl font-semibold tracking-[-0.03em] text-divlab-text group-hover:text-white">{portfolio.name}</h2>
-          <span className={`ml-auto border px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] ${style.badge}`}>{portfolio.riskLabel}</span>
+          <div className="ml-auto flex flex-wrap items-center justify-end gap-1.5">
+            <MarketLiveBadge initialStatus={marketStatus} />
+            <span className={`border px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] ${style.badge}`}>{portfolio.riskLabel}</span>
+          </div>
         </div>
 
         <div className="mt-7 flex items-end justify-between gap-4">

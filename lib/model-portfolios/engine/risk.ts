@@ -27,6 +27,8 @@ export type ModelPortfolioBuyRiskInput = {
     asOf: string;
     sourcePublisher: string;
   };
+  /** Override default 30-minute freshness for explicitly labelled delayed SIMULATED fills. */
+  maxQuoteAgeMs?: number;
 };
 
 export type ModelPortfolioRiskGateResult =
@@ -56,9 +58,9 @@ function ageMs(now: Date, asOf: string): number | null {
   return nowMs - timestamp;
 }
 
-function isFresh(now: Date, asOf: string): boolean {
+function isFresh(now: Date, asOf: string, maxAgeMs = MAX_MARKET_DATA_AGE_MS): boolean {
   const age = ageMs(now, asOf);
-  return age !== null && age >= -60_000 && age <= MAX_MARKET_DATA_AGE_MS;
+  return age !== null && age >= -60_000 && age <= maxAgeMs;
 }
 
 function pct(value: number, total: number): number {
@@ -105,7 +107,7 @@ export function validateModelPortfolioBuyRisk(
     return { ok: false, reason: "invalid_quote" };
   }
 
-  if (!isFresh(now, quote.asOf)) {
+  if (!isFresh(now, quote.asOf, input.maxQuoteAgeMs)) {
     return { ok: false, reason: "stale_quote" };
   }
 
@@ -115,7 +117,7 @@ export function validateModelPortfolioBuyRisk(
     if (!fx || fx.rate <= 0 || !Number.isFinite(fx.rate) || !fx.sourcePublisher.trim()) {
       return { ok: false, reason: "fx_required" };
     }
-    if (!isFresh(now, fx.asOf)) {
+    if (!isFresh(now, fx.asOf, input.maxQuoteAgeMs)) {
       return { ok: false, reason: "stale_fx" };
     }
     tradeValueSekMinor = Math.round(proposedTradeGrossMinor * fx.rate);

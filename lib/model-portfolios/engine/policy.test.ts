@@ -120,6 +120,8 @@ describe("model portfolio manager policy", () => {
     const highRisk = buildModelPortfolioSystemMandate("high_risk");
     assert.match(conservative, /inte göra någon affär/i);
     assert.match(conservative, /aldrig kringgå den deterministiska riskvalidatorn/i);
+    assert.match(conservative, /10,00 SEK/i);
+    assert.match(conservative, /Onödig omsättning/i);
     assert.match(highRisk, /högre omsättning/i);
     assert.match(highRisk, /okontrollerad daytrading/i);
   });
