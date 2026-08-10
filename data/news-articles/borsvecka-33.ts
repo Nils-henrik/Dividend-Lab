@@ -32,11 +32,11 @@ export const BORSVECKA_33_ARTICLE: NewsArticle = {
   url: "/news/borsvecka-33",
   featured: true,
   imageUrl: "/news-demo/borsvecka-33.webp",
-  thumbnailObjectPosition: "center 45%",
-  mobileThumbnailObjectPosition: "center 34%",
+  thumbnailObjectPosition: "center 42%",
+  mobileThumbnailObjectPosition: "center 40%",
   imageAlt:
-    "Redaktionell DivLab-bild med kalender, börsgraf och rubriken Börsvecka 33 för 10–16 augusti 2026.",
-  imageCaption: "Grafik: DivLab.",
+    "Omslagsbild för Börsvecka 33 med Stockholmsvy och veckans schema 10–16 augusti 2026.",
+  imageCaption: "Illustration: DivLab.",
   readingMinutes: 7,
   seoTitle: "Börsvecka 33: inflation, räntor och rapporter att bevaka",
   seoDescription:
