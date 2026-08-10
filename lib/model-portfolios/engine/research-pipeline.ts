@@ -5,11 +5,13 @@ import type { ModelPortfolioEvidence } from "./decision";
 import type { DelayedQuote } from "./eodhd";
 import { fetchEodhdFundamentals } from "./eodhd";
 import type {
-  EodhdCallBudget,
   EodhdCallBudgetSnapshot,
   ModelPortfolioResearchPass,
 } from "./eodhd-budget";
-import { createScheduledEodhdBudget } from "./eodhd-budget";
+import {
+  claimScheduledEodhdBudget,
+  recordScheduledEodhdUsage,
+} from "./eodhd-ledger";
 import { fetchFxRateToSek } from "./fx-adapter";
 import { searchGoogleCompanyResearch } from "./google-research";
 import { rankResearchUniverse, type ResearchCandidate } from "./research";
@@ -53,7 +55,9 @@ const US_QUALITY_CORE = [
   { symbol: "NVDA", exchange: "US", name: "NVIDIA" },
 ] as const;
 
-const CACHE_TTL_MS = 4 * 60 * 60 * 1_000;
+// Must refresh between the 15:50, 18:30 and 21:30 decision windows while
+// still suppressing accidental retries and duplicate fetches around one slot.
+const CACHE_TTL_MS = 2 * 60 * 60 * 1_000;
 const MAX_SEEDS = 18;
 const MAX_FUNDAMENTAL_TARGETS = 8;
 const MAX_GOOGLE_TARGETS = 2;
@@ -324,7 +328,11 @@ export async function runModelPortfolioResearchPipeline(input: {
   holdings: readonly HoldingSeed[];
   now: Date;
 }): Promise<ModelPortfolioResearchPipelineResult> {
-  const budget: EodhdCallBudget = createScheduledEodhdBudget(input.pass);
+  const budget = await claimScheduledEodhdBudget({
+    supabase: input.supabase,
+    pass: input.pass,
+    now: input.now,
+  });
   const seeds = await buildSeeds(input.pass, input.holdings, input.now);
   const usdFx = isUsPass(input.pass) ? await fetchFxRateToSek("USD", input.now) : null;
   const fxToSek = usdFx?.ok ? usdFx.quote.rate : 1;
@@ -470,6 +478,13 @@ export async function runModelPortfolioResearchPipeline(input: {
       }
     }
   }
+
+  await recordScheduledEodhdUsage({
+    supabase: input.supabase,
+    pass: input.pass,
+    now: input.now,
+    budget: budget.snapshot(),
+  });
 
   let googleHits = 0;
   const googleHitsByCandidate = new Map<string, number>();
