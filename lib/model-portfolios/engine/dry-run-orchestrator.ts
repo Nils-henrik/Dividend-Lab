@@ -356,7 +356,7 @@ export async function runAllModelPortfoliosDryRun(
         portfolioResult.followerEvent = buildFollowerTradePayload({
           symbol: fill.symbol,
           exchange: fill.exchange,
-          currency: settlement.plan.nativeCurrency,
+          currency: "SEK",
           side,
           executionPriceMinor: settlement.plan.priceSekMinor,
           priceBasis: "last_trade",
