@@ -31,7 +31,7 @@ export const BORSVECKA_33_ARTICLE: NewsArticle = {
   publishedAt: "2026-08-10T07:30:00+02:00",
   url: "/news/borsvecka-33",
   featured: true,
-  imageUrl: "/api/news-images/borsvecka-33",
+  imageUrl: "/news-demo/borsvecka-33.svg",
   thumbnailObjectPosition: "center 45%",
   mobileThumbnailObjectPosition: "center 34%",
   imageAlt:
