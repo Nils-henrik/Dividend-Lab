@@ -302,7 +302,7 @@ export async function runAllModelPortfoliosDryRun(
   const candidates = [];
   const evidence: ModelPortfolioEvidence[] = [];
   const candidateDiagnostics: DryRunOrchestrationResult["candidates"] = [];
-  const instrumentNameBySymbol = new Map(
+  const instrumentNameBySymbol = new Map<string, string>(
     BOOTSTRAP_RESEARCH_UNIVERSE.map((instrument) => [instrument.symbol, instrument.name]),
   );
 
