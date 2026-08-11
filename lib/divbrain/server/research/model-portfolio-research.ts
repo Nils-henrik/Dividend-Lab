@@ -74,8 +74,87 @@ const STOP_TERMS = new Set([
   "stod",
 ]);
 
-const MAX_ROWS = 100;
-const MAX_SOURCES = 3;
+/** Period/document vocabulary — useful for scoring, not for company DB targeting. */
+const NON_COMPANY_QUERY_TERMS = new Set([
+  ...STOP_TERMS,
+  "q1",
+  "q2",
+  "q3",
+  "q4",
+  "h1",
+  "h2",
+  "fy",
+  "rapport",
+  "rapporten",
+  "rapporter",
+  "rapporterna",
+  "kvartalsrapport",
+  "kvartalsrapporten",
+  "delårsrapport",
+  "delårsrapporten",
+  "halvårsrapport",
+  "halvårsrapporten",
+  "årsrapport",
+  "årsrapporten",
+  "årsredovisning",
+  "årsredovisningen",
+  "bokslut",
+  "bokslutet",
+  "bokslutskommunike",
+  "bokslutskommuniké",
+  "resultatrapport",
+  "resultatrapporten",
+  "earnings",
+  "quarterly",
+  "annual",
+  "report",
+  "reports",
+  "guidance",
+  "prognos",
+  "prognosen",
+  "kassaflödet",
+  "kassaflode",
+  "kassaflöde",
+  "resultat",
+  "värderingen",
+  "varderingen",
+  "värdering",
+  "portföljen",
+  "portfoljen",
+  "portfölj",
+  "aktie",
+  "bolag",
+  "technical",
+  "analysis",
+  "stock",
+  "share",
+  "valuation",
+]);
+
+/**
+ * Hard bounds for shared-research retrieval.
+ * Company-targeted mode exists so older company rows remain visible after the
+ * store grows beyond a tiny global window.
+ */
+export const RESEARCH_RETRIEVAL_BOUNDS = {
+  maxCompanyTerms: 4,
+  maxOrClauses: 8,
+  maxCompanyCandidateRows: 48,
+  maxRecentFallbackRows: 100,
+  maxDbCallsPerQuery: 1,
+  minSafeTermLength: 2,
+  maxSafeTermLength: 32,
+  maxSources: 3,
+} as const;
+
+/**
+ * Strict safe token contract for PostgREST `.or(...)` interpolation.
+ * Rejects commas, dots, wildcards, quotes, and other filter metacharacters.
+ */
+const SAFE_RESEARCH_DB_TERM =
+  /^[A-Za-zÅÄÖåäöÆØæøÜü0-9][A-Za-zÅÄÖåäöÆØæøÜü0-9-]{1,31}$/u;
+
+const MAX_SOURCES = RESEARCH_RETRIEVAL_BOUNDS.maxSources;
 
 export type ModelPortfolioResearchRow = {
   id: string;
@@ -98,6 +177,28 @@ export type ReportPeriodHint = {
   years: readonly number[];
   wantsReport: boolean;
   wantsGuidance: boolean;
+};
+
+export type ResearchRetrievalMode =
+  | "company_targeted"
+  | "recent_fallback"
+  | "none";
+
+export type ResearchRetrievalPlan = {
+  mode: ResearchRetrievalMode;
+  companyTerms: readonly string[];
+  orFilter: string | null;
+  companyLimit: number;
+  recentLimit: number;
+  maxDbCalls: number;
+};
+
+export type ResearchSnapshotQueryPort = {
+  fetchRecent(limit: number): Promise<readonly ModelPortfolioResearchRow[]>;
+  fetchCompanyTargeted(
+    orFilter: string,
+    limit: number,
+  ): Promise<readonly ModelPortfolioResearchRow[]>;
 };
 
 function uniqueNumbers(values: readonly number[]): number[] {
@@ -167,6 +268,156 @@ export function queryTerms(query: string): string[] {
     .slice(0, 16);
 }
 
+/**
+ * Sanitize one token for safe PostgREST filter interpolation.
+ * Returns null when the token fails the strict character/length contract.
+ */
+export function sanitizeResearchDbTerm(term: string): string | null {
+  const normalized = term.normalize("NFC").trim();
+  if (
+    normalized.length < RESEARCH_RETRIEVAL_BOUNDS.minSafeTermLength ||
+    normalized.length > RESEARCH_RETRIEVAL_BOUNDS.maxSafeTermLength
+  ) {
+    return null;
+  }
+  if (!SAFE_RESEARCH_DB_TERM.test(normalized)) return null;
+  // Defense in depth against ilike / filter metacharacters.
+  if (/[%_,.()"'\\]/.test(normalized)) return null;
+  return normalized;
+}
+
+export function extractCompanyTargetTerms(query: string): string[] {
+  const original = query.normalize("NFC");
+  const preferred = new Set<string>();
+
+  for (const match of original.matchAll(
+    /(?:^|[^\p{L}])([\p{Lu}][\p{L}]{2,})(?:'s|s)?\b/gu,
+  )) {
+    for (const variant of termVariants(match[1]!.toLowerCase())) {
+      preferred.add(variant);
+    }
+  }
+
+  for (const match of original.matchAll(
+    /\b([A-Z]{2,6}(?:[-.][A-Z0-9]{1,4})?)\b/g,
+  )) {
+    const raw = match[1]!.toLowerCase();
+    preferred.add(raw);
+    preferred.add(raw.replace(/\./g, "-"));
+    preferred.add(raw.replace(/[-.]/g, ""));
+  }
+
+  const seen = new Set<string>();
+  const terms: string[] = [];
+  const candidates =
+    preferred.size > 0 ? [...preferred] : queryTerms(original);
+
+  for (const term of candidates) {
+    if (NON_COMPANY_QUERY_TERMS.has(term)) continue;
+    if (/^\d{4}$/.test(term)) continue;
+    for (const variant of termVariants(term)) {
+      const safe = sanitizeResearchDbTerm(variant);
+      if (!safe || seen.has(safe.toLowerCase())) continue;
+      seen.add(safe.toLowerCase());
+      terms.push(safe);
+      if (terms.length >= RESEARCH_RETRIEVAL_BOUNDS.maxCompanyTerms) {
+        return terms;
+      }
+    }
+  }
+  return terms;
+}
+
+/**
+ * Build a PostgREST `.or(...)` filter using only sanitized company terms.
+ * Never interpolates unrestricted user text.
+ */
+export function buildSafeCompanyResearchOrFilter(
+  terms: readonly string[],
+): string | null {
+  const clauses: string[] = [];
+  const seen = new Set<string>();
+
+  for (const term of terms) {
+    const safe = sanitizeResearchDbTerm(term);
+    if (!safe) continue;
+    const key = safe.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    clauses.push(`instrument_symbol.ilike.%${safe}%`);
+    clauses.push(`instrument_name.ilike.%${safe}%`);
+    if (clauses.length >= RESEARCH_RETRIEVAL_BOUNDS.maxOrClauses) break;
+  }
+
+  return clauses.length > 0 ? clauses.join(",") : null;
+}
+
+export function planModelPortfolioResearchRetrieval(
+  query: string,
+): ResearchRetrievalPlan {
+  const normalized = query.normalize("NFC").trim();
+  if (!shouldQueryModelPortfolioResearch(normalized)) {
+    return {
+      mode: "none",
+      companyTerms: [],
+      orFilter: null,
+      companyLimit: 0,
+      recentLimit: 0,
+      maxDbCalls: 0,
+    };
+  }
+
+  const companyTerms = extractCompanyTargetTerms(normalized);
+  const orFilter = buildSafeCompanyResearchOrFilter(companyTerms);
+  const hasCompanyOrTickerSignal =
+    hasLikelyCompanySignal(normalized) || TICKER_LIKE.test(normalized);
+
+  // Company-targeted retrieval only when a real company/ticker signal exists.
+  // Broader finance intents without a company signal keep a bounded recent fallback.
+  if (hasCompanyOrTickerSignal && companyTerms.length > 0 && orFilter) {
+    return {
+      mode: "company_targeted",
+      companyTerms,
+      orFilter,
+      companyLimit: RESEARCH_RETRIEVAL_BOUNDS.maxCompanyCandidateRows,
+      recentLimit: RESEARCH_RETRIEVAL_BOUNDS.maxRecentFallbackRows,
+      maxDbCalls: RESEARCH_RETRIEVAL_BOUNDS.maxDbCallsPerQuery,
+    };
+  }
+
+  return {
+    mode: "recent_fallback",
+    companyTerms: [],
+    orFilter: null,
+    companyLimit: 0,
+    recentLimit: RESEARCH_RETRIEVAL_BOUNDS.maxRecentFallbackRows,
+    maxDbCalls: RESEARCH_RETRIEVAL_BOUNDS.maxDbCallsPerQuery,
+  };
+}
+
+/**
+ * Execute a retrieval plan against a bounded query port.
+ * Used by production loaders and by scalability regression tests.
+ */
+export async function executeModelPortfolioResearchRetrievalPlan(
+  plan: ResearchRetrievalPlan,
+  port: ResearchSnapshotQueryPort,
+): Promise<readonly ModelPortfolioResearchRow[]> {
+  if (plan.mode === "none" || plan.maxDbCalls <= 0) return [];
+
+  if (plan.mode === "company_targeted") {
+    if (!plan.orFilter) return [];
+    const rows = await port.fetchCompanyTargeted(
+      plan.orFilter,
+      plan.companyLimit,
+    );
+    return rows.slice(0, plan.companyLimit);
+  }
+
+  const rows = await port.fetchRecent(plan.recentLimit);
+  return rows.slice(0, plan.recentLimit);
+}
+
 function rowSearchText(row: ModelPortfolioResearchRow): string {
   return `${row.kind} ${row.title} ${row.summary}`.toLowerCase();
 }
@@ -217,11 +468,74 @@ function lexicalFieldScore(
   return score;
 }
 
-function periodScore(
-  rowText: string,
+function metadataReportPeriod(
+  meta: Record<string, unknown>,
+): string | null {
+  return typeof meta.report_period === "string"
+    ? meta.report_period.toUpperCase()
+    : null;
+}
+
+function metadataReportYear(meta: Record<string, unknown>): number | null {
+  if (typeof meta.report_year === "number" && Number.isFinite(meta.report_year)) {
+    return meta.report_year;
+  }
+  if (
+    typeof meta.report_year === "string" &&
+    /^\d{4}$/.test(meta.report_year)
+  ) {
+    return Number(meta.report_year);
+  }
+  return null;
+}
+
+/**
+ * Structured metadata period scoring (#171 producer fields).
+ * Exact Q1–Q4 beats compatible H1↔Q2 / H2↔Q4 signals. Never rewrites stored metadata.
+ */
+function metadataPeriodScore(
+  meta: Record<string, unknown>,
   hint: ReportPeriodHint,
 ): number {
   let score = 0;
+  const reportPeriod = metadataReportPeriod(meta);
+  const reportYear = metadataReportYear(meta);
+
+  for (const quarter of hint.quarters) {
+    if (reportPeriod === `Q${quarter}`) score += 45;
+    else if (quarter === 2 && reportPeriod === "H1") score += 28;
+    else if (quarter === 4 && reportPeriod === "H2") score += 28;
+  }
+  for (const half of hint.halves) {
+    if (reportPeriod === `H${half}`) score += 35;
+    else if (half === 1 && reportPeriod === "Q2") score += 22;
+    else if (half === 2 && reportPeriod === "Q4") score += 22;
+  }
+  for (const year of hint.years) {
+    if (reportYear === year) score += 22;
+  }
+
+  if (hint.quarters.length > 0 && reportPeriod && /^Q[1-4]$/.test(reportPeriod)) {
+    const matchedRequested = hint.quarters.some(
+      (quarter) =>
+        reportPeriod === `Q${quarter}` ||
+        (quarter === 2 && reportPeriod === "H1") ||
+        (quarter === 4 && reportPeriod === "H2"),
+    );
+    // Soft penalty only for an explicit contradictory quarter in metadata.
+    if (!matchedRequested) score -= 15;
+  }
+
+  return score;
+}
+
+function periodScore(
+  rowText: string,
+  hint: ReportPeriodHint,
+  meta: Record<string, unknown>,
+): number {
+  // Prefer structured metadata when present; keep title/summary matching for older rows.
+  let score = metadataPeriodScore(meta, hint);
 
   for (const quarter of hint.quarters) {
     if (rowHasQuarter(rowText, quarter)) score += 40;
@@ -238,7 +552,16 @@ function periodScore(
     const matchedRequested = hint.quarters.some((quarter) =>
       rowHasQuarter(rowText, quarter),
     );
-    if (!matchedRequested) {
+    const metaPeriod = metadataReportPeriod(meta);
+    const matchedViaCompatibleMeta =
+      metaPeriod != null &&
+      hint.quarters.some(
+        (quarter) =>
+          (quarter === 2 && metaPeriod === "H1") ||
+          (quarter === 4 && metaPeriod === "H2") ||
+          metaPeriod === `Q${quarter}`,
+      );
+    if (!matchedRequested && !matchedViaCompatibleMeta) {
       const otherQuarter = [1, 2, 3, 4].some(
         (quarter) =>
           !hint.quarters.includes(quarter) && rowHasQuarter(rowText, quarter),
@@ -254,12 +577,27 @@ function reportKindScore(
   row: ModelPortfolioResearchRow,
   rowText: string,
   hint: ReportPeriodHint,
+  meta: Record<string, unknown>,
 ): number {
   if (!hint.wantsReport && !hint.wantsGuidance) return 0;
   let score = 0;
   if (REPORT_KIND.has(row.kind)) score += 25;
   if (REPORT_TEXT.test(rowText)) score += 18;
   if (hint.wantsGuidance && /(?:guidance|prognos)/iu.test(rowText)) score += 12;
+
+  if (
+    meta.document_retrieved === true &&
+    meta.source_type === "official_company_report"
+  ) {
+    score += 15;
+  }
+  if (
+    typeof meta.document_type === "string" &&
+    /report/i.test(meta.document_type)
+  ) {
+    score += 8;
+  }
+
   // Generic same-company news without report signals stays lower.
   if (row.kind === "news" && !REPORT_TEXT.test(rowText)) score -= 8;
   return score;
@@ -281,8 +619,8 @@ function freshnessBoost(row: ModelPortfolioResearchRow): number {
 }
 
 /**
- * Deterministic relevance score using only existing snapshot fields.
- * Period metadata is never fabricated — only matched when present in text/kind.
+ * Deterministic relevance score using snapshot fields + optional #171 metadata.
+ * Period metadata is never fabricated — only matched when present.
  */
 export function scoreModelPortfolioResearchRow(
   row: ModelPortfolioResearchRow,
@@ -295,11 +633,12 @@ export function scoreModelPortfolioResearchRow(
   if (companyScore <= 0) return 0;
 
   const rowText = rowSearchText(row);
+  const meta = metadata(row.metadata);
   return (
     companyScore +
     lexicalFieldScore(row, terms) +
-    periodScore(rowText, hint) +
-    reportKindScore(row, rowText, hint) +
+    periodScore(rowText, hint, meta) +
+    reportKindScore(row, rowText, hint, meta) +
     freshnessBoost(row)
   );
 }
@@ -369,7 +708,7 @@ export function mapModelPortfolioResearchCategory(
       meta.verification_state === "internally_curated";
     const trustedPublisher =
       typeof row.publisher === "string" &&
-      /(?:investor\s*relations|\bir\b|bolaget|official|officiell)/iu.test(
+      /(?:investor\s*relations|\bir\b|bolaget|official|officiell|nasdaq)/iu.test(
         row.publisher,
       );
     const trustedSourceFlag =
@@ -392,6 +731,29 @@ function safeUrl(value: string): string | undefined {
   }
 }
 
+/**
+ * Prefer the official PDF/document URL only when the verified read-report
+ * contract from the #171 producer is fully satisfied.
+ */
+export function resolveResearchCanonicalUrl(
+  row: ModelPortfolioResearchRow,
+): string | undefined {
+  const meta = metadata(row.metadata);
+  const verifiedReadReport =
+    row.kind === "company_report" &&
+    meta.verification_state === "verified" &&
+    meta.document_retrieved === true &&
+    meta.source_type === "official_company_report" &&
+    typeof meta.document_url === "string";
+
+  if (verifiedReadReport) {
+    const documentUrl = safeUrl(meta.document_url as string);
+    if (documentUrl) return documentUrl;
+  }
+
+  return safeUrl(row.source_url);
+}
+
 export function researchRowToDivBrainSource(
   row: ModelPortfolioResearchRow,
   retrievedAt = new Date().toISOString(),
@@ -403,7 +765,7 @@ export function researchRowToDivBrainSource(
     verificationState: verificationState(row),
     freshnessState: freshnessState(row),
     publisher: row.publisher.slice(0, 120),
-    canonicalUrl: safeUrl(row.source_url),
+    canonicalUrl: resolveResearchCanonicalUrl(row),
     publishedAt: row.published_at,
     retrievedAt,
     dataAsOf: row.published_at,
@@ -414,29 +776,55 @@ export function researchRowToDivBrainSource(
   };
 }
 
+const RESEARCH_SELECT =
+  "id,instrument_symbol,exchange,instrument_name,kind,publisher,source_url,published_at,verified_at,title,summary,metadata";
+
+function createSupabaseResearchPort(
+  // Loose client to match existing admin client typing.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+): ResearchSnapshotQueryPort {
+  return {
+    async fetchRecent(limit) {
+      const { data, error } = await supabase
+        .from("model_portfolio_research_snapshots")
+        .select(RESEARCH_SELECT)
+        .order("verified_at", { ascending: false })
+        .limit(limit);
+      if (error) return [];
+      return (data ?? []) as ModelPortfolioResearchRow[];
+    },
+    async fetchCompanyTargeted(orFilter, limit) {
+      const { data, error } = await supabase
+        .from("model_portfolio_research_snapshots")
+        .select(RESEARCH_SELECT)
+        .or(orFilter)
+        .order("verified_at", { ascending: false })
+        .limit(limit);
+      if (error) return [];
+      return (data ?? []) as ModelPortfolioResearchRow[];
+    },
+  };
+}
+
 export async function loadModelPortfolioResearchSources(
   query: string,
 ): Promise<readonly DivBrainSource[]> {
   const normalized = query.normalize("NFC").trim();
-  if (!shouldQueryModelPortfolioResearch(normalized)) {
-    return [];
-  }
+  const plan = planModelPortfolioResearchRetrieval(normalized);
+  if (plan.mode === "none") return [];
 
   const supabase = createModelPortfolioAdminClient();
   if (!supabase) return [];
 
-  const { data, error } = await supabase
-    .from("model_portfolio_research_snapshots")
-    .select(
-      "id,instrument_symbol,exchange,instrument_name,kind,publisher,source_url,published_at,verified_at,title,summary,metadata",
-    )
-    .order("verified_at", { ascending: false })
-    .limit(MAX_ROWS);
-  if (error) return [];
+  const rows = await executeModelPortfolioResearchRetrievalPlan(
+    plan,
+    createSupabaseResearchPort(supabase),
+  );
 
   const selected = selectModelPortfolioResearchRows(
     normalized,
-    (data ?? []) as ModelPortfolioResearchRow[],
+    rows,
     MAX_SOURCES,
   );
   return selected.map((row) => researchRowToDivBrainSource(row));

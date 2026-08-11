@@ -268,6 +268,11 @@ function collapseWhitespace(value: string): string {
 /**
  * Deterministic bounded PDF text extraction. No LLM involvement.
  * Extracted text is untrusted external evidence only.
+ *
+ * Timeout note: the Promise.race deadline returns `parse_timeout` to the caller
+ * and clears the timer handle, then destroys the parser. It does not hard-abort
+ * native PDF work mid-instruction; treat it as a cooperative bound, not a
+ * real-time wall-clock guarantee.
  */
 export async function extractBoundedPdfText(input: {
   bytes: Uint8Array;
@@ -280,6 +285,7 @@ export async function extractBoundedPdfText(input: {
   const parseTimeoutMs = input.parseTimeoutMs ?? 8_000;
 
   const parser = new PDFParse({ data: input.bytes });
+  let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
   try {
     const parsePromise = (async (): Promise<OfficialDocumentExtractResult> => {
       const info = await parser.getInfo();
@@ -306,13 +312,17 @@ export async function extractBoundedPdfText(input: {
     })();
 
     const timeoutPromise = new Promise<OfficialDocumentExtractFailure>((resolve) => {
-      setTimeout(() => resolve({ ok: false, reason: "parse_timeout" }), parseTimeoutMs);
+      timeoutHandle = setTimeout(
+        () => resolve({ ok: false, reason: "parse_timeout" }),
+        parseTimeoutMs,
+      );
     });
 
     return await Promise.race([parsePromise, timeoutPromise]);
   } catch {
     return { ok: false, reason: "parse_failed" };
   } finally {
+    if (timeoutHandle !== undefined) clearTimeout(timeoutHandle);
     try {
       await parser.destroy();
     } catch {
