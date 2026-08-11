@@ -1,13 +1,14 @@
 /**
  * Canonical listed-instrument symbol helpers.
  *
- * Internal base symbol stays exchange-free (e.g. DNB + OL).
- * Yahoo transport and investor-facing labels use a single Nordic suffix
- * (DNB.OL) and must never double-append (.OL.OL / .ST.ST).
+ * Internal base symbol stays exchange-free (e.g. DNB + OL, JPM + US).
+ * Yahoo transport and investor-facing labels use exactly one market suffix
+ * where DivLab exposes one and must never double-append (.OL.OL / .US.US).
  */
 
 const NORDIC_SUFFIX_RE = /\.(ST|CO|HE|OL)$/i;
 const NORDIC_SUFFIX_CAPTURE_RE = /^(.*)\.(ST|CO|HE|OL)$/i;
+const US_SUFFIX_CAPTURE_RE = /^(.*)\.US$/i;
 
 export type NordicYahooSuffix = "ST" | "CO" | "HE" | "OL";
 
@@ -18,16 +19,16 @@ export type CanonicalInstrumentSymbol = {
   exchange: string;
   /** Yahoo Finance transport symbol (DNB.OL, MSFT). */
   yahooSymbol: string;
-  /** Investor-facing label (DNB.OL, MSFT). Never double-suffixed. */
+  /** Investor-facing label (DNB.OL, MSFT.US). Never double-suffixed. */
   investorLabel: string;
 };
 
 function normalizeNordicExchangeCode(exchange: string): NordicYahooSuffix | null {
   const value = exchange.trim().toUpperCase();
-  if (["ST", "STO", "XSTO", "STOCKHOLM"].includes(value)) return "ST";
-  if (["CO", "CPH", "XCSE", "COPENHAGEN"].includes(value)) return "CO";
-  if (["HE", "HEL", "XHEL", "HELSINKI"].includes(value)) return "HE";
-  if (["OL", "OSL", "XOSL", "OSLO"].includes(value)) return "OL";
+  if (["ST", "STO", "XSTO", "STOCKHOLM", "NASDAQ STOCKHOLM"].includes(value)) return "ST";
+  if (["CO", "CPH", "XCSE", "COPENHAGEN", "NASDAQ COPENHAGEN"].includes(value)) return "CO";
+  if (["HE", "HEL", "XHEL", "HELSINKI", "NASDAQ HELSINKI"].includes(value)) return "HE";
+  if (["OL", "OSL", "XOSL", "OSLO", "OSLO BØRS", "OSLO BORS", "EURONEXT OSLO", "OSLO STOCK EXCHANGE"].includes(value)) return "OL";
   return null;
 }
 
@@ -40,6 +41,7 @@ function normalizeUsExchange(exchange: string): boolean {
     "NASDAQGM",
     "NASDAQCM",
     "NYSE",
+    "NEW YORK STOCK EXCHANGE",
     "NYQ",
     "NMS",
     "NGM",
@@ -70,7 +72,7 @@ export function toYahooTransportSymbol(symbol: string, exchange: string): string
 
 /**
  * Investor-facing label: exactly one Nordic suffix when listed in Norden,
- * bare ticker for US. Never emits DNB.OL.OL.
+ * exactly one .US suffix for US instruments. Never emits DNB.OL.OL/JPM.US.US.
  */
 export function toInvestorFacingSymbol(symbol: string, exchange: string): string {
   return canonicalizeInstrumentSymbol(symbol, exchange).investorLabel;
@@ -108,12 +110,11 @@ export function canonicalizeInstrumentSymbol(
     };
   }
 
-  const upper = baseSymbol;
   const nordic = normalizeNordicExchangeCode(exchange);
   if (nordic) {
-    const yahooSymbol = `${upper}.${nordic}`;
+    const yahooSymbol = `${baseSymbol}.${nordic}`;
     return {
-      baseSymbol: upper,
+      baseSymbol,
       exchange: nordic,
       yahooSymbol,
       investorLabel: yahooSymbol,
@@ -121,19 +122,26 @@ export function canonicalizeInstrumentSymbol(
   }
 
   if (normalizeUsExchange(exchange)) {
+    // The model may return investor-facing JPM.US even though Yahoo transport
+    // expects JPM. Collapse repeated .US suffixes before storage/quote lookup.
+    while (true) {
+      const match = baseSymbol.match(US_SUFFIX_CAPTURE_RE);
+      if (!match) break;
+      baseSymbol = match[1]!;
+    }
     return {
-      baseSymbol: upper,
+      baseSymbol,
       exchange: "US",
-      yahooSymbol: upper,
-      investorLabel: `${upper}.US`,
+      yahooSymbol: baseSymbol,
+      investorLabel: `${baseSymbol}.US`,
     };
   }
 
   const normalizedExchange = exchange.trim().toUpperCase() || "US";
   return {
-    baseSymbol: upper,
+    baseSymbol,
     exchange: normalizedExchange,
-    yahooSymbol: upper,
-    investorLabel: `${upper}.${normalizedExchange}`,
+    yahooSymbol: baseSymbol,
+    investorLabel: `${baseSymbol}.${normalizedExchange}`,
   };
 }
