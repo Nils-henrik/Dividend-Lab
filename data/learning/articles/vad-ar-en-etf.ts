@@ -9,6 +9,10 @@ const article: LearningArticle = {
   "category": "Fonder",
   "publishedAt": "2026-08-11",
   "updatedAt": "2026-08-11",
+  "coverImage": "/learning/vad-ar-en-etf.png",
+  "coverImageAlt":
+    "Skrivbord med ETF-portfölj på skärm, analysmaterial och DivLab-mugg som illustrerar börshandlade fonder.",
+  "thumbnailObjectPosition": "center top",
   "authorName": "DivLab Redaktion",
   "relatedArticleSlugs": [
     "vad-ar-en-indexfond",

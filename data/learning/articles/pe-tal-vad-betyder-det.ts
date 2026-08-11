@@ -9,6 +9,10 @@ const article: LearningArticle = {
   "category": "Aktier",
   "publishedAt": "2026-08-11",
   "updatedAt": "2026-08-11",
+  "coverImage": "/learning/pe-tal-vad-betyder-det.png",
+  "coverImageAlt":
+    "Finansiellt skrivbord med börsgraf, värderingsanalys, anteckningar och DivLab-mugg som illustrerar P/E-tal.",
+  "thumbnailObjectPosition": "center top",
   "authorName": "DivLab Redaktion",
   "relatedArticleSlugs": [
     "vad-ar-en-aktie",

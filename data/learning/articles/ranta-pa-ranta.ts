@@ -9,6 +9,10 @@ const article: LearningArticle = {
   "category": "Privatekonomi",
   "publishedAt": "2026-08-11",
   "updatedAt": "2026-08-11",
+  "coverImage": "/learning/ranta-pa-ranta.png",
+  "coverImageAlt":
+    "Skrivbord med stigande staplar av mynt, DivLab-mugg och laptop som illustrerar ränta på ränta över tid.",
+  "thumbnailObjectPosition": "center top",
   "authorName": "DivLab Redaktion",
   "relatedArticleSlugs": [
     "sparkvot-budgetera-lonen-i-procent",
