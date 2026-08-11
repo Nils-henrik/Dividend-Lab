@@ -125,5 +125,45 @@ describe("model portfolio decision narrative", () => {
     });
     assert.match(ops, /eodhdBudget=0\/0/);
     assert.match(ops, /cacheHits=4/);
+    assert.match(ops, /primaryHits=0/);
+  });
+
+  it("never double-appends Nordic Yahoo suffixes in investor-facing text", () => {
+    const summary = buildInvestorFacingResearchSummary({
+      pass: "nordic_morning",
+      investigated: [
+        { symbol: "DNB.OL", exchange: "OL", name: "DNB Bank ASA", changePct: 0.4 },
+        { symbol: "DNB", exchange: "OL", name: "DNB Bank ASA", changePct: -0.5 },
+        { symbol: "ATCO-A", exchange: "ST", name: "Atlas Copco AB ser. A", changePct: 0.2 },
+      ],
+      topCandidates: [
+        { symbol: "DNB.OL", exchange: "OL", name: "DNB Bank ASA", changePct: 0.4 },
+      ],
+    });
+    assert.match(summary, /DNB\.OL/);
+    assert.doesNotMatch(summary, /\.OL\.OL|\.ST\.ST|\.HE\.HE|\.CO\.CO/);
+
+    const rationale = buildInvestorFacingDecisionRationale({
+      researchSummary: summary,
+      decision: {
+        action: "hold",
+        symbol: "DNB.OL",
+        exchange: "OL",
+        instrumentName: "DNB Bank ASA",
+        proposedPortfolioPct: 0,
+        convictionScore: 0.4,
+        materialThesisBreak: false,
+        thesis: "Otillräckligt verifierat fundamentalunderlag för en ny position i detta pass.",
+        bearCase: "Om kreditkvalitet eller kapitalkrav försämras kan nedsidan bli större.",
+        catalyst: "Väntar på tydligare primärkälla och värderingsstöd.",
+        valuationView: "Ingen köpbeslutad värderingsmarginal i detta pass.",
+        keyRisks: ["Saknade fundamentals"],
+        evidenceIds: ["research:DNB"],
+        disconfirmingEvidenceIds: [],
+        rationale: "HOLD tills verifierade fundamentals och riskregler ger tydligt stöd.",
+      },
+    });
+    assert.match(rationale, /DNB\.OL/);
+    assert.doesNotMatch(rationale, /DNB\.OL\.OL/);
   });
 });

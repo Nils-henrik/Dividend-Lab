@@ -21,6 +21,12 @@ import {
 import { fetchFxRateToSek } from "./fx-adapter";
 import { searchGoogleCompanyResearch } from "./google-research";
 import {
+  canonicalizeInstrumentSymbol,
+  toInvestorFacingSymbol,
+  toYahooTransportSymbol,
+} from "./instrument-symbol";
+import { fetchNordicPrimarySourceEvents } from "./nordic-primary-sources";
+import {
   mergeNordicDeepResearchTargets,
   NORDIC_RESEARCH_BOUNDS,
   normalizeNordicExchange,
@@ -43,7 +49,6 @@ import { discoverNordicYahooCandidates, discoverYahooCandidates } from "./yahoo-
 import {
   fetchYahooFundamentals,
   fetchYahooHistoryResearch,
-  toYahooSymbol,
 } from "./yahoo-research";
 
 const US_QUALITY_CORE = [
@@ -99,6 +104,7 @@ export type ResearchCandidateDiagnostic = {
   cacheHit: boolean;
   fundamentalsSource: ResearchFundamentalsSource;
   googleHits: number;
+  primarySourceHits: number;
   error?: string;
 };
 
@@ -171,7 +177,7 @@ function evidenceForCandidate(input: {
   const score = (value: number | undefined) =>
     Number.isFinite(value) ? (value as number).toFixed(3) : "saknas";
   const summary = [
-    `${input.seed.name} (${input.seed.symbol}.${input.seed.exchange}).`,
+    `${input.seed.name} (${toInvestorFacingSymbol(input.seed.symbol, input.seed.exchange)}).`,
     `Senaste observerade kurs ${input.quote?.close ?? input.seed.discoveryPrice ?? "saknas"}; dagsförändring ${input.quote?.changePct ?? input.seed.discoveryChangePct ?? "saknas"}%.`,
     `Historik: ${input.historyBars} dagsstaplar.`,
     technical
@@ -226,11 +232,12 @@ function holdingSeedsForPass(
     if (!exchange) return [];
     const belongs = isUsPass(pass) ? exchange === "US" : exchange !== "US";
     if (!belongs) return [];
+    const canonical = canonicalizeInstrumentSymbol(holding.instrument_symbol, exchange);
     return [{
-      symbol: holding.instrument_symbol,
-      exchange,
+      symbol: canonical.baseSymbol,
+      exchange: canonical.exchange,
       name: holding.instrument_name,
-      yahooSymbol: toYahooSymbol(holding.instrument_symbol, exchange),
+      yahooSymbol: toYahooTransportSymbol(canonical.baseSymbol, canonical.exchange),
       held: true,
     }];
   });
@@ -396,6 +403,7 @@ export async function runModelPortfolioResearchPipeline(input: {
         cacheHit: true,
         fundamentalsSource: cached.fundamentalsSource,
         googleHits: 0,
+        primarySourceHits: 0,
       });
       continue;
     }
@@ -410,6 +418,7 @@ export async function runModelPortfolioResearchPipeline(input: {
         cacheHit: false,
         fundamentalsSource: "unavailable",
         googleHits: 0,
+        primarySourceHits: 0,
         error: "yahoo_history_unavailable",
       });
       continue;
@@ -518,12 +527,47 @@ export async function runModelPortfolioResearchPipeline(input: {
   });
 
   let googleHits = 0;
+  let primarySourceHits = 0;
   const googleHitsByCandidate = new Map<string, number>();
-  // Google is optional enrichment only; absence must never fail the pass.
-  const googleTargets = [...targets].slice(0, googleTargetLimit);
-  for (const candidateKey of googleTargets) {
+  const primaryHitsByCandidate = new Map<string, number>();
+  // Primary-source exchange disclosures first; Google is optional supplemental only.
+  const eventTargets = [...targets].slice(0, googleTargetLimit);
+  for (const candidateKey of eventTargets) {
     const row = newResearch.get(candidateKey);
     if (!row) continue;
+
+    if (!isUsPass(input.pass)) {
+      const primaryHits = await fetchNordicPrimarySourceEvents({
+        companyName: row.seed.name,
+        symbol: row.seed.symbol,
+        exchange: row.seed.exchange,
+        now: input.now,
+      });
+      primaryHitsByCandidate.set(candidateKey, primaryHits.length);
+      for (const [index, hit] of primaryHits.entries()) {
+        primarySourceHits += 1;
+        evidence.push({
+          id: `primary:${row.seed.symbol}:${hit.fetchedAt}:${index}`,
+          kind: "company_release",
+          publisher: hit.publisher,
+          publishedAt: hit.publishedAt ?? hit.fetchedAt,
+          verifiedAt: hit.fetchedAt,
+          title: hit.title,
+          summary: hit.snippet,
+        });
+        await persistGoogleResearchHit({
+          supabase: input.supabase,
+          symbol: row.seed.symbol,
+          exchange: row.seed.exchange,
+          name: row.seed.name,
+          title: hit.title,
+          snippet: hit.snippet,
+          url: hit.url,
+          fetchedAt: hit.fetchedAt,
+        });
+      }
+    }
+
     const hits = await searchGoogleCompanyResearch({
       companyName: row.seed.name,
       symbol: row.seed.symbol,
@@ -596,6 +640,7 @@ export async function runModelPortfolioResearchPipeline(input: {
     if (diagnostic) {
       diagnostic.fundamentalsSource = row.fundamentalsSource;
       diagnostic.googleHits = googleHitsByCandidate.get(candidateKey) ?? 0;
+      diagnostic.primarySourceHits = primaryHitsByCandidate.get(candidateKey) ?? 0;
     } else {
       diagnostics.push({
         symbol: row.seed.symbol,
@@ -605,6 +650,7 @@ export async function runModelPortfolioResearchPipeline(input: {
         cacheHit: false,
         fundamentalsSource: row.fundamentalsSource,
         googleHits: googleHitsByCandidate.get(candidateKey) ?? 0,
+        primarySourceHits: primaryHitsByCandidate.get(candidateKey) ?? 0,
       });
     }
   }
@@ -655,6 +701,7 @@ export async function runModelPortfolioResearchPipeline(input: {
     yahooFundamentalCount,
     eodhdFundamentalCount,
     googleHits,
+    primarySourceHits,
     eodhdUsed: budget.snapshot().used,
     eodhdLimit: budget.snapshot().limit,
   });

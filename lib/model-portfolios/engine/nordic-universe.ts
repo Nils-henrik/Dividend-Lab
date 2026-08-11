@@ -70,10 +70,19 @@ export function nordicYahooSuffix(exchange: NordicExchange): ".ST" | ".CO" | ".H
 export function toNordicYahooSymbol(symbol: string, exchange: string): string {
   const clean = symbol.trim().toUpperCase();
   if (!clean) throw new Error("invalid_nordic_symbol");
-  if (/\.(ST|CO|HE|OL)$/i.test(clean)) return clean;
-  const normalized = normalizeNordicExchange(exchange);
+
+  let base = clean;
+  let suffixFromSymbol: NordicExchange | null = null;
+  while (true) {
+    const match = base.match(/^(.*)\.(ST|CO|HE|OL)$/);
+    if (!match) break;
+    base = match[1]!;
+    suffixFromSymbol = match[2] as NordicExchange;
+  }
+
+  const normalized = normalizeNordicExchange(exchange) ?? suffixFromSymbol;
   if (!normalized) throw new Error("invalid_nordic_exchange");
-  return `${clean}${nordicYahooSuffix(normalized)}`;
+  return `${base}${nordicYahooSuffix(normalized)}`;
 }
 
 export function parseNordicYahooSymbol(yahooSymbol: string): {
