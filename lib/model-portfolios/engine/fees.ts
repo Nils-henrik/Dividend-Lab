@@ -1,5 +1,5 @@
-/** Simulated brokerage fee applied to every executed BUY or SELL. Exactly SEK 10.00. */
-export const SIMULATED_BUY_BROKERAGE_FEE_MINOR = 1_000;
+/** DivLab model portfolios do not charge simulated brokerage/courtage. */
+export const SIMULATED_BUY_BROKERAGE_FEE_MINOR = 0;
 
 export function buyBrokerageFeeMinor(side: "buy" | "sell"): number {
   void side;
