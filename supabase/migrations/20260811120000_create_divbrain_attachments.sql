@@ -87,6 +87,7 @@ create trigger set_divbrain_attachments_updated_at
 create or replace function public.divbrain_attachments_enforce_unlinked_quota()
 returns trigger
 language plpgsql
+set search_path = ''
 as $$
 declare
   active_count integer;
@@ -98,7 +99,10 @@ begin
 
   -- Serialize quota checks per user for the duration of this transaction.
   -- Namespace 872014601 is DivBrain unlinked-attachment quota (stable int).
-  perform pg_advisory_xact_lock(872014601, hashtext(new.user_id::text));
+  perform pg_catalog.pg_advisory_xact_lock(
+    872014601,
+    pg_catalog.hashtext(new.user_id::text)
+  );
 
   select count(*)::integer
   into active_count
