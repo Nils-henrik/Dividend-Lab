@@ -715,7 +715,7 @@ describe("model portfolio research — targeted retrieval planning + scalability
 
     let companyCalls = 0;
     let recentCalls = 0;
-    let seenQuery: ResearchCompanyTargetedQuery | null = null;
+    const seenQueries: ResearchCompanyTargetedQuery[] = [];
 
     const port: ResearchSnapshotQueryPort = {
       async fetchRecent(limit) {
@@ -725,7 +725,7 @@ describe("model portfolio research — targeted retrieval planning + scalability
       },
       async fetchCompanyTargeted(query) {
         companyCalls += 1;
-        seenQuery = query;
+        seenQueries.push(query);
         assert.ok(query.limit <= RESEARCH_RETRIEVAL_BOUNDS.maxCompanyCandidateRows);
         assert.match(query.orFilter, /investor/i);
         assert.equal(query.kindEq, "company_report");
@@ -758,10 +758,10 @@ describe("model portfolio research — targeted retrieval planning + scalability
 
     assert.equal(companyCalls, 1);
     assert.equal(recentCalls, 0);
-    assert.ok(seenQuery);
-    assert.equal(seenQuery?.kindEq, "company_report");
+    assert.equal(seenQueries.length, 1);
+    assert.equal(seenQueries[0]!.kindEq, "company_report");
     assert.ok(
-      (seenQuery?.limit ?? 0) <= RESEARCH_RETRIEVAL_BOUNDS.maxCompanyCandidateRows,
+      seenQueries[0]!.limit <= RESEARCH_RETRIEVAL_BOUNDS.maxCompanyCandidateRows,
     );
     assert.ok(candidates.length <= RESEARCH_RETRIEVAL_BOUNDS.maxCompanyCandidateRows);
     assert.ok(candidates.some((candidate) => candidate.id === olderReport.id));
@@ -843,7 +843,7 @@ describe("model portfolio research — targeted retrieval planning + scalability
       false,
     );
 
-    let seenQuery: ResearchCompanyTargetedQuery | null = null;
+    const seenQueries: ResearchCompanyTargetedQuery[] = [];
     let companyCalls = 0;
 
     const port: ResearchSnapshotQueryPort = {
@@ -852,7 +852,7 @@ describe("model portfolio research — targeted retrieval planning + scalability
       },
       async fetchCompanyTargeted(query) {
         companyCalls += 1;
-        seenQuery = query;
+        seenQueries.push(query);
         assert.equal(query.kindEq, "company_report");
         assert.ok(
           query.limit <= RESEARCH_RETRIEVAL_BOUNDS.maxCompanyCandidateRows,
@@ -884,7 +884,8 @@ describe("model portfolio research — targeted retrieval planning + scalability
     );
 
     assert.equal(companyCalls, 1);
-    assert.equal(seenQuery?.kindEq, "company_report");
+    assert.equal(seenQueries.length, 1);
+    assert.equal(seenQueries[0]!.kindEq, "company_report");
     assert.ok(candidates.every((candidate) => candidate.kind === "company_report"));
     assert.ok(candidates.some((candidate) => candidate.id === olderReport.id));
     assert.equal(
