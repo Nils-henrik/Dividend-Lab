@@ -20,6 +20,8 @@ import {
   type DivBrainProviderUsage,
 } from "./types";
 
+export type { DivBrainProviderMessage };
+
 const CONTROL_CHARS_PATTERN = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/;
 
 function isProviderContextBlockKind(
@@ -31,14 +33,20 @@ function isProviderContextBlockKind(
   );
 }
 
-function normalizeProviderText(content: unknown): string | null {
+/** User-owned attachment extracts may exceed ordinary message length. */
+const USER_OWNED_CONTEXT_MAX_LENGTH = 50_000;
+
+function normalizeProviderText(
+  content: unknown,
+  maxLength: number = DIVBRAIN_MESSAGE_CONTENT_MAX_LENGTH,
+): string | null {
   if (typeof content !== "string") {
     return null;
   }
 
   const normalized = content.normalize("NFC").trim();
 
-  if (!normalized || normalized.length > DIVBRAIN_MESSAGE_CONTENT_MAX_LENGTH) {
+  if (!normalized || normalized.length > maxLength) {
     return null;
   }
 
@@ -47,6 +55,66 @@ function normalizeProviderText(content: unknown): string | null {
   }
 
   return normalized;
+}
+
+function validateContentParts(
+  value: unknown,
+): DivBrainProviderMessage["content"] | null {
+  if (!Array.isArray(value) || value.length === 0) {
+    return null;
+  }
+
+  const parts: Array<
+    | { type: "text"; text: string }
+    | { type: "file"; mediaType: string; data: Uint8Array; filename?: string }
+  > = [];
+
+  for (const part of value) {
+    if (typeof part !== "object" || part === null) {
+      return null;
+    }
+    const candidate = part as Record<string, unknown>;
+    if (candidate.type === "text") {
+      const text = normalizeProviderText(candidate.text);
+      if (text === null) {
+        return null;
+      }
+      parts.push({ type: "text", text });
+      continue;
+    }
+    if (candidate.type === "file") {
+      if (
+        typeof candidate.mediaType !== "string" ||
+        candidate.mediaType.trim().length === 0 ||
+        candidate.mediaType.length > 120
+      ) {
+        return null;
+      }
+      if (!(candidate.data instanceof Uint8Array) || candidate.data.byteLength === 0) {
+        return null;
+      }
+      if (
+        candidate.filename !== undefined &&
+        (typeof candidate.filename !== "string" ||
+          candidate.filename.trim().length === 0 ||
+          candidate.filename.length > 200)
+      ) {
+        return null;
+      }
+      parts.push({
+        type: "file",
+        mediaType: candidate.mediaType.trim(),
+        data: candidate.data,
+        ...(typeof candidate.filename === "string"
+          ? { filename: candidate.filename.trim() }
+          : {}),
+      });
+      continue;
+    }
+    return null;
+  }
+
+  return parts;
 }
 
 function validateContextBlock(
@@ -61,7 +129,12 @@ function validateContextBlock(
     return null;
   }
 
-  const content = normalizeProviderText(candidate.content);
+  const maxLength =
+    candidate.kind === "user_owned_context"
+      ? USER_OWNED_CONTEXT_MAX_LENGTH
+      : DIVBRAIN_MESSAGE_CONTENT_MAX_LENGTH;
+
+  const content = normalizeProviderText(candidate.content, maxLength);
   if (content === null) {
     return null;
   }
@@ -81,12 +154,25 @@ function validateProviderMessage(
     return null;
   }
 
-  const content = normalizeProviderText(candidate.content);
-  if (content === null) {
+  if (typeof candidate.content === "string") {
+    const content = normalizeProviderText(candidate.content);
+    if (content === null) {
+      return null;
+    }
+    return { role: candidate.role, content };
+  }
+
+  // Multimodal content is only valid on user messages.
+  if (candidate.role !== "user") {
     return null;
   }
 
-  return { role: candidate.role, content };
+  const parts = validateContentParts(candidate.content);
+  if (parts === null) {
+    return null;
+  }
+
+  return { role: candidate.role, content: parts };
 }
 
 /**

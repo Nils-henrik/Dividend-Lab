@@ -1,5 +1,5 @@
 /**
- * Strict browser-input boundary for DivBrain submitMessage (Ticket 1A-7b).
+ * Strict browser-input boundary for DivBrain submitMessage (Ticket 1A-7b / #166).
  *
  * Exact-key allowlist only. Ownership, role, provider and policy injection
  * fields are rejected. Never includes raw input in errors.
@@ -7,12 +7,17 @@
  * This module must never be imported by client components.
  */
 
+import { formatDivBrainAttachmentOnlyLabel } from "../../attachments";
 import type { DivBrainResult } from "../../results";
 import { divBrainFailureFromCode, divBrainSuccess } from "../../results";
-import { validateSubmitMessageInput } from "../../validation";
+import { DIVBRAIN_MESSAGE_CONTENT_MAX_LENGTH } from "../../constants";
 import { isDivBrainUuid } from "../repository/ids";
 
-const ALLOWED_KEYS = new Set(["conversationId", "content"] as const);
+const ALLOWED_KEYS = new Set([
+  "conversationId",
+  "content",
+  "attachmentIds",
+] as const);
 
 const FORBIDDEN_KEYS = [
   "actorId",
@@ -49,6 +54,7 @@ const FORBIDDEN_KEYS = [
 export type DivBrainParsedSubmitMessageInput = {
   conversationId: string;
   content: string;
+  attachmentIds: readonly string[];
 };
 
 /**
@@ -74,9 +80,53 @@ export function isPlainDivBrainSubmitMessageObject(
   }
 }
 
+function parseAttachmentIds(value: unknown): DivBrainResult<readonly string[]> {
+  if (value === undefined) {
+    return divBrainSuccess([]);
+  }
+  if (!Array.isArray(value)) {
+    return divBrainFailureFromCode("invalid_request");
+  }
+  if (value.length > 4) {
+    return divBrainFailureFromCode("invalid_request");
+  }
+
+  const ids: string[] = [];
+  const seen = new Set<string>();
+  for (const entry of value) {
+    if (typeof entry !== "string" || !isDivBrainUuid(entry)) {
+      return divBrainFailureFromCode("invalid_request");
+    }
+    const normalized = entry.toLowerCase();
+    if (seen.has(normalized)) {
+      continue;
+    }
+    seen.add(normalized);
+    ids.push(normalized);
+  }
+  return divBrainSuccess(ids);
+}
+
+function normalizeOptionalContent(content: unknown): DivBrainResult<string> {
+  if (typeof content !== "string") {
+    return divBrainFailureFromCode("invalid_request");
+  }
+  const normalized = content.normalize("NFC").trim();
+  if (normalized.length > DIVBRAIN_MESSAGE_CONTENT_MAX_LENGTH) {
+    return divBrainFailureFromCode("invalid_request");
+  }
+  if (/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/.test(normalized)) {
+    return divBrainFailureFromCode("invalid_request");
+  }
+  return divBrainSuccess(normalized);
+}
+
 /**
  * Parse unknown browser input with an exact-key allowlist, then run shared
  * domain validation/normalization.
+ *
+ * Attachment-only submits are allowed when `attachmentIds` is non-empty; the
+ * service synthesizes a clear Swedish label before persistence.
  */
 export function parseDivBrainSubmitMessageInput(
   input: unknown,
@@ -90,7 +140,11 @@ export function parseDivBrainSubmitMessageInput(
     const keys = Object.keys(record);
 
     for (const key of keys) {
-      if (!ALLOWED_KEYS.has(key as "conversationId" | "content")) {
+      if (
+        !ALLOWED_KEYS.has(
+          key as "conversationId" | "content" | "attachmentIds",
+        )
+      ) {
         return divBrainFailureFromCode("invalid_request");
       }
     }
@@ -105,28 +159,73 @@ export function parseDivBrainSubmitMessageInput(
       return divBrainFailureFromCode("invalid_request");
     }
 
-    if (keys.length !== 2) {
+    if (keys.length < 2 || keys.length > 3) {
       return divBrainFailureFromCode("invalid_request");
     }
 
-    const validated = validateSubmitMessageInput({
-      conversationId: record.conversationId as string,
-      content: record.content as string,
-    });
-
-    if (!validated.ok) {
-      return validated;
+    if (
+      keys.length === 3 &&
+      !Object.prototype.hasOwnProperty.call(record, "attachmentIds")
+    ) {
+      return divBrainFailureFromCode("invalid_request");
     }
 
-    if (!isDivBrainUuid(validated.data.conversationId)) {
+    if (
+      typeof record.conversationId !== "string" ||
+      !isDivBrainUuid(record.conversationId)
+    ) {
+      return divBrainFailureFromCode("invalid_request");
+    }
+
+    const contentResult = normalizeOptionalContent(record.content);
+    if (!contentResult.ok) {
+      return contentResult;
+    }
+
+    const attachmentIdsResult = parseAttachmentIds(record.attachmentIds);
+    if (!attachmentIdsResult.ok) {
+      return attachmentIdsResult;
+    }
+
+    if (
+      contentResult.data.length === 0 &&
+      attachmentIdsResult.data.length === 0
+    ) {
       return divBrainFailureFromCode("invalid_request");
     }
 
     return divBrainSuccess({
-      conversationId: validated.data.conversationId.toLowerCase(),
-      content: validated.data.content,
+      conversationId: record.conversationId.toLowerCase(),
+      content: contentResult.data,
+      attachmentIds: attachmentIdsResult.data,
     });
   } catch {
     return divBrainFailureFromCode("invalid_request");
   }
+}
+
+/**
+ * Build the persisted user-message label when the composer sent attachments.
+ * Text content wins when present; otherwise a clear Swedish attachment label.
+ */
+export function resolveDivBrainSubmitMessageContent(params: {
+  content: string;
+  filenames: readonly string[];
+}): DivBrainResult<string> {
+  if (params.content.length > 0) {
+    if (params.content.length > DIVBRAIN_MESSAGE_CONTENT_MAX_LENGTH) {
+      return divBrainFailureFromCode("invalid_request");
+    }
+    return divBrainSuccess(params.content);
+  }
+
+  if (params.filenames.length === 0) {
+    return divBrainFailureFromCode("invalid_request");
+  }
+
+  const label = formatDivBrainAttachmentOnlyLabel(params.filenames);
+  if (label.length > DIVBRAIN_MESSAGE_CONTENT_MAX_LENGTH) {
+    return divBrainFailureFromCode("invalid_request");
+  }
+  return divBrainSuccess(label);
 }

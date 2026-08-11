@@ -60,7 +60,10 @@ import { accountDivBrainProviderUsage } from "../providers/usage-accounting";
 import type { DivBrainConversationRepository } from "../repository/repository";
 import type { DivBrainUsageTerminalStatus } from "../repository/usage-ledger-persistence";
 import { loadBoundedDivBrainHistory } from "./history";
-import { parseDivBrainSubmitMessageInput } from "./input";
+import {
+  parseDivBrainSubmitMessageInput,
+  resolveDivBrainSubmitMessageContent,
+} from "./input";
 import type {
   CreateDivBrainApplicationServiceDeps,
   DivBrainApplicationService,
@@ -68,6 +71,14 @@ import type {
   DivBrainSubmitMessageOutcome,
 } from "./types";
 import { DIVBRAIN_APPLICATION_PROVIDER_TIMEOUT_MS_DEFAULT } from "./types";
+import {
+  prepareDivBrainAttachmentsForGeneration,
+  prepareRecentDivBrainAttachmentContext,
+  validateDivBrainAttachmentBatchLimits,
+} from "../attachments";
+import { DIVBRAIN_ATTACHMENT_COMBINED_PROVIDER_MAX_BYTES } from "../../attachments";
+import type { DivBrainPreparedAttachmentPayload } from "../attachments/types";
+import type { DivBrainProviderFilePart } from "../providers/types";
 
 function isFiniteTimeoutMs(value: unknown): value is number {
   return (
@@ -401,7 +412,50 @@ export function createDivBrainApplicationService(
         return parsed;
       }
 
-      const { conversationId, content } = parsed.data;
+      const { conversationId, attachmentIds } = parsed.data;
+      let content = parsed.data.content;
+
+      let resolvedAttachments: Awaited<
+        ReturnType<
+          NonNullable<
+            CreateDivBrainApplicationServiceDeps["attachmentRepository"]
+          >["resolveReadyAttachmentsForSubmit"]
+        >
+      > | null = null;
+
+      if (attachmentIds.length > 0) {
+        if (!deps.attachmentRepository) {
+          return divBrainFailureFromCode("internal_error");
+        }
+
+        const resolved =
+          await deps.attachmentRepository.resolveReadyAttachmentsForSubmit({
+            actorId,
+            conversationId,
+            attachmentIds,
+          });
+        if (!resolved.ok) {
+          return resolved;
+        }
+
+        const batchLimits = validateDivBrainAttachmentBatchLimits(
+          resolved.data.map((item) => item.byteSize),
+        );
+        if (!batchLimits.ok) {
+          return divBrainFailureFromCode("invalid_request");
+        }
+
+        resolvedAttachments = resolved;
+
+        const contentResult = resolveDivBrainSubmitMessageContent({
+          content,
+          filenames: resolved.data.map((item) => item.originalFilename),
+        });
+        if (!contentResult.ok) {
+          return contentResult;
+        }
+        content = contentResult.data;
+      }
 
       const guardrailResult = deps.guardrailEvaluator.evaluate(content);
       if (!guardrailResult.ok) {
@@ -431,6 +485,32 @@ export function createDivBrainApplicationService(
         return divBrainFailureFromCode("invalid_request");
       }
 
+      let currentAttachmentPayload: DivBrainPreparedAttachmentPayload | null =
+        null;
+      const extraSources: DivBrainSource[] = [];
+      const userOwnedContextBlocks: string[] = [];
+      const currentUserFileParts: DivBrainProviderFilePart[] = [];
+
+      if (resolvedAttachments?.ok && resolvedAttachments.data.length > 0) {
+        if (!deps.attachmentRepository) {
+          return divBrainFailureFromCode("internal_error");
+        }
+
+        const prepared = await prepareDivBrainAttachmentsForGeneration({
+          repository: deps.attachmentRepository,
+          actorId,
+          attachments: resolvedAttachments.data,
+        });
+        if (!prepared.ok) {
+          return prepared;
+        }
+
+        currentAttachmentPayload = prepared.data;
+        extraSources.push(...prepared.data.sources);
+        userOwnedContextBlocks.push(...prepared.data.extractedTextBlocks);
+        currentUserFileParts.push(...prepared.data.fileParts);
+      }
+
       const historyResult = await loadBoundedDivBrainHistory({
         repository: deps.repository,
         actorId,
@@ -438,6 +518,34 @@ export function createDivBrainApplicationService(
       });
       if (!historyResult.ok) {
         return historyResult;
+      }
+
+      // Bounded recent-attachment follow-up context (not every historical file).
+      // Combined current + recent bytes must stay within the provider ceiling.
+      if (deps.attachmentRepository) {
+        const currentBytes =
+          resolvedAttachments?.ok
+            ? resolvedAttachments.data.reduce(
+                (sum, item) => sum + item.byteSize,
+                0,
+              )
+            : 0;
+        const remainingByteBudget = Math.max(
+          0,
+          DIVBRAIN_ATTACHMENT_COMBINED_PROVIDER_MAX_BYTES - currentBytes,
+        );
+        const recent = await prepareRecentDivBrainAttachmentContext({
+          repository: deps.attachmentRepository,
+          actorId,
+          conversationId,
+          excludeAttachmentIds: attachmentIds,
+          remainingByteBudget,
+        });
+        if (recent.ok) {
+          extraSources.push(...recent.data.sources);
+          userOwnedContextBlocks.push(...recent.data.extractedTextBlocks);
+          currentUserFileParts.push(...recent.data.fileParts);
+        }
       }
 
       const userMessageResult = await deps.repository.createMessage({
@@ -455,6 +563,29 @@ export function createDivBrainApplicationService(
 
       const userMessage = userMessageResult.data;
 
+      if (
+        currentAttachmentPayload &&
+        deps.attachmentRepository &&
+        currentAttachmentPayload.attachmentIds.length > 0
+      ) {
+        const linked = await deps.attachmentRepository.linkToMessage({
+          actorId,
+          conversationId,
+          messageId: userMessage.id,
+          attachmentIds: currentAttachmentPayload.attachmentIds,
+        });
+        if (!linked.ok) {
+          return recoverAfterUserPersistence({
+            repository: deps.repository,
+            actorId,
+            conversationId,
+            assessment,
+            userMessage,
+            errorCode: linked.error.code,
+          });
+        }
+      }
+
       const assembledResult = deps.contextAssembler.assemble({
         currentUserMessage: content,
         conversationId,
@@ -463,6 +594,7 @@ export function createDivBrainApplicationService(
           assessment.decision === "allow_with_constraints"
             ? assessment.constraints
             : [],
+        sources: extraSources,
       });
       if (!assembledResult.ok) {
         return recoverAfterUserPersistence({
@@ -481,6 +613,12 @@ export function createDivBrainApplicationService(
           timeoutMs: deps.providerTimeoutMs,
           ...(options?.signal !== undefined
             ? { signal: options.signal }
+            : {}),
+          ...(currentUserFileParts.length > 0
+            ? { currentUserFileParts }
+            : {}),
+          ...(userOwnedContextBlocks.length > 0
+            ? { userOwnedContextBlocks }
             : {}),
         },
       );
@@ -682,6 +820,7 @@ export function createDivBrainApplicationServiceDeps(params: {
   usageLedger?: CreateDivBrainApplicationServiceDeps["usageLedger"];
   providerModelId?: string;
   providerMaxOutputTokens?: number;
+  attachmentRepository?: CreateDivBrainApplicationServiceDeps["attachmentRepository"];
 }): CreateDivBrainApplicationServiceDeps {
   return {
     actorResolver: params.actorResolver,
@@ -709,6 +848,9 @@ export function createDivBrainApplicationServiceDeps(params: {
       : {}),
     ...(params.providerMaxOutputTokens !== undefined
       ? { providerMaxOutputTokens: params.providerMaxOutputTokens }
+      : {}),
+    ...(params.attachmentRepository !== undefined
+      ? { attachmentRepository: params.attachmentRepository }
       : {}),
   };
 }

@@ -6,15 +6,22 @@ import type { DivBrainActionState } from "@/lib/divbrain/action-state";
 import { createDivBrainAlphaAccessModule } from "@/lib/divbrain/server/access";
 import {
   runArchiveDivBrainConversation,
+  runConfirmDivBrainAttachmentUpload,
   runCreateDivBrainConversation,
   runDeleteDivBrainConversation,
+  runDiscardDivBrainUnlinkedAttachment,
+  runPrepareDivBrainAttachmentUpload,
   runRenameDivBrainConversation,
   runRestoreDivBrainConversation,
   runSubmitDivBrainMessage,
+  type DivBrainConfirmAttachmentUploadResult,
+  type DivBrainDiscardUnlinkedAttachmentResult,
   type DivBrainInteractionDeps,
   type DivBrainInteractionResult,
+  type DivBrainPrepareAttachmentUploadResult,
 } from "@/lib/divbrain/server/ui/interaction";
 import { createDivBrainRuntimeRepository } from "@/lib/divbrain/server/ui/runtime";
+import { createDivBrainServiceRoleAttachmentRepository } from "@/lib/divbrain/server/attachments";
 
 function createProductionInteractionDeps(): DivBrainInteractionDeps {
   const access = createDivBrainAlphaAccessModule();
@@ -22,6 +29,8 @@ function createProductionInteractionDeps(): DivBrainInteractionDeps {
     actorResolver: access.actorResolver,
     accessGate: access.accessGate,
     createRepository: () => createDivBrainRuntimeRepository(),
+    createAttachmentRepository: () =>
+      createDivBrainServiceRoleAttachmentRepository(),
   };
 }
 
@@ -107,4 +116,34 @@ export async function submitDivBrainMessageAction(
   }
 
   return result.state;
+}
+
+export async function prepareDivBrainAttachmentUploadAction(input: {
+  conversationId: string;
+  filename: string;
+  mimeType: string;
+  byteSize: number;
+}): Promise<DivBrainPrepareAttachmentUploadResult> {
+  return runPrepareDivBrainAttachmentUpload(
+    createProductionInteractionDeps(),
+    input,
+  );
+}
+
+export async function confirmDivBrainAttachmentUploadAction(input: {
+  attachmentId: string;
+}): Promise<DivBrainConfirmAttachmentUploadResult> {
+  return runConfirmDivBrainAttachmentUpload(
+    createProductionInteractionDeps(),
+    input,
+  );
+}
+
+export async function discardDivBrainUnlinkedAttachmentAction(input: {
+  attachmentId: string;
+}): Promise<DivBrainDiscardUnlinkedAttachmentResult> {
+  return runDiscardDivBrainUnlinkedAttachment(
+    createProductionInteractionDeps(),
+    input,
+  );
 }

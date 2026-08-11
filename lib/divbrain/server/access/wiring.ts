@@ -10,6 +10,7 @@
 
 import type { DivBrainConversationRepository } from "../repository/repository";
 import { createDivBrainServiceRoleUsageLedgerRepository } from "../repository/service-role-client";
+import { createDivBrainServiceRoleAttachmentRepository } from "../attachments/wiring";
 import {
   createDivBrainApplicationService,
   createDivBrainApplicationServiceDeps,
@@ -67,6 +68,8 @@ export type CreateDivBrainAlphaApplicationServiceDepsOptions = {
   usageLedger?: CreateDivBrainApplicationServiceDeps["usageLedger"];
   providerModelId?: string;
   providerMaxOutputTokens?: number;
+  /** Explicit attachment repository override (tests). */
+  attachmentRepository?: CreateDivBrainApplicationServiceDeps["attachmentRepository"];
 };
 
 /**
@@ -114,6 +117,14 @@ export function createDivBrainAlphaApplicationServiceDeps(
 
   let costGuard = options.costGuard;
   let usageLedger = options.usageLedger;
+  let attachmentRepository = options.attachmentRepository;
+
+  if (attachmentRepository === undefined) {
+    const attachmentResult = createDivBrainServiceRoleAttachmentRepository();
+    if (attachmentResult.ok) {
+      attachmentRepository = attachmentResult.data;
+    }
+  }
 
   if (providerRequiresDivBrainCostGuard(provider.id)) {
     if (usageLedger === undefined) {
@@ -151,6 +162,9 @@ export function createDivBrainAlphaApplicationServiceDeps(
     ...(providerModelId !== undefined ? { providerModelId } : {}),
     ...(providerMaxOutputTokens !== undefined
       ? { providerMaxOutputTokens }
+      : {}),
+    ...(attachmentRepository !== undefined
+      ? { attachmentRepository }
       : {}),
   });
 }

@@ -158,6 +158,46 @@ function DivBrainMessageItem({ item }: { item: DivBrainShellTranscriptItem }) {
   if (item.kind === "user_message") {
     return (
       <article className="ml-auto w-fit max-w-[88%] rounded-[1.35rem] border border-divlab-blue/15 bg-divlab-blue/15 px-4 py-3 shadow-sm sm:max-w-[76%]">
+        {item.attachments && item.attachments.length > 0 ? (
+          <ul className="mb-2 flex flex-wrap gap-1.5" aria-label="Bilagor">
+            {item.attachments.map((attachment) => (
+              <li key={attachment.id}>
+                <a
+                  href={`/brain/attachments/${attachment.id}`}
+                  className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-divlab-blue/25 bg-divlab-elevated/80 px-2.5 py-1 text-[11px] text-divlab-text transition hover:border-divlab-blue/50"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="h-3.5 w-3.5 shrink-0"
+                    fill="none"
+                    aria-hidden="true"
+                  >
+                    {attachment.kind === "image" ? (
+                      <path
+                        d="M4 7.5A2.5 2.5 0 016.5 5h11A2.5 2.5 0 0120 7.5v9a2.5 2.5 0 01-2.5 2.5h-11A2.5 2.5 0 014 16.5v-9zM8 10.5l2.5 2.5L14 9l6 6"
+                        stroke="currentColor"
+                        strokeWidth="1.6"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    ) : (
+                      <path
+                        d="M7 3.5h6.5L19 9v11.5a1 1 0 01-1 1H7a1 1 0 01-1-1V4.5a1 1 0 011-1zM13.5 3.5V9H19"
+                        stroke="currentColor"
+                        strokeWidth="1.6"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    )}
+                  </svg>
+                  <span className="truncate">{attachment.filename}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        ) : null}
         <p className="whitespace-pre-wrap break-words text-sm leading-6 text-divlab-text">
           {item.content}
         </p>
