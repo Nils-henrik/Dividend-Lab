@@ -11,7 +11,6 @@ import { getAuthenticatedUser } from "@/lib/auth/session";
 import { getProfileForUser } from "@/lib/profiles/profile";
 import { getCanonicalUrl } from "@/lib/seo/canonical";
 import { articleJsonLd, breadcrumbJsonLd } from "@/lib/seo/json-ld";
-import { DIVLAB_BRAND_NAME } from "@/lib/site/brand";
 
 type Props = {
   params: Promise<{
@@ -43,7 +42,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     : undefined;
 
   return {
-    title: `${pageTitle} | ${DIVLAB_BRAND_NAME}`,
+    title: pageTitle,
     description: article.description,
     alternates: {
       canonical,
@@ -103,6 +102,7 @@ export default async function LearningArticlePage({ params }: Props) {
             publishedAt: article.publishedAt,
             updatedAt: article.updatedAt,
             imageUrl: article.coverImage,
+            authorName: article.authorName,
           }),
           breadcrumbJsonLd([
             { name: "Hem", path: "/" },
