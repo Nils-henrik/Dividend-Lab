@@ -42,7 +42,7 @@ export const MODEL_PORTFOLIO_TURNOVER_POLICY: Record<
   balanced: {
     maxRunsPerTradingDay: 4,
     maxAdditionalEventRuns: 3,
-    minTradePctOfPortfolio: 2.5,
+    minTradePctOfPortfolio: 8,
     replacementThresholdScore: 0.72,
     trimThresholdScore: 0.64,
     cooldownHours: 72,
@@ -50,7 +50,7 @@ export const MODEL_PORTFOLIO_TURNOVER_POLICY: Record<
   high_risk: {
     maxRunsPerTradingDay: 4,
     maxAdditionalEventRuns: 3,
-    minTradePctOfPortfolio: 2,
+    minTradePctOfPortfolio: 8,
     replacementThresholdScore: 0.58,
     trimThresholdScore: 0.52,
     cooldownHours: 24,
@@ -58,7 +58,7 @@ export const MODEL_PORTFOLIO_TURNOVER_POLICY: Record<
   dividend: {
     maxRunsPerTradingDay: 4,
     maxAdditionalEventRuns: 3,
-    minTradePctOfPortfolio: 2.5,
+    minTradePctOfPortfolio: 8,
     replacementThresholdScore: 0.78,
     trimThresholdScore: 0.68,
     cooldownHours: 96,
