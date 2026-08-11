@@ -261,7 +261,10 @@ export async function persistPrimarySourceResearchHit(input: {
   verifiedAt: string;
   title: string;
   summary: string;
-  metadata: Omit<ResearchSnapshotMetadata, "research_kind" | "primary_source" | "verification_state"> & {
+  metadata: Omit<
+    ResearchSnapshotMetadata,
+    "research_kind" | "primary_source" | "verification_state" | "expires_at"
+  > & {
     source_type: NonNullable<ResearchSnapshotMetadata["source_type"]>;
     document_retrieved: boolean;
     official_source: "nasdaq_nordic_cns";

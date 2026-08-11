@@ -110,7 +110,7 @@ describe("official document retrieval safety", () => {
     const fetched = await fetchOfficialHttpsDocument({
       url: "https://attachment.news.eu.nasdaq.com/ok",
       fetchImpl: async () =>
-        new Response(usable, {
+        new Response(Buffer.from(usable), {
           status: 200,
           headers: {
             "content-type": "application/pdf",
