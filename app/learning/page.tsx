@@ -5,7 +5,7 @@ import { getCanonicalUrl } from "@/lib/seo/canonical";
 import { DIVLAB_BRAND_NAME } from "@/lib/site/brand";
 
 export const metadata: Metadata = {
-  title: `Utbildning om aktier, fonder och privatekonomi | ${DIVLAB_BRAND_NAME}`,
+  title: "Utbildning om aktier, fonder och privatekonomi",
   description:
     "Guider om aktier, fonder, privatekonomi, pension, FIRE, konton och skatt samt långsiktigt sparande — sakligt och utan köpråd.",
   alternates: {

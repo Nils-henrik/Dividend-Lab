@@ -1,12 +1,16 @@
 import borjaInvestera from "./articles/borja-investera-pa-borsen";
-import vadArEnAktie from "./articles/vad-ar-en-aktie";
-import vadArEnIndexfond from "./articles/vad-ar-en-indexfond";
 import direktavkastning from "./articles/direktavkastning-och-utdelningssakerhet";
+import etf from "./articles/vad-ar-en-etf";
 import fireEkonomiskFrihet from "./articles/fire-ekonomisk-frihet";
+import iskEllerKapitalforsakring from "./articles/isk-eller-kapitalforsakring";
+import peTal from "./articles/pe-tal-vad-betyder-det";
+import premiepension from "./articles/ta-kontroll-over-premiepensionen";
+import rantaPaRanta from "./articles/ranta-pa-ranta";
 import sparande from "./articles/sparande-i-borjan";
 import sparkvot from "./articles/sparkvot-budgetera-lonen-i-procent";
-import premiepension from "./articles/ta-kontroll-over-premiepensionen";
 import tidTillFrihet from "./articles/tid-till-ekonomisk-frihet";
+import vadArEnAktie from "./articles/vad-ar-en-aktie";
+import vadArEnIndexfond from "./articles/vad-ar-en-indexfond";
 import { withReadingTime, type LearningArticleWithReadingTime } from "./reading-time";
 import type { LearningArticle } from "./types";
 
@@ -24,6 +28,10 @@ export {
 } from "./reading-time";
 
 const rawArticles: LearningArticle[] = [
+  iskEllerKapitalforsakring,
+  rantaPaRanta,
+  peTal,
+  etf,
   premiepension,
   fireEkonomiskFrihet,
   sparkvot,

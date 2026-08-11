@@ -100,6 +100,7 @@ export function articleJsonLd(input: {
   publishedAt?: string;
   updatedAt?: string;
   imageUrl?: string;
+  authorName?: string;
 }): JsonLd {
   return {
     "@context": "https://schema.org",
@@ -118,7 +119,7 @@ export function articleJsonLd(input: {
     isAccessibleForFree: true,
     author: {
       "@type": "Organization",
-      name: DIVLAB_BRAND_NAME,
+      name: input.authorName ?? DIVLAB_BRAND_NAME,
     },
     publisher: {
       "@type": "Organization",
