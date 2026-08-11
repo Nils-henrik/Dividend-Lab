@@ -8,10 +8,17 @@ import type { DelayedQuote } from "./eodhd";
 
 export type ResearchFundamentalsSource = "none" | "unavailable" | "market_only" | "yahoo" | "eodhd";
 
+export type ResearchSnapshotKind =
+  | "company_report"
+  | "regulatory_filing"
+  | "company_release"
+  | "news"
+  | "market_data";
+
 export type ResearchSnapshotMetadata = {
-  research_kind: "candidate_bundle" | "google_discovery";
+  research_kind: "candidate_bundle" | "google_discovery" | "primary_source_disclosure";
   expires_at: string;
-  primary_source: "yahoo_finance" | "eodhd" | "google" | "mixed";
+  primary_source: "yahoo_finance" | "eodhd" | "google" | "mixed" | "company";
   verification_state: "verified" | "internally_curated" | "unverified";
   candidate?: ResearchCandidate;
   quote?: DelayedQuote | null;
@@ -19,6 +26,15 @@ export type ResearchSnapshotMetadata = {
   yahoo_symbol?: string;
   currency?: string | null;
   source_urls?: string[];
+  /** Official issuer/exchange disclosure metadata (producer side for DivBrain reuse). */
+  source_type?: "official_company_report" | "company_release" | "regulatory_filing";
+  report_period?: "Q1" | "Q2" | "Q3" | "Q4" | "H1" | "H2" | "FY";
+  report_year?: number;
+  document_type?: string;
+  document_retrieved?: boolean;
+  document_url?: string;
+  official_source?: "nasdaq_nordic_cns";
+  cns_category?: string;
 };
 
 export type StoredCandidateBundle = {
@@ -227,6 +243,82 @@ export async function persistGoogleResearchHit(input: {
     },
   });
   if (error && error.code !== "23505") throw new Error(`google_research_snapshot_insert_failed:${error.code ?? "unknown"}`);
+}
+
+/**
+ * Persist verified official exchange/company evidence separately from Google discovery.
+ * Never routes through Google Custom Search attribution.
+ */
+export async function persistPrimarySourceResearchHit(input: {
+  supabase: SupabaseClient;
+  symbol: string;
+  exchange: string;
+  name: string;
+  kind: ResearchSnapshotKind;
+  publisher: string;
+  sourceUrl: string;
+  publishedAt: string;
+  verifiedAt: string;
+  title: string;
+  summary: string;
+  metadata: Omit<ResearchSnapshotMetadata, "research_kind" | "primary_source" | "verification_state"> & {
+    source_type: NonNullable<ResearchSnapshotMetadata["source_type"]>;
+    document_retrieved: boolean;
+    official_source: "nasdaq_nordic_cns";
+    expires_at?: string;
+    report_period?: ResearchSnapshotMetadata["report_period"];
+    report_year?: number;
+    document_type?: string;
+    document_url?: string;
+    cns_category?: string;
+    source_urls?: string[];
+  };
+}): Promise<void> {
+  const sourceUrl = safeHttps(input.sourceUrl);
+  const contentHash = buildResearchContentHash({
+    symbol: input.symbol,
+    exchange: input.exchange,
+    publishedAt: input.publishedAt,
+    summary: input.summary,
+    sourceUrl,
+  });
+  const expiresAt =
+    input.metadata.expires_at
+    ?? new Date(Date.parse(input.verifiedAt) + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+  const metadata: ResearchSnapshotMetadata = {
+    research_kind: "primary_source_disclosure",
+    expires_at: expiresAt,
+    primary_source: "company",
+    verification_state: "verified",
+    source_type: input.metadata.source_type,
+    document_retrieved: input.metadata.document_retrieved,
+    official_source: input.metadata.official_source,
+    report_period: input.metadata.report_period,
+    report_year: input.metadata.report_year,
+    document_type: input.metadata.document_type,
+    document_url: input.metadata.document_url,
+    cns_category: input.metadata.cns_category,
+    source_urls: input.metadata.source_urls ?? [sourceUrl],
+  };
+
+  const { error } = await input.supabase.from("model_portfolio_research_snapshots").insert({
+    instrument_symbol: input.symbol,
+    exchange: input.exchange,
+    instrument_name: input.name,
+    kind: input.kind,
+    publisher: input.publisher.slice(0, 120),
+    source_url: sourceUrl,
+    published_at: input.publishedAt,
+    verified_at: input.verifiedAt,
+    title: input.title.slice(0, 240),
+    summary: input.summary.slice(0, 6000),
+    content_hash: contentHash,
+    metadata,
+  });
+  if (error && error.code !== "23505") {
+    throw new Error(`primary_research_snapshot_insert_failed:${error.code ?? "unknown"}`);
+  }
 }
 
 export function storedBundleToEvidence(bundle: StoredCandidateBundle): ModelPortfolioEvidence {
