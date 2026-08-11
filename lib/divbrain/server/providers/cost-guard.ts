@@ -62,6 +62,53 @@ export function providerRequiresDivBrainCostGuard(providerId: string): boolean {
   return providerId === DIVBRAIN_AI_GATEWAY_PROVIDER_ID;
 }
 
+/**
+ * Conservative file/image token estimate for Cost Guard reservation.
+ * Prefer over-reserving vs under-reserving when multimodal input is present.
+ */
+export function estimateDivBrainProviderFilePartTokens(params: {
+  mediaType: string;
+  byteLength: number;
+}): number {
+  const bytes = Math.max(0, Math.floor(params.byteLength));
+  if (bytes === 0) {
+    return 0;
+  }
+
+  // Images: rough high-side heuristic for vision tokens.
+  if (params.mediaType.startsWith("image/")) {
+    return Math.max(1_000, Math.ceil(bytes / 256) + 512);
+  }
+
+  // PDFs / other binary file parts: conservative byte→token ceiling.
+  if (params.mediaType === "application/pdf") {
+    return Math.max(2_000, Math.ceil(bytes / 180) + 1_000);
+  }
+
+  return Math.max(500, Math.ceil(bytes / 220) + 256);
+}
+
+function estimateMessageContentTokens(
+  content: DivBrainProviderRequest["messages"][number]["content"],
+): number {
+  if (typeof content === "string") {
+    return estimateDivBrainContextTokens(content);
+  }
+
+  let total = 0;
+  for (const part of content) {
+    if (part.type === "text") {
+      total += estimateDivBrainContextTokens(part.text);
+      continue;
+    }
+    total += estimateDivBrainProviderFilePartTokens({
+      mediaType: part.mediaType,
+      byteLength: part.data.byteLength,
+    });
+  }
+  return total;
+}
+
 /** Deterministic input-token estimate for conservative projection. */
 export function estimateDivBrainProviderRequestInputTokens(
   request: DivBrainProviderRequest,
@@ -71,7 +118,7 @@ export function estimateDivBrainProviderRequestInputTokens(
     total += estimateDivBrainContextTokens(block.content);
   }
   for (const message of request.messages) {
-    total += estimateDivBrainContextTokens(message.content);
+    total += estimateMessageContentTokens(message.content);
   }
   return total;
 }

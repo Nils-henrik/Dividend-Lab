@@ -80,6 +80,11 @@ export type CreateDivBrainApplicationServiceDeps = {
   providerModelId?: string;
   /** Server-configured max output tokens for conservative projection. */
   providerMaxOutputTokens?: number;
+  /**
+   * Optional attachment repository (Issue #166). Required when the browser
+   * submits attachmentIds or when recent-attachment follow-up context is enabled.
+   */
+  attachmentRepository?: import("../attachments/repository").DivBrainAttachmentRepository;
 };
 
 /** Trusted server-only options — never part of the browser JSON payload. */
