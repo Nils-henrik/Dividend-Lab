@@ -14,6 +14,12 @@ import "server-only";
  * - Bounded: at most a few disclosures per target company per pass.
  */
 
+export type NordicPrimaryAttachment = {
+  url: string;
+  mimeType: string | null;
+  fileName: string | null;
+};
+
 export type NordicPrimarySourceHit = {
   title: string;
   snippet: string;
@@ -23,6 +29,15 @@ export type NordicPrimarySourceHit = {
   sourceKind: "company_primary";
   publishedAt: string | null;
   fetchedAt: string;
+  category: string | null;
+  market: string | null;
+  attachments: NordicPrimaryAttachment[];
+};
+
+type NasdaqCnsAttachment = {
+  mimetype?: unknown;
+  fileName?: unknown;
+  attachmentUrl?: unknown;
 };
 
 type NasdaqCnsItem = {
@@ -33,6 +48,7 @@ type NasdaqCnsItem = {
   market?: unknown;
   company?: unknown;
   cnsCategory?: unknown;
+  attachment?: unknown;
 };
 
 type NasdaqCnsResponse = {
@@ -131,13 +147,42 @@ function itemsFromBody(body: NasdaqCnsResponse): NasdaqCnsItem[] {
   return Array.isArray(raw) ? raw : [raw];
 }
 
+function attachmentsFromItem(item: NasdaqCnsItem): NordicPrimaryAttachment[] {
+  const raw = item.attachment;
+  const list = Array.isArray(raw) ? raw : raw ? [raw] : [];
+  const attachments: NordicPrimaryAttachment[] = [];
+  const seen = new Set<string>();
+  for (const entry of list) {
+    if (!entry || typeof entry !== "object") continue;
+    const attachment = entry as NasdaqCnsAttachment;
+    const url = httpsUrl(attachment.attachmentUrl);
+    if (!url || seen.has(url)) continue;
+    // Official CNS attachments only — never follow arbitrary remote hosts here.
+    try {
+      const host = new URL(url).hostname.toLowerCase();
+      if (host !== "attachment.news.eu.nasdaq.com") continue;
+    } catch {
+      continue;
+    }
+    seen.add(url);
+    attachments.push({
+      url,
+      mimeType: text(attachment.mimetype),
+      fileName: text(attachment.fileName),
+    });
+    if (attachments.length >= 2) break;
+  }
+  return attachments;
+}
+
 async function queryNasdaqCns(input: {
   company: string;
   fetchImpl: typeof fetch;
 }): Promise<NasdaqCnsItem[]> {
   const url = new URL(NASDAQ_CNS_ENDPOINT);
   url.searchParams.set("type", "json");
-  url.searchParams.set("showAttachments", "false");
+  // Needed to discover official PDF report attachments for document retrieval.
+  url.searchParams.set("showAttachments", "true");
   url.searchParams.set("countResults", "true");
   url.searchParams.set("company", input.company);
   url.searchParams.set("count", "5");
@@ -195,12 +240,16 @@ export async function fetchNordicPrimarySourceEvents(input: {
 
       const category = text(item.cnsCategory);
       const market = text(item.market);
+      const attachments = attachmentsFromItem(item);
       const publishedAt =
         toIsoMaybe(text(item.releaseTime)) ?? toIsoMaybe(text(item.published));
       const snippetParts = [
         `Officiellt börsmeddelande från ${issuer}.`,
         category ? `Kategori: ${category}.` : null,
         market ? `Marknad: ${market}.` : null,
+        attachments.length
+          ? `CNS anger ${attachments.length} officiell bilaga(or); bilagetext läses endast efter säker hämtning.`
+          : "Ingen officiell bilaga i CNS-svaret.",
         "Primärkälla (börsdisclosure). Ingen nyckeltal har härletts ur rubriken.",
       ].filter(Boolean);
 
@@ -213,6 +262,9 @@ export async function fetchNordicPrimarySourceEvents(input: {
         sourceKind: "company_primary",
         publishedAt,
         fetchedAt: now.toISOString(),
+        category,
+        market,
+        attachments,
       });
     }
   }
