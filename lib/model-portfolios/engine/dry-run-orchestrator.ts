@@ -4,7 +4,7 @@ import { createModelPortfolioAdminClient } from "../admin";
 import { aggregatePortfolioAiUsage, type ModelPortfolioAiUsage, type ModelPortfolioBatchAiUsage } from "./ai-usage";
 import { buildDecisionAuditRow, persistDecisionAuditBatch, type DecisionAuditRow } from "./decision-audit";
 import { buildInvestorFacingDecisionRationale } from "./decision-narrative";
-import type { ModelPortfolioEvidence } from "./decision";
+import type { ModelPortfolioDecision, ModelPortfolioEvidence } from "./decision";
 import { runPortfolioDryRun } from "./dry-run";
 import type { EodhdCallBudgetSnapshot, ModelPortfolioResearchPass } from "./eodhd-budget";
 import type { DelayedQuote } from "./eodhd";
@@ -15,6 +15,11 @@ import { buildFollowerTradePayload } from "./pricing";
 import type { ResearchCandidate } from "./research";
 import { runModelPortfolioResearchPipeline, type ResearchCandidateDiagnostic } from "./research-pipeline";
 import { settleModelPortfolioDecision } from "./settle-service";
+import { planSimulatedSettlement } from "./settlement";
+import {
+  persistModelPortfolioValuationSnapshots,
+  refreshModelPortfolioHoldingPrices,
+} from "./valuation-snapshots";
 import { evaluateWholeShareBuyEligibility } from "./whole-share-eligibility";
 
 type PortfolioRow = {
@@ -106,8 +111,8 @@ function buildPortfolioSnapshot(input: {
     `Mål: ${input.portfolio.objective}`,
     `Tillgänglig modellkassa (minor SEK): ${input.cashMinor}`,
     "Handelsregel: simuleringen köper och säljer endast hela aktier; fraktionerade aktier är inte tillåtna.",
-    "Nya köpkandidater har förfiltrerats så att minst en hel aktie kan köpas utan att bryta mot courtage-, kassa-, positions- eller equity-regler.",
-    "Courtage: varje köp kostar exakt 10,00 SEK och belastar både kassa och snittkostnad.",
+    "Nya köpkandidater har förfiltrerats så att minst en hel aktie kan köpas utan att bryta mot kassa-, positions- eller equity-regler.",
+    "Courtage: 0,00 SEK för både köp och sälj i DivLabs modellportföljer.",
     "Befintliga innehav:",
     ...holdingLines,
   ].join("\n");
@@ -234,6 +239,100 @@ async function filterPortfolioDecisionInputs(input: {
   return { candidates: selected, evidence };
 }
 
+function failClosedExecutionHold(
+  decision: ModelPortfolioDecision,
+  reason: string,
+): ModelPortfolioDecision {
+  return {
+    action: "hold",
+    symbol: null,
+    exchange: null,
+    instrumentName: null,
+    proposedPortfolioPct: 0,
+    convictionScore: Math.min(decision.convictionScore, 0.49),
+    materialThesisBreak: false,
+    thesis: "Det föreslagna portföljbeslutet klarade inte den deterministiska exekveringskontrollen för hela aktier.",
+    bearCase: decision.bearCase,
+    catalyst: decision.catalyst,
+    valuationView: decision.valuationView,
+    keyRisks: [...decision.keyRisks, `Exekveringsspärr: ${reason}.`],
+    evidenceIds: decision.evidenceIds,
+    disconfirmingEvidenceIds: decision.disconfirmingEvidenceIds,
+    rationale: `Ingen affär genomförs. AI-förslaget var inte exekverbart med hela aktier inom portföljens kassa och riskregler (${reason}), därför används HOLD som säkerhetsbeslut.`,
+  };
+}
+
+async function preflightGeneratedDecision(input: {
+  decision: ModelPortfolioDecision;
+  portfolio: PortfolioRow;
+  holdings: HoldingRow[];
+  cashMinor: number;
+  quotes: Map<string, DelayedQuote>;
+  recentTx: TransactionTimeRow[];
+  now: Date;
+}): Promise<ModelPortfolioDecision> {
+  const action = input.decision.action;
+  if (action !== "buy" && action !== "sell" && action !== "trim" && action !== "rebalance") {
+    return input.decision;
+  }
+  if (!input.decision.symbol || !input.decision.exchange) {
+    return failClosedExecutionHold(input.decision, "missing_decision_instrument");
+  }
+
+  const quote = input.quotes.get(instrumentKey(input.decision.symbol, input.decision.exchange));
+  const fill = quote ? quoteToSimulatedFill(quote, input.decision.instrumentName ?? input.decision.symbol) : null;
+  if (!fill) return failClosedExecutionHold(input.decision, "missing_simulated_quote");
+
+  const investedMinor = investedValueMinor(input.holdings);
+  const currentHolding = input.holdings.find((holding) =>
+    holding.instrument_symbol === input.decision.symbol && holding.exchange === input.decision.exchange,
+  );
+  const lastTrade = input.recentTx.find((row) =>
+    row.portfolio_id === input.portfolio.id &&
+    row.instrument_symbol === input.decision.symbol &&
+    row.exchange === input.decision.exchange,
+  );
+  const hoursSince = lastTrade
+    ? (input.now.getTime() - Date.parse(lastTrade.executed_at)) / (60 * 60 * 1_000)
+    : null;
+
+  const nativeCurrency = currencyForExchange(fill.exchange);
+  if (!nativeCurrency) return failClosedExecutionHold(input.decision, "unsupported_currency");
+  let fxRate: FxRateQuote | null = null;
+  if (nativeCurrency !== "SEK") {
+    const fetched = await fetchFxRateToSek(nativeCurrency, input.now);
+    if (!fetched.ok) return failClosedExecutionHold(input.decision, "fx_unavailable");
+    fxRate = fetched.quote;
+  }
+
+  const plan = planSimulatedSettlement({
+    side: action === "buy" ? "buy" : "sell",
+    portfolioStatus: input.portfolio.status,
+    executionAllowedAtDecisionTime: true,
+    strategyKey: input.portfolio.strategy_key,
+    rules: parseRiskRules(input.portfolio.strategy_rules),
+    now: input.now,
+    cashMinor: input.cashMinor,
+    portfolioValueMinor: input.cashMinor + investedMinor,
+    investedMinor,
+    currentHolding: currentHolding
+      ? {
+          quantity: Number(currentHolding.quantity),
+          averageCostMinor: Number(currentHolding.average_cost_minor),
+          lastPriceMinor: currentHolding.last_price_minor,
+        }
+      : null,
+    targetWeightPct: input.decision.proposedPortfolioPct,
+    quote: fill,
+    fxRateToSek: fxRate,
+    convictionScore: input.decision.convictionScore,
+    materialThesisBreak: input.decision.materialThesisBreak,
+    hoursSinceLastTradeInInstrument: hoursSince,
+  });
+
+  return plan.ok ? input.decision : failClosedExecutionHold(input.decision, plan.reason);
+}
+
 async function markDecisionSettlementRejected(
   supabase: NonNullable<ReturnType<typeof createModelPortfolioAdminClient>>,
   decisionId: string,
@@ -300,6 +399,18 @@ export async function runAllModelPortfoliosDryRun(
     now,
   });
 
+  await refreshModelPortfolioHoldingPrices({
+    supabase,
+    holdings,
+    quotes: research.quotes,
+    now,
+  });
+  await persistModelPortfolioValuationSnapshots({
+    supabase,
+    portfolioIds: portfolios.map((portfolio) => portfolio.id),
+    now,
+  });
+
   const portfolioResults: DryRunOrchestrationResult["portfolios"] = [];
   const auditRows: DecisionAuditRow[] = [];
   let spentTodayUsdMicros = 0;
@@ -334,18 +445,27 @@ export async function runAllModelPortfoliosDryRun(
     }
 
     spentTodayUsdMicros += result.estimatedCostUsdMicros;
+    const decision = await preflightGeneratedDecision({
+      decision: result.decision,
+      portfolio,
+      holdings: portfolioHoldings,
+      cashMinor,
+      quotes: research.quotes,
+      recentTx,
+      now,
+    });
     const rationale = buildInvestorFacingDecisionRationale({
       researchSummary: research.summary,
-      decision: result.decision,
+      decision,
     });
     portfolioResults.push({
       id: portfolio.id,
       slug: portfolio.slug,
       name: portfolio.name,
       ok: true,
-      action: result.decision.action,
-      symbol: result.decision.symbol,
-      convictionScore: result.decision.convictionScore,
+      action: decision.action,
+      symbol: decision.symbol,
+      convictionScore: decision.convictionScore,
       rationale,
       model: result.model,
       estimatedCostUsdMicros: result.estimatedCostUsdMicros,
@@ -358,7 +478,7 @@ export async function runAllModelPortfoliosDryRun(
         runId: audit.runId,
         portfolioId: portfolio.id,
         strategyKey: portfolio.strategy_key,
-        decision: result.decision,
+        decision,
         evidence: decisionInputs.evidence,
         rankedCandidates: result.rankedCandidates,
         modelName: result.model,
