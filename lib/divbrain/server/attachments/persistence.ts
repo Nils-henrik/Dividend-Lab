@@ -59,6 +59,15 @@ export type DivBrainAttachmentPersistencePort = {
     >
   >;
 
+  /**
+   * Bounded scan of the actor's unlinked (message_id IS NULL), non-deleted
+   * attachment rows — oldest first. Used for opportunistic TTL cleanup + quota.
+   */
+  listUnlinkedAttachmentsForActor(params: {
+    userId: string;
+    limit: number;
+  }): Promise<DivBrainAttachmentPersistenceResult<DivBrainAttachmentRow[]>>;
+
   updateAttachmentStatusForActor(params: {
     attachmentId: string;
     userId: string;

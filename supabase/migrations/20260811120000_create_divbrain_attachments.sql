@@ -1,12 +1,14 @@
--- DivBrain attachments v1 (Issue #166): private file metadata + storage.
+-- DivBrain attachments v1 (Issue #166 / hardened #172): private file metadata + storage.
 -- Model A: authenticated clients SELECT attachment metadata only.
 -- All INSERT/UPDATE/DELETE of attachment rows is service-role / server-owned.
 -- Storage bucket is PRIVATE. No permanent public object URLs.
 --
--- Cleanup: conversation DELETE cascades attachment rows. A BEFORE DELETE trigger
--- on divbrain_conversations removes private storage objects for that conversation
--- (bounded best-effort cleanup; orphaned objects without metadata are not
--- accessible via app APIs because paths are server-generated and ownership-checked).
+-- Cleanup: conversation DELETE cascades attachment metadata rows via FK.
+-- Physical private storage objects MUST be removed through the Supabase Storage
+-- API in trusted application code BEFORE permanent conversation deletion.
+-- Do not delete rows from storage.objects directly — that can orphan billable
+-- objects. Conversation delete fails closed when Storage API cleanup cannot
+-- complete. Unlinked discard / abandoned-upload TTL also use the Storage API.
 
 -- ---------------------------------------------------------------------------
 -- Attachments metadata
@@ -61,52 +63,16 @@ create index if not exists divbrain_attachments_message_id_idx
 create index if not exists divbrain_attachments_conversation_status_idx
   on public.divbrain_attachments (conversation_id, status);
 
+create index if not exists divbrain_attachments_user_unlinked_created_idx
+  on public.divbrain_attachments (user_id, created_at asc)
+  where message_id is null and status <> 'deleted';
+
 drop trigger if exists set_divbrain_attachments_updated_at
   on public.divbrain_attachments;
 create trigger set_divbrain_attachments_updated_at
   before update on public.divbrain_attachments
   for each row
   execute function public.set_updated_at();
-
--- ---------------------------------------------------------------------------
--- Storage cleanup on permanent conversation delete
--- ---------------------------------------------------------------------------
-
-create or replace function public.cleanup_divbrain_attachment_storage()
-returns trigger
-language plpgsql
-security definer
-set search_path = public, storage
-as $$
-declare
-  attachment_row record;
-begin
-  for attachment_row in
-    select storage_bucket, storage_path
-    from public.divbrain_attachments
-    where conversation_id = old.id
-  loop
-    begin
-      delete from storage.objects
-      where bucket_id = attachment_row.storage_bucket
-        and name = attachment_row.storage_path;
-    exception
-      when others then
-        -- Best-effort: never block conversation deletion on storage cleanup.
-        null;
-    end;
-  end loop;
-
-  return old;
-end;
-$$;
-
-drop trigger if exists cleanup_divbrain_attachment_storage_before_conversation_delete
-  on public.divbrain_conversations;
-create trigger cleanup_divbrain_attachment_storage_before_conversation_delete
-  before delete on public.divbrain_conversations
-  for each row
-  execute function public.cleanup_divbrain_attachment_storage();
 
 -- ---------------------------------------------------------------------------
 -- RLS (Model A for metadata writes)
@@ -167,6 +133,7 @@ set
 -- Uploads use short-lived signed upload URLs created by the trusted server.
 -- Downloads use short-lived signed download URLs created by the trusted server.
 -- Service role retains full storage access for server-owned operations.
+-- Physical object deletion is performed only via the Storage API in app code.
 
 drop policy if exists "DivBrain attachments are not publicly readable"
   on storage.objects;

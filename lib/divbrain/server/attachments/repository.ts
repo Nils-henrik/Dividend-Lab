@@ -4,7 +4,10 @@
  */
 
 import {
+  DIVBRAIN_ATTACHMENT_ABANDONED_TTL_MS,
   DIVBRAIN_ATTACHMENT_BUCKET,
+  DIVBRAIN_ATTACHMENT_MAX_UNLINKED_PER_USER,
+  DIVBRAIN_ATTACHMENT_UNLINKED_CLEANUP_SCAN_LIMIT,
   isDivBrainAttachmentMimeType,
   toDivBrainShellAttachment,
   type DivBrainAttachmentStatus,
@@ -94,6 +97,10 @@ export type DivBrainAttachmentConfirmUploadResult =
   | { ok: false; clientError: DivBrainAttachmentClientError }
   | { ok: false; error: import("../../errors").DivBrainError };
 
+export type DivBrainAttachmentDiscardResult =
+  | { ok: true }
+  | { ok: false; error: import("../../errors").DivBrainError };
+
 export type DivBrainAttachmentRepository = {
   prepareUpload(params: {
     actorId: string;
@@ -107,6 +114,17 @@ export type DivBrainAttachmentRepository = {
     actorId: string;
     attachmentId: string;
   }): Promise<DivBrainAttachmentConfirmUploadResult>;
+
+  /**
+   * Discard an unlinked attachment (message_id IS NULL).
+   * Storage API removal happens first; metadata is retired only after success.
+   * Missing/cross-user/linked ids collapse to not_found (no existence leak).
+   * Already-deleted rows are idempotent success.
+   */
+  discardUnlinkedAttachment(params: {
+    actorId: string;
+    attachmentId: string;
+  }): Promise<DivBrainAttachmentDiscardResult>;
 
   resolveReadyAttachmentsForSubmit(params: {
     actorId: string;
@@ -144,6 +162,11 @@ export type DivBrainAttachmentRepository = {
     expiresInSeconds?: number;
   }): Promise<DivBrainResult<{ signedUrl: string; filename: string; mimeType: string }>>;
 
+  /**
+   * Remove private storage objects for a conversation via the Storage API.
+   * Fails closed on Storage API errors so conversation/metadata delete can
+   * refuse to proceed and avoid orphaning billable objects.
+   */
   cleanupConversationStorage(params: {
     actorId: string;
     conversationId: string;
@@ -153,8 +176,89 @@ export type DivBrainAttachmentRepository = {
 export function createDivBrainAttachmentRepository(deps: {
   persistence: DivBrainAttachmentPersistencePort;
   storage: DivBrainAttachmentStoragePort;
+  /** Injectable clock for deterministic TTL tests. */
+  nowMs?: () => number;
 }): DivBrainAttachmentRepository {
   const { persistence, storage } = deps;
+  const nowMs = deps.nowMs ?? (() => Date.now());
+
+  async function retireUnlinkedAttachmentObject(params: {
+    actorId: string;
+    row: DivBrainAttachmentRow;
+  }): Promise<DivBrainResult<void>> {
+    const removed = await storage.removeObjects({
+      bucket: params.row.storage_bucket,
+      paths: [params.row.storage_path],
+    });
+    if (!removed.ok) {
+      return mapPersistenceFailure(removed.error.kind);
+    }
+
+    const updated = await persistence.updateAttachmentStatusForActor({
+      attachmentId: params.row.id,
+      userId: params.actorId,
+      status: "deleted",
+    });
+    if (!updated.ok) {
+      return mapPersistenceFailure(updated.error.kind);
+    }
+    return divBrainSuccess(undefined);
+  }
+
+  /**
+   * Opportunistic bounded cleanup of stale unlinked uploads, then quota check.
+   * Returns clientError unlinked_quota when active unlinked rows still exceed cap.
+   */
+  async function enforceUnlinkedQuotaBeforePrepare(params: {
+    actorId: string;
+  }): Promise<
+    | { ok: true }
+    | { ok: false; clientError: DivBrainAttachmentClientError }
+    | { ok: false; error: import("../../errors").DivBrainError }
+  > {
+    const listed = await persistence.listUnlinkedAttachmentsForActor({
+      userId: params.actorId,
+      limit: DIVBRAIN_ATTACHMENT_UNLINKED_CLEANUP_SCAN_LIMIT,
+    });
+    if (!listed.ok) {
+      return { ok: false as const, error: persistenceError(listed.error.kind) };
+    }
+
+    const cutoff = nowMs() - DIVBRAIN_ATTACHMENT_ABANDONED_TTL_MS;
+    for (const row of listed.data) {
+      const createdMs = Date.parse(row.created_at);
+      if (!Number.isFinite(createdMs) || createdMs > cutoff) {
+        continue;
+      }
+      const retired = await retireUnlinkedAttachmentObject({
+        actorId: params.actorId,
+        row,
+      });
+      if (!retired.ok) {
+        // Fail closed on Storage API cleanup so prepare cannot grow orphans.
+        return { ok: false as const, error: retired.error };
+      }
+    }
+
+    const afterCleanup = await persistence.listUnlinkedAttachmentsForActor({
+      userId: params.actorId,
+      limit: DIVBRAIN_ATTACHMENT_UNLINKED_CLEANUP_SCAN_LIMIT,
+    });
+    if (!afterCleanup.ok) {
+      return {
+        ok: false as const,
+        error: persistenceError(afterCleanup.error.kind),
+      };
+    }
+
+    if (
+      afterCleanup.data.length >= DIVBRAIN_ATTACHMENT_MAX_UNLINKED_PER_USER
+    ) {
+      return { ok: false as const, clientError: "unlinked_quota" as const };
+    }
+
+    return { ok: true as const };
+  }
 
   return {
     async prepareUpload(params) {
@@ -177,6 +281,13 @@ export function createDivBrainAttachmentRepository(deps: {
           return validated;
         }
         return { ok: false as const, clientError: "invalid" as const };
+      }
+
+      const quota = await enforceUnlinkedQuotaBeforePrepare({
+        actorId: actorResult.data,
+      });
+      if (!quota.ok) {
+        return quota;
       }
 
       const attachmentId = randomUUID();
@@ -342,6 +453,44 @@ export function createDivBrainAttachmentRepository(deps: {
           byteSize: mapped.data.byteSize,
         }),
       };
+    },
+
+    async discardUnlinkedAttachment(params) {
+      const actorResult = normalizeDivBrainActorId(params.actorId);
+      if (!actorResult.ok) {
+        return actorResult;
+      }
+      const idResult = normalizeDivBrainResourceId(params.attachmentId);
+      if (!idResult.ok) {
+        return divBrainFailureFromCode("not_found");
+      }
+
+      const found = await persistence.findAttachmentForActor({
+        attachmentId: idResult.data,
+        userId: actorResult.data,
+      });
+      if (!found.ok) {
+        return mapPersistenceFailure(found.error.kind);
+      }
+      if (!found.data) {
+        return divBrainFailureFromCode("not_found");
+      }
+
+      // Idempotent retry: already retired.
+      if (found.data.status === "deleted") {
+        return divBrainSuccess(undefined);
+      }
+
+      // Linked transcript attachments cannot be discarded via this path.
+      // Same not_found surface as missing/cross-user (no existence leak).
+      if (found.data.message_id !== null) {
+        return divBrainFailureFromCode("not_found");
+      }
+
+      return retireUnlinkedAttachmentObject({
+        actorId: actorResult.data,
+        row: found.data,
+      });
     },
 
     async resolveReadyAttachmentsForSubmit(params) {
@@ -596,8 +745,8 @@ export function createDivBrainAttachmentRepository(deps: {
       for (const [bucket, paths] of byBucket) {
         const removed = await storage.removeObjects({ bucket, paths });
         if (!removed.ok) {
-          // Best-effort app-side cleanup; DB trigger is the primary guarantee.
-          continue;
+          // Fail closed: do not allow conversation/metadata delete after this.
+          return mapPersistenceFailure(removed.error.kind);
         }
       }
 

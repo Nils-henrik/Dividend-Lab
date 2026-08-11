@@ -10,6 +10,7 @@ import {
 } from "react";
 import {
   confirmDivBrainAttachmentUploadAction,
+  discardDivBrainUnlinkedAttachmentAction,
   prepareDivBrainAttachmentUploadAction,
   submitDivBrainMessageAction,
 } from "@/app/brain/actions";
@@ -179,6 +180,19 @@ export default function DivBrainComposer({
           continue;
         }
 
+        // Retain server attachment id as soon as prepare succeeds (before PUT).
+        setAttachments((current) =>
+          current.map((item) =>
+            item.localId === localId
+              ? {
+                  ...item,
+                  attachmentId: prepared.attachmentId,
+                  shell: prepared.shell,
+                }
+              : item,
+          ),
+        );
+
         const uploadResponse = await fetch(prepared.signedUrl, {
           method: "PUT",
           headers: {
@@ -191,11 +205,15 @@ export default function DivBrainComposer({
         });
 
         if (!uploadResponse.ok) {
+          void discardDivBrainUnlinkedAttachmentAction({
+            attachmentId: prepared.attachmentId,
+          });
           setAttachments((current) =>
             current.map((item) =>
               item.localId === localId
                 ? {
                     ...item,
+                    attachmentId: prepared.attachmentId,
                     status: "error",
                     errorMessage: DIVBRAIN_ATTACHMENT_COPY_SV.uploadFailure,
                   }
@@ -211,11 +229,15 @@ export default function DivBrainComposer({
         });
 
         if (!confirmed.ok) {
+          void discardDivBrainUnlinkedAttachmentAction({
+            attachmentId: prepared.attachmentId,
+          });
           setAttachments((current) =>
             current.map((item) =>
               item.localId === localId
                 ? {
                     ...item,
+                    attachmentId: prepared.attachmentId,
                     status: "error",
                     errorMessage: confirmed.safeMessage,
                   }
@@ -239,8 +261,14 @@ export default function DivBrainComposer({
           ),
         );
       } catch {
-        setAttachments((current) =>
-          current.map((item) =>
+        setAttachments((current) => {
+          const failed = current.find((item) => item.localId === localId);
+          if (failed?.attachmentId) {
+            void discardDivBrainUnlinkedAttachmentAction({
+              attachmentId: failed.attachmentId,
+            });
+          }
+          return current.map((item) =>
             item.localId === localId
               ? {
                   ...item,
@@ -248,11 +276,30 @@ export default function DivBrainComposer({
                   errorMessage: DIVBRAIN_ATTACHMENT_COPY_SV.uploadFailure,
                 }
               : item,
-          ),
-        );
+          );
+        });
         setLocalError(DIVBRAIN_ATTACHMENT_COPY_SV.uploadFailure);
       }
     }
+  }
+
+  async function removeComposerAttachment(item: ComposerAttachment) {
+    // Do not allow remove while PUT/confirm is in flight for this chip.
+    if (item.status === "uploading") {
+      return;
+    }
+
+    if (item.attachmentId) {
+      // Best-effort server discard; UI clears either way so retry stays usable.
+      await discardDivBrainUnlinkedAttachmentAction({
+        attachmentId: item.attachmentId,
+      });
+    }
+
+    setAttachments((current) =>
+      current.filter((entry) => entry.localId !== item.localId),
+    );
+    setLocalError(null);
   }
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -363,13 +410,11 @@ export default function DivBrainComposer({
                   </span>
                   <button
                     type="button"
-                    className="shrink-0 text-divlab-text-muted transition hover:text-divlab-text"
+                    className="shrink-0 text-divlab-text-muted transition hover:text-divlab-text disabled:cursor-not-allowed disabled:opacity-40"
                     aria-label={DIVBRAIN_ATTACHMENT_COPY_SV.remove}
+                    disabled={item.status === "uploading" || pending}
                     onClick={() => {
-                      setAttachments((current) =>
-                        current.filter((entry) => entry.localId !== item.localId),
-                      );
-                      setLocalError(null);
+                      void removeComposerAttachment(item);
                     }}
                   >
                     ×

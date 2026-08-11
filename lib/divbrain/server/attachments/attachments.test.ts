@@ -8,8 +8,14 @@ import { readFileSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  DIVBRAIN_ATTACHMENT_ABANDONED_TTL_MS,
+  DIVBRAIN_ATTACHMENT_COMBINED_PROVIDER_MAX_BYTES,
   DIVBRAIN_ATTACHMENT_MAX_BYTES,
   DIVBRAIN_ATTACHMENT_MAX_PER_MESSAGE,
+  DIVBRAIN_ATTACHMENT_MAX_UNLINKED_PER_USER,
+  DIVBRAIN_ATTACHMENT_RECENT_FILE_LIMIT,
+  DIVBRAIN_ATTACHMENT_RECENT_MESSAGE_LIMIT,
+  DIVBRAIN_ATTACHMENT_UNLINKED_CLEANUP_SCAN_LIMIT,
   formatDivBrainAttachmentOnlyLabel,
 } from "../../attachments";
 import {
@@ -28,7 +34,10 @@ import {
   sniffDivBrainAttachmentMime,
   validateDivBrainAttachmentBatchLimits,
 } from "./validation";
-import { prepareDivBrainAttachmentsForGeneration } from "./prepare";
+import {
+  prepareDivBrainAttachmentsForGeneration,
+  prepareRecentDivBrainAttachmentContext,
+} from "./prepare";
 import { estimateDivBrainProviderRequestInputTokens } from "../providers/cost-guard";
 import type { DivBrainProviderRequest } from "../providers/types";
 import { mapAssembledContextToProviderRequest } from "../context/to-provider-request";
@@ -151,6 +160,19 @@ function createMemoryPorts(seed: DivBrainAttachmentRow[] = []) {
         }));
       return { ok: true, data };
     },
+    async listUnlinkedAttachmentsForActor({ userId, limit }) {
+      const data = [...rows.values()]
+        .filter(
+          (row) =>
+            row.user_id === userId &&
+            row.message_id === null &&
+            row.status !== "deleted",
+        )
+        .sort((a, b) => a.created_at.localeCompare(b.created_at))
+        .slice(0, Math.max(0, limit))
+        .map((row) => ({ ...row }));
+      return { ok: true, data };
+    },
     async updateAttachmentStatusForActor({
       attachmentId,
       userId,
@@ -192,6 +214,7 @@ function createMemoryPorts(seed: DivBrainAttachmentRow[] = []) {
     },
   };
 
+  let removeShouldFail = false;
   const storage: DivBrainAttachmentStoragePort = {
     async createSignedUploadUrl({ path }) {
       return {
@@ -217,6 +240,9 @@ function createMemoryPorts(seed: DivBrainAttachmentRow[] = []) {
       return { ok: true, data: bytes };
     },
     async removeObjects({ paths }) {
+      if (removeShouldFail) {
+        return { ok: false, error: { kind: "query_failed" } };
+      }
       for (const path of paths) {
         objects.delete(path);
       }
@@ -227,7 +253,15 @@ function createMemoryPorts(seed: DivBrainAttachmentRow[] = []) {
     },
   };
 
-  return { persistence, storage, rows, objects };
+  return {
+    persistence,
+    storage,
+    rows,
+    objects,
+    setRemoveShouldFail(value: boolean) {
+      removeShouldFail = value;
+    },
+  };
 }
 
 function createConversationRepo(): DivBrainConversationRepository {
@@ -952,12 +986,396 @@ describe("DivBrain attachments migration contract", () => {
     assert.match(source, /create table if not exists public\.divbrain_attachments/i);
     assert.match(source, /'divbrain-attachments'/);
     assert.match(source, /\bfalse\b/);
-    assert.match(source, /cleanup_divbrain_attachment_storage/);
     assert.match(source, /grant select, insert, update, delete/i);
     assert.match(source, /to service_role/i);
     assert.doesNotMatch(
       source,
       /create policy[\s\S]*for insert[\s\S]*to authenticated/i,
     );
+    assert.doesNotMatch(source, /delete\s+from\s+storage\.objects/i);
+    assert.doesNotMatch(source, /cleanup_divbrain_attachment_storage/i);
+  });
+});
+
+describe("DivBrain attachment hardening (#172)", () => {
+  it("failed Storage API cleanup prevents conversation storage cleanup success", async () => {
+    const path = `${ACTOR}/${CONV}/a/report.pdf`;
+    const ports = createMemoryPorts([
+      {
+        id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        user_id: ACTOR,
+        conversation_id: CONV,
+        message_id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+        storage_bucket: "divbrain-attachments",
+        storage_path: path,
+        original_filename: "report.pdf",
+        mime_type: "application/pdf",
+        byte_size: 10,
+        checksum_sha256: null,
+        status: "ready",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+    ]);
+    ports.objects.set(path, pdfBytes());
+    ports.setRemoveShouldFail(true);
+    const repository = createDivBrainAttachmentRepository(ports);
+    const cleaned = await repository.cleanupConversationStorage({
+      actorId: ACTOR,
+      conversationId: CONV,
+    });
+    assert.equal(cleaned.ok, false);
+    assert.equal(ports.objects.has(path), true);
+  });
+
+  it("discards unlinked ready attachment via Storage API then marks deleted", async () => {
+    const attachmentId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+    const path = `${ACTOR}/${CONV}/${attachmentId}/report.pdf`;
+    const ports = createMemoryPorts([
+      {
+        id: attachmentId,
+        user_id: ACTOR,
+        conversation_id: CONV,
+        message_id: null,
+        storage_bucket: "divbrain-attachments",
+        storage_path: path,
+        original_filename: "report.pdf",
+        mime_type: "application/pdf",
+        byte_size: pdfBytes().byteLength,
+        checksum_sha256: null,
+        status: "ready",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+    ]);
+    ports.objects.set(path, pdfBytes());
+    const repository = createDivBrainAttachmentRepository(ports);
+    const discarded = await repository.discardUnlinkedAttachment({
+      actorId: ACTOR,
+      attachmentId,
+    });
+    assert.equal(discarded.ok, true);
+    assert.equal(ports.objects.has(path), false);
+    assert.equal(ports.rows.get(attachmentId)?.status, "deleted");
+  });
+
+  it("rejects linked attachment discard and leaves object intact", async () => {
+    const attachmentId = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+    const path = `${ACTOR}/${CONV}/${attachmentId}/report.pdf`;
+    const ports = createMemoryPorts([
+      {
+        id: attachmentId,
+        user_id: ACTOR,
+        conversation_id: CONV,
+        message_id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+        storage_bucket: "divbrain-attachments",
+        storage_path: path,
+        original_filename: "report.pdf",
+        mime_type: "application/pdf",
+        byte_size: pdfBytes().byteLength,
+        checksum_sha256: null,
+        status: "ready",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+    ]);
+    ports.objects.set(path, pdfBytes());
+    const repository = createDivBrainAttachmentRepository(ports);
+    const discarded = await repository.discardUnlinkedAttachment({
+      actorId: ACTOR,
+      attachmentId,
+    });
+    assert.equal(discarded.ok, false);
+    if (!discarded.ok) {
+      assert.equal(discarded.error.code, "not_found");
+    }
+    assert.equal(ports.objects.has(path), true);
+    assert.equal(ports.rows.get(attachmentId)?.status, "ready");
+  });
+
+  it("cross-user discard returns safe not_found", async () => {
+    const attachmentId = "dddddddd-dddd-4ddd-8ddd-dddddddddddd";
+    const path = `${ACTOR}/${CONV}/${attachmentId}/report.pdf`;
+    const ports = createMemoryPorts([
+      {
+        id: attachmentId,
+        user_id: ACTOR,
+        conversation_id: CONV,
+        message_id: null,
+        storage_bucket: "divbrain-attachments",
+        storage_path: path,
+        original_filename: "report.pdf",
+        mime_type: "application/pdf",
+        byte_size: pdfBytes().byteLength,
+        checksum_sha256: null,
+        status: "ready",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+    ]);
+    ports.objects.set(path, pdfBytes());
+    const repository = createDivBrainAttachmentRepository(ports);
+    const discarded = await repository.discardUnlinkedAttachment({
+      actorId: OTHER,
+      attachmentId,
+    });
+    assert.equal(discarded.ok, false);
+    if (!discarded.ok) {
+      assert.equal(discarded.error.code, "not_found");
+    }
+    assert.equal(ports.objects.has(path), true);
+  });
+
+  it("opportunistically cleans stale unlinked attachments before prepare", async () => {
+    const staleId = "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee";
+    const stalePath = `${ACTOR}/${CONV}/${staleId}/old.pdf`;
+    const now = Date.parse("2026-08-11T12:00:00.000Z");
+    const staleCreated = new Date(
+      now - DIVBRAIN_ATTACHMENT_ABANDONED_TTL_MS - 60_000,
+    ).toISOString();
+    const ports = createMemoryPorts([
+      {
+        id: staleId,
+        user_id: ACTOR,
+        conversation_id: CONV,
+        message_id: null,
+        storage_bucket: "divbrain-attachments",
+        storage_path: stalePath,
+        original_filename: "old.pdf",
+        mime_type: "application/pdf",
+        byte_size: pdfBytes().byteLength,
+        checksum_sha256: null,
+        status: "ready",
+        created_at: staleCreated,
+        updated_at: staleCreated,
+      },
+    ]);
+    ports.objects.set(stalePath, pdfBytes());
+    const repository = createDivBrainAttachmentRepository({
+      ...ports,
+      nowMs: () => now,
+    });
+    const prepared = await repository.prepareUpload({
+      actorId: ACTOR,
+      conversationId: CONV,
+      filename: "fresh.pdf",
+      mimeType: "application/pdf",
+      byteSize: pdfBytes().byteLength,
+    });
+    assert.equal(prepared.ok, true);
+    assert.equal(ports.objects.has(stalePath), false);
+    assert.equal(ports.rows.get(staleId)?.status, "deleted");
+  });
+
+  it("rejects prepare when non-stale unlinked quota is reached", async () => {
+    const now = Date.parse("2026-08-11T12:00:00.000Z");
+    const seed: DivBrainAttachmentRow[] = [];
+    for (let i = 0; i < DIVBRAIN_ATTACHMENT_MAX_UNLINKED_PER_USER; i += 1) {
+      const id = `10000000-0000-4000-8000-${String(i).padStart(12, "0")}`;
+      seed.push({
+        id,
+        user_id: ACTOR,
+        conversation_id: CONV,
+        message_id: null,
+        storage_bucket: "divbrain-attachments",
+        storage_path: `${ACTOR}/${CONV}/${id}/f.pdf`,
+        original_filename: "f.pdf",
+        mime_type: "application/pdf",
+        byte_size: 10,
+        checksum_sha256: null,
+        status: "ready",
+        created_at: new Date(now - 60_000).toISOString(),
+        updated_at: new Date(now - 60_000).toISOString(),
+      });
+    }
+    const ports = createMemoryPorts(seed);
+    const repository = createDivBrainAttachmentRepository({
+      ...ports,
+      nowMs: () => now,
+    });
+    const prepared = await repository.prepareUpload({
+      actorId: ACTOR,
+      conversationId: CONV,
+      filename: "fresh.pdf",
+      mimeType: "application/pdf",
+      byteSize: pdfBytes().byteLength,
+    });
+    assert.equal(prepared.ok, false);
+    if (!prepared.ok && "clientError" in prepared) {
+      assert.equal(prepared.clientError, "unlinked_quota");
+    }
+  });
+
+  it("bounds the unlinked cleanup scan", async () => {
+    assert.ok(
+      DIVBRAIN_ATTACHMENT_UNLINKED_CLEANUP_SCAN_LIMIT >=
+        DIVBRAIN_ATTACHMENT_MAX_UNLINKED_PER_USER,
+    );
+    assert.ok(DIVBRAIN_ATTACHMENT_UNLINKED_CLEANUP_SCAN_LIMIT <= 100);
+
+    let observedLimit: number | null = null;
+    const ports = createMemoryPorts();
+    const wrappedPersistence: DivBrainAttachmentPersistencePort = {
+      ...ports.persistence,
+      async listUnlinkedAttachmentsForActor(params) {
+        observedLimit = params.limit;
+        return ports.persistence.listUnlinkedAttachmentsForActor(params);
+      },
+    };
+    const repository = createDivBrainAttachmentRepository({
+      persistence: wrappedPersistence,
+      storage: ports.storage,
+      nowMs: () => Date.now(),
+    });
+    await repository.prepareUpload({
+      actorId: ACTOR,
+      conversationId: CONV,
+      filename: "fresh.pdf",
+      mimeType: "application/pdf",
+      byteSize: pdfBytes().byteLength,
+    });
+    assert.equal(
+      observedLimit,
+      DIVBRAIN_ATTACHMENT_UNLINKED_CLEANUP_SCAN_LIMIT,
+    );
+  });
+
+  it("skips recent files that cannot fit the remaining combined byte budget", async () => {
+    const msg1 = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1";
+    const recentId = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb1";
+    const recentPath = `${ACTOR}/${CONV}/${recentId}/big.pdf`;
+    const now = new Date().toISOString();
+    const ports = createMemoryPorts([
+      {
+        id: recentId,
+        user_id: ACTOR,
+        conversation_id: CONV,
+        message_id: msg1,
+        storage_bucket: "divbrain-attachments",
+        storage_path: recentPath,
+        original_filename: "big.pdf",
+        mime_type: "application/pdf",
+        byte_size: 30 * 1024 * 1024,
+        checksum_sha256: null,
+        status: "ready",
+        created_at: now,
+        updated_at: now,
+      },
+    ]);
+    ports.objects.set(recentPath, pdfBytes());
+    const repository = createDivBrainAttachmentRepository(ports);
+    const recent = await prepareRecentDivBrainAttachmentContext({
+      repository,
+      actorId: ACTOR,
+      conversationId: CONV,
+      remainingByteBudget: 10 * 1024 * 1024,
+    });
+    assert.equal(recent.ok, true);
+    if (recent.ok) {
+      assert.equal(recent.data.fileParts.length, 0);
+    }
+  });
+
+  it("keeps current + recent bytes within the combined ceiling", async () => {
+    const msg1 = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2";
+    const fitId = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb2";
+    const skipId = "cccccccc-cccc-4ccc-8ccc-ccccccccccc2";
+    const newer = "2026-08-11T12:00:02.000Z";
+    const older = "2026-08-11T12:00:01.000Z";
+    const ports = createMemoryPorts([
+      {
+        id: fitId,
+        user_id: ACTOR,
+        conversation_id: CONV,
+        message_id: msg1,
+        storage_bucket: "divbrain-attachments",
+        storage_path: `${ACTOR}/${CONV}/${fitId}/small.pdf`,
+        original_filename: "small.pdf",
+        mime_type: "application/pdf",
+        byte_size: 5 * 1024 * 1024,
+        checksum_sha256: null,
+        status: "ready",
+        created_at: newer,
+        updated_at: newer,
+      },
+      {
+        id: skipId,
+        user_id: ACTOR,
+        conversation_id: CONV,
+        message_id: msg1,
+        storage_bucket: "divbrain-attachments",
+        storage_path: `${ACTOR}/${CONV}/${skipId}/also.pdf`,
+        original_filename: "also.pdf",
+        mime_type: "application/pdf",
+        byte_size: 6 * 1024 * 1024,
+        checksum_sha256: null,
+        status: "ready",
+        created_at: older,
+        updated_at: older,
+      },
+    ]);
+    ports.objects.set(`${ACTOR}/${CONV}/${fitId}/small.pdf`, pdfBytes());
+    ports.objects.set(`${ACTOR}/${CONV}/${skipId}/also.pdf`, pdfBytes());
+    const repository = createDivBrainAttachmentRepository(ports);
+    // Simulate a large current-turn payload leaving only 8 MiB for recent reuse.
+    const remaining = 8 * 1024 * 1024;
+    assert.ok(remaining < DIVBRAIN_ATTACHMENT_COMBINED_PROVIDER_MAX_BYTES);
+    const recent = await prepareRecentDivBrainAttachmentContext({
+      repository,
+      actorId: ACTOR,
+      conversationId: CONV,
+      remainingByteBudget: remaining,
+    });
+    assert.equal(recent.ok, true);
+    if (recent.ok) {
+      assert.equal(recent.data.fileParts.length, 1);
+      assert.equal(recent.data.fileParts[0]?.filename, "small.pdf");
+    }
+  });
+
+  it("preserves recent message and file count bounds", async () => {
+    assert.equal(DIVBRAIN_ATTACHMENT_RECENT_MESSAGE_LIMIT, 2);
+    assert.equal(DIVBRAIN_ATTACHMENT_RECENT_FILE_LIMIT, 4);
+
+    const seed: DivBrainAttachmentRow[] = [];
+    const now = Date.now();
+    for (let messageIndex = 0; messageIndex < 3; messageIndex += 1) {
+      const messageId = `20000000-0000-4000-8000-${String(messageIndex).padStart(12, "0")}`;
+      for (let fileIndex = 0; fileIndex < 3; fileIndex += 1) {
+        const id = `30000000-0000-4000-8000-${String(messageIndex * 10 + fileIndex).padStart(12, "0")}`;
+        const created = new Date(now - messageIndex * 1000 - fileIndex).toISOString();
+        seed.push({
+          id,
+          user_id: ACTOR,
+          conversation_id: CONV,
+          message_id: messageId,
+          storage_bucket: "divbrain-attachments",
+          storage_path: `${ACTOR}/${CONV}/${id}/f.pdf`,
+          original_filename: `f-${messageIndex}-${fileIndex}.pdf`,
+          mime_type: "application/pdf",
+          byte_size: pdfBytes().byteLength,
+          checksum_sha256: null,
+          status: "ready",
+          created_at: created,
+          updated_at: created,
+        });
+      }
+    }
+    const ports = createMemoryPorts(seed);
+    for (const row of seed) {
+      ports.objects.set(row.storage_path, pdfBytes());
+    }
+    const repository = createDivBrainAttachmentRepository(ports);
+    const recent = await prepareRecentDivBrainAttachmentContext({
+      repository,
+      actorId: ACTOR,
+      conversationId: CONV,
+      remainingByteBudget: DIVBRAIN_ATTACHMENT_COMBINED_PROVIDER_MAX_BYTES,
+    });
+    assert.equal(recent.ok, true);
+    if (recent.ok) {
+      assert.ok(recent.data.fileParts.length <= DIVBRAIN_ATTACHMENT_RECENT_FILE_LIMIT);
+      assert.equal(recent.data.fileParts.length, 4);
+    }
   });
 });

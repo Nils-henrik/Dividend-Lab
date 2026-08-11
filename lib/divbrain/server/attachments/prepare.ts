@@ -5,6 +5,7 @@
 
 import {
   DIVBRAIN_ATTACHMENT_MAX_EXTRACTED_TEXT_CHARS,
+  DIVBRAIN_ATTACHMENT_COMBINED_PROVIDER_MAX_BYTES,
   DIVBRAIN_ATTACHMENT_RECENT_FILE_LIMIT,
   DIVBRAIN_ATTACHMENT_RECENT_MESSAGE_LIMIT,
   toDivBrainShellAttachment,
@@ -142,7 +143,10 @@ export async function prepareDivBrainAttachmentsForGeneration(params: {
 /**
  * Bounded recent-attachment context for follow-up turns.
  * Does not resend every historical file — only the newest linked ready files
- * up to RECENT_FILE_LIMIT, preferring distinct recent message_ids.
+ * up to RECENT_FILE_LIMIT / RECENT_MESSAGE_LIMIT, preferring distinct recent
+ * message_ids, and never exceeding the remaining combined byte budget.
+ * Oversized-to-budget recent files are skipped (best-effort; does not fail
+ * the user's new turn).
  */
 export async function prepareRecentDivBrainAttachmentContext(params: {
   repository: DivBrainAttachmentRepository;
@@ -150,6 +154,11 @@ export async function prepareRecentDivBrainAttachmentContext(params: {
   conversationId: string;
   /** Attachment ids already included on the current turn. */
   excludeAttachmentIds?: readonly string[];
+  /**
+   * Remaining byte budget for recent reuse after current-turn attachments.
+   * Defaults to the full combined ceiling when omitted.
+   */
+  remainingByteBudget?: number;
 }): Promise<
   DivBrainResult<{
     sources: readonly DivBrainSource[];
@@ -182,6 +191,12 @@ export async function prepareRecentDivBrainAttachmentContext(params: {
     byMessage.get(attachment.messageId)!.push(attachment);
   }
 
+  let remainingBytes =
+    typeof params.remainingByteBudget === "number" &&
+    Number.isFinite(params.remainingByteBudget)
+      ? Math.max(0, Math.floor(params.remainingByteBudget))
+      : DIVBRAIN_ATTACHMENT_COMBINED_PROVIDER_MAX_BYTES;
+
   const selected: DivBrainAttachmentRecord[] = [];
   for (const messageId of messageOrder.slice(
     0,
@@ -192,7 +207,12 @@ export async function prepareRecentDivBrainAttachmentContext(params: {
       if (selected.length >= DIVBRAIN_ATTACHMENT_RECENT_FILE_LIMIT) {
         break;
       }
+      if (attachment.byteSize > remainingBytes) {
+        // Skip files that cannot fit the remaining combined budget.
+        continue;
+      }
       selected.push(attachment);
+      remainingBytes -= attachment.byteSize;
     }
     if (selected.length >= DIVBRAIN_ATTACHMENT_RECENT_FILE_LIMIT) {
       break;

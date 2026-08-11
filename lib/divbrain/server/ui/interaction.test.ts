@@ -79,6 +79,8 @@ function createDeps(options: {
   allowed?: boolean;
   repositoryOk?: boolean;
   repository?: Partial<DivBrainConversationRepository>;
+  attachmentCleanupOk?: boolean;
+  attachmentRepositoryOk?: boolean;
   submitOutcome?:
     | { ok: true; data: DivBrainSubmitMessageOutcome }
     | { ok: false; code: Parameters<typeof createDivBrainError>[0] }
@@ -188,6 +190,55 @@ function createDeps(options: {
         return divBrainFailure(createDivBrainError("internal_error"));
       }
       return divBrainSuccess(baseRepo);
+    },
+    createAttachmentRepository: () => {
+      if (options.attachmentRepositoryOk === false) {
+        return divBrainFailure(createDivBrainError("internal_error"));
+      }
+      return divBrainSuccess({
+        async prepareUpload() {
+          return {
+            ok: false as const,
+            error: createDivBrainError("internal_error"),
+          };
+        },
+        async confirmUpload() {
+          return {
+            ok: false as const,
+            error: createDivBrainError("internal_error"),
+          };
+        },
+        async discardUnlinkedAttachment() {
+          return divBrainSuccess(undefined);
+        },
+        async resolveReadyAttachmentsForSubmit() {
+          return divBrainSuccess([]);
+        },
+        async linkToMessage() {
+          return divBrainSuccess(undefined);
+        },
+        async listForMessages() {
+          return divBrainSuccess([]);
+        },
+        async listRecentReadyForConversation() {
+          return divBrainSuccess([]);
+        },
+        async downloadBytes() {
+          return divBrainFailure(createDivBrainError("internal_error"));
+        },
+        async createSignedDownloadUrl() {
+          return divBrainFailure(createDivBrainError("internal_error"));
+        },
+        async cleanupConversationStorage(params) {
+          log.repo.push("cleanupConversationStorage");
+          assert.equal(params.actorId, ACTOR);
+          assert.equal(params.conversationId, CONV);
+          if (options.attachmentCleanupOk === false) {
+            return divBrainFailure(createDivBrainError("persistence_failed"));
+          }
+          return divBrainSuccess(undefined);
+        },
+      });
     },
     createApplicationService: (repository) => {
       log.createApplicationService += 1;
@@ -358,7 +409,43 @@ describe("DivBrain interaction orchestration security", () => {
     if (deleted.kind === "redirect") {
       assert.equal(deleted.href, "/brain?archive=archived");
     }
-    assert.deepEqual(log.repo, ["deleteConversation"]);
+    assert.deepEqual(log.repo, [
+      "cleanupConversationStorage",
+      "deleteConversation",
+    ]);
+  });
+
+  it("delete fails closed when Storage API cleanup fails", async () => {
+    const { deps, log } = createDeps({ attachmentCleanupOk: false });
+    const result = await runDeleteDivBrainConversation(
+      deps,
+      form({
+        conversationId: CONV,
+        confirmDelete: "permanent",
+      }),
+    );
+    assert.equal(result.kind, "state");
+    if (result.kind === "state") {
+      assert.equal(result.state.status, "error");
+      assert.match(result.state.safeMessage ?? "", /bilagefiler/i);
+    }
+    assert.deepEqual(log.repo, ["cleanupConversationStorage"]);
+  });
+
+  it("delete fails closed when attachment repository wiring fails", async () => {
+    const { deps, log } = createDeps({ attachmentRepositoryOk: false });
+    const result = await runDeleteDivBrainConversation(
+      deps,
+      form({
+        conversationId: CONV,
+        confirmDelete: "permanent",
+      }),
+    );
+    assert.equal(result.kind, "state");
+    if (result.kind === "state") {
+      assert.equal(result.state.status, "error");
+    }
+    assert.deepEqual(log.repo, []);
   });
 
   it("cross-owner/missing resources collapse to not_found", async () => {

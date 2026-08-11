@@ -25,7 +25,8 @@ export type DivBrainAttachmentClientError =
   | "invalid"
   | "incomplete"
   | "upload_failure"
-  | "processing_failure";
+  | "processing_failure"
+  | "unlinked_quota";
 
 export function divBrainAttachmentSafeMessage(
   code: DivBrainAttachmentClientError,
@@ -45,6 +46,8 @@ export function divBrainAttachmentSafeMessage(
       return DIVBRAIN_ATTACHMENT_COPY_SV.uploadFailure;
     case "processing_failure":
       return DIVBRAIN_ATTACHMENT_COPY_SV.processingFailure;
+    case "unlinked_quota":
+      return DIVBRAIN_ATTACHMENT_COPY_SV.unlinkedQuota;
     case "invalid":
     default:
       return "Begäran kunde inte tolkas.";

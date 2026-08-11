@@ -9,11 +9,13 @@ import {
   runConfirmDivBrainAttachmentUpload,
   runCreateDivBrainConversation,
   runDeleteDivBrainConversation,
+  runDiscardDivBrainUnlinkedAttachment,
   runPrepareDivBrainAttachmentUpload,
   runRenameDivBrainConversation,
   runRestoreDivBrainConversation,
   runSubmitDivBrainMessage,
   type DivBrainConfirmAttachmentUploadResult,
+  type DivBrainDiscardUnlinkedAttachmentResult,
   type DivBrainInteractionDeps,
   type DivBrainInteractionResult,
   type DivBrainPrepareAttachmentUploadResult,
@@ -132,6 +134,15 @@ export async function confirmDivBrainAttachmentUploadAction(input: {
   attachmentId: string;
 }): Promise<DivBrainConfirmAttachmentUploadResult> {
   return runConfirmDivBrainAttachmentUpload(
+    createProductionInteractionDeps(),
+    input,
+  );
+}
+
+export async function discardDivBrainUnlinkedAttachmentAction(input: {
+  attachmentId: string;
+}): Promise<DivBrainDiscardUnlinkedAttachmentResult> {
+  return runDiscardDivBrainUnlinkedAttachment(
     createProductionInteractionDeps(),
     input,
   );

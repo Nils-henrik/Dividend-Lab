@@ -458,11 +458,34 @@ export async function runDeleteDivBrainConversation(
     }
 
     const attachmentRepositoryResult = createAttachmentRepository(deps);
-    if (attachmentRepositoryResult.ok) {
+    if (!attachmentRepositoryResult.ok) {
+      return {
+        kind: "state",
+        state: createDivBrainActionState({
+          status: "error",
+          safeMessage: attachmentRepositoryResult.error.message,
+          persisted: false,
+          clearComposer: false,
+        }),
+      };
+    }
+
+    const cleaned =
       await attachmentRepositoryResult.data.cleanupConversationStorage({
         actorId: access.actorId,
         conversationId,
       });
+    if (!cleaned.ok) {
+      return {
+        kind: "state",
+        state: createDivBrainActionState({
+          status: "error",
+          safeMessage:
+            "Konversationen kunde inte tas bort eftersom bilagefiler inte kunde rensas säkert. Försök igen.",
+          persisted: false,
+          clearComposer: false,
+        }),
+      };
     }
 
     const deleted = await repositoryResult.data.deleteConversation({
@@ -795,6 +818,63 @@ export async function runConfirmDivBrainAttachmentUpload(
       ok: true,
       shell: confirmed.shell,
     };
+  } catch {
+    return {
+      ok: false,
+      safeMessage: createDivBrainError("internal_error").message,
+    };
+  }
+}
+
+export type DivBrainDiscardUnlinkedAttachmentResult =
+  | { ok: true }
+  | { ok: false; safeMessage: string };
+
+/**
+ * Server-owned discard for unlinked composer attachments.
+ * Auth + Alpha gate resolved independently; linked transcript attachments
+ * cannot be discarded through this path.
+ */
+export async function runDiscardDivBrainUnlinkedAttachment(
+  deps: DivBrainInteractionDeps,
+  input: { attachmentId: string },
+): Promise<DivBrainDiscardUnlinkedAttachmentResult> {
+  try {
+    const access = await resolveTrustedActorAndAccess(deps);
+    if (!access.ok) {
+      return {
+        ok: false,
+        safeMessage:
+          access.state.safeMessage ?? createDivBrainError("internal_error").message,
+      };
+    }
+
+    if (!isDivBrainUuid(input.attachmentId)) {
+      return {
+        ok: false,
+        safeMessage: createDivBrainError("not_found").message,
+      };
+    }
+
+    const attachmentRepositoryResult = createAttachmentRepository(deps);
+    if (!attachmentRepositoryResult.ok) {
+      return {
+        ok: false,
+        safeMessage: attachmentRepositoryResult.error.message,
+      };
+    }
+
+    const discarded =
+      await attachmentRepositoryResult.data.discardUnlinkedAttachment({
+        actorId: access.actorId,
+        attachmentId: input.attachmentId,
+      });
+
+    if (!discarded.ok) {
+      return { ok: false, safeMessage: discarded.error.message };
+    }
+
+    return { ok: true };
   } catch {
     return {
       ok: false,

@@ -213,6 +213,33 @@ export function createSupabaseDivBrainAttachmentPersistencePort(
       }
     },
 
+    async listUnlinkedAttachmentsForActor({ userId, limit }) {
+      const boundedLimit = Math.max(0, Math.min(Math.floor(limit), 100));
+      if (boundedLimit === 0) {
+        return ok([]);
+      }
+      try {
+        const { data, error } = await client
+          .from("divbrain_attachments")
+          .select("*")
+          .eq("user_id", userId)
+          .is("message_id", null)
+          .neq("status", "deleted")
+          .order("created_at", { ascending: true })
+          .limit(boundedLimit);
+
+        if (error) {
+          return fail("query_failed");
+        }
+        if (!Array.isArray(data) || !data.every(isAttachmentRow)) {
+          return fail("malformed_response");
+        }
+        return ok(data);
+      } catch {
+        return fail("unavailable");
+      }
+    },
+
     async updateAttachmentStatusForActor({
       attachmentId,
       userId,

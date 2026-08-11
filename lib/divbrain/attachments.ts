@@ -15,12 +15,34 @@ export const DIVBRAIN_ATTACHMENT_MAX_BYTES = 20 * 1024 * 1024;
 export const DIVBRAIN_ATTACHMENT_MAX_TOTAL_BYTES_PER_MESSAGE =
   40 * 1024 * 1024;
 
+/**
+ * Combined provider-context ceiling for current-turn + reused recent
+ * attachments (v1: same 40 MiB as the current-message batch).
+ */
+export const DIVBRAIN_ATTACHMENT_COMBINED_PROVIDER_MAX_BYTES =
+  DIVBRAIN_ATTACHMENT_MAX_TOTAL_BYTES_PER_MESSAGE;
+
 /** Filename length bounds (aligned with DB check). */
 export const DIVBRAIN_ATTACHMENT_FILENAME_MAX_LENGTH = 200 as const;
 
 /** Bounded recent-attachment follow-up context. */
 export const DIVBRAIN_ATTACHMENT_RECENT_MESSAGE_LIMIT = 2 as const;
 export const DIVBRAIN_ATTACHMENT_RECENT_FILE_LIMIT = 4 as const;
+
+/**
+ * Abandoned unlinked uploads (`message_id IS NULL`) older than this TTL are
+ * eligible for opportunistic Storage-API cleanup before a new prepare.
+ */
+export const DIVBRAIN_ATTACHMENT_ABANDONED_TTL_MS = 24 * 60 * 60 * 1000;
+
+/** Max active unlinked (non-deleted) attachments per user after cleanup. */
+export const DIVBRAIN_ATTACHMENT_MAX_UNLINKED_PER_USER = 20 as const;
+
+/**
+ * Bounded scan window for opportunistic unlinked cleanup/quota checks.
+ * Must be >= MAX_UNLINKED_PER_USER so quota can be enforced after TTL cleanup.
+ */
+export const DIVBRAIN_ATTACHMENT_UNLINKED_CLEANUP_SCAN_LIMIT = 40 as const;
 
 /** Bounded UTF-8 extraction for text/csv. */
 export const DIVBRAIN_ATTACHMENT_MAX_EXTRACTED_TEXT_CHARS = 50_000 as const;
@@ -70,6 +92,8 @@ export const DIVBRAIN_ATTACHMENT_COPY_SV = {
   uploadFailure: "Filen kunde inte laddas upp. Försök igen.",
   processingFailure: "DivBrain kunde inte läsa filen.",
   incomplete: "Vänta tills bilagan är uppladdad.",
+  unlinkedQuota:
+    "Du har för många bilagor som väntar. Ta bort några och försök igen.",
 } as const;
 
 const MIME_TO_KIND: Record<DivBrainAttachmentMimeType, DivBrainAttachmentKind> =

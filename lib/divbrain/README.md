@@ -278,6 +278,14 @@ Operational `/brain` diagnostics (`server/ui/diagnostic.ts`) may emit a single f
 - Validated plain text is **not** safe for `dangerouslySetInnerHTML`.
 - Render with normal React text escaping at UI time.
 
+## Attachments (Issue #166 / hardened #172)
+
+- Private bucket only; metadata is server-owned (Model A SELECT for owners).
+- Physical object cleanup uses the Storage API exclusively — no direct `storage.objects` SQL deletes.
+- Permanent conversation delete fails closed if Storage API cleanup cannot complete.
+- Unlinked composer discard + abandoned-upload TTL/quota (24h / 20 active / scan 40) are documented in `docs/divbrain/attachments.md`.
+- Combined current + recent attachment bytes are capped at 40 MiB for the single guarded provider generation.
+
 ## System messages
 
 `system` is a valid internal role for server-controlled messages only. Browser input must never supply system-policy text, and policy text must not be exposed to clients merely because the shared role union includes `system`.

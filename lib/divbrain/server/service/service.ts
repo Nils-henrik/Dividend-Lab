@@ -76,6 +76,7 @@ import {
   prepareRecentDivBrainAttachmentContext,
   validateDivBrainAttachmentBatchLimits,
 } from "../attachments";
+import { DIVBRAIN_ATTACHMENT_COMBINED_PROVIDER_MAX_BYTES } from "../../attachments";
 import type { DivBrainPreparedAttachmentPayload } from "../attachments/types";
 import type { DivBrainProviderFilePart } from "../providers/types";
 
@@ -520,12 +521,25 @@ export function createDivBrainApplicationService(
       }
 
       // Bounded recent-attachment follow-up context (not every historical file).
+      // Combined current + recent bytes must stay within the provider ceiling.
       if (deps.attachmentRepository) {
+        const currentBytes =
+          resolvedAttachments?.ok
+            ? resolvedAttachments.data.reduce(
+                (sum, item) => sum + item.byteSize,
+                0,
+              )
+            : 0;
+        const remainingByteBudget = Math.max(
+          0,
+          DIVBRAIN_ATTACHMENT_COMBINED_PROVIDER_MAX_BYTES - currentBytes,
+        );
         const recent = await prepareRecentDivBrainAttachmentContext({
           repository: deps.attachmentRepository,
           actorId,
           conversationId,
           excludeAttachmentIds: attachmentIds,
+          remainingByteBudget,
         });
         if (recent.ok) {
           extraSources.push(...recent.data.sources);
