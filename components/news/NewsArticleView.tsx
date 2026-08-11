@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { LearningRichText } from "@/components/learning/LearningRichText";
 import type { NewsArticle } from "@/types/news";
 import { getNewsCategoryLabel } from "@/lib/news/categories";
 import { newsDisclaimer } from "@/lib/news/disclaimer";
@@ -160,7 +161,7 @@ export default function NewsArticleView({ article }: Props) {
                 key={paragraph}
                 className="text-base leading-7 text-divlab-text-secondary"
               >
-                {paragraph}
+                <LearningRichText text={paragraph} />
               </p>
             ))}
           </div>
@@ -176,7 +177,7 @@ export default function NewsArticleView({ article }: Props) {
                 key={paragraph}
                 className="text-base leading-7 text-divlab-text-secondary"
               >
-                {paragraph}
+                <LearningRichText text={paragraph} />
               </p>
             ))}
           </section>
