@@ -26,7 +26,7 @@ const baseBuyInput = {
   portfolioValueMinor: 1_000_000,
   investedMinor: 0,
   currentHolding: null,
-  targetWeightPct: 8,
+  targetWeightPct: 10,
   quote: {
     symbol: "INVE-B",
     exchange: "ST",

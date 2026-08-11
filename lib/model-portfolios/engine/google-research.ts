@@ -56,7 +56,6 @@ function isLikelyCompanyPrimaryCandidate(input: {
     "quarterly report",
     "financial report",
     "financial statements",
-    "/investor",
     "/investors",
     "/press",
     "/media",

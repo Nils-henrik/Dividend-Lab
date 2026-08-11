@@ -3,6 +3,11 @@ import MarketLiveBadge from "@/components/portfolios/MarketLiveBadge";
 import { MODEL_PORTFOLIO_MANDATES } from "@/lib/model-portfolios/engine/mandates";
 import { resolveMarketLiveStatus } from "@/lib/model-portfolios/engine/market-status";
 import { MODEL_PORTFOLIO_TURNOVER_POLICY } from "@/lib/model-portfolios/engine/policy";
+import {
+  MODEL_PORTFOLIO_PROCESS_PATH,
+  MODEL_PORTFOLIO_PUBLIC_LAUNCH_LABEL,
+  getModelPortfolioPublicEntry,
+} from "@/lib/model-portfolios/public";
 import type { PortfolioTransparencyDetail } from "@/lib/model-portfolios/transparency";
 
 const accentBySlug: Record<string, string> = {
@@ -40,13 +45,21 @@ function tradeLabel(type: string): string {
 export default function PortfolioDetailView({ detail }: { detail: PortfolioTransparencyDetail }) {
   const mandate = MODEL_PORTFOLIO_MANDATES[detail.strategyKey];
   const turnover = MODEL_PORTFOLIO_TURNOVER_POLICY[detail.strategyKey];
+  const catalog = getModelPortfolioPublicEntry(detail.slug);
   const accent = accentBySlug[detail.slug] ?? accentBySlug.forsiktig;
   const marketStatus = resolveMarketLiveStatus(new Date());
+  const launchLabel = detail.launchedAt
+    ? new Intl.DateTimeFormat("sv-SE", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      }).format(new Date(detail.launchedAt))
+    : MODEL_PORTFOLIO_PUBLIC_LAUNCH_LABEL;
 
   return (
     <div className="mx-auto w-full max-w-[1380px] space-y-6 pb-8">
       <div className="flex flex-wrap items-center gap-2 text-xs text-divlab-text-muted">
-        <Link href="/portfolios" className="hover:text-divlab-text">Modellportföljer</Link>
+        <Link href="/portfolios" className="hover:text-divlab-text">AI-portföljer</Link>
         <span>/</span>
         <span className="text-divlab-text-secondary">{detail.name}</span>
       </div>
@@ -61,14 +74,30 @@ export default function PortfolioDetailView({ detail }: { detail: PortfolioTrans
                 {detail.riskLabel}
               </span>
             </div>
-            <p className="mt-3 text-sm leading-6 text-divlab-text-secondary">{detail.description}</p>
+            <p className="mt-3 text-sm leading-6 text-divlab-text-secondary">
+              {catalog?.summary ?? detail.description}
+            </p>
             <p className="mt-2 text-xs leading-5 text-divlab-text-muted">
-              Simulerad modellportfölj i SEK. Inte personlig rådgivning eller verkliga mäklaraffärer. Varje köp kostar 10 kr i simulerad courtage.
+              Simulerad AI-portfölj i SEK, live sedan {launchLabel}. Inte personlig
+              rådgivning eller verkliga mäklaraffärer. Historiken är fortfarande kort.
+              Varje köp och sälj kostar 10 kr i simulerad courtage.
+            </p>
+            <p className="mt-3 text-xs leading-5 text-divlab-text-secondary">
+              <Link
+                href={MODEL_PORTFOLIO_PROCESS_PATH}
+                className="font-semibold text-divlab-blue hover:text-divlab-blue-muted"
+              >
+                Så arbetar DivLabs AI-portföljer
+              </Link>
+              {" · "}
+              AI för aktieanalys inom ett fast mandat, med deterministisk verifiering
+              innan en simulerad affär bokförs.
             </p>
           </div>
           <div className="text-right text-xs text-divlab-text-muted">
             <p>Strategiversion {detail.strategyVersion}</p>
             <p className="mt-1">{detail.tradeCount} genomförda affärer</p>
+            <p className="mt-1">Live {launchLabel}</p>
           </div>
         </div>
 

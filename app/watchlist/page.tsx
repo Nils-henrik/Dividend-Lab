@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
 import AppShell from "@/components/layout/AppShell";
 import PlaceholderPage from "@/components/dashboard/PlaceholderPage";
+import { noIndexMetadata } from "@/lib/seo/robots-metadata";
 
-export const metadata: Metadata = {
-  title: "Bevakningslista",
-  robots: { index: false, follow: false },
-};
+export const metadata: Metadata = noIndexMetadata("Bevakningslista");
 
 export default function WatchlistPage() {
   return (

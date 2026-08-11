@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import AppShell from "@/components/layout/AppShell";
+import PublicContentShell from "@/components/layout/PublicContentShell";
 import TradeDetailView from "@/components/portfolios/TradeDetailView";
+import { noIndexMetadata } from "@/lib/seo/robots-metadata";
 import { loadPortfolioTradeDetail } from "@/lib/model-portfolios/transparency";
 
 type Props = {
@@ -10,10 +11,7 @@ type Props = {
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Affärsdetalj | Modellportföljer",
-  robots: { index: false, follow: false },
-};
+export const metadata: Metadata = noIndexMetadata("Affärsdetalj | Modellportföljer");
 
 export default async function PortfolioTradePage({ params }: Props) {
   const { slug, transactionId } = await params;
@@ -22,8 +20,8 @@ export default async function PortfolioTradePage({ params }: Props) {
   if (!detail) notFound();
 
   return (
-    <AppShell>
+    <PublicContentShell>
       <TradeDetailView detail={detail} />
-    </AppShell>
+    </PublicContentShell>
   );
 }

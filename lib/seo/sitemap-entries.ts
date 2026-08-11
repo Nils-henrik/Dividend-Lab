@@ -1,6 +1,8 @@
 import { forumCategories } from "@/data/forum";
 import { learningArticles } from "@/data/learning";
+import { MODEL_PORTFOLIO_INDEXABLE_PATHS } from "@/lib/model-portfolios/public";
 import { getNewsArticlesWithSlug } from "@/lib/news/get-articles";
+import { INDEXABLE_STATIC_PUBLIC_PATHS } from "@/lib/seo/public-routes";
 import { absoluteUrl } from "@/lib/seo/site";
 
 export type SitemapEntry = {
@@ -9,31 +11,11 @@ export type SitemapEntry = {
 };
 
 /**
- * Stable public marketing, legal, listing and forum hub paths.
+ * Stable public marketing, legal, listing, forum hub and public product paths.
  * Auth, dashboard, settings, messages, profiles and API routes are intentionally omitted.
+ * Prefer INDEXABLE_STATIC_PUBLIC_PATHS as the authoritative registry.
  */
-export const STATIC_PUBLIC_PATHS = [
-  "/",
-  "/about",
-  "/features",
-  "/contact",
-  "/editorial",
-  "/disclaimer",
-  "/privacy",
-  "/terms",
-  "/cookies",
-  "/news",
-  "/learning",
-  "/verktyg",
-  "/verktyg/gav-kalkylator",
-  "/frihetsmaskinen",
-  "/forum",
-  "/forum/senaste",
-  "/forum/populart",
-  "/forum/regler",
-  "/forum/kategorier",
-  "/forum/bolag",
-] as const;
+export const STATIC_PUBLIC_PATHS = INDEXABLE_STATIC_PUBLIC_PATHS;
 
 function parseReliableDate(value: string | undefined): Date | undefined {
   if (!value?.trim()) {
@@ -64,8 +46,30 @@ function uniqueByUrl(entries: SitemapEntry[]): SitemapEntry[] {
   return unique;
 }
 
+async function loadDynamicPublicEntries(): Promise<SitemapEntry[]> {
+  try {
+    const [
+      { listPublicForumThreadSitemapEntries },
+      { listActiveForumCompanySitemapEntries },
+    ] = await Promise.all([
+      import("@/lib/seo/sitemap-forum-threads"),
+      import("@/lib/seo/sitemap-forum-companies"),
+    ]);
+
+    const [forumThreadEntries, forumCompanyEntries] = await Promise.all([
+      listPublicForumThreadSitemapEntries(),
+      listActiveForumCompanySitemapEntries(),
+    ]);
+
+    return [...forumThreadEntries, ...forumCompanyEntries];
+  } catch {
+    // Fail-soft outside the Next.js server runtime (unit tests) or when DB is unavailable.
+    return [];
+  }
+}
+
 /** Build the canonical public sitemap entry list for production. */
-export function buildSitemapEntries(): SitemapEntry[] {
+export async function buildSitemapEntries(): Promise<SitemapEntry[]> {
   const staticEntries: SitemapEntry[] = STATIC_PUBLIC_PATHS.map((path) => ({
     url: absoluteUrl(path),
   }));
@@ -82,6 +86,7 @@ export function buildSitemapEntries(): SitemapEntry[] {
         return [];
       }
 
+      // News articles currently expose publishedAt only; do not fabricate updatedAt.
       return [
         {
           url: absoluteUrl(`/news/${article.slug}`),
@@ -98,10 +103,18 @@ export function buildSitemapEntries(): SitemapEntry[] {
       parseReliableDate(article.publishedAt),
   }));
 
+  const dynamicEntries = await loadDynamicPublicEntries();
+
   return uniqueByUrl([
     ...staticEntries,
     ...forumCategoryEntries,
     ...newsEntries,
     ...learningEntries,
+    ...dynamicEntries,
   ]);
 }
+
+/** Paths that SEO regression tests expect to remain indexable product routes. */
+export const REQUIRED_INDEXABLE_PRODUCT_PATHS = [
+  ...MODEL_PORTFOLIO_INDEXABLE_PATHS,
+] as const;

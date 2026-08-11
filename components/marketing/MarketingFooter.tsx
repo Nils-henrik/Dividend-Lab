@@ -7,6 +7,8 @@ const linkGroups = [
     links: [
       { label: "Börsnyheter", href: "/news" },
       { label: "Utbildning", href: "/learning" },
+      { label: "AI-portföljer", href: "/portfolios" },
+      { label: "Så arbetar DivLabs AI-portföljer", href: "/portfolios/sa-fungerar-ai-processen" },
       { label: "Frihetsmaskinen", href: "/frihetsmaskinen" },
       { label: "Forum", href: "/forum" },
       { label: "Funktioner", href: "/features" },

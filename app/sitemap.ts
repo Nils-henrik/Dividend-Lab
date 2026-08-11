@@ -2,8 +2,9 @@ import type { MetadataRoute } from "next";
 
 import { buildSitemapEntries } from "@/lib/seo/sitemap-entries";
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  return buildSitemapEntries().map((entry) => ({
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const entries = await buildSitemapEntries();
+  return entries.map((entry) => ({
     url: entry.url,
     ...(entry.lastModified ? { lastModified: entry.lastModified } : {}),
   }));

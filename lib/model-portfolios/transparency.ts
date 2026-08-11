@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createClient } from "@/lib/supabase/server";
+import { getModelPortfolioReadContext } from "@/lib/model-portfolios/read-client";
 import type { ModelPortfolioStrategyKey } from "./engine/policy";
 
 export const MODEL_PORTFOLIO_TRADES_PAGE_SIZE = 25;
@@ -114,18 +114,11 @@ function mapTrade(row: Record<string, unknown>): PortfolioTransparencyTrade {
   };
 }
 
-async function authenticatedClient() {
-  const supabase = await createClient();
-  const { data, error } = await supabase.auth.getUser();
-  if (error || !data.user) return null;
-  return supabase;
-}
-
 export async function loadPortfolioTransparencyDetail(
   slug: string,
   requestedPage: number,
 ): Promise<PortfolioTransparencyDetail | null> {
-  const supabase = await authenticatedClient();
+  const { client: supabase } = await getModelPortfolioReadContext();
   if (!supabase) return null;
 
   const page = normalizePage(requestedPage);
@@ -195,7 +188,7 @@ export async function loadPortfolioTradeDetail(
   slug: string,
   transactionId: string,
 ): Promise<PortfolioTradeDetail | null> {
-  const supabase = await authenticatedClient();
+  const { client: supabase } = await getModelPortfolioReadContext();
   if (!supabase) return null;
 
   const { data: portfolio, error: portfolioError } = await supabase
