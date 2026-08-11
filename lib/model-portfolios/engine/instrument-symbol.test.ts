@@ -37,11 +37,24 @@ describe("instrument symbol normalization", () => {
     assert.doesNotMatch(toInvestorFacingSymbol("DNB.OL", "OL"), /\.OL\.OL/);
   });
 
+  it("normalizes US investor labels back to the bare Yahoo/storage ticker", () => {
+    assert.deepEqual(canonicalizeInstrumentSymbol("JPM.US", "US"), {
+      baseSymbol: "JPM",
+      exchange: "US",
+      yahooSymbol: "JPM",
+      investorLabel: "JPM.US",
+    });
+    assert.equal(toYahooTransportSymbol("JPM.US.US", "NYSE"), "JPM");
+    assert.equal(toInvestorFacingSymbol("JPM.US.US", "NYSE"), "JPM.US");
+    assert.doesNotMatch(toInvestorFacingSymbol("JPM.US", "US"), /\.US\.US/);
+  });
+
   it("normalizes Nordic exchange aliases and US labels", () => {
     assert.equal(toYahooTransportSymbol("INVE-B", "XSTO"), "INVE-B.ST");
     assert.equal(toInvestorFacingSymbol("INVE-B", "STO"), "INVE-B.ST");
     assert.equal(toYahooTransportSymbol("MSFT", "NASDAQ"), "MSFT");
     assert.equal(toInvestorFacingSymbol("MSFT", "US"), "MSFT.US");
+    assert.equal(toInvestorFacingSymbol("EQNR", "Oslo Børs"), "EQNR.OL");
     assert.equal(stripNordicYahooSuffix("EQNR.OL"), "EQNR");
     assert.equal(hasNordicYahooSuffix("EQNR.OL"), true);
     assert.equal(hasNordicYahooSuffix("EQNR"), false);
