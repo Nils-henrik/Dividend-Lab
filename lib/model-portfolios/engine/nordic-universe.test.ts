@@ -37,6 +37,9 @@ describe("Nordic universe and shortlist bounds", () => {
     assert.equal(toNordicYahooSymbol("EQNR", "OSL"), "EQNR.OL");
     assert.equal(toNordicYahooSymbol("NOVO-B", "CPH"), "NOVO-B.CO");
     assert.equal(toNordicYahooSymbol("NOKIA", "HEL"), "NOKIA.HE");
+    assert.equal(toNordicYahooSymbol("DNB.OL", "OL"), "DNB.OL");
+    assert.equal(toNordicYahooSymbol("ATCO-A.ST", "ST"), "ATCO-A.ST");
+    assert.equal(toNordicYahooSymbol("DNB.OL.OL", "OL"), "DNB.OL");
     assert.deepEqual(parseNordicYahooSymbol("VOLV-B.ST"), {
       symbol: "VOLV-B",
       exchange: "ST",

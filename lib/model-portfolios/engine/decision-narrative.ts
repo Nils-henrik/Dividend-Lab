@@ -1,5 +1,6 @@
 import type { ModelPortfolioDecision } from "./decision";
 import type { ModelPortfolioResearchPass } from "./eodhd-budget";
+import { toInvestorFacingSymbol } from "./instrument-symbol";
 import type { ResearchCandidate } from "./research";
 
 export type NarrativeCandidate = {
@@ -82,7 +83,7 @@ function listNames(candidates: readonly NarrativeCandidate[], limit = 6): string
   if (!candidates.length) return "inga namn";
   return candidates
     .slice(0, limit)
-    .map((item) => `${item.name} (${item.symbol}.${item.exchange})`)
+    .map((item) => `${item.name} (${toInvestorFacingSymbol(item.symbol, item.exchange)})`)
     .join(", ");
 }
 
@@ -155,7 +156,7 @@ export function buildInvestorFacingDecisionRationale(input: {
   const action = actionLabel(input.decision.action);
   const instrument =
     input.decision.symbol && input.decision.exchange
-      ? ` i ${input.decision.instrumentName ?? input.decision.symbol} (${input.decision.symbol}.${input.decision.exchange})`
+      ? ` i ${input.decision.instrumentName ?? input.decision.symbol} (${toInvestorFacingSymbol(input.decision.symbol, input.decision.exchange)})`
       : "";
 
   const holdHint =
@@ -177,6 +178,7 @@ export function buildOperationalResearchDiagnostics(input: {
   yahooFundamentalCount: number;
   eodhdFundamentalCount: number;
   googleHits: number;
+  primarySourceHits?: number;
   eodhdUsed: number;
   eodhdLimit: number;
 }): string {
@@ -184,6 +186,6 @@ export function buildOperationalResearchDiagnostics(input: {
     `ops[${input.pass}] seeds=${input.seeds} deep=${input.deepTargets}`,
     `cacheHits=${input.cacheHits} technical=${input.technicalCount}`,
     `fundamentals=${input.fundamentalCount} yahoo=${input.yahooFundamentalCount} eodhd=${input.eodhdFundamentalCount}`,
-    `googleHits=${input.googleHits} eodhdBudget=${input.eodhdUsed}/${input.eodhdLimit}`,
+    `primaryHits=${input.primarySourceHits ?? 0} googleHits=${input.googleHits} eodhdBudget=${input.eodhdUsed}/${input.eodhdLimit}`,
   ].join(" ");
 }
