@@ -6,7 +6,6 @@ import { validateModelPortfolioBuyRisk, type ModelPortfolioRiskRules } from "./r
 export const SIMULATED_FILL_LABEL = "SIMULATED" as const;
 /** Delayed SIMULATED fills may be older than realtime quotes; reject only when clearly stale. */
 export const SIMULATED_QUOTE_MAX_AGE_MS = 26 * 60 * 60 * 1_000;
-const MODEL_PORTFOLIO_QUANTITY_SCALE = 100_000_000;
 
 export type SettlementSide = "buy" | "sell";
 
@@ -85,14 +84,9 @@ export type SettlementPlan =
         | string;
     };
 
-function sharesAtOrBelow(value: number): number {
+function wholeShares(value: number): number {
   if (!Number.isFinite(value) || value <= 0) return 0;
-  return Math.floor((value + Number.EPSILON) * MODEL_PORTFOLIO_QUANTITY_SCALE) / MODEL_PORTFOLIO_QUANTITY_SCALE;
-}
-
-function normalizeShares(value: number): number {
-  if (!Number.isFinite(value)) return 0;
-  return Math.round(value * MODEL_PORTFOLIO_QUANTITY_SCALE) / MODEL_PORTFOLIO_QUANTITY_SCALE;
+  return Math.floor(value + 1e-12);
 }
 
 export function planSimulatedSettlement(input: SettlementPlanInput): SettlementPlan {
@@ -159,11 +153,10 @@ export function planSimulatedSettlement(input: SettlementPlanInput): SettlementP
     if (affordableGross <= 0) return { ok: false, reason: "insufficient_cash" };
 
     const grossBudget = Math.min(desiredGrossMinor, affordableGross);
-    const quantity = sharesAtOrBelow(grossBudget / priceSekMinor);
+    const quantity = wholeShares(grossBudget / priceSekMinor);
     if (quantity <= 0) return { ok: false, reason: "trade_too_small" };
 
-    const grossAmountSekMinor = Math.round(quantity * priceSekMinor);
-    if (grossAmountSekMinor <= 0) return { ok: false, reason: "trade_too_small" };
+    const grossAmountSekMinor = quantity * priceSekMinor;
     const totalCashNeeded = grossAmountSekMinor + feeSekMinor;
     if (totalCashNeeded > input.cashMinor) {
       return { ok: false, reason: "insufficient_cash" };
@@ -210,12 +203,12 @@ export function planSimulatedSettlement(input: SettlementPlanInput): SettlementP
       return { ok: false, reason: "instrument_cooldown" };
     }
 
-    const quantityAfter = normalizeShares(currentQty + quantity);
+    const quantityAfter = currentQty + quantity;
     const averageCostMinorAfter = Math.round(
       (currentQty * currentAvg + grossAmountSekMinor + feeSekMinor) / quantityAfter,
     );
 
-    const nativeGrossMinor = Math.round(quantity * input.quote.nativePriceMinor);
+    const nativeGrossMinor = quantity * input.quote.nativePriceMinor;
 
     return {
       ok: true,
@@ -248,22 +241,22 @@ export function planSimulatedSettlement(input: SettlementPlanInput): SettlementP
   }
 
   const quantityFromValue = input.targetWeightPct === 0
-    ? normalizeShares(currentQty)
-    : sharesAtOrBelow(desiredSellValue / priceSekMinor);
-  const quantity = Math.min(normalizeShares(currentQty), quantityFromValue);
+    ? wholeShares(currentQty)
+    : wholeShares(desiredSellValue / priceSekMinor);
+  const quantity = Math.min(wholeShares(currentQty), quantityFromValue);
   if (quantity <= 0) return { ok: false, reason: "trade_too_small" };
 
   const feeSekMinor = buyBrokerageFeeMinor("sell");
-  const grossAmountSekMinor = Math.round(quantity * priceSekMinor);
+  const grossAmountSekMinor = quantity * priceSekMinor;
   const policy = MODEL_PORTFOLIO_TURNOVER_POLICY[input.strategyKey];
   const tradePct = (grossAmountSekMinor / input.portfolioValueMinor) * 100;
   if (tradePct < policy.minTradePctOfPortfolio && !input.materialThesisBreak) {
     return { ok: false, reason: "trade_too_small" };
   }
 
-  const quantityAfter = normalizeShares(currentQty - quantity);
+  const quantityAfter = currentQty - quantity;
   const averageCostMinorAfter = quantityAfter <= 0 ? 0 : currentAvg;
-  const nativeGrossMinor = Math.round(quantity * input.quote.nativePriceMinor);
+  const nativeGrossMinor = quantity * input.quote.nativePriceMinor;
 
   return {
     ok: true,
