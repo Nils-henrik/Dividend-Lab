@@ -48,12 +48,33 @@ export type DivBrainProviderContextBlock = {
 };
 
 /**
+ * Provider-neutral multimodal parts for user messages (Issue #166).
+ * DivBrain-owned shapes — never leak AI SDK types across domain boundaries.
+ */
+export type DivBrainProviderTextPart = {
+  type: "text";
+  text: string;
+};
+
+export type DivBrainProviderFilePart = {
+  type: "file";
+  mediaType: string;
+  data: Uint8Array;
+  filename?: string;
+};
+
+export type DivBrainProviderContentPart =
+  | DivBrainProviderTextPart
+  | DivBrainProviderFilePart;
+
+/**
  * Role + content only. `system` is server-assembled only — never from browser
  * input at the application boundary.
+ * User messages may carry multimodal file parts for PDF/images.
  */
 export type DivBrainProviderMessage = {
   role: DivBrainMessageRole;
-  content: string;
+  content: string | readonly DivBrainProviderContentPart[];
 };
 
 /**

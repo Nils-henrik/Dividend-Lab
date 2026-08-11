@@ -1,6 +1,8 @@
 import type { DivBrainArchiveScope } from "./brain-routes";
+import type { DivBrainShellAttachment } from "./attachments";
 
 export type { DivBrainArchiveScope };
+export type { DivBrainShellAttachment };
 
 export type DivBrainShellConversationListItem = {
   id: string;
@@ -25,6 +27,7 @@ export type DivBrainShellTranscriptItem =
       id: string;
       content: string;
       createdAt: string;
+      attachments?: readonly DivBrainShellAttachment[];
     }
   | {
       kind: "assistant_message";
