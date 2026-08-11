@@ -1,9 +1,49 @@
+import { DIVBRAIN_ATTACHMENT_COPY_SV } from "./attachments";
+
 export type DivBrainComposerKeyIntent = {
   key: string;
   shiftKey: boolean;
   isComposing: boolean;
   canSubmit: boolean;
 };
+
+export type DivBrainComposerDiscardServerResult =
+  | { ok: true }
+  | { ok: false; safeMessage: string };
+
+export type DivBrainComposerDiscardOutcome =
+  | { remove: true }
+  | { remove: false; safeMessage: string };
+
+/**
+ * Pure discard UX boundary for composer chips.
+ * Server-backed chips are removed only after a successful discard.
+ */
+export function resolveDivBrainComposerDiscardOutcome(params: {
+  hasServerAttachmentId: boolean;
+  discardResult: DivBrainComposerDiscardServerResult | null;
+}): DivBrainComposerDiscardOutcome {
+  if (!params.hasServerAttachmentId) {
+    return { remove: true };
+  }
+
+  if (params.discardResult?.ok === true) {
+    return { remove: true };
+  }
+
+  const safeMessage =
+    params.discardResult && !params.discardResult.ok
+      ? params.discardResult.safeMessage.trim()
+      : "";
+
+  return {
+    remove: false,
+    safeMessage:
+      safeMessage.length > 0
+        ? safeMessage
+        : DIVBRAIN_ATTACHMENT_COPY_SV.discardFailure,
+  };
+}
 
 export function shouldSubmitDivBrainComposerKey(
   intent: DivBrainComposerKeyIntent,

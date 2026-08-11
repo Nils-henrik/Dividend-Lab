@@ -305,7 +305,14 @@ export function createDivBrainAttachmentRepository(deps: {
         status: "pending",
       });
       if (!insertResult.ok) {
-        return { ok: false as const, error: persistenceError(insertResult.error.kind) };
+        // Atomic DB quota guard (and app pre-check) share the same client surface.
+        if (insertResult.error.kind === "quota_exceeded") {
+          return { ok: false as const, clientError: "unlinked_quota" as const };
+        }
+        return {
+          ok: false as const,
+          error: persistenceError(insertResult.error.kind),
+        };
       }
 
       const signed = await storage.createSignedUploadUrl({
@@ -314,10 +321,13 @@ export function createDivBrainAttachmentRepository(deps: {
         upsert: false,
       });
       if (!signed.ok) {
+        // Client never received a signed URL, so no private object can exist yet
+        // through this flow. Retire metadata immediately to free unlinked quota
+        // rather than leaving a failed active row until TTL cleanup.
         await persistence.updateAttachmentStatusForActor({
           attachmentId,
           userId: actorResult.data,
-          status: "failed",
+          status: "deleted",
         });
         return { ok: false as const, clientError: "upload_failure" as const };
       }

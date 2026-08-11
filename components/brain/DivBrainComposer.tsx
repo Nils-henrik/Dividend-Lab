@@ -26,7 +26,10 @@ import {
   isDivBrainAttachmentMimeType,
   type DivBrainShellAttachment,
 } from "@/lib/divbrain/attachments";
-import { shouldSubmitDivBrainComposerKey } from "@/lib/divbrain/chat-ux";
+import {
+  resolveDivBrainComposerDiscardOutcome,
+  shouldSubmitDivBrainComposerKey,
+} from "@/lib/divbrain/chat-ux";
 import { DIVBRAIN_MESSAGE_CONTENT_MAX_LENGTH } from "@/lib/divbrain/constants";
 
 type Props = {
@@ -67,6 +70,9 @@ export default function DivBrainComposer({
   const submittedContentRef = useRef<string | null>(null);
   const [content, setContent] = useState("");
   const [attachments, setAttachments] = useState<ComposerAttachment[]>([]);
+  const [discardingLocalIds, setDiscardingLocalIds] = useState<Set<string>>(
+    () => new Set(),
+  );
   const [dragActive, setDragActive] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 
@@ -285,21 +291,50 @@ export default function DivBrainComposer({
 
   async function removeComposerAttachment(item: ComposerAttachment) {
     // Do not allow remove while PUT/confirm is in flight for this chip.
-    if (item.status === "uploading") {
+    if (item.status === "uploading" || discardingLocalIds.has(item.localId)) {
       return;
     }
 
-    if (item.attachmentId) {
-      // Best-effort server discard; UI clears either way so retry stays usable.
-      await discardDivBrainUnlinkedAttachmentAction({
-        attachmentId: item.attachmentId,
-      });
+    if (!item.attachmentId) {
+      setAttachments((current) =>
+        current.filter((entry) => entry.localId !== item.localId),
+      );
+      setLocalError(null);
+      return;
     }
 
-    setAttachments((current) =>
-      current.filter((entry) => entry.localId !== item.localId),
-    );
-    setLocalError(null);
+    setDiscardingLocalIds((current) => {
+      const next = new Set(current);
+      next.add(item.localId);
+      return next;
+    });
+
+    try {
+      const discardResult = await discardDivBrainUnlinkedAttachmentAction({
+        attachmentId: item.attachmentId,
+      });
+      const outcome = resolveDivBrainComposerDiscardOutcome({
+        hasServerAttachmentId: true,
+        discardResult,
+      });
+
+      if (outcome.remove) {
+        setAttachments((current) =>
+          current.filter((entry) => entry.localId !== item.localId),
+        );
+        setLocalError(null);
+        return;
+      }
+
+      // Keep the chip so the user can retry; never leak storage path/id details.
+      setLocalError(outcome.safeMessage);
+    } finally {
+      setDiscardingLocalIds((current) => {
+        const next = new Set(current);
+        next.delete(item.localId);
+        return next;
+      });
+    }
   }
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -412,7 +447,11 @@ export default function DivBrainComposer({
                     type="button"
                     className="shrink-0 text-divlab-text-muted transition hover:text-divlab-text disabled:cursor-not-allowed disabled:opacity-40"
                     aria-label={DIVBRAIN_ATTACHMENT_COPY_SV.remove}
-                    disabled={item.status === "uploading" || pending}
+                    disabled={
+                      item.status === "uploading" ||
+                      pending ||
+                      discardingLocalIds.has(item.localId)
+                    }
                     onClick={() => {
                       void removeComposerAttachment(item);
                     }}

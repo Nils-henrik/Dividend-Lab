@@ -94,7 +94,16 @@ export const DIVBRAIN_ATTACHMENT_COPY_SV = {
   incomplete: "Vänta tills bilagan är uppladdad.",
   unlinkedQuota:
     "Du har för många bilagor som väntar. Ta bort några och försök igen.",
+  discardFailure: "Bilagan kunde inte tas bort. Försök igen.",
 } as const;
+
+/**
+ * Stable Postgres raise contract for the atomic unlinked-quota guard.
+ * Mapped in the Supabase persistence adapter — never shown to clients raw.
+ */
+export const DIVBRAIN_UNLINKED_QUOTA_SQLSTATE = "DVQ20" as const;
+export const DIVBRAIN_UNLINKED_QUOTA_MESSAGE =
+  "divbrain_unlinked_quota_exceeded" as const;
 
 const MIME_TO_KIND: Record<DivBrainAttachmentMimeType, DivBrainAttachmentKind> =
   {

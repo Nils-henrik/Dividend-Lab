@@ -12,10 +12,13 @@ import {
   DIVBRAIN_ATTACHMENT_COMBINED_PROVIDER_MAX_BYTES,
   DIVBRAIN_ATTACHMENT_MAX_BYTES,
   DIVBRAIN_ATTACHMENT_MAX_PER_MESSAGE,
+  DIVBRAIN_ATTACHMENT_COPY_SV,
   DIVBRAIN_ATTACHMENT_MAX_UNLINKED_PER_USER,
   DIVBRAIN_ATTACHMENT_RECENT_FILE_LIMIT,
   DIVBRAIN_ATTACHMENT_RECENT_MESSAGE_LIMIT,
   DIVBRAIN_ATTACHMENT_UNLINKED_CLEANUP_SCAN_LIMIT,
+  DIVBRAIN_UNLINKED_QUOTA_MESSAGE,
+  DIVBRAIN_UNLINKED_QUOTA_SQLSTATE,
   formatDivBrainAttachmentOnlyLabel,
 } from "../../attachments";
 import {
@@ -51,6 +54,7 @@ import {
   buildDivBrainGuardrailAssessment,
 } from "../../guardrails";
 import { DIVBRAIN_AI_GATEWAY_PROVIDER_ID } from "../providers/candidates";
+import { mapDivBrainAttachmentInsertError } from "./supabase-persistence";
 
 function allowAssessment() {
   return buildDivBrainGuardrailAssessment({
@@ -84,6 +88,23 @@ function createMemoryPorts(seed: DivBrainAttachmentRow[] = []) {
 
   const persistence: DivBrainAttachmentPersistencePort = {
     async insertAttachment(input) {
+      // Mirror the DB BEFORE INSERT unlinked-quota guard (atomic in this fake:
+      // count + insert has no await boundary, so concurrent prepares cannot
+      // exceed the cap even when the app pre-check is raced).
+      const countsTowardQuota =
+        input.status !== "deleted";
+      if (countsTowardQuota) {
+        const activeUnlinked = [...rows.values()].filter(
+          (row) =>
+            row.user_id === input.user_id &&
+            row.message_id === null &&
+            row.status !== "deleted",
+        ).length;
+        if (activeUnlinked >= DIVBRAIN_ATTACHMENT_MAX_UNLINKED_PER_USER) {
+          return { ok: false, error: { kind: "quota_exceeded" } };
+        }
+      }
+
       const now = new Date().toISOString();
       const row: DivBrainAttachmentRow = {
         id: input.id,
@@ -992,8 +1013,40 @@ describe("DivBrain attachments migration contract", () => {
       source,
       /create policy[\s\S]*for insert[\s\S]*to authenticated/i,
     );
+    assert.doesNotMatch(
+      source,
+      /create policy[\s\S]*for update[\s\S]*to authenticated/i,
+    );
+    assert.doesNotMatch(
+      source,
+      /create policy[\s\S]*for delete[\s\S]*to authenticated/i,
+    );
     assert.doesNotMatch(source, /delete\s+from\s+storage\.objects/i);
     assert.doesNotMatch(source, /cleanup_divbrain_attachment_storage/i);
+  });
+
+  it("includes an atomic per-user unlinked quota guard at insert", () => {
+    const matches = readdirSync(migrationsDir).filter((name) =>
+      name.includes("create_divbrain_attachments"),
+    );
+    assert.equal(matches.length, 1);
+    const source = readFileSync(join(migrationsDir, matches[0]!), "utf8");
+    assert.match(
+      source,
+      /divbrain_attachments_enforce_unlinked_quota/i,
+    );
+    assert.match(source, /pg_advisory_xact_lock/i);
+    assert.match(source, /before insert on public\.divbrain_attachments/i);
+    assert.match(source, new RegExp(DIVBRAIN_UNLINKED_QUOTA_SQLSTATE));
+    assert.match(source, new RegExp(DIVBRAIN_UNLINKED_QUOTA_MESSAGE));
+    assert.match(source, /active_count >= 20/i);
+    assert.match(source, /message_id is null/i);
+    assert.match(source, /status <> 'deleted'/i);
+    // Guard must not be an UPDATE trigger (linking / retirement stay free).
+    assert.doesNotMatch(
+      source,
+      /before update on public\.divbrain_attachments[\s\S]*enforce_unlinked_quota/i,
+    );
   });
 });
 
@@ -1204,6 +1257,231 @@ describe("DivBrain attachment hardening (#172)", () => {
     if (!prepared.ok && "clientError" in prepared) {
       assert.equal(prepared.clientError, "unlinked_quota");
     }
+  });
+
+  it("maps the DB quota rejection contract to quota_exceeded safely", () => {
+    assert.equal(
+      mapDivBrainAttachmentInsertError({
+        code: DIVBRAIN_UNLINKED_QUOTA_SQLSTATE,
+        message: DIVBRAIN_UNLINKED_QUOTA_MESSAGE,
+      }),
+      "quota_exceeded",
+    );
+    assert.equal(
+      mapDivBrainAttachmentInsertError({
+        code: "P0001",
+        message: `ERROR: ${DIVBRAIN_UNLINKED_QUOTA_MESSAGE}`,
+      }),
+      "quota_exceeded",
+    );
+    assert.equal(
+      mapDivBrainAttachmentInsertError({
+        code: "42501",
+        message: "permission denied for table divbrain_attachments",
+      }),
+      "query_failed",
+    );
+    assert.equal(
+      mapDivBrainAttachmentInsertError({
+        code: DIVBRAIN_UNLINKED_QUOTA_SQLSTATE,
+        message: DIVBRAIN_UNLINKED_QUOTA_MESSAGE,
+      }) === "quota_exceeded",
+      true,
+    );
+  });
+
+  it("maps atomic insert quota rejection to unlinked_quota client error", async () => {
+    const ports = createMemoryPorts();
+    const wrapped: DivBrainAttachmentPersistencePort = {
+      ...ports.persistence,
+      async insertAttachment() {
+        return { ok: false, error: { kind: "quota_exceeded" } };
+      },
+      async listUnlinkedAttachmentsForActor() {
+        // Bypass app pre-check so only the insert-boundary mapping is exercised.
+        return { ok: true, data: [] };
+      },
+    };
+    const repository = createDivBrainAttachmentRepository({
+      persistence: wrapped,
+      storage: ports.storage,
+      nowMs: () => Date.now(),
+    });
+    const prepared = await repository.prepareUpload({
+      actorId: ACTOR,
+      conversationId: CONV,
+      filename: "fresh.pdf",
+      mimeType: "application/pdf",
+      byteSize: pdfBytes().byteLength,
+    });
+    assert.equal(prepared.ok, false);
+    if (!prepared.ok && "clientError" in prepared) {
+      assert.equal(prepared.clientError, "unlinked_quota");
+      assert.equal(
+        prepared.clientError === "unlinked_quota"
+          ? DIVBRAIN_ATTACHMENT_COPY_SV.unlinkedQuota
+          : "",
+        DIVBRAIN_ATTACHMENT_COPY_SV.unlinkedQuota,
+      );
+      assert.equal(
+        DIVBRAIN_ATTACHMENT_COPY_SV.unlinkedQuota.includes(
+          DIVBRAIN_UNLINKED_QUOTA_MESSAGE,
+        ),
+        false,
+      );
+    }
+  });
+
+  it("concurrent prepare reservation boundary cannot exceed 20 active rows", async () => {
+    const now = Date.parse("2026-08-11T12:00:00.000Z");
+    const seed: DivBrainAttachmentRow[] = [];
+    // Leave one slot so the app pre-check lets parallel prepares through;
+    // the insert-boundary guard must still admit only one winner.
+    for (let i = 0; i < DIVBRAIN_ATTACHMENT_MAX_UNLINKED_PER_USER - 1; i += 1) {
+      const id = `10000000-0000-4000-8000-${String(i).padStart(12, "0")}`;
+      seed.push({
+        id,
+        user_id: ACTOR,
+        conversation_id: CONV,
+        message_id: null,
+        storage_bucket: "divbrain-attachments",
+        storage_path: `${ACTOR}/${CONV}/${id}/f.pdf`,
+        original_filename: "f.pdf",
+        mime_type: "application/pdf",
+        byte_size: 10,
+        checksum_sha256: null,
+        status: "ready",
+        created_at: new Date(now - 60_000).toISOString(),
+        updated_at: new Date(now - 60_000).toISOString(),
+      });
+    }
+
+    const ports = createMemoryPorts(seed);
+    const repository = createDivBrainAttachmentRepository({
+      ...ports,
+      nowMs: () => now,
+    });
+
+    const attempts = Array.from({ length: 8 }, (_, index) =>
+      repository.prepareUpload({
+        actorId: ACTOR,
+        conversationId: CONV,
+        filename: `race-${index}.pdf`,
+        mimeType: "application/pdf",
+        byteSize: pdfBytes().byteLength,
+      }),
+    );
+    const results = await Promise.all(attempts);
+    const successes = results.filter((result) => result.ok);
+    const quotaRejects = results.filter(
+      (result) =>
+        !result.ok &&
+        "clientError" in result &&
+        result.clientError === "unlinked_quota",
+    );
+
+    assert.equal(successes.length, 1);
+    assert.equal(quotaRejects.length, results.length - 1);
+
+    const active = [...ports.rows.values()].filter(
+      (row) =>
+        row.user_id === ACTOR &&
+        row.message_id === null &&
+        row.status !== "deleted",
+    );
+    assert.equal(active.length, DIVBRAIN_ATTACHMENT_MAX_UNLINKED_PER_USER);
+  });
+
+  it("signed-upload URL failure retires the inserted row immediately", async () => {
+    const ports = createMemoryPorts();
+    const storage: DivBrainAttachmentStoragePort = {
+      ...ports.storage,
+      async createSignedUploadUrl() {
+        return { ok: false, error: { kind: "query_failed" } };
+      },
+    };
+    const repository = createDivBrainAttachmentRepository({
+      persistence: ports.persistence,
+      storage,
+      nowMs: () => Date.now(),
+    });
+    const prepared = await repository.prepareUpload({
+      actorId: ACTOR,
+      conversationId: CONV,
+      filename: "fresh.pdf",
+      mimeType: "application/pdf",
+      byteSize: pdfBytes().byteLength,
+    });
+    assert.equal(prepared.ok, false);
+    if (!prepared.ok && "clientError" in prepared) {
+      assert.equal(prepared.clientError, "upload_failure");
+    }
+    assert.equal(ports.rows.size, 1);
+    const row = [...ports.rows.values()][0]!;
+    assert.equal(row.status, "deleted");
+    assert.equal(row.message_id, null);
+
+    // Quota slot is free again for a subsequent prepare.
+    const retryPorts = createMemoryPorts();
+    // Seed 19 active + prove the retired path does not block a new prepare
+    // after a signing failure on a full-but-one quota.
+    for (let i = 0; i < DIVBRAIN_ATTACHMENT_MAX_UNLINKED_PER_USER - 1; i += 1) {
+      const id = `20000000-0000-4000-8000-${String(i).padStart(12, "0")}`;
+      retryPorts.rows.set(id, {
+        id,
+        user_id: ACTOR,
+        conversation_id: CONV,
+        message_id: null,
+        storage_bucket: "divbrain-attachments",
+        storage_path: `${ACTOR}/${CONV}/${id}/f.pdf`,
+        original_filename: "f.pdf",
+        mime_type: "application/pdf",
+        byte_size: 10,
+        checksum_sha256: null,
+        status: "ready",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+    }
+    let signCalls = 0;
+    const flakyStorage: DivBrainAttachmentStoragePort = {
+      ...retryPorts.storage,
+      async createSignedUploadUrl(params) {
+        signCalls += 1;
+        if (signCalls === 1) {
+          return { ok: false, error: { kind: "query_failed" } };
+        }
+        return retryPorts.storage.createSignedUploadUrl(params);
+      },
+    };
+    const flakyRepo = createDivBrainAttachmentRepository({
+      persistence: retryPorts.persistence,
+      storage: flakyStorage,
+      nowMs: () => Date.now(),
+    });
+    const failed = await flakyRepo.prepareUpload({
+      actorId: ACTOR,
+      conversationId: CONV,
+      filename: "a.pdf",
+      mimeType: "application/pdf",
+      byteSize: pdfBytes().byteLength,
+    });
+    assert.equal(failed.ok, false);
+    const recovered = await flakyRepo.prepareUpload({
+      actorId: ACTOR,
+      conversationId: CONV,
+      filename: "b.pdf",
+      mimeType: "application/pdf",
+      byteSize: pdfBytes().byteLength,
+    });
+    assert.equal(recovered.ok, true);
+    const activeAfter = [...retryPorts.rows.values()].filter(
+      (row) =>
+        row.user_id === ACTOR &&
+        row.message_id === null &&
+        row.status !== "deleted",
+    );
+    assert.equal(activeAfter.length, DIVBRAIN_ATTACHMENT_MAX_UNLINKED_PER_USER);
   });
 
   it("bounds the unlinked cleanup scan", async () => {

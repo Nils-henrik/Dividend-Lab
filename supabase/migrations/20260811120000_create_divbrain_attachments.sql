@@ -75,6 +75,62 @@ create trigger set_divbrain_attachments_updated_at
   execute function public.set_updated_at();
 
 -- ---------------------------------------------------------------------------
+-- Atomic active-unlinked quota (concurrency-safe at insert boundary)
+-- ---------------------------------------------------------------------------
+-- Active unlinked rows: message_id IS NULL AND status <> 'deleted'.
+-- Cap: 20 per user. Application still runs opportunistic 24h TTL cleanup
+-- before prepare; this trigger is the hard concurrency guarantee.
+-- Does not run on UPDATE (linking to a message / retiring as deleted is free).
+-- Stable raise contract for the service-role adapter:
+--   SQLSTATE DVQ20 / message divbrain_unlinked_quota_exceeded
+
+create or replace function public.divbrain_attachments_enforce_unlinked_quota()
+returns trigger
+language plpgsql
+as $$
+declare
+  active_count integer;
+begin
+  -- Linked inserts and already-retired rows do not consume the abuse quota.
+  if new.message_id is not null or new.status = 'deleted' then
+    return new;
+  end if;
+
+  -- Serialize quota checks per user for the duration of this transaction.
+  -- Namespace 872014601 is DivBrain unlinked-attachment quota (stable int).
+  perform pg_advisory_xact_lock(872014601, hashtext(new.user_id::text));
+
+  select count(*)::integer
+  into active_count
+  from public.divbrain_attachments
+  where user_id = new.user_id
+    and message_id is null
+    and status <> 'deleted';
+
+  if active_count >= 20 then
+    raise exception 'divbrain_unlinked_quota_exceeded'
+      using errcode = 'DVQ20';
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists divbrain_attachments_enforce_unlinked_quota
+  on public.divbrain_attachments;
+create trigger divbrain_attachments_enforce_unlinked_quota
+  before insert on public.divbrain_attachments
+  for each row
+  execute function public.divbrain_attachments_enforce_unlinked_quota();
+
+revoke all on function public.divbrain_attachments_enforce_unlinked_quota()
+  from public;
+revoke all on function public.divbrain_attachments_enforce_unlinked_quota()
+  from anon, authenticated;
+grant execute on function public.divbrain_attachments_enforce_unlinked_quota()
+  to service_role;
+
+-- ---------------------------------------------------------------------------
 -- RLS (Model A for metadata writes)
 -- ---------------------------------------------------------------------------
 

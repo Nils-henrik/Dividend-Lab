@@ -15,7 +15,8 @@ export type DivBrainAttachmentPersistenceError = {
     | "unavailable"
     | "query_failed"
     | "malformed_response"
-    | "configuration";
+    | "configuration"
+    | "quota_exceeded";
 };
 
 export type DivBrainAttachmentPersistenceResult<T> =

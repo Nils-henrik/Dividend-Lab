@@ -4,7 +4,12 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  DIVBRAIN_UNLINKED_QUOTA_MESSAGE,
+  DIVBRAIN_UNLINKED_QUOTA_SQLSTATE,
+} from "../../attachments";
 import type {
+  DivBrainAttachmentPersistenceError,
   DivBrainAttachmentPersistencePort,
   DivBrainAttachmentPersistenceResult,
   DivBrainAttachmentStoragePort,
@@ -19,9 +24,28 @@ function ok<T>(data: T): DivBrainAttachmentPersistenceResult<T> {
 }
 
 function fail(
-  kind: "not_found" | "unavailable" | "query_failed" | "malformed_response" | "configuration",
+  kind: DivBrainAttachmentPersistenceError["kind"],
 ): DivBrainAttachmentPersistenceResult<never> {
   return { ok: false, error: { kind } };
+}
+
+/**
+ * Map the DB quota-guard raise contract to a dedicated persistence error.
+ * Never leak raw database error text to callers.
+ */
+export function mapDivBrainAttachmentInsertError(error: {
+  code?: string | null;
+  message?: string | null;
+}): DivBrainAttachmentPersistenceError["kind"] {
+  const code = typeof error.code === "string" ? error.code : "";
+  const message = typeof error.message === "string" ? error.message : "";
+  if (
+    code === DIVBRAIN_UNLINKED_QUOTA_SQLSTATE ||
+    message.includes(DIVBRAIN_UNLINKED_QUOTA_MESSAGE)
+  ) {
+    return "quota_exceeded";
+  }
+  return "query_failed";
 }
 
 function isAttachmentRow(value: unknown): value is DivBrainAttachmentRow {
@@ -58,8 +82,11 @@ export function createSupabaseDivBrainAttachmentPersistencePort(
           .select("*")
           .single();
 
-        if (error || !isAttachmentRow(data)) {
-          return fail(error ? "query_failed" : "malformed_response");
+        if (error) {
+          return fail(mapDivBrainAttachmentInsertError(error));
+        }
+        if (!isAttachmentRow(data)) {
+          return fail("malformed_response");
         }
         return ok(data);
       } catch {

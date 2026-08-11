@@ -1,12 +1,49 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
+import { DIVBRAIN_ATTACHMENT_COPY_SV } from "./attachments";
 import {
   isDivBrainOptimisticMessagePersisted,
+  resolveDivBrainComposerDiscardOutcome,
   shouldSubmitDivBrainComposerKey,
 } from "./chat-ux";
 
 describe("DivBrain Chat UX v1", () => {
+  it("removes composer chip only after successful server discard", () => {
+    assert.deepEqual(
+      resolveDivBrainComposerDiscardOutcome({
+        hasServerAttachmentId: false,
+        discardResult: null,
+      }),
+      { remove: true },
+    );
+
+    assert.deepEqual(
+      resolveDivBrainComposerDiscardOutcome({
+        hasServerAttachmentId: true,
+        discardResult: { ok: true },
+      }),
+      { remove: true },
+    );
+
+    const failed = resolveDivBrainComposerDiscardOutcome({
+      hasServerAttachmentId: true,
+      discardResult: {
+        ok: false,
+        safeMessage: DIVBRAIN_ATTACHMENT_COPY_SV.discardFailure,
+      },
+    });
+    assert.deepEqual(failed, {
+      remove: false,
+      safeMessage: DIVBRAIN_ATTACHMENT_COPY_SV.discardFailure,
+    });
+    assert.equal(failed.remove, false);
+    if (!failed.remove) {
+      assert.equal(failed.safeMessage.includes("storage"), false);
+      assert.equal(failed.safeMessage.includes("attachmentId"), false);
+    }
+  });
+
   it("submits plain Enter only when the composer can submit", () => {
     assert.equal(
       shouldSubmitDivBrainComposerKey({

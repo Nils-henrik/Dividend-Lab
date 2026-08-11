@@ -1,4 +1,4 @@
-# DivBrain attachments v1 (Issue #166 / hardened #172)
+# DivBrain attachments v1 (Issue #166 / hardened #172 / #176)
 
 Private file attachments for `/brain` chat: PDF, images (JPEG/PNG/WebP), plain text and CSV.
 
@@ -9,7 +9,7 @@ Private file attachments for `/brain` chat: PDF, images (JPEG/PNG/WebP), plain t
 - Attachment-only messages persist as `Bifogad fil: <filename>` (or multi-file Swedish label).
 - Attachments remain visible on the originating user message after reload.
 - Follow-up turns may reuse a **bounded** recent-attachment set (last 2 messages / max 4 files), not the full history, and only within the remaining combined byte budget.
-- Removing a ready/error unlinked chip discards the private object via a server-owned discard action (not UI-only).
+- Removing a ready/error unlinked chip discards the private object via a server-owned discard action (not UI-only). The chip is removed only after `{ ok: true }`; failed discard keeps the chip and shows safe Swedish retry copy.
 
 ## Architecture
 
@@ -58,7 +58,7 @@ Physical private objects are removed **only** through the Supabase Storage API (
 - Only for `message_id IS NULL` rows; linked transcript attachments cannot be discarded this way.
 - Missing / cross-user / linked ids share the same safe not-found surface.
 - Storage API removal first; metadata marked `deleted` only after successful object removal.
-- Composer keeps the server attachment id after prepare succeeds; remove is disabled while uploading; ready/error chips with an id call discard before disappearing; failed upload/confirm after an id exists performs best-effort discard.
+- Composer keeps the server attachment id after prepare succeeds; remove is disabled while uploading/discarding; ready/error chips with an id call discard and disappear only on success; failed upload/confirm after an id exists performs best-effort discard.
 
 ### Abandoned uploads (opportunistic, not a cron)
 
@@ -68,10 +68,14 @@ Before prepare:
 2. Stale rows older than the 24h TTL are removed via Storage API, then metadata retired.
 3. If active unlinked count is still ≥ 20, prepare is rejected with safe Swedish quota copy.
 
+Hard concurrency guarantee (in addition to the app pre-check): a `BEFORE INSERT` trigger serializes per-`user_id` with a transaction-scoped advisory lock and rejects inserts that would push active unlinked rows (`message_id IS NULL AND status <> 'deleted'`) past 20. Rejection uses the stable internal contract `SQLSTATE DVQ20` / message `divbrain_unlinked_quota_exceeded`, mapped by the persistence adapter to `quota_exceeded` and then to the existing Swedish `unlinked_quota` client error. Linking a ready row and retiring a row as `deleted` are UPDATEs and are not blocked by this guard.
+
+If signed-upload URL creation fails after the pending metadata row was inserted (and before any signed URL reaches the client), the row is immediately retired as `deleted` so it does not consume unlinked quota until TTL. The `failed` status remains reserved for flows where an upload/object may already exist and later Storage-API discard is required.
+
 ## Migration
 
 `supabase/migrations/20260811120000_create_divbrain_attachments.sql`
 
-Creates `divbrain_attachments`, private bucket, RLS/grants, and metadata FK cascade. It does **not** create a trigger that deletes `storage.objects` rows.
+Creates `divbrain_attachments`, private bucket, RLS/grants, metadata FK cascade, and the atomic unlinked-quota insert trigger. It does **not** create a trigger that deletes `storage.objects` rows. Authenticated clients receive SELECT-only metadata access; INSERT/UPDATE/DELETE remain service-role / server-owned.
 
 Manual-only / high security review required before production apply.
