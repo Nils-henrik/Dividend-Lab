@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
-import AppShell from "@/components/layout/AppShell";
+import PublicContentShell from "@/components/layout/PublicContentShell";
 import ModelPortfoliosOverview from "@/components/portfolios/ModelPortfoliosOverview";
+import { ModelPortfoliosPublicFallback } from "@/components/portfolios/ModelPortfoliosPublicFallback";
+import JsonLdScript from "@/components/seo/JsonLd";
+import { buildModelPortfolioHubMetadata } from "@/lib/model-portfolios/public";
 import { loadModelPortfoliosOverview } from "@/lib/model-portfolios/server";
+import { breadcrumbJsonLd } from "@/lib/seo/json-ld";
 
-export const metadata: Metadata = {
-  title: "Modellportföljer",
-  robots: { index: false, follow: false },
-};
+export const metadata: Metadata = buildModelPortfolioHubMetadata();
 
 export const dynamic = "force-dynamic";
 
@@ -14,23 +15,22 @@ export default async function ModelPortfoliosPage() {
   const result = await loadModelPortfoliosOverview();
 
   return (
-    <AppShell>
+    <PublicContentShell>
+      <JsonLdScript
+        data={breadcrumbJsonLd([
+          { name: "Hem", path: "/" },
+          { name: "AI-portföljer", path: "/portfolios" },
+        ])}
+      />
       {result.ok ? (
         <ModelPortfoliosOverview
           portfolios={result.portfolios}
           recentTransactions={result.recentTransactions}
+          isAuthenticated={result.isAuthenticated}
         />
       ) : (
-        <section className="divlab-card px-5 py-8 sm:px-7">
-          <h1 className="text-2xl font-semibold tracking-[-0.03em] text-divlab-text">
-            Modellportföljer kunde inte laddas
-          </h1>
-          <p className="mt-3 max-w-xl text-sm leading-6 text-divlab-text-secondary">
-            Portföljdatan är tillfälligt otillgänglig. Ingen modelltransaktion kan
-            göras från den här vyn. Försök igen om en stund.
-          </p>
-        </section>
+        <ModelPortfoliosPublicFallback />
       )}
-    </AppShell>
+    </PublicContentShell>
   );
 }

@@ -9,6 +9,8 @@ type FeatureItem = {
   title: string;
   description: string;
   status: FeatureMaturity;
+  href?: string;
+  ctaLabel?: string;
 };
 
 const availableFeatures: FeatureItem[] = [
@@ -32,6 +34,15 @@ const availableFeatures: FeatureItem[] = [
     status: "Tillgängligt",
     description:
       "Interaktiv FIRE-kalkylator för att utforska sparande, kapital och utdelningsantaganden. En modell för reflektion – inte prognos eller rådgivning.",
+  },
+  {
+    icon: "portfolio",
+    title: "AI-portföljer",
+    status: "Tillgängligt",
+    description:
+      "Fyra publika AI-förvaltade modellportföljer med olika investeringsstrategier. Läs beslut, historik och hur AI används för aktieanalys – utan konto.",
+    href: "/portfolios",
+    ctaLabel: "Öppna AI-portföljerna",
   },
   {
     icon: "forum",
@@ -109,7 +120,7 @@ function StatusLabel({
   );
 }
 
-function FeatureCard({ icon, title, description, status }: FeatureItem) {
+function FeatureCard({ icon, title, description, status, href, ctaLabel }: FeatureItem) {
   const statusTone = status === "Tillgängligt" ? "available" : "early";
   return (
     <article className="rounded-lg border divlab-border-neutral bg-white/[0.02] p-5">
@@ -123,6 +134,14 @@ function FeatureCard({ icon, title, description, status }: FeatureItem) {
       <p className="mt-2 text-sm leading-6 text-divlab-text-secondary">
         {description}
       </p>
+      {href ? (
+        <Link
+          href={href}
+          className="mt-4 inline-flex text-sm font-semibold text-divlab-blue transition hover:text-divlab-blue-muted"
+        >
+          {ctaLabel ?? "Läs mer"} →
+        </Link>
+      ) : null}
     </article>
   );
 }
@@ -134,10 +153,10 @@ function PageCtas() {
         Skapa konto
       </Link>
       <Link
-        href="/forum"
+        href="/portfolios"
         className="rounded-xl border divlab-border-neutral px-6 py-3 text-center text-sm font-medium text-divlab-text-secondary transition hover:border-divlab-border-strong hover:text-divlab-text"
       >
-        Utforska forumet
+        Utforska AI-portföljerna
       </Link>
     </div>
   );

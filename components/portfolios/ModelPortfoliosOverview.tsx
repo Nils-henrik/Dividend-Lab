@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { setModelPortfolioFollowAction } from "@/app/portfolios/actions";
 import MarketLiveBadge from "@/components/portfolios/MarketLiveBadge";
+import {
+  MODEL_PORTFOLIO_PROCESS_PATH,
+  MODEL_PORTFOLIO_PUBLIC_LAUNCH_LABEL,
+} from "@/lib/model-portfolios/public";
 import { resolveMarketLiveStatus } from "@/lib/model-portfolios/engine/market-status";
 import type {
   ModelPortfolioOverview,
@@ -85,20 +89,35 @@ function transactionLabel(type: ModelPortfolioTransaction["transactionType"]): s
 export default function ModelPortfoliosOverview({
   portfolios,
   recentTransactions,
+  isAuthenticated = false,
 }: {
   portfolios: readonly ModelPortfolioOverview[];
   recentTransactions: readonly ModelPortfolioTransaction[];
+  isAuthenticated?: boolean;
 }) {
   const marketStatus = resolveMarketLiveStatus(new Date());
 
   return (
     <div className="mx-auto w-full max-w-[1560px] space-y-5 pb-4">
       <section className="px-0.5 pt-1">
-        <h1 className="text-[28px] font-semibold tracking-[-0.04em] text-divlab-text sm:text-[32px]">
-          Modellportföljer
+        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-divlab-blue-muted">
+          Nyligen lanserade · Live sedan {MODEL_PORTFOLIO_PUBLIC_LAUNCH_LABEL}
+        </p>
+        <h1 className="mt-2 text-[28px] font-semibold tracking-[-0.04em] text-divlab-text sm:text-[32px]">
+          Fyra AI-portföljer. Fyra olika strategier.
         </h1>
-        <p className="mt-1.5 text-sm text-divlab-text-secondary">
-          Simulerade AI-förvaltade modellportföljer med olika risknivåer och strategier. Inte personlig rådgivning eller verkliga mäklaraffärer.
+        <p className="mt-3 max-w-3xl text-sm leading-7 text-divlab-text-secondary">
+          DivLab har byggt fyra separata AI-förvaltade modellportföljer med varsin
+          investeringsstrategi: Försiktig, Medelrisk, Högrisk och Utdelning.
+          Portföljerna gick live den {MODEL_PORTFOLIO_PUBLIC_LAUNCH_LABEL} och har
+          därför fortfarande en kort historik. Varje AI arbetar inom sitt eget mandat,
+          analyserar marknaden och dokumenterar varför en modellaffär föreslås eller
+          genomförs.
+        </p>
+        <p className="mt-2 max-w-3xl text-sm leading-6 text-divlab-text-muted">
+          Detta är allmän information om simulerade modellportföljer – inte personlig
+          investeringsrådgivning eller verkliga mäklaraffärer. Historiken är för kort
+          för att tolkas som långsiktig track record.
         </p>
       </section>
 
@@ -111,13 +130,13 @@ export default function ModelPortfoliosOverview({
             <p className="mt-1 text-lg font-semibold text-divlab-text">AI + verifierade källor</p>
             <p className="mt-1 text-xs text-divlab-text-muted">Transparens i varje beslut</p>
           </div>
-          <a
-            href="#ai-process"
+          <Link
+            href={MODEL_PORTFOLIO_PROCESS_PATH}
             className="hidden shrink-0 items-center gap-2 border divlab-border-neutral px-3.5 py-2 text-xs font-semibold text-divlab-text transition hover:border-divlab-blue/50 hover:text-divlab-blue sm:inline-flex"
           >
             <InfoIcon />
             Så fungerar det
-          </a>
+          </Link>
         </div>
       </section>
 
@@ -127,6 +146,7 @@ export default function ModelPortfoliosOverview({
             key={portfolio.id}
             portfolio={portfolio}
             marketStatus={marketStatus}
+            isAuthenticated={isAuthenticated}
           />
         ))}
       </section>
@@ -179,19 +199,23 @@ export default function ModelPortfoliosOverview({
             <ProcessStep number="3" title="Verifiering" text="Regler och riskkontroller säkerställer varje beslut." />
             <ProcessStep number="4" title="Genomförande" text="Godkända modellaffärer bokförs och förklaringen sparas i historiken." />
           </div>
-          <a
-            href="#historik"
+          <Link
+            href={MODEL_PORTFOLIO_PROCESS_PATH}
             className="mt-6 block border divlab-border-neutral px-3 py-2.5 text-center text-xs font-semibold text-divlab-text transition hover:border-divlab-blue/50 hover:text-divlab-blue"
           >
             Läs mer om processen
-          </a>
+          </Link>
         </aside>
       </section>
 
       <section className="flex items-start gap-3 border border-divlab-blue/20 bg-divlab-blue/[0.08] px-4 py-3 text-xs leading-5 text-divlab-text-secondary">
         <span className="mt-0.5 text-divlab-blue"><InfoIcon /></span>
         <p>
-          Modellportföljerna är simulerade och uppdateras minst 1 gång per handelsdag. Varje köp belastar kassan med 10 kr i simulerad courtage. Vid materiella händelser kan AI:n göra riktade omprövningar, med en hård gräns på totalt 4 beslutskörningar per portfölj och dag. Alla genomförda affärer sparas i historiken. Detta är inte personlig investeringsrådgivning.
+          Modellportföljerna är simulerade och uppdateras i fyra schemalagda pass per
+          handelsdag. Varje köp och sälj belastar kassan med 10 kr i simulerad courtage.
+          Vid materiella händelser kan AI:n göra riktade omprövningar, med en hård gräns
+          på totalt 4 beslutskörningar per portfölj och dag. Alla genomförda affärer
+          sparas i historiken. Detta är inte personlig investeringsrådgivning.
         </p>
       </section>
     </div>
@@ -211,9 +235,11 @@ function TopMetric({ label, value, sub }: { label: string; value: string; sub: s
 function PortfolioCard({
   portfolio,
   marketStatus,
+  isAuthenticated,
 }: {
   portfolio: ModelPortfolioOverview;
   marketStatus: ReturnType<typeof resolveMarketLiveStatus>;
+  isAuthenticated: boolean;
 }) {
   const style = portfolioStyle[portfolio.slug] ?? portfolioStyle.forsiktig;
   const positive = portfolio.performancePct >= 0;
@@ -240,7 +266,7 @@ function PortfolioCard({
               <span className={`text-sm font-semibold ${positive ? "text-emerald-400" : "text-red-400"}`}>
                 {positive ? "+" : ""}{portfolio.performancePct.toFixed(2).replace(".", ",")}%
               </span>
-              <span className="text-xs text-divlab-text-muted">sedan start</span>
+              <span className="text-xs text-divlab-text-muted">sedan start (kort historik)</span>
             </div>
           </div>
           <MiniSparkline accent={style.accent} flat={Math.abs(portfolio.performancePct) < 0.001} />
@@ -258,13 +284,22 @@ function PortfolioCard({
           <p className={`mt-2 text-[11px] font-semibold ${style.accent}`}>Öppna strategi och historik →</p>
         </div>
 
-        <form action={setModelPortfolioFollowAction} className="pointer-events-auto mt-4">
-          <input type="hidden" name="portfolioId" value={portfolio.id} />
-          <input type="hidden" name="follow" value={portfolio.isFollowing ? "false" : "true"} />
-          <button type="submit" className={`w-full border py-2.5 text-xs font-semibold transition ${style.border} ${style.accent} hover:bg-white/[0.03]`}>
-            {portfolio.isFollowing ? "Följer portföljen ✓" : "Följ portfölj →"}
-          </button>
-        </form>
+        {isAuthenticated ? (
+          <form action={setModelPortfolioFollowAction} className="pointer-events-auto mt-4">
+            <input type="hidden" name="portfolioId" value={portfolio.id} />
+            <input type="hidden" name="follow" value={portfolio.isFollowing ? "false" : "true"} />
+            <button type="submit" className={`w-full border py-2.5 text-xs font-semibold transition ${style.border} ${style.accent} hover:bg-white/[0.03]`}>
+              {portfolio.isFollowing ? "Följer portföljen ✓" : "Följ portfölj →"}
+            </button>
+          </form>
+        ) : (
+          <Link
+            href={`/login?redirect=${encodeURIComponent(href)}`}
+            className={`pointer-events-auto mt-4 block w-full border py-2.5 text-center text-xs font-semibold transition ${style.border} ${style.accent} hover:bg-white/[0.03]`}
+          >
+            Logga in för att följa →
+          </Link>
+        )}
       </div>
     </article>
   );

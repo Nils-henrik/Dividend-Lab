@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createClient } from "@/lib/supabase/server";
+import { getModelPortfolioReadContext } from "@/lib/model-portfolios/read-client";
 
 export type ModelPortfolioTransaction = {
   id: string;
@@ -41,6 +41,7 @@ export type ModelPortfolioOverview = {
   holdingsCount: number;
   followerCount: number;
   isFollowing: boolean;
+  launchedAt: string | null;
   latestDecision: {
     type: string;
     rationale: string;
@@ -54,12 +55,14 @@ export type ModelPortfoliosOverviewResult =
       ok: true;
       portfolios: ModelPortfolioOverview[];
       recentTransactions: ModelPortfolioTransaction[];
+      isAuthenticated: boolean;
     }
   | {
       ok: false;
       portfolios: [];
       recentTransactions: [];
-      reason: "unauthenticated" | "unavailable";
+      isAuthenticated: boolean;
+      reason: "unavailable";
     };
 
 type PortfolioRow = {
@@ -76,6 +79,7 @@ type PortfolioRow = {
   contribution_day: number;
   strategy_version: number;
   sort_order: number;
+  launched_at: string | null;
 };
 
 type CashRow = {
@@ -112,11 +116,15 @@ type TransactionRow = {
 };
 
 export async function loadModelPortfoliosOverview(): Promise<ModelPortfoliosOverviewResult> {
-  const supabase = await createClient();
-  const { data: userData, error: userError } = await supabase.auth.getUser();
-  const user = userData.user;
-  if (userError || !user) {
-    return { ok: false, portfolios: [], recentTransactions: [], reason: "unauthenticated" };
+  const { client: supabase, user } = await getModelPortfolioReadContext();
+  if (!supabase) {
+    return {
+      ok: false,
+      portfolios: [],
+      recentTransactions: [],
+      isAuthenticated: false,
+      reason: "unavailable",
+    };
   }
 
   const [
@@ -130,7 +138,7 @@ export async function loadModelPortfoliosOverview(): Promise<ModelPortfoliosOver
     supabase
       .from("model_portfolios")
       .select(
-        "id,slug,name,risk_label,description,objective,status,currency,initial_capital_minor,monthly_contribution_minor,contribution_day,strategy_version,sort_order",
+        "id,slug,name,risk_label,description,objective,status,currency,initial_capital_minor,monthly_contribution_minor,contribution_day,strategy_version,sort_order,launched_at",
       )
       .order("sort_order", { ascending: true }),
     supabase
@@ -163,7 +171,13 @@ export async function loadModelPortfoliosOverview(): Promise<ModelPortfoliosOver
     followersResult.error ||
     transactionsResult.error
   ) {
-    return { ok: false, portfolios: [], recentTransactions: [], reason: "unavailable" };
+    return {
+      ok: false,
+      portfolios: [],
+      recentTransactions: [],
+      isAuthenticated: Boolean(user),
+      reason: "unavailable",
+    };
   }
 
   const cashByPortfolio = new Map<string, number>();
@@ -211,7 +225,7 @@ export async function loadModelPortfoliosOverview(): Promise<ModelPortfoliosOver
       row.portfolio_id,
       (followerCountByPortfolio.get(row.portfolio_id) ?? 0) + 1,
     );
-    if (row.user_id === user.id) followedByUser.add(row.portfolio_id);
+    if (user && row.user_id === user.id) followedByUser.add(row.portfolio_id);
   }
 
   const portfolioMeta = new Map<string, { name: string; slug: string }>();
@@ -248,6 +262,7 @@ export async function loadModelPortfoliosOverview(): Promise<ModelPortfoliosOver
       holdingsCount: holdingsCountByPortfolio.get(row.id) ?? 0,
       followerCount: followerCountByPortfolio.get(row.id) ?? 0,
       isFollowing: followedByUser.has(row.id),
+      launchedAt: row.launched_at ? String(row.launched_at) : null,
       latestDecision: latest
         ? {
             type: latest.decision_type,
@@ -279,5 +294,10 @@ export async function loadModelPortfoliosOverview(): Promise<ModelPortfoliosOver
     } satisfies ModelPortfolioTransaction;
   });
 
-  return { ok: true, portfolios, recentTransactions };
+  return {
+    ok: true,
+    portfolios,
+    recentTransactions,
+    isAuthenticated: Boolean(user),
+  };
 }

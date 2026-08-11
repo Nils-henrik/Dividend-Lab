@@ -9,9 +9,11 @@ import { describe, it } from "node:test";
 import robots from "@/app/robots";
 import sitemap from "@/app/sitemap";
 import { learningArticles } from "@/data/learning";
+import { MODEL_PORTFOLIO_INDEXABLE_PATHS } from "@/lib/model-portfolios/public";
 import { getNewsArticlesWithSlug } from "@/lib/news/get-articles";
 import { ROBOTS_DISALLOW_PATHS } from "@/lib/seo/robots-policy";
 import {
+  REQUIRED_INDEXABLE_PRODUCT_PATHS,
   STATIC_PUBLIC_PATHS,
   buildSitemapEntries,
 } from "@/lib/seo/sitemap-entries";
@@ -27,8 +29,8 @@ describe("absoluteUrl", () => {
 });
 
 describe("buildSitemapEntries", () => {
-  it("includes homepage, public listings and published article URLs", () => {
-    const entries = buildSitemapEntries();
+  it("includes homepage, public listings and published article URLs", async () => {
+    const entries = await buildSitemapEntries();
     const urls = new Set(entries.map((entry) => entry.url));
 
     for (const path of STATIC_PUBLIC_PATHS) {
@@ -54,21 +56,47 @@ describe("buildSitemapEntries", () => {
     }
   });
 
-  it("only emits https://divlab.se URLs", () => {
-    for (const entry of buildSitemapEntries()) {
+  it("includes the public AI portfolio product routes", async () => {
+    const entries = await buildSitemapEntries();
+    const urls = new Set(entries.map((entry) => entry.url));
+
+    for (const path of MODEL_PORTFOLIO_INDEXABLE_PATHS) {
+      assert.ok(
+        STATIC_PUBLIC_PATHS.includes(
+          path as (typeof STATIC_PUBLIC_PATHS)[number],
+        ),
+        `portfolio path missing from STATIC_PUBLIC_PATHS: ${path}`,
+      );
+      assert.ok(
+        REQUIRED_INDEXABLE_PRODUCT_PATHS.includes(
+          path as (typeof REQUIRED_INDEXABLE_PRODUCT_PATHS)[number],
+        ),
+        `portfolio path missing from REQUIRED_INDEXABLE_PRODUCT_PATHS: ${path}`,
+      );
+      assert.ok(urls.has(absoluteUrl(path)), `missing portfolio path ${path}`);
+    }
+  });
+
+  it("only emits https://divlab.se URLs", async () => {
+    for (const entry of await buildSitemapEntries()) {
       assert.match(entry.url, /^https:\/\/divlab\.se(\/|$)/);
       assert.doesNotMatch(entry.url, /vercel\.app|www\.divlab\.se/i);
     }
   });
 
-  it("excludes private, auth and preview routes", () => {
-    const urls = buildSitemapEntries().map((entry) => entry.url);
+  it("excludes private, auth and preview routes", async () => {
+    const urls = (await buildSitemapEntries()).map((entry) => entry.url);
 
     for (const url of urls) {
       const path = url.slice(PRODUCTION_SITE_ORIGIN.length) || "/";
       for (const prefix of ROBOTS_DISALLOW_PATHS) {
+        // Match exact path or a true path-segment prefix so /portfolio does not
+        // falsely exclude the public /portfolios product hub.
+        const isPrivate =
+          path === prefix ||
+          path.startsWith(prefix.endsWith("/") ? prefix : `${prefix}/`);
         assert.equal(
-          path === prefix || path.startsWith(prefix),
+          isPrivate,
           false,
           `unexpected private route in sitemap: ${url}`,
         );
@@ -79,10 +107,11 @@ describe("buildSitemapEntries", () => {
       urls.includes("https://divlab.se/forum/demo-interactions-preview"),
       false,
     );
+    assert.ok(urls.includes("https://divlab.se/portfolios"));
   });
 
-  it("sets lastModified only from reliable article dates", () => {
-    const entries = buildSitemapEntries();
+  it("sets lastModified only from reliable article dates", async () => {
+    const entries = await buildSitemapEntries();
     const newsWithDates = getNewsArticlesWithSlug().filter((article) =>
       Boolean(article.publishedAt),
     );
@@ -106,8 +135,8 @@ describe("buildSitemapEntries", () => {
 });
 
 describe("Next.js metadata routes", () => {
-  it("sitemap() returns MetadataRoute entries with production URLs", () => {
-    const entries = sitemap();
+  it("sitemap() returns MetadataRoute entries with production URLs", async () => {
+    const entries = await sitemap();
     assert.ok(entries.length >= STATIC_PUBLIC_PATHS.length);
     assert.ok(
       entries.every((entry) => entry.url.startsWith("https://divlab.se")),
