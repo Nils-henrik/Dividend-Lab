@@ -1,5 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "git": {
+    "deploymentEnabled": {
+      "cursor/issue-*": false
+    }
+  },
   "env": {
     "MODEL_PORTFOLIO_DRY_RUN_ENABLED": "true",
     "MODEL_PORTFOLIO_EXECUTION_ENABLED": "true"
