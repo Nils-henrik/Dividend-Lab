@@ -122,7 +122,6 @@ export async function persistModelPortfolioValuationSnapshots(input: {
       cash_value_minor: cashMinor,
       invested_value_minor: investedMinor,
       contributed_capital_minor: contributedMinor,
-      currency: "SEK",
       market_data_as_of: Number.isFinite(marketDataAsOf)
         ? new Date(marketDataAsOf as number).toISOString()
         : null,
