@@ -57,10 +57,6 @@ export async function fetchFxRateToSek(
     };
   }
 
-  if (base !== "USD") {
-    return { ok: false, reason: "unsupported_pair" };
-  }
-
   const key = cacheKey(base);
   const cached = cache.get(key);
   if (cached && cached.expiresAt > Date.now()) {
@@ -68,7 +64,7 @@ export async function fetchFxRateToSek(
   }
 
   try {
-    const response = await fetch(`${FRANKFURTER_URL}?from=USD&to=SEK`, {
+    const response = await fetch(`${FRANKFURTER_URL}?from=${encodeURIComponent(base)}&to=SEK`, {
       method: "GET",
       headers: { Accept: "application/json" },
       next: { revalidate: 900 },
@@ -82,6 +78,10 @@ export async function fetchFxRateToSek(
       rates?: { SEK?: unknown };
     };
 
+    if (typeof body.base === "string" && body.base.trim().toUpperCase() !== base) {
+      return { ok: false, reason: "fx_unavailable" };
+    }
+
     const rate = typeof body.rates?.SEK === "number" ? body.rates.SEK : Number(body.rates?.SEK);
     if (!Number.isFinite(rate) || rate <= 0) return { ok: false, reason: "fx_unavailable" };
 
@@ -89,7 +89,7 @@ export async function fetchFxRateToSek(
     const asOf = date ? `${date}T16:00:00.000Z` : now.toISOString();
 
     const quote = remember(key, {
-      base: "USD",
+      base,
       quote: "SEK",
       rate,
       asOf,
