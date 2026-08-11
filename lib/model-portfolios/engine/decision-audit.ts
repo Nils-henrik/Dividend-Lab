@@ -5,6 +5,7 @@ import type { ModelPortfolioDecision, ModelPortfolioEvidence } from "./decision"
 import type { ModelPortfolioAiUsage } from "./ai-usage";
 import { MODEL_PORTFOLIO_AI_PROVIDER } from "./ai-usage";
 import { buildInvestorFacingDecisionRationale } from "./decision-narrative";
+import { canonicalizeInstrumentSymbol } from "./instrument-symbol";
 import type { RankedResearchCandidate } from "./research";
 
 export const MODEL_PORTFOLIO_PROMPT_VERSION = "portfolio-manager-tools-v2" as const;
@@ -99,14 +100,17 @@ export function buildDecisionAuditRow(input: DecisionAuditInput): DecisionAuditR
         decision: input.decision,
       })
     : input.decision.rationale;
+  const canonicalInstrument = input.decision.symbol && input.decision.exchange
+    ? canonicalizeInstrumentSymbol(input.decision.symbol, input.decision.exchange)
+    : null;
 
   return {
     portfolio_id: input.portfolioId,
     run_id: input.runId,
     decision_type: databaseDecisionType(input.decision.action),
     status: input.decision.action === "hold" ? "skipped" : "proposed",
-    instrument_symbol: input.decision.symbol,
-    exchange: input.decision.exchange,
+    instrument_symbol: canonicalInstrument?.baseSymbol ?? null,
+    exchange: canonicalInstrument?.exchange ?? null,
     instrument_name: input.decision.instrumentName,
     rationale: rationale.slice(0, 4000),
     model_provider: MODEL_PORTFOLIO_MODEL_PROVIDER,
