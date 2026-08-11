@@ -1,5 +1,8 @@
 import "server-only";
 
+// pdf-parse requires its Node/serverless worker compatibility layer before the
+// main parser import when DOM globals such as DOMMatrix are unavailable.
+import { CanvasFactory } from "pdf-parse/worker";
 import { PDFParse } from "pdf-parse";
 
 /**
@@ -284,7 +287,7 @@ export async function extractBoundedPdfText(input: {
   const maxChars = input.maxChars ?? OFFICIAL_DOCUMENT_BOUNDS.maxTextChars;
   const parseTimeoutMs = input.parseTimeoutMs ?? 8_000;
 
-  const parser = new PDFParse({ data: input.bytes });
+  const parser = new PDFParse({ data: input.bytes, CanvasFactory });
   let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
   try {
     const parsePromise = (async (): Promise<OfficialDocumentExtractResult> => {
