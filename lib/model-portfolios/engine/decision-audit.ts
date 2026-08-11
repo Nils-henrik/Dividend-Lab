@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ModelPortfolioDecision, ModelPortfolioEvidence } from "./decision";
 import type { ModelPortfolioAiUsage } from "./ai-usage";
 import { MODEL_PORTFOLIO_AI_PROVIDER } from "./ai-usage";
+import { buildInvestorFacingDecisionRationale } from "./decision-narrative";
 import type { RankedResearchCandidate } from "./research";
 
 export const MODEL_PORTFOLIO_PROMPT_VERSION = "portfolio-manager-tools-v2" as const;
@@ -22,6 +23,8 @@ export type DecisionAuditInput = {
   portfolioSnapshot: string;
   executionAllowed: boolean;
   researchSummary?: string;
+  /** Internal/admin diagnostics only; never prepended to public Senaste beslut copy. */
+  operationalSummary?: string;
 };
 
 export type DecisionAuditRow = {
@@ -89,8 +92,12 @@ function referencedEvidence(
 export function buildDecisionAuditRow(input: DecisionAuditInput): DecisionAuditRow {
   if (!input.runId.trim() || !input.portfolioId.trim()) throw new Error("invalid_decision_audit_identity");
   const researchSummary = input.researchSummary?.trim() ?? "";
+  const operationalSummary = input.operationalSummary?.trim() ?? "";
   const rationale = researchSummary
-    ? `${researchSummary} Beslut: ${input.decision.rationale}`
+    ? buildInvestorFacingDecisionRationale({
+        researchSummary,
+        decision: input.decision,
+      })
     : input.decision.rationale;
 
   return {
@@ -108,10 +115,11 @@ export function buildDecisionAuditRow(input: DecisionAuditInput): DecisionAuditR
     market_data_as_of: latestMarketDataTimestamp(input.evidence),
     evidence: referencedEvidence(input.decision, input.evidence),
     input_snapshot: {
-      audit_version: 2,
+      audit_version: 3,
       strategy_key: input.strategyKey,
       execution_allowed_at_decision_time: input.executionAllowed,
       research_summary: researchSummary || null,
+      operational_summary: operationalSummary || null,
       original_action: input.decision.action,
       proposed_portfolio_pct: input.decision.proposedPortfolioPct,
       conviction_score: input.decision.convictionScore,

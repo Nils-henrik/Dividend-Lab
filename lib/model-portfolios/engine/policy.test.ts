@@ -80,7 +80,7 @@ describe("model portfolio manager policy", () => {
     const common = {
       action: "sell" as const,
       convictionScore: 0.65,
-      tradeValueMinor: 40_000,
+      tradeValueMinor: 100_000,
       portfolioValueMinor: 1_000_000,
       hoursSinceLastTradeInInstrument: 80,
       materialThesisBreak: false,
@@ -97,6 +97,51 @@ describe("model portfolio manager policy", () => {
     assert.ok(
       MODEL_PORTFOLIO_TURNOVER_POLICY.conservative.replacementThresholdScore >
         MODEL_PORTFOLIO_TURNOVER_POLICY.high_risk.replacementThresholdScore,
+    );
+  });
+
+  it("enforces an 8% minimum meaningful trade across every strategy and preserves conservative 120-hour cooldown", () => {
+    for (const strategyKey of ["conservative", "balanced", "high_risk", "dividend"] as const) {
+      assert.equal(MODEL_PORTFOLIO_TURNOVER_POLICY[strategyKey].minTradePctOfPortfolio, 8);
+      assert.deepEqual(
+        shouldAllowPortfolioChange({
+          strategyKey,
+          action: "buy",
+          convictionScore: 0.95,
+          tradeValueMinor: 79_999,
+          portfolioValueMinor: 1_000_000,
+          hoursSinceLastTradeInInstrument: null,
+          materialThesisBreak: false,
+        }),
+        { allowed: false, reason: "trade_too_small" },
+      );
+    }
+
+    assert.equal(MODEL_PORTFOLIO_TURNOVER_POLICY.conservative.cooldownHours, 120);
+    assert.deepEqual(
+      shouldAllowPortfolioChange({
+        strategyKey: "conservative",
+        action: "buy",
+        convictionScore: 0.9,
+        tradeValueMinor: 80_000,
+        portfolioValueMinor: 1_000_000,
+        hoursSinceLastTradeInInstrument: 119,
+        materialThesisBreak: false,
+      }),
+      { allowed: false, reason: "instrument_cooldown" },
+    );
+
+    assert.deepEqual(
+      shouldAllowPortfolioChange({
+        strategyKey: "conservative",
+        action: "buy",
+        convictionScore: 0.9,
+        tradeValueMinor: 80_000,
+        portfolioValueMinor: 1_000_000,
+        hoursSinceLastTradeInInstrument: 120,
+        materialThesisBreak: false,
+      }),
+      { allowed: true },
     );
   });
 

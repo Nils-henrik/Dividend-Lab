@@ -1,9 +1,17 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { discoverYahooCandidates } from "./yahoo-discovery";
+import { NORDIC_RESEARCH_BOUNDS, NORDIC_SEED_UNIVERSE } from "./nordic-universe";
+import { discoverNordicYahooCandidates, discoverYahooCandidates } from "./yahoo-discovery";
 
 function responseFor(symbols: Array<Record<string, unknown>>): Response {
   return new Response(JSON.stringify({ finance: { result: [{ quotes: symbols }] } }), {
+    status: 200,
+    headers: { "content-type": "application/json" },
+  });
+}
+
+function quoteResponse(symbols: Array<Record<string, unknown>>): Response {
+  return new Response(JSON.stringify({ quoteResponse: { result: symbols } }), {
     status: 200,
     headers: { "content-type": "application/json" },
   });
@@ -70,5 +78,77 @@ describe("Yahoo market discovery", () => {
 
     assert.equal(result.length, 1);
     assert.equal(result[0]?.symbol, "AAA");
+  });
+
+  it("screens a broad Nordic seed universe and returns a bounded four-country shortlist", async () => {
+    const calls: string[] = [];
+    const fetchImpl: typeof fetch = async (input) => {
+      calls.push(String(input));
+      const url = new URL(String(input));
+      const symbols = (url.searchParams.get("symbols") ?? "").split(",").filter(Boolean);
+      return quoteResponse(
+        symbols.map((yahooSymbol, index) => {
+          const suffix = yahooSymbol.split(".").at(-1);
+          const currency =
+            suffix === "HE" ? "EUR" : suffix === "CO" ? "DKK" : suffix === "OL" ? "NOK" : "SEK";
+          return {
+            symbol: yahooSymbol,
+            shortName: yahooSymbol,
+            fullExchangeName:
+              suffix === "ST"
+                ? "Stockholm"
+                : suffix === "CO"
+                  ? "Copenhagen"
+                  : suffix === "HE"
+                    ? "Helsinki"
+                    : "Oslo",
+            currency,
+            regularMarketPrice: 100 + index,
+            regularMarketChangePercent: 10 - (index % 7),
+            regularMarketVolume: 1_000_000 + index * 1_000,
+            averageDailyVolume3Month: 800_000,
+            marketCap: currency === "EUR" ? 2_000_000_000 : 40_000_000_000,
+          };
+        }),
+      );
+    };
+
+    const result = await discoverNordicYahooCandidates({
+      seeds: NORDIC_SEED_UNIVERSE,
+      broadLimit: NORDIC_RESEARCH_BOUNDS.broadDiscoveryCandidateCount,
+      shortlistLimit: NORDIC_RESEARCH_BOUNDS.deepHistoryTechnicalCount,
+      fetchImpl,
+      now: new Date("2026-08-10T07:20:00.000Z"),
+    });
+
+    assert.ok(calls.length >= 1);
+    assert.ok(result.screened.length > result.shortlist.length);
+    assert.equal(result.shortlist.length, NORDIC_RESEARCH_BOUNDS.deepHistoryTechnicalCount);
+
+    const countries = new Set(result.shortlist.map((item) => item.country));
+    assert.deepEqual([...countries].sort(), ["DK", "FI", "NO", "SE"]);
+    assert.ok(result.shortlist.every((item) => item.source === "yahoo_finance"));
+    assert.ok(result.shortlist.every((item) => /\.(ST|CO|HE|OL)$/.test(item.yahooSymbol)));
+  });
+
+  it("falls back to deterministic seed ranking when Yahoo quotes are unavailable", async () => {
+    const fetchImpl: typeof fetch = async () =>
+      new Response("nope", { status: 500 });
+
+    const balancedSeeds = (["SE", "NO", "FI", "DK"] as const).flatMap((country) =>
+      NORDIC_SEED_UNIVERSE.filter((seed) => seed.country === country).slice(0, 6),
+    );
+
+    const result = await discoverNordicYahooCandidates({
+      seeds: balancedSeeds,
+      shortlistLimit: 8,
+      perCountryMin: 2,
+      perCountryMax: 2,
+      fetchImpl,
+    });
+
+    assert.equal(result.shortlist.length, 8);
+    const countries = new Set(result.shortlist.map((item) => item.country));
+    assert.deepEqual([...countries].sort(), ["DK", "FI", "NO", "SE"]);
   });
 });

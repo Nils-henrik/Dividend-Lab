@@ -3,6 +3,7 @@ import "server-only";
 import { createModelPortfolioAdminClient } from "../admin";
 import { aggregatePortfolioAiUsage, type ModelPortfolioAiUsage, type ModelPortfolioBatchAiUsage } from "./ai-usage";
 import { buildDecisionAuditRow, persistDecisionAuditBatch, type DecisionAuditRow } from "./decision-audit";
+import { buildInvestorFacingDecisionRationale } from "./decision-narrative";
 import { runPortfolioDryRun } from "./dry-run";
 import type { EodhdCallBudgetSnapshot, ModelPortfolioResearchPass } from "./eodhd-budget";
 import type { DelayedQuote } from "./eodhd";
@@ -227,7 +228,10 @@ export async function runAllModelPortfoliosDryRun(
     }
 
     spentTodayUsdMicros += result.estimatedCostUsdMicros;
-    const rationale = `${research.summary} Beslut: ${result.decision.rationale}`;
+    const rationale = buildInvestorFacingDecisionRationale({
+      researchSummary: research.summary,
+      decision: result.decision,
+    });
     portfolioResults.push({
       id: portfolio.id,
       slug: portfolio.slug,
@@ -257,6 +261,7 @@ export async function runAllModelPortfoliosDryRun(
         portfolioSnapshot,
         executionAllowed,
         researchSummary: research.summary,
+        operationalSummary: research.operationalSummary,
       }));
     }
   }

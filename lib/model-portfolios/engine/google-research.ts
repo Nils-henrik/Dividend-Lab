@@ -4,7 +4,8 @@ export type GoogleResearchHit = {
   title: string;
   snippet: string;
   url: string;
-  publisher: "Google Custom Search";
+  publisher: string;
+  sourceKind: "company_primary_candidate" | "discovery";
   fetchedAt: string;
 };
 
@@ -31,10 +32,43 @@ function httpsUrl(value: unknown): string | null {
   }
 }
 
+function publisherFromUrl(value: string): string {
+  try {
+    return new URL(value).hostname.replace(/^www\./i, "");
+  } catch {
+    return "web_source";
+  }
+}
+
+function isLikelyCompanyPrimaryCandidate(input: {
+  title: string;
+  snippet: string;
+  url: string;
+}): boolean {
+  const haystack = `${input.title} ${input.snippet} ${input.url}`.toLowerCase();
+  return [
+    "investor relations",
+    "investors",
+    "press release",
+    "company announcement",
+    "annual report",
+    "interim report",
+    "quarterly report",
+    "financial report",
+    "financial statements",
+    "/investor",
+    "/investors",
+    "/press",
+    "/media",
+    "/reports",
+  ].some((needle) => haystack.includes(needle));
+}
+
 /**
  * Optional bounded Google Programmable Search lookup. Missing credentials are
- * a normal disabled state. Search snippets are discovery evidence only: they
- * are never converted into invented financial metrics.
+ * a normal disabled state. Google is discovery only: results are attributed to
+ * their destination publisher, likely company/IR sources are ranked first, and
+ * snippets are never converted into invented financial metrics.
  */
 export async function searchGoogleCompanyResearch(input: {
   companyName: string;
@@ -52,7 +86,7 @@ export async function searchGoogleCompanyResearch(input: {
 
   const fetchImpl = input.fetchImpl ?? fetch;
   const now = input.now ?? new Date();
-  const query = `${companyName} ${symbol} investor relations earnings revenue valuation annual report`;
+  const query = `${companyName} ${symbol} ("investor relations" OR "press release" OR "annual report" OR "interim report" OR guidance OR dividend OR acquisition OR contract)`;
   const url = new URL("https://www.googleapis.com/customsearch/v1");
   url.searchParams.set("key", apiKey);
   url.searchParams.set("cx", cx);
@@ -77,11 +111,19 @@ export async function searchGoogleCompanyResearch(input: {
           title: title.slice(0, 200),
           snippet: snippet.slice(0, 1_400),
           url: resultUrl,
-          publisher: "Google Custom Search",
+          publisher: publisherFromUrl(resultUrl),
+          sourceKind: isLikelyCompanyPrimaryCandidate({
+            title,
+            snippet,
+            url: resultUrl,
+          })
+            ? "company_primary_candidate"
+            : "discovery",
           fetchedAt: now.toISOString(),
         };
       })
-      .filter((item): item is GoogleResearchHit => Boolean(item));
+      .filter((item): item is GoogleResearchHit => Boolean(item))
+      .sort((a, b) => Number(b.sourceKind === "company_primary_candidate") - Number(a.sourceKind === "company_primary_candidate"));
   } catch {
     return [];
   }

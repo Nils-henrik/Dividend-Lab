@@ -107,6 +107,58 @@ describe("model portfolio decision audit", () => {
     });
   });
 
+  it("uses investor-facing research narrative and keeps ops diagnostics off the public rationale", () => {
+    const row = buildDecisionAuditRow({
+      runId: "run-narrative",
+      portfolioId: "portfolio-narrative",
+      strategyKey: "conservative",
+      decision: {
+        action: "hold",
+        symbol: null,
+        exchange: null,
+        instrumentName: null,
+        proposedPortfolioPct: 0,
+        convictionScore: 0.42,
+        materialThesisBreak: false,
+        thesis: "Inget nytt case passerade mandatets tröskel med tillräckligt underlag.",
+        bearCase: "Forcerad omsättning skulle öka friktion utan tydlig edge.",
+        catalyst: "Väntar på starkare kombinerad signal.",
+        valuationView: "Inga kandidater erbjöd tillräcklig marginal.",
+        keyRisks: ["Otillräckligt underlag"],
+        evidenceIds: ["market:INVE-B"],
+        disconfirmingEvidenceIds: [],
+        rationale: "Inga kandidater klarade strategins och riskreglernas tröskel.",
+      },
+      evidence,
+      rankedCandidates,
+      modelName: "openai/gpt-5.6-luna",
+      estimatedCostUsdMicros: 100,
+      usage: {
+        provider: "vercel-ai-gateway",
+        model: "openai/gpt-5.6-luna",
+        inputTokens: 100,
+        cachedInputTokens: null,
+        outputTokens: 50,
+        totalTokens: 150,
+        estimatedCostUsdMicros: 100,
+        costSource: "catalog_estimate",
+        timestamp: "2026-08-10T12:00:00.000Z",
+        runId: "run-narrative",
+      },
+      portfolioSnapshot: "cash=1000000",
+      executionAllowed: false,
+      researchSummary:
+        "Nordiska morgonpasset (09.20) granskade 8 aktier mer i detalj. Mest relevanta kandidater: Investor AB ser. B (INVE-B.ST).",
+      operationalSummary: "ops[nordic_morning] cacheHits=3 googleHits=0 eodhdBudget=0/0",
+    });
+
+    assert.match(row.rationale, /Nordiska morgonpasset/);
+    assert.match(row.rationale, /AVVAKTA \(HOLD\)/);
+    assert.doesNotMatch(row.rationale, /cacheHits|eodhdBudget|Google/i);
+    assert.equal(row.input_snapshot.research_summary?.toString().includes("Nordiska"), true);
+    assert.equal(row.input_snapshot.operational_summary, "ops[nordic_morning] cacheHits=3 googleHits=0 eodhdBudget=0/0");
+  });
+
   it("preserves trim semantics while using the existing database decision type", () => {
     const row = buildDecisionAuditRow({
       runId: "run-2",

@@ -2,6 +2,12 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ModelPortfolioEvidence } from "./decision";
+import {
+  buildInvestorFacingResearchSummary,
+  buildOperationalResearchDiagnostics,
+  toNarrativeCandidate,
+  type NarrativeCandidate,
+} from "./decision-narrative";
 import type { DelayedQuote } from "./eodhd";
 import { fetchEodhdFundamentals } from "./eodhd";
 import type {
@@ -14,6 +20,11 @@ import {
 } from "./eodhd-ledger";
 import { fetchFxRateToSek } from "./fx-adapter";
 import { searchGoogleCompanyResearch } from "./google-research";
+import {
+  mergeNordicDeepResearchTargets,
+  NORDIC_RESEARCH_BOUNDS,
+  normalizeNordicExchange,
+} from "./nordic-universe";
 import { rankResearchUniverse, type ResearchCandidate } from "./research";
 import {
   mergeFundamentalScores,
@@ -28,22 +39,12 @@ import {
   storedBundleToEvidence,
   type ResearchFundamentalsSource,
 } from "./research-store";
-import { discoverYahooCandidates } from "./yahoo-discovery";
+import { discoverNordicYahooCandidates, discoverYahooCandidates } from "./yahoo-discovery";
 import {
   fetchYahooFundamentals,
   fetchYahooHistoryResearch,
   toYahooSymbol,
 } from "./yahoo-research";
-
-const NORDIC_CORE = [
-  { symbol: "INVE-B", exchange: "ST", name: "Investor AB ser. B" },
-  { symbol: "VOLV-B", exchange: "ST", name: "Volvo AB ser. B" },
-  { symbol: "ATCO-A", exchange: "ST", name: "Atlas Copco AB ser. A" },
-  { symbol: "SEB-A", exchange: "ST", name: "SEB AB ser. A" },
-  { symbol: "ERIC-B", exchange: "ST", name: "Ericsson AB ser. B" },
-  { symbol: "EVO", exchange: "ST", name: "Evolution AB" },
-  { symbol: "TEL2-B", exchange: "ST", name: "Tele2 AB ser. B" },
-] as const;
 
 const US_QUALITY_CORE = [
   { symbol: "MSFT", exchange: "US", name: "Microsoft" },
@@ -57,10 +58,10 @@ const US_QUALITY_CORE = [
 
 // Must refresh between the 15:50, 18:30 and 21:30 decision windows while
 // still suppressing accidental retries and duplicate fetches around one slot.
-const CACHE_TTL_MS = 2 * 60 * 60 * 1_000;
-const MAX_SEEDS = 18;
-const MAX_FUNDAMENTAL_TARGETS = 8;
-const MAX_GOOGLE_TARGETS = 2;
+const US_CACHE_TTL_MS = 2 * 60 * 60 * 1_000;
+const US_MAX_SEEDS = 18;
+const US_MAX_FUNDAMENTAL_TARGETS = 8;
+const US_MAX_GOOGLE_TARGETS = 2;
 const MAX_EODHD_FUNDAMENTAL_CALLS_PER_PASS = 2;
 
 type HoldingSeed = {
@@ -108,8 +109,13 @@ export type ModelPortfolioResearchPipelineResult = {
   quotes: Map<string, DelayedQuote>;
   names: Map<string, string>;
   diagnostics: ResearchCandidateDiagnostic[];
+  /** Investor-facing Swedish narrative for Senaste beslut. */
   summary: string;
+  /** Internal/admin operational diagnostics (API/cache/budget). */
+  operationalSummary: string;
   eodhdBudget: EodhdCallBudgetSnapshot;
+  discoveryScreenedCount: number;
+  deepResearchCount: number;
 };
 
 function key(symbol: string, exchange: string): string {
@@ -117,11 +123,9 @@ function key(symbol: string, exchange: string): string {
 }
 
 function normalizeExchange(exchange: string): string | null {
+  const nordic = normalizeNordicExchange(exchange);
+  if (nordic) return nordic;
   const value = exchange.trim().toUpperCase();
-  if (["ST", "STO", "XSTO"].includes(value)) return "ST";
-  if (["CO", "CPH", "XCSE"].includes(value)) return "CO";
-  if (["HE", "HEL", "XHEL"].includes(value)) return "HE";
-  if (["OL", "OSL", "XOSL"].includes(value)) return "OL";
   if ([
     "US",
     "NASDAQ",
@@ -150,11 +154,8 @@ function marketForEodhd(exchange: string): "US" | "SE" | "DK" | "FI" | "NO" | nu
   return null;
 }
 
-function passLabel(pass: ModelPortfolioResearchPass): string {
-  if (pass === "nordic_morning") return "Norden 09.20";
-  if (pass === "us_1550") return "USA 15.50";
-  if (pass === "us_1830") return "USA 18.30";
-  return "USA 21.30";
+function cacheTtlMs(pass: ModelPortfolioResearchPass): number {
+  return pass === "nordic_morning" ? NORDIC_RESEARCH_BOUNDS.cacheTtlMs : US_CACHE_TTL_MS;
 }
 
 function evidenceForCandidate(input: {
@@ -171,7 +172,6 @@ function evidenceForCandidate(input: {
     Number.isFinite(value) ? (value as number).toFixed(3) : "saknas";
   const summary = [
     `${input.seed.name} (${input.seed.symbol}.${input.seed.exchange}).`,
-    "Källa för marknadsdata: Yahoo Finance; färsk lagrad research återanvänds före nya externa hämtningar.",
     `Senaste observerade kurs ${input.quote?.close ?? input.seed.discoveryPrice ?? "saknas"}; dagsförändring ${input.quote?.changePct ?? input.seed.discoveryChangePct ?? "saknas"}%.`,
     `Historik: ${input.historyBars} dagsstaplar.`,
     technical
@@ -180,7 +180,7 @@ function evidenceForCandidate(input: {
     technical && Number.isFinite(technical.momentum.rsi14)
       ? `RSI14 ${(technical.momentum.rsi14 as number).toFixed(1)}.`
       : "",
-    `Fundamentalkälla: ${input.fundamentalsSource}. Kvalitet ${score(input.candidate.qualityScore)}, värdering ${score(input.candidate.valuationScore)}, revideringar ${score(input.candidate.earningsRevisionScore)}, utdelningskvalitet ${score(input.candidate.dividendQualityScore)}, katalysator ${score(input.candidate.catalystScore)}, balansräkning ${score(input.candidate.balanceSheetScore)}.`,
+    `Kvalitet ${score(input.candidate.qualityScore)}, värdering ${score(input.candidate.valuationScore)}, revideringar ${score(input.candidate.earningsRevisionScore)}, utdelningskvalitet ${score(input.candidate.dividendQualityScore)}, katalysator ${score(input.candidate.catalystScore)}, balansräkning ${score(input.candidate.balanceSheetScore)}.`,
     "Teknisk analys är beslutsunderlag och får aldrig ensam utlösa köp eller sälj. Saknade fundamentala värden lämnas saknade.",
   ].filter(Boolean).join(" ");
 
@@ -198,7 +198,7 @@ function evidenceForCandidate(input: {
   };
 }
 
-function combineSeeds(seeds: Seed[]): Seed[] {
+function combineSeeds(seeds: Seed[], maxSeeds: number): Seed[] {
   const map = new Map<string, Seed>();
   for (const seed of seeds) {
     const seedKey = key(seed.symbol, seed.exchange);
@@ -214,15 +214,14 @@ function combineSeeds(seeds: Seed[]): Seed[] {
       held: previous.held || seed.held,
     });
   }
-  return [...map.values()].slice(0, MAX_SEEDS);
+  return [...map.values()].slice(0, maxSeeds);
 }
 
-async function buildSeeds(
+function holdingSeedsForPass(
   pass: ModelPortfolioResearchPass,
   holdings: readonly HoldingSeed[],
-  now: Date,
-): Promise<Seed[]> {
-  const holdingSeeds: Seed[] = holdings.flatMap((holding) => {
+): Seed[] {
+  return holdings.flatMap((holding) => {
     const exchange = normalizeExchange(holding.exchange);
     if (!exchange) return [];
     const belongs = isUsPass(pass) ? exchange === "US" : exchange !== "US";
@@ -235,18 +234,49 @@ async function buildSeeds(
       held: true,
     }];
   });
+}
 
-  if (!isUsPass(pass)) {
-    return combineSeeds([
-      ...holdingSeeds,
-      ...NORDIC_CORE.map((item) => ({
-        ...item,
-        yahooSymbol: toYahooSymbol(item.symbol, item.exchange),
-        held: false,
-      })),
-    ]);
-  }
+async function buildNordicDeepSeeds(
+  holdings: readonly HoldingSeed[],
+  now: Date,
+): Promise<{ seeds: Seed[]; screenedCount: number }> {
+  const holdingSeeds = holdingSeedsForPass("nordic_morning", holdings);
+  const discovery = await discoverNordicYahooCandidates({
+    broadLimit: NORDIC_RESEARCH_BOUNDS.broadDiscoveryCandidateCount,
+    shortlistLimit: NORDIC_RESEARCH_BOUNDS.deepHistoryTechnicalCount,
+    perCountryMin: NORDIC_RESEARCH_BOUNDS.perCountryMinShortlist,
+    perCountryMax: NORDIC_RESEARCH_BOUNDS.perCountryMaxShortlist,
+    now,
+  });
 
+  const shortlistSeeds: Seed[] = discovery.shortlist.map((item) => ({
+    symbol: item.symbol,
+    exchange: item.exchange,
+    name: item.name,
+    yahooSymbol: item.yahooSymbol,
+    discoveryMarketCapUsd: item.marketCap,
+    discoveryPrice: item.price,
+    discoveryChangePct: item.changePct,
+    held: false,
+  }));
+
+  const merged = mergeNordicDeepResearchTargets(shortlistSeeds, holdingSeeds);
+  // Holdings must never be truncated away by the deep-research cap.
+  const held = merged.filter((item) => item.held);
+  const discovered = merged.filter((item) => !item.held);
+  const cappedDiscovered = discovered.slice(0, NORDIC_RESEARCH_BOUNDS.deepHistoryTechnicalCount);
+  const seeds = combineSeeds(
+    [...held, ...cappedDiscovered],
+    held.length + NORDIC_RESEARCH_BOUNDS.deepHistoryTechnicalCount,
+  );
+  return { seeds, screenedCount: discovery.screened.length };
+}
+
+async function buildUsSeeds(
+  holdings: readonly HoldingSeed[],
+  now: Date,
+): Promise<{ seeds: Seed[]; screenedCount: number }> {
+  const holdingSeeds = holdingSeedsForPass("us_1550", holdings);
   const discovered = await discoverYahooCandidates({
     shortlistLimit: 12,
     perScreen: 20,
@@ -267,24 +297,28 @@ async function buildSeeds(
     yahooSymbol: item.symbol,
     held: false,
   }));
-  return combineSeeds([...holdingSeeds, ...moverSeeds, ...qualitySeeds]);
+  return {
+    seeds: combineSeeds([...holdingSeeds, ...moverSeeds, ...qualitySeeds], US_MAX_SEEDS),
+    screenedCount: discovered.length,
+  };
 }
 
 function selectFundamentalTargets(
   candidates: ResearchCandidate[],
   seeds: Seed[],
+  maxTargets: number,
 ): Set<string> {
   const selected = new Set<string>();
   const strategies = ["conservative", "balanced", "high_risk", "dividend"] as const;
   for (const strategy of strategies) {
     for (const candidate of rankResearchUniverse(candidates, strategy).slice(0, 3)) {
       selected.add(key(candidate.symbol, candidate.exchange));
-      if (selected.size >= MAX_FUNDAMENTAL_TARGETS) return selected;
+      if (selected.size >= maxTargets) return selected;
     }
   }
   for (const seed of seeds) {
     if (seed.held) selected.add(key(seed.symbol, seed.exchange));
-    if (selected.size >= MAX_FUNDAMENTAL_TARGETS) break;
+    if (selected.size >= maxTargets) break;
   }
   return selected;
 }
@@ -300,28 +334,6 @@ function hasUsefulFundamentals(candidate: ResearchCandidate): boolean {
   ].some((value) => Number.isFinite(value));
 }
 
-function researchSummary(input: {
-  pass: ModelPortfolioResearchPass;
-  seeds: number;
-  cacheHits: number;
-  technicalCount: number;
-  fundamentalCount: number;
-  yahooFundamentalCount: number;
-  eodhdFundamentalCount: number;
-  googleHits: number;
-  budget: EodhdCallBudgetSnapshot;
-}): string {
-  return [
-    `${passLabel(input.pass)}: ${input.seeds} kandidater granskades.`,
-    `${input.cacheHits} återanvändes från färsk cache och ${input.technicalCount} hade användbar teknisk analys.`,
-    `${input.fundamentalCount} kandidater hade fundamentalt underlag (${input.yahooFundamentalCount} via Yahoo Finance, ${input.eodhdFundamentalCount} med EODHD-verifiering).`,
-    input.googleHits > 0
-      ? `Google användes selektivt och gav ${input.googleHits} kompletterande sökträffar; dessa behandlas som discovery-evidens och inte som verifierade nyckeltal.`
-      : "Google behövdes inte eller var inte konfigurerat i denna körning.",
-    `EODHD-budget ${input.budget.used}/${input.budget.limit} anrop användes.`,
-  ].join(" ");
-}
-
 export async function runModelPortfolioResearchPipeline(input: {
   supabase: SupabaseClient;
   pass: ModelPortfolioResearchPass;
@@ -333,9 +345,24 @@ export async function runModelPortfolioResearchPipeline(input: {
     pass: input.pass,
     now: input.now,
   });
-  const seeds = await buildSeeds(input.pass, input.holdings, input.now);
+
+  // Hard fail-closed: Nordic 09:20 must never consume EODHD calls.
+  if (input.pass === "nordic_morning" && budget.snapshot().limit !== 0) {
+    throw new Error("nordic_pass_eodhd_budget_must_be_zero");
+  }
+
+  const built = isUsPass(input.pass)
+    ? await buildUsSeeds(input.holdings, input.now)
+    : await buildNordicDeepSeeds(input.holdings, input.now);
+  const seeds = built.seeds;
   const usdFx = isUsPass(input.pass) ? await fetchFxRateToSek("USD", input.now) : null;
   const fxToSek = usdFx?.ok ? usdFx.quote.rate : 1;
+  const fundamentalTargetLimit = isUsPass(input.pass)
+    ? US_MAX_FUNDAMENTAL_TARGETS
+    : NORDIC_RESEARCH_BOUNDS.fundamentalsTargetCount;
+  const googleTargetLimit = isUsPass(input.pass)
+    ? US_MAX_GOOGLE_TARGETS
+    : NORDIC_RESEARCH_BOUNDS.eventPrimarySourceTargetCount;
 
   const candidates: ResearchCandidate[] = [];
   const evidence: ModelPortfolioEvidence[] = [];
@@ -343,6 +370,9 @@ export async function runModelPortfolioResearchPipeline(input: {
   const names = new Map<string, string>();
   const diagnostics: ResearchCandidateDiagnostic[] = [];
   const newResearch = new Map<string, NewResearchRow>();
+  const heldKeys = new Set(
+    seeds.filter((seed) => seed.held).map((seed) => key(seed.symbol, seed.exchange)),
+  );
 
   let cacheHits = 0;
   for (const seed of seeds) {
@@ -389,7 +419,7 @@ export async function runModelPortfolioResearchPipeline(input: {
     const base: Partial<ResearchCandidate> = {
       marketCapSek:
         Number.isFinite(discoveryMarketCap) && (discoveryMarketCap as number) > 0
-          ? Math.round((discoveryMarketCap as number) * fxToSek)
+          ? Math.round((discoveryMarketCap as number) * (seed.exchange === "US" ? fxToSek : 1))
           : undefined,
     };
     const candidate = buildMarketResearchCandidate({
@@ -413,7 +443,7 @@ export async function runModelPortfolioResearchPipeline(input: {
     });
   }
 
-  const targets = selectFundamentalTargets(candidates, seeds);
+  const targets = selectFundamentalTargets(candidates, seeds, fundamentalTargetLimit);
   let yahooFundamentalCount = 0;
   for (const candidateKey of targets) {
     const row = newResearch.get(candidateKey);
@@ -436,6 +466,7 @@ export async function runModelPortfolioResearchPipeline(input: {
   }
 
   let eodhdFundamentalCount = 0;
+  // Nordic 09:20 is hard-gated to zero EODHD usage even if budget state drifts.
   if (isUsPass(input.pass) && budget.snapshot().remaining > 0) {
     const fallbackTargets: NewResearchRow[] = [];
     for (const candidateKey of targets) {
@@ -488,7 +519,8 @@ export async function runModelPortfolioResearchPipeline(input: {
 
   let googleHits = 0;
   const googleHitsByCandidate = new Map<string, number>();
-  const googleTargets = [...targets].slice(0, MAX_GOOGLE_TARGETS);
+  // Google is optional enrichment only; absence must never fail the pass.
+  const googleTargets = [...targets].slice(0, googleTargetLimit);
   for (const candidateKey of googleTargets) {
     const row = newResearch.get(candidateKey);
     if (!row) continue;
@@ -507,7 +539,7 @@ export async function runModelPortfolioResearchPipeline(input: {
         publishedAt: hit.fetchedAt,
         verifiedAt: hit.fetchedAt,
         title: hit.title,
-        summary: `${hit.snippet} Källa upptäckt via Google; uppgifterna är inte automatiskt verifierade som nyckeltal.`,
+        summary: `${hit.snippet} Kompletterande discovery-träff; uppgifterna är inte automatiskt verifierade som nyckeltal.`,
       });
       await persistGoogleResearchHit({
         supabase: input.supabase,
@@ -544,7 +576,7 @@ export async function runModelPortfolioResearchPipeline(input: {
       summary: itemEvidence.summary,
       metadata: {
         research_kind: "candidate_bundle",
-        expires_at: new Date(input.now.getTime() + CACHE_TTL_MS).toISOString(),
+        expires_at: new Date(input.now.getTime() + cacheTtlMs(input.pass)).toISOString(),
         primary_source: row.fundamentalsSource === "eodhd" ? "mixed" : "yahoo_finance",
         verification_state:
           row.fundamentalsSource === "eodhd" ? "verified" : "internally_curated",
@@ -583,17 +615,53 @@ export async function runModelPortfolioResearchPipeline(input: {
   const technicalCount = candidates.filter(
     (item) => (item.technicalAnalysis?.sessions ?? 0) > 0,
   ).length;
-  const summary = researchSummary({
+
+  const narrativeInvestigated: NarrativeCandidate[] = candidates.map((candidate) => {
+    const seedKey = key(candidate.symbol, candidate.exchange);
+    const seed = seeds.find((item) => key(item.symbol, item.exchange) === seedKey);
+    const quote = quotes.get(seedKey);
+    return toNarrativeCandidate(candidate, names, {
+      held: heldKeys.has(seedKey) || Boolean(seed?.held),
+      changePct: quote?.changePct ?? seed?.discoveryChangePct ?? null,
+    });
+  });
+
+  const topRanked = rankResearchUniverse(candidates, "balanced").slice(0, 4);
+  const topNarrative = topRanked.map((candidate) => {
+    const seedKey = key(candidate.symbol, candidate.exchange);
+    const seed = seeds.find((item) => key(item.symbol, item.exchange) === seedKey);
+    const quote = quotes.get(seedKey);
+    return {
+      ...toNarrativeCandidate(candidate, names, {
+        held: heldKeys.has(seedKey) || Boolean(seed?.held),
+        changePct: quote?.changePct ?? seed?.discoveryChangePct ?? null,
+      }),
+      reasons: candidate.reasons,
+    };
+  });
+
+  const summary = buildInvestorFacingResearchSummary({
     pass: input.pass,
-    seeds: seeds.length,
+    investigated: narrativeInvestigated,
+    topCandidates: topNarrative,
+  });
+  const operationalSummary = buildOperationalResearchDiagnostics({
+    pass: input.pass,
+    seeds: built.screenedCount || seeds.length,
+    deepTargets: seeds.length,
     cacheHits,
     technicalCount,
     fundamentalCount,
     yahooFundamentalCount,
     eodhdFundamentalCount,
     googleHits,
-    budget: budget.snapshot(),
+    eodhdUsed: budget.snapshot().used,
+    eodhdLimit: budget.snapshot().limit,
   });
+
+  if (input.pass === "nordic_morning" && budget.snapshot().used !== 0) {
+    throw new Error("nordic_pass_used_eodhd_calls");
+  }
 
   return {
     pass: input.pass,
@@ -603,6 +671,9 @@ export async function runModelPortfolioResearchPipeline(input: {
     names,
     diagnostics,
     summary,
+    operationalSummary,
     eodhdBudget: budget.snapshot(),
+    discoveryScreenedCount: built.screenedCount,
+    deepResearchCount: seeds.length,
   };
 }
