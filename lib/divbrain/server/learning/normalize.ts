@@ -21,6 +21,7 @@ const STOPWORDS = new Set([
   "an",
   "att",
   "av",
+  "betyder",
   "de",
   "den",
   "det",
