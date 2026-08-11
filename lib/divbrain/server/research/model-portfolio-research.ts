@@ -184,20 +184,34 @@ export type ResearchRetrievalMode =
   | "recent_fallback"
   | "none";
 
+/** Strict DB kind predicate applied before the company candidate limit. */
+export type ResearchKindEq = "company_report";
+
 export type ResearchRetrievalPlan = {
   mode: ResearchRetrievalMode;
   companyTerms: readonly string[];
   orFilter: string | null;
+  /**
+   * When set (report/document intent), the production query must filter
+   * `kind = kindEq` at the DB boundary before ordering/limiting candidates.
+   * Prevents newer same-company market_data/news from crowding out reports.
+   */
+  kindEq: ResearchKindEq | null;
   companyLimit: number;
   recentLimit: number;
   maxDbCalls: number;
 };
 
+export type ResearchCompanyTargetedQuery = {
+  orFilter: string;
+  limit: number;
+  kindEq: ResearchKindEq | null;
+};
+
 export type ResearchSnapshotQueryPort = {
   fetchRecent(limit: number): Promise<readonly ModelPortfolioResearchRow[]>;
   fetchCompanyTargeted(
-    orFilter: string,
-    limit: number,
+    query: ResearchCompanyTargetedQuery,
   ): Promise<readonly ModelPortfolioResearchRow[]>;
 };
 
@@ -361,6 +375,7 @@ export function planModelPortfolioResearchRetrieval(
       mode: "none",
       companyTerms: [],
       orFilter: null,
+      kindEq: null,
       companyLimit: 0,
       recentLimit: 0,
       maxDbCalls: 0,
@@ -371,14 +386,18 @@ export function planModelPortfolioResearchRetrieval(
   const orFilter = buildSafeCompanyResearchOrFilter(companyTerms);
   const hasCompanyOrTickerSignal =
     hasLikelyCompanySignal(normalized) || TICKER_LIKE.test(normalized);
+  const hint = extractReportPeriodHint(normalized);
 
   // Company-targeted retrieval only when a real company/ticker signal exists.
   // Broader finance intents without a company signal keep a bounded recent fallback.
+  // Report/document intent narrows to actual company_report rows before the limit
+  // so same-company market_data snapshots cannot crowd durable reports out.
   if (hasCompanyOrTickerSignal && companyTerms.length > 0 && orFilter) {
     return {
       mode: "company_targeted",
       companyTerms,
       orFilter,
+      kindEq: hint.wantsReport ? "company_report" : null,
       companyLimit: RESEARCH_RETRIEVAL_BOUNDS.maxCompanyCandidateRows,
       recentLimit: RESEARCH_RETRIEVAL_BOUNDS.maxRecentFallbackRows,
       maxDbCalls: RESEARCH_RETRIEVAL_BOUNDS.maxDbCallsPerQuery,
@@ -389,6 +408,7 @@ export function planModelPortfolioResearchRetrieval(
     mode: "recent_fallback",
     companyTerms: [],
     orFilter: null,
+    kindEq: null,
     companyLimit: 0,
     recentLimit: RESEARCH_RETRIEVAL_BOUNDS.maxRecentFallbackRows,
     maxDbCalls: RESEARCH_RETRIEVAL_BOUNDS.maxDbCallsPerQuery,
@@ -407,11 +427,18 @@ export async function executeModelPortfolioResearchRetrievalPlan(
 
   if (plan.mode === "company_targeted") {
     if (!plan.orFilter) return [];
-    const rows = await port.fetchCompanyTargeted(
-      plan.orFilter,
-      plan.companyLimit,
-    );
-    return rows.slice(0, plan.companyLimit);
+    const rows = await port.fetchCompanyTargeted({
+      orFilter: plan.orFilter,
+      limit: plan.companyLimit,
+      kindEq: plan.kindEq,
+    });
+    // Defense in depth: if a port ignores kindEq, still drop non-report rows
+    // before ranking when the plan required an actual document kind.
+    const scoped =
+      plan.kindEq == null
+        ? rows
+        : rows.filter((candidate) => candidate.kind === plan.kindEq);
+    return scoped.slice(0, plan.companyLimit);
   }
 
   const rows = await port.fetchRecent(plan.recentLimit);
@@ -666,13 +693,26 @@ function metadata(value: unknown): Record<string, unknown> {
     : {};
 }
 
-function freshnessState(
+/**
+ * Separate research-cache TTL from durable source/document validity.
+ * - candidate_bundle: metadata.expires_at is dynamic cache validity → current/stale
+ * - primary_source_disclosure (and other durable rows): derive from published_at
+ *   → current when newly published, otherwise dated — never stale solely because
+ *   the 7-day research refresh TTL expired.
+ */
+export function freshnessState(
   row: ModelPortfolioResearchRow,
 ): DivBrainSource["freshnessState"] {
   const meta = metadata(row.metadata);
-  const expiry =
-    typeof meta.expires_at === "string" ? Date.parse(meta.expires_at) : NaN;
-  if (Number.isFinite(expiry)) return expiry > Date.now() ? "current" : "stale";
+
+  if (meta.research_kind === "candidate_bundle") {
+    const expiry =
+      typeof meta.expires_at === "string" ? Date.parse(meta.expires_at) : NaN;
+    if (Number.isFinite(expiry)) {
+      return expiry > Date.now() ? "current" : "stale";
+    }
+  }
+
   const published = Date.parse(row.published_at);
   if (!Number.isFinite(published)) return "unknown";
   return Date.now() - published <= 24 * 60 * 60 * 1000 ? "current" : "dated";
@@ -688,8 +728,12 @@ function verificationState(
 }
 
 /**
- * Narrow category mapping. Only promote to official_company_report when the
- * snapshot kind is already company_report and trusted metadata/publisher exists.
+ * Narrow category mapping. Promote to official_company_report only when:
+ * - kind is already company_report, AND
+ * - trusted verification (verified / internally_curated), AND
+ * - trusted provenance (primary_source company, official source_type, or
+ *   narrowly trusted official publisher signal).
+ * Unverified rows stay external_unverified even if publisher text looks official.
  */
 export function mapModelPortfolioResearchCategory(
   row: ModelPortfolioResearchRow,
@@ -714,7 +758,9 @@ export function mapModelPortfolioResearchCategory(
     const trustedSourceFlag =
       meta.primary_source === "company" ||
       meta.source_type === "official_company_report";
-    if (trustedVerification || trustedPublisher || trustedSourceFlag) {
+    const trustedProvenance =
+      trustedSourceFlag || trustedPublisher;
+    if (trustedVerification && trustedProvenance) {
       return "official_company_report";
     }
   }
@@ -794,11 +840,16 @@ function createSupabaseResearchPort(
       if (error) return [];
       return (data ?? []) as ModelPortfolioResearchRow[];
     },
-    async fetchCompanyTargeted(orFilter, limit) {
-      const { data, error } = await supabase
+    async fetchCompanyTargeted({ orFilter, limit, kindEq }) {
+      let query = supabase
         .from("model_portfolio_research_snapshots")
         .select(RESEARCH_SELECT)
-        .or(orFilter)
+        .or(orFilter);
+      // Apply kind before order/limit so durable reports stay in the window.
+      if (kindEq) {
+        query = query.eq("kind", kindEq);
+      }
+      const { data, error } = await query
         .order("verified_at", { ascending: false })
         .limit(limit);
       if (error) return [];

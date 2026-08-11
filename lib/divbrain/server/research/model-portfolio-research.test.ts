@@ -13,6 +13,7 @@ import {
   executeModelPortfolioResearchRetrievalPlan,
   extractCompanyTargetTerms,
   extractReportPeriodHint,
+  freshnessState,
   mapModelPortfolioResearchCategory,
   planModelPortfolioResearchRetrieval,
   queryTerms,
@@ -23,6 +24,7 @@ import {
   selectModelPortfolioResearchRows,
   shouldQueryModelPortfolioResearch,
   type ModelPortfolioResearchRow,
+  type ResearchCompanyTargetedQuery,
   type ResearchSnapshotQueryPort,
 } from "./model-portfolio-research";
 
@@ -334,6 +336,119 @@ describe("model portfolio research — source mapping quality", () => {
       "external_unverified",
     );
   });
+
+  it("keeps unverified company_report with Nasdaq/IR-looking publisher as external_unverified", () => {
+    assert.equal(
+      mapModelPortfolioResearchCategory(
+        row({
+          id: "unverified-looks-official",
+          kind: "company_report",
+          title: "Investor Q2 2026",
+          publisher: "Nasdaq Investor IR official",
+          metadata: {
+            verification_state: "unverified",
+            primary_source: "google",
+            source_type: "news",
+          },
+        }),
+      ),
+      "external_unverified",
+    );
+    assert.equal(
+      mapModelPortfolioResearchCategory(
+        row({
+          id: "unverified-ir-only",
+          kind: "company_report",
+          title: "Investor årsrapport",
+          publisher: "Investor IR",
+          metadata: {
+            verification_state: "unverified",
+          },
+        }),
+      ),
+      "external_unverified",
+    );
+  });
+
+  it("maps verified + trusted-provenance producer row to official_company_report", () => {
+    assert.equal(
+      mapModelPortfolioResearchCategory(producerOfficialInvestorH1Report()),
+      "official_company_report",
+    );
+  });
+});
+
+describe("model portfolio research — cache TTL vs durable source freshness", () => {
+  it("marks primary-source disclosure past expires_at as dated, not stale", () => {
+    const durable = producerOfficialInvestorH1Report();
+    // expires_at is 2026-07-23; published_at is 2026-07-16 — both older than "today".
+    assert.equal(freshnessState(durable), "dated");
+    assert.equal(
+      researchRowToDivBrainSource(durable, "2026-08-11T12:00:00.000Z")
+        .freshnessState,
+      "dated",
+    );
+  });
+
+  it("marks expired candidate_bundle as stale", () => {
+    const expiredBundle = row({
+      id: "expired-bundle",
+      kind: "market_data",
+      title: "Investor market snapshot",
+      published_at: "2026-08-10T10:00:00.000Z",
+      metadata: {
+        research_kind: "candidate_bundle",
+        primary_source: "mixed",
+        verification_state: "verified",
+        expires_at: "2026-08-10T12:00:00.000Z",
+      },
+    });
+    assert.equal(freshnessState(expiredBundle), "stale");
+  });
+
+  it("marks newly published primary report as current under the 24h source rule", () => {
+    const now = Date.now();
+    const freshPrimary = row({
+      id: "fresh-primary",
+      kind: "company_report",
+      title: "Investor Q2 2026",
+      published_at: new Date(now - 2 * 60 * 60 * 1000).toISOString(),
+      verified_at: new Date(now - 60 * 60 * 1000).toISOString(),
+      metadata: {
+        research_kind: "primary_source_disclosure",
+        primary_source: "company",
+        verification_state: "verified",
+        source_type: "official_company_report",
+        // Cache TTL already expired — must not force stale for durable sources.
+        expires_at: new Date(now - 60 * 60 * 1000).toISOString(),
+      },
+    });
+    assert.equal(freshnessState(freshPrimary), "current");
+  });
+
+  it("does not upgrade google discovery via cache-expiry semantics", () => {
+    const googleHit = row({
+      id: "google-hit",
+      kind: "news",
+      title: "Investor omnämns",
+      publisher: "Google Custom Search",
+      published_at: "2026-07-01T08:00:00.000Z",
+      metadata: {
+        research_kind: "google_discovery",
+        verification_state: "unverified",
+        primary_source: "google",
+        // Even if a TTL field is present, discovery stays publication-dated.
+        expires_at: "2099-01-01T00:00:00.000Z",
+      },
+    });
+    const source = researchRowToDivBrainSource(
+      googleHit,
+      "2026-08-11T12:00:00.000Z",
+    );
+    assert.equal(source.verificationState, "unverified");
+    assert.equal(source.category, "external_unverified");
+    assert.equal(source.freshnessState, "dated");
+  });
 });
 
 describe("model portfolio research — #171 producer metadata integration", () => {
@@ -493,6 +608,7 @@ describe("model portfolio research — targeted retrieval planning + scalability
     assert.ok(plan.orFilter);
     assert.match(plan.orFilter ?? "", /instrument_symbol\.ilike\.%investor%/i);
     assert.match(plan.orFilter ?? "", /instrument_name\.ilike\.%investor%/i);
+    assert.equal(plan.kindEq, "company_report");
     assert.equal(
       plan.companyLimit,
       RESEARCH_RETRIEVAL_BOUNDS.maxCompanyCandidateRows,
@@ -501,11 +617,25 @@ describe("model portfolio research — targeted retrieval planning + scalability
     assert.ok(plan.maxDbCalls <= 2);
   });
 
+  it("keeps general valuation queries broader without report-kind constraint", () => {
+    const plan = planModelPortfolioResearchRetrieval(
+      "Hur ser värderingen ut för Investor?",
+    );
+    assert.equal(plan.mode, "company_targeted");
+    assert.equal(plan.kindEq, null);
+    assert.ok(plan.orFilter);
+    assert.equal(
+      plan.companyLimit,
+      RESEARCH_RETRIEVAL_BOUNDS.maxCompanyCandidateRows,
+    );
+  });
+
   it("uses bounded recent fallback for non-company finance intents", () => {
     const plan = planModelPortfolioResearchRetrieval("Vad händer i portföljen?");
     assert.equal(plan.mode, "recent_fallback");
     assert.deepEqual(plan.companyTerms, []);
     assert.equal(plan.orFilter, null);
+    assert.equal(plan.kindEq, null);
     assert.equal(
       plan.recentLimit,
       RESEARCH_RETRIEVAL_BOUNDS.maxRecentFallbackRows,
@@ -516,6 +646,7 @@ describe("model portfolio research — targeted retrieval planning + scalability
     const plan = planModelPortfolioResearchRetrieval("Vad är en aktie?");
     assert.equal(plan.mode, "none");
     assert.equal(plan.maxDbCalls, 0);
+    assert.equal(plan.kindEq, null);
   });
 
   it("rejects malicious/special-character terms from safe filter construction", () => {
@@ -584,8 +715,7 @@ describe("model portfolio research — targeted retrieval planning + scalability
 
     let companyCalls = 0;
     let recentCalls = 0;
-    let seenOrFilter: string | null = null;
-    let seenCompanyLimit = 0;
+    let seenQuery: ResearchCompanyTargetedQuery | null = null;
 
     const port: ResearchSnapshotQueryPort = {
       async fetchRecent(limit) {
@@ -593,30 +723,33 @@ describe("model portfolio research — targeted retrieval planning + scalability
         // Global-latest-only would never see the older Investor report.
         return recentUnrelated.slice(0, limit);
       },
-      async fetchCompanyTargeted(orFilter, limit) {
+      async fetchCompanyTargeted(query) {
         companyCalls += 1;
-        seenOrFilter = orFilter;
-        seenCompanyLimit = limit;
-        assert.ok(limit <= RESEARCH_RETRIEVAL_BOUNDS.maxCompanyCandidateRows);
-        assert.match(orFilter, /investor/i);
-        // Simulate DB filtering: only rows matching the company filter.
-        const haystack = `${olderReport.instrument_symbol} ${olderReport.instrument_name}`.toLowerCase();
-        const tokens = [...orFilter.matchAll(/ilike\.%([^%]+)%/gi)].map((m) =>
-          m[1]!.toLowerCase(),
+        seenQuery = query;
+        assert.ok(query.limit <= RESEARCH_RETRIEVAL_BOUNDS.maxCompanyCandidateRows);
+        assert.match(query.orFilter, /investor/i);
+        assert.equal(query.kindEq, "company_report");
+        // Simulate DB filtering: company filter + kind before limit.
+        const tokens = [...query.orFilter.matchAll(/ilike\.%([^%]+)%/gi)].map(
+          (m) => m[1]!.toLowerCase(),
         );
-        const matches = [olderReport, ...recentUnrelated].filter((candidate) => {
-          const text =
-            `${candidate.instrument_symbol} ${candidate.instrument_name}`.toLowerCase();
-          return tokens.some((token) => text.includes(token));
-        });
-        assert.ok(haystack.includes("investor"));
-        return matches.slice(0, limit);
+        const matches = [olderReport, ...recentUnrelated]
+          .filter((candidate) => {
+            const text =
+              `${candidate.instrument_symbol} ${candidate.instrument_name}`.toLowerCase();
+            return tokens.some((token) => text.includes(token));
+          })
+          .filter((candidate) =>
+            query.kindEq ? candidate.kind === query.kindEq : true,
+          );
+        return matches.slice(0, query.limit);
       },
     };
 
-    const query = "Kan du titta på Investors Q2-rapport?";
-    const plan = planModelPortfolioResearchRetrieval(query);
+    const queryText = "Kan du titta på Investors Q2-rapport?";
+    const plan = planModelPortfolioResearchRetrieval(queryText);
     assert.equal(plan.mode, "company_targeted");
+    assert.equal(plan.kindEq, "company_report");
 
     const candidates = await executeModelPortfolioResearchRetrievalPlan(
       plan,
@@ -625,8 +758,11 @@ describe("model portfolio research — targeted retrieval planning + scalability
 
     assert.equal(companyCalls, 1);
     assert.equal(recentCalls, 0);
-    assert.ok(seenOrFilter);
-    assert.ok(seenCompanyLimit <= RESEARCH_RETRIEVAL_BOUNDS.maxCompanyCandidateRows);
+    assert.ok(seenQuery);
+    assert.equal(seenQuery?.kindEq, "company_report");
+    assert.ok(
+      (seenQuery?.limit ?? 0) <= RESEARCH_RETRIEVAL_BOUNDS.maxCompanyCandidateRows,
+    );
     assert.ok(candidates.length <= RESEARCH_RETRIEVAL_BOUNDS.maxCompanyCandidateRows);
     assert.ok(candidates.some((candidate) => candidate.id === olderReport.id));
 
@@ -637,7 +773,7 @@ describe("model portfolio research — targeted retrieval planning + scalability
       false,
     );
 
-    const selected = selectModelPortfolioResearchRows(query, candidates);
+    const selected = selectModelPortfolioResearchRows(queryText, candidates);
     assert.equal(selected[0]?.id, olderReport.id);
     const source = researchRowToDivBrainSource(selected[0]!);
     assert.equal(source.category, "official_company_report");
@@ -645,6 +781,168 @@ describe("model portfolio research — targeted retrieval planning + scalability
     assert.equal(
       source.canonicalUrl,
       "https://attachment.news.eu.nasdaq.com/realistic-investor-h1-2026.pdf",
+    );
+  });
+
+  it("keeps older Investor report discoverable behind >48 newer same-company market_data rows", async () => {
+    const olderReport = producerOfficialInvestorH1Report();
+    const sameCompanyMarket: ModelPortfolioResearchRow[] = Array.from(
+      { length: 55 },
+      (_, index) =>
+        row({
+          id: `investor-market-${index}`,
+          kind: "market_data",
+          title: `Investor market snapshot ${index}`,
+          summary: "Dynamisk kandidat-bundle för Investor.",
+          publisher: "Dividend Lab research",
+          source_url: `https://example.com/market/${index}`,
+          published_at: `2026-08-${String((index % 28) + 1).padStart(2, "0")}T10:00:00.000Z`,
+          verified_at: `2026-08-${String((index % 28) + 1).padStart(2, "0")}T11:00:00.000Z`,
+          metadata: {
+            research_kind: "candidate_bundle",
+            primary_source: "mixed",
+            verification_state: "verified",
+            expires_at: "2099-01-01T00:00:00.000Z",
+          },
+        }),
+    );
+    const sameCompanyNews = row({
+      id: "investor-news-new",
+      kind: "news",
+      title: "Investor omnämns i nyhetsflöde",
+      summary: "Nyare unverified discovery utan rapporttext.",
+      publisher: "Google Custom Search",
+      source_url: "https://example.com/news/investor-new",
+      published_at: "2026-08-10T12:00:00.000Z",
+      verified_at: "2026-08-10T13:00:00.000Z",
+      metadata: {
+        research_kind: "google_discovery",
+        verification_state: "unverified",
+        primary_source: "google",
+      },
+    });
+
+    // Without kind filter, company-targeted latest-48 would drop the older report.
+    const companyHaystackNewestFirst = [
+      ...sameCompanyMarket,
+      sameCompanyNews,
+      olderReport,
+    ].sort(
+      (a, b) => Date.parse(b.verified_at) - Date.parse(a.verified_at),
+    );
+    assert.ok(
+      companyHaystackNewestFirst.length >
+        RESEARCH_RETRIEVAL_BOUNDS.maxCompanyCandidateRows,
+    );
+    const naiveCompanyWindow = companyHaystackNewestFirst.slice(
+      0,
+      RESEARCH_RETRIEVAL_BOUNDS.maxCompanyCandidateRows,
+    );
+    assert.equal(
+      naiveCompanyWindow.some((candidate) => candidate.id === olderReport.id),
+      false,
+    );
+
+    let seenQuery: ResearchCompanyTargetedQuery | null = null;
+    let companyCalls = 0;
+
+    const port: ResearchSnapshotQueryPort = {
+      async fetchRecent() {
+        throw new Error("recent fallback must not run for company-targeted plan");
+      },
+      async fetchCompanyTargeted(query) {
+        companyCalls += 1;
+        seenQuery = query;
+        assert.equal(query.kindEq, "company_report");
+        assert.ok(
+          query.limit <= RESEARCH_RETRIEVAL_BOUNDS.maxCompanyCandidateRows,
+        );
+        const tokens = [...query.orFilter.matchAll(/ilike\.%([^%]+)%/gi)].map(
+          (m) => m[1]!.toLowerCase(),
+        );
+        // Production contract: filter kind at DB boundary BEFORE limit.
+        const matches = companyHaystackNewestFirst.filter((candidate) => {
+          const text =
+            `${candidate.instrument_symbol} ${candidate.instrument_name}`.toLowerCase();
+          if (!tokens.some((token) => text.includes(token))) return false;
+          if (query.kindEq && candidate.kind !== query.kindEq) return false;
+          return true;
+        });
+        return matches.slice(0, query.limit);
+      },
+    };
+
+    const queryText = "Vad sa Investor i Q2-rapporten 2026?";
+    const plan = planModelPortfolioResearchRetrieval(queryText);
+    assert.equal(plan.mode, "company_targeted");
+    assert.equal(plan.kindEq, "company_report");
+    assert.ok(plan.orFilter);
+
+    const candidates = await executeModelPortfolioResearchRetrievalPlan(
+      plan,
+      port,
+    );
+
+    assert.equal(companyCalls, 1);
+    assert.equal(seenQuery?.kindEq, "company_report");
+    assert.ok(candidates.every((candidate) => candidate.kind === "company_report"));
+    assert.ok(candidates.some((candidate) => candidate.id === olderReport.id));
+    assert.equal(
+      candidates.some((candidate) => candidate.kind === "market_data"),
+      false,
+    );
+
+    const selected = selectModelPortfolioResearchRows(queryText, candidates);
+    assert.equal(selected[0]?.id, olderReport.id);
+    const source = researchRowToDivBrainSource(selected[0]!);
+    assert.equal(source.category, "official_company_report");
+    assert.equal(source.verificationState, "verified");
+    assert.equal(source.freshnessState, "dated");
+    assert.equal(
+      source.canonicalUrl,
+      "https://attachment.news.eu.nasdaq.com/realistic-investor-h1-2026.pdf",
+    );
+  });
+
+  it("returns no shared report source when no company_report exists for report intent", async () => {
+    const onlyMarket = row({
+      id: "only-market",
+      kind: "market_data",
+      title: "Investor market snapshot",
+      metadata: {
+        research_kind: "candidate_bundle",
+        primary_source: "mixed",
+        verification_state: "verified",
+        expires_at: "2099-01-01T00:00:00.000Z",
+      },
+    });
+    const plan = planModelPortfolioResearchRetrieval(
+      "Vad sa Investor i Q2-rapporten 2026?",
+    );
+    assert.equal(plan.kindEq, "company_report");
+
+    const port: ResearchSnapshotQueryPort = {
+      async fetchRecent() {
+        return [onlyMarket];
+      },
+      async fetchCompanyTargeted(query) {
+        assert.equal(query.kindEq, "company_report");
+        // DB returns nothing because kind filter excluded market_data.
+        return [];
+      },
+    };
+
+    const candidates = await executeModelPortfolioResearchRetrievalPlan(
+      plan,
+      port,
+    );
+    assert.deepEqual(candidates, []);
+    assert.deepEqual(
+      selectModelPortfolioResearchRows(
+        "Vad sa Investor i Q2-rapporten 2026?",
+        candidates,
+      ),
+      [],
     );
   });
 
