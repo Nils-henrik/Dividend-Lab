@@ -155,11 +155,14 @@ function investedValueMinor(holdings: readonly HoldingRow[]): number {
 
 function evidenceMatchesCandidate(evidence: ModelPortfolioEvidence, candidate: ResearchCandidate): boolean {
   const id = evidence.id.toUpperCase();
+  const title = evidence.title.toUpperCase();
   const symbol = candidate.symbol.toUpperCase();
   const exchange = candidate.exchange.toUpperCase();
+  const instrumentToken = `(${symbol}.${exchange})`;
   return id.startsWith(`RESEARCH:${symbol}:${exchange}:`)
     || id.startsWith(`GOOGLE:${symbol}:`)
-    || id.startsWith(`PRIMARY:${symbol}:`);
+    || id.startsWith(`PRIMARY:${symbol}:`)
+    || (id.startsWith("RESEARCH-CACHE:") && title.includes(instrumentToken));
 }
 
 async function filterPortfolioDecisionInputs(input: {
