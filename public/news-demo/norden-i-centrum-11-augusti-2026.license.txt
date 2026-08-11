@@ -1,0 +1,20 @@
+Börsnyheter cover: Norden i centrum, 11 Augusti (DivLab)
+Local file:
+- public/news-demo/norden-i-centrum-11-augusti-2026.webp
+Source filename:
+- ChatGPT Image 11 aug. 2026 08_36_35.png
+Created: 2026-08-11
+Creator: DivLab (approved editorial cover)
+
+Composition notes:
+- Approved static DivLab editorial cover for Norden i centrum, 11 augusti 2026.
+- Converted once from the supplied PNG to WebP without altering visual content.
+- Delivered as a single WebP asset for hero, listing thumbnail,
+  homepage/latest-news thumbnail and Open Graph preview.
+- Native delivery path: /news-demo/norden-i-centrum-11-augusti-2026.webp
+- List/hero object-cover uses article thumbnailObjectPosition "center 46%"
+  so the DivLab logo, headline/date and lower company panels stay framed.
+- Mobile list/hero crops use mobileThumbnailObjectPosition "center 40%" for
+  the same balance on shorter listing crops.
+
+Usage: Editorial news cover for DivLab Börsnyheter. Illustration: DivLab.
