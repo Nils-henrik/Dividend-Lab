@@ -63,6 +63,13 @@ alter table public.model_portfolio_holdings
   add constraint model_portfolio_holdings_whole_quantity_check
   check (quantity = trunc(quantity)) not valid;
 
+alter table public.model_portfolio_transactions
+  validate constraint model_portfolio_transactions_whole_quantity_check;
+alter table public.model_portfolio_transactions
+  validate constraint model_portfolio_transactions_zero_fee_check;
+alter table public.model_portfolio_holdings
+  validate constraint model_portfolio_holdings_whole_quantity_check;
+
 revoke all on function public.settle_model_portfolio_decision(uuid, jsonb)
   from public, anon, authenticated;
 grant execute on function public.settle_model_portfolio_decision(uuid, jsonb)
