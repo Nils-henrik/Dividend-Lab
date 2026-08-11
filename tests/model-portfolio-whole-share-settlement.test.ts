@@ -46,7 +46,7 @@ test("model portfolio settlement rejects a US buy when target budget cannot buy 
   assert.deepEqual(plan, { ok: false, reason: "trade_too_small" });
 });
 
-test("model portfolio settlement buys only integer quantities", () => {
+test("model portfolio settlement buys only integer quantities with zero brokerage", () => {
   const plan = planSimulatedSettlement({
     side: "buy",
     portfolioStatus: "active",
@@ -91,5 +91,6 @@ test("model portfolio settlement buys only integer quantities", () => {
   assert.equal(Number.isInteger(plan.quantity), true);
   assert.equal(plan.quantity, 4);
   assert.equal(plan.grossAmountSekMinor, 200_000);
-  assert.equal(plan.feeSekMinor, 1_000);
+  assert.equal(plan.feeSekMinor, 0);
+  assert.equal(plan.cashDeltaMinor, -200_000);
 });
