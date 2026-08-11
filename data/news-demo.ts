@@ -12,6 +12,7 @@ import { NORDEN_I_CENTRUM_5_AUGUSTI_2026_ARTICLE } from "@/data/news-articles/no
 import { NORDEN_I_CENTRUM_6_AUGUSTI_2026_ARTICLE } from "@/data/news-articles/norden-i-centrum-6-augusti-2026";
 import { NORDEN_I_CENTRUM_7_AUGUSTI_2026_ARTICLE } from "@/data/news-articles/norden-i-centrum-7-augusti-2026";
 import { NORDEN_I_CENTRUM_10_AUGUSTI_2026_ARTICLE } from "@/data/news-articles/norden-i-centrum-10-augusti-2026";
+import { NORDEN_I_CENTRUM_11_AUGUSTI_2026_ARTICLE } from "@/data/news-articles/norden-i-centrum-11-augusti-2026";
 import { ONSDAGENS_RAPPORTER_TESLA_IBM_ARTICLE } from "@/data/news-articles/onsdagens-rapporter-tesla-ibm";
 import { SINCH_RASAR_EFTER_Q2_RAPPORTEN_2026_ARTICLE } from "@/data/news-articles/sinch-rasar-efter-q2-rapporten-2026";
 import { SIVERS_RUSAR_AI_FOTONIK_USA_IMPORTREGLER_ARTICLE } from "@/data/news-articles/sivers-rusar-ai-fotonik-usa-importregler";
@@ -23,6 +24,7 @@ import { USA_BORSEN_FALLER_ALPHABET_TESLA_OLJA_ARTICLE } from "@/data/news-artic
  * Image assets currently live under /public/news-demo/ for historical path stability.
  */
 export const DEMO_NEWS_ARTICLES: NewsArticle[] = [
+  NORDEN_I_CENTRUM_11_AUGUSTI_2026_ARTICLE,
   NORDEN_I_CENTRUM_10_AUGUSTI_2026_ARTICLE,
   BORSVECKA_33_ARTICLE,
   BORSVECKAN_SOM_GICK_VECKA_32_2026_ARTICLE,
