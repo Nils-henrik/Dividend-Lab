@@ -1,13 +1,14 @@
 /**
  * Canonical listed-instrument symbol helpers.
  *
- * Internal base symbol stays exchange-free (e.g. DNB + OL).
- * Yahoo transport and investor-facing labels use a single Nordic suffix
- * (DNB.OL) and must never double-append (.OL.OL / .ST.ST).
+ * Internal base symbol stays exchange-free (e.g. DNB + OL, JPM + US).
+ * Yahoo transport uses exchange-specific symbols while investor-facing labels
+ * use a single display suffix (DNB.OL, JPM.US) and must never double-append.
  */
 
 const NORDIC_SUFFIX_RE = /\.(ST|CO|HE|OL)$/i;
 const NORDIC_SUFFIX_CAPTURE_RE = /^(.*)\.(ST|CO|HE|OL)$/i;
+const US_DISPLAY_SUFFIX_RE = /\.US$/i;
 
 export type NordicYahooSuffix = "ST" | "CO" | "HE" | "OL";
 
@@ -18,7 +19,7 @@ export type CanonicalInstrumentSymbol = {
   exchange: string;
   /** Yahoo Finance transport symbol (DNB.OL, MSFT). */
   yahooSymbol: string;
-  /** Investor-facing label (DNB.OL, MSFT). Never double-suffixed. */
+  /** Investor-facing label (DNB.OL, MSFT.US). Never double-suffixed. */
   investorLabel: string;
 };
 
@@ -69,8 +70,8 @@ export function toYahooTransportSymbol(symbol: string, exchange: string): string
 }
 
 /**
- * Investor-facing label: exactly one Nordic suffix when listed in Norden,
- * bare ticker for US. Never emits DNB.OL.OL.
+ * Investor-facing label: exactly one exchange display suffix where DivLab uses
+ * one. Never emits DNB.OL.OL or JPM.US.US.
  */
 export function toInvestorFacingSymbol(symbol: string, exchange: string): string {
   return canonicalizeInstrumentSymbol(symbol, exchange).investorLabel;
@@ -108,12 +109,11 @@ export function canonicalizeInstrumentSymbol(
     };
   }
 
-  const upper = baseSymbol;
   const nordic = normalizeNordicExchangeCode(exchange);
   if (nordic) {
-    const yahooSymbol = `${upper}.${nordic}`;
+    const yahooSymbol = `${baseSymbol}.${nordic}`;
     return {
-      baseSymbol: upper,
+      baseSymbol,
       exchange: nordic,
       yahooSymbol,
       investorLabel: yahooSymbol,
@@ -121,19 +121,25 @@ export function canonicalizeInstrumentSymbol(
   }
 
   if (normalizeUsExchange(exchange)) {
+    // DivLab's investor-facing convention appends .US, but Yahoo expects the
+    // bare US ticker. Accept either representation from AI/research inputs.
+    while (US_DISPLAY_SUFFIX_RE.test(baseSymbol)) {
+      baseSymbol = baseSymbol.replace(US_DISPLAY_SUFFIX_RE, "");
+    }
+    if (!baseSymbol) throw new Error("invalid_instrument_symbol");
     return {
-      baseSymbol: upper,
+      baseSymbol,
       exchange: "US",
-      yahooSymbol: upper,
-      investorLabel: `${upper}.US`,
+      yahooSymbol: baseSymbol,
+      investorLabel: `${baseSymbol}.US`,
     };
   }
 
   const normalizedExchange = exchange.trim().toUpperCase() || "US";
   return {
-    baseSymbol: upper,
+    baseSymbol,
     exchange: normalizedExchange,
-    yahooSymbol: upper,
-    investorLabel: `${upper}.${normalizedExchange}`,
+    yahooSymbol: baseSymbol,
+    investorLabel: `${baseSymbol}.${normalizedExchange}`,
   };
 }

@@ -46,4 +46,16 @@ describe("instrument symbol normalization", () => {
     assert.equal(hasNordicYahooSuffix("EQNR.OL"), true);
     assert.equal(hasNordicYahooSuffix("EQNR"), false);
   });
+
+  it("accepts DivLab's investor-facing .US suffix without corrupting Yahoo lookup keys", () => {
+    assert.deepEqual(canonicalizeInstrumentSymbol("JPM.US", "US"), {
+      baseSymbol: "JPM",
+      exchange: "US",
+      yahooSymbol: "JPM",
+      investorLabel: "JPM.US",
+    });
+    assert.equal(toYahooTransportSymbol("JPM.US", "NYSE"), "JPM");
+    assert.equal(toInvestorFacingSymbol("JPM.US", "US"), "JPM.US");
+    assert.equal(toInvestorFacingSymbol("JPM.US.US", "NASDAQ"), "JPM.US");
+  });
 });
