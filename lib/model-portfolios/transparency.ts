@@ -29,6 +29,15 @@ export type PortfolioTransparencyTrade = {
   fillLabel: string | null;
 };
 
+export type PortfolioValuePoint = {
+  snapshotAt: string;
+  totalValueMinor: number;
+  cashValueMinor: number;
+  investedValueMinor: number;
+  contributedCapitalMinor: number;
+  marketDataAsOf: string | null;
+};
+
 export type PortfolioTransparencyDetail = {
   id: string;
   slug: string;
@@ -50,6 +59,7 @@ export type PortfolioTransparencyDetail = {
     rationale: string;
     createdAt: string;
   } | null;
+  valueHistory: PortfolioValuePoint[];
   trades: PortfolioTransparencyTrade[];
   tradeCount: number;
   page: number;
@@ -114,6 +124,17 @@ function mapTrade(row: Record<string, unknown>): PortfolioTransparencyTrade {
   };
 }
 
+function mapValuePoint(row: Record<string, unknown>): PortfolioValuePoint {
+  return {
+    snapshotAt: String(row.snapshot_at),
+    totalValueMinor: Number(row.total_value_minor),
+    cashValueMinor: Number(row.cash_value_minor),
+    investedValueMinor: Number(row.invested_value_minor),
+    contributedCapitalMinor: Number(row.contributed_capital_minor),
+    marketDataAsOf: row.market_data_as_of ? String(row.market_data_as_of) : null,
+  };
+}
+
 export async function loadPortfolioTransparencyDetail(
   slug: string,
   requestedPage: number,
@@ -133,7 +154,7 @@ export async function loadPortfolioTransparencyDetail(
 
   if (portfolioError || !portfolio) return null;
 
-  const [tradeResult, decisionResult] = await Promise.all([
+  const [tradeResult, decisionResult, snapshotResult] = await Promise.all([
     supabase
       .from("model_portfolio_transactions")
       .select("id,decision_id,transaction_type,instrument_symbol,exchange,instrument_name,quantity,price_minor,gross_amount_minor,fee_minor,currency,executed_at,market_data_as_of,rationale,native_currency,native_price_minor,native_gross_amount_minor,fx_rate_to_sek,fx_as_of,fx_source_publisher,fill_label", { count: "exact" })
@@ -147,9 +168,15 @@ export async function loadPortfolioTransparencyDetail(
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
+    supabase
+      .from("model_portfolio_snapshots")
+      .select("snapshot_at,total_value_minor,cash_value_minor,invested_value_minor,contributed_capital_minor,market_data_as_of")
+      .eq("portfolio_id", portfolio.id)
+      .order("snapshot_at", { ascending: true })
+      .limit(1000),
   ]);
 
-  if (tradeResult.error || decisionResult.error) return null;
+  if (tradeResult.error || decisionResult.error || snapshotResult.error) return null;
 
   const tradeCount = tradeResult.count ?? 0;
   const pageCount = Math.max(1, Math.ceil(tradeCount / MODEL_PORTFOLIO_TRADES_PAGE_SIZE));
@@ -177,6 +204,7 @@ export async function loadPortfolioTransparencyDetail(
           createdAt: String(decisionResult.data.created_at),
         }
       : null,
+    valueHistory: ((snapshotResult.data ?? []) as Record<string, unknown>[]).map(mapValuePoint),
     trades: ((tradeResult.data ?? []) as Record<string, unknown>[]).map(mapTrade),
     tradeCount,
     page,
