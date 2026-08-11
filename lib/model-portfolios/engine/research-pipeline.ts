@@ -31,6 +31,7 @@ import {
   NORDIC_RESEARCH_BOUNDS,
   normalizeNordicExchange,
 } from "./nordic-universe";
+import { enrichNordicPrimarySourceHits } from "./primary-source-enrichment";
 import { rankResearchUniverse, type ResearchCandidate } from "./research";
 import {
   mergeFundamentalScores,
@@ -42,6 +43,7 @@ import {
   loadFreshCandidateBundle,
   persistCandidateBundle,
   persistGoogleResearchHit,
+  persistPrimarySourceResearchHit,
   storedBundleToEvidence,
   type ResearchFundamentalsSource,
 } from "./research-store";
@@ -543,27 +545,51 @@ export async function runModelPortfolioResearchPipeline(input: {
         exchange: row.seed.exchange,
         now: input.now,
       });
-      primaryHitsByCandidate.set(candidateKey, primaryHits.length);
-      for (const [index, hit] of primaryHits.entries()) {
+      const enrichedHits = await enrichNordicPrimarySourceHits({
+        hits: primaryHits,
+      });
+      primaryHitsByCandidate.set(candidateKey, enrichedHits.length);
+      for (const [index, enriched] of enrichedHits.entries()) {
         primarySourceHits += 1;
+        const { hit } = enriched;
+        const publishedAt = hit.publishedAt ?? hit.fetchedAt;
         evidence.push({
           id: `primary:${row.seed.symbol}:${hit.fetchedAt}:${index}`,
-          kind: "company_release",
+          kind: enriched.evidenceKind,
           publisher: hit.publisher,
-          publishedAt: hit.publishedAt ?? hit.fetchedAt,
+          publishedAt,
           verifiedAt: hit.fetchedAt,
           title: hit.title,
-          summary: hit.snippet,
+          summary: enriched.summary,
         });
-        await persistGoogleResearchHit({
+        await persistPrimarySourceResearchHit({
           supabase: input.supabase,
           symbol: row.seed.symbol,
           exchange: row.seed.exchange,
           name: row.seed.name,
+          kind: enriched.kind,
+          publisher: hit.publisher,
+          // Prefer the official message URL as the canonical disclosure source;
+          // document URL is retained in metadata when a report PDF was read.
+          sourceUrl: hit.url,
+          publishedAt,
+          verifiedAt: hit.fetchedAt,
           title: hit.title,
-          snippet: hit.snippet,
-          url: hit.url,
-          fetchedAt: hit.fetchedAt,
+          summary: enriched.summary,
+          metadata: {
+            source_type: enriched.sourceType,
+            document_retrieved: enriched.documentRetrieved,
+            official_source: "nasdaq_nordic_cns",
+            report_period: enriched.reportPeriod ?? undefined,
+            report_year: enriched.reportYear ?? undefined,
+            document_type: enriched.documentType,
+            document_url: enriched.documentUrl ?? undefined,
+            cns_category: hit.category ?? undefined,
+            source_urls: [
+              hit.url,
+              ...(enriched.documentUrl ? [enriched.documentUrl] : []),
+            ],
+          },
         });
       }
     }
