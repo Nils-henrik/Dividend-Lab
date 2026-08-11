@@ -3,6 +3,7 @@ import PlaceholderPage from "@/components/dashboard/PlaceholderPage";
 import DivBrainShell from "@/components/brain/DivBrainShell";
 import { requireAuthenticatedUserWithProfile } from "@/lib/auth/session";
 import { resolveDivBrainAlphaPageAccess } from "@/lib/divbrain/server/access";
+import { createDivBrainServiceRoleAttachmentRepository } from "@/lib/divbrain/server/attachments";
 import {
   createDivBrainRuntimeRepository,
   createDivBrainShellDiagnosticLogger,
@@ -64,11 +65,16 @@ export default async function DivBrainPage({ searchParams }: Props) {
   if (!repositoryResult.ok) {
     view = divBrainShellDataUnavailable();
   } else {
+    const attachmentRepositoryResult =
+      createDivBrainServiceRoleAttachmentRepository();
     view = await loadDivBrainShellData({
       actorId: user.id,
       selectedConversationId,
       archiveScope: resolvedSearchParams.archive,
       repository: repositoryResult.data,
+      ...(attachmentRepositoryResult.ok
+        ? { attachmentRepository: attachmentRepositoryResult.data }
+        : {}),
       diagnose,
     });
   }

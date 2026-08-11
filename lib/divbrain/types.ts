@@ -75,8 +75,10 @@ export type RenameConversationInput = {
  * Client-facing input: submit message content.
  * No owner/user id, role, completion status, safety classification,
  * or provider metadata — the server assigns role as `user`.
+ * Optional `attachmentIds` are opaque server-owned ids only.
  */
 export type SubmitMessageInput = {
   conversationId: DivBrainConversationId;
   content: string;
+  attachmentIds?: readonly string[];
 };

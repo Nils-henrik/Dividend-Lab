@@ -18,10 +18,15 @@ import { divBrainFailureFromCode, divBrainSuccess } from "../../results";
 import type { DivBrainSource } from "../../sources";
 import type { DivBrainMessage } from "../../types";
 import {
+  toDivBrainShellAttachment,
+  type DivBrainShellAttachment,
+} from "../../attachments";
+import {
   DIVBRAIN_REPOSITORY_MAX_PAGE_SIZE,
   type DivBrainConversationRepository,
   type DivBrainTrustedActorId,
 } from "../repository";
+import type { DivBrainAttachmentRepository } from "../attachments/repository";
 import {
   DIVBRAIN_SHELL_TRANSCRIPT_MAX_PAGE_ROUNDS,
   DIVBRAIN_SHELL_TRANSCRIPT_RENDER_LIMIT,
@@ -38,6 +43,8 @@ export type LoadDivBrainShellTranscriptParams = {
   renderLimit?: number;
   /** Defaults to DIVBRAIN_SHELL_TRANSCRIPT_MAX_PAGE_ROUNDS. */
   maxPageRounds?: number;
+  /** Optional attachment metadata for user message chips. */
+  attachmentRepository?: DivBrainAttachmentRepository;
 };
 
 const INCOMPLETE_NOTICE =
@@ -76,6 +83,7 @@ function mapSourcesForShell(
 export function mapDivBrainMessageToShellTranscriptItem(
   message: DivBrainMessage,
   conversationId: string,
+  attachmentsByMessageId?: ReadonlyMap<string, readonly DivBrainShellAttachment[]>,
 ): DivBrainShellTranscriptItem | null {
   if (message.conversationId !== conversationId) {
     return null;
@@ -97,11 +105,13 @@ export function mapDivBrainMessageToShellTranscriptItem(
   switch (message.completionStatus) {
     case "completed": {
       if (message.role === "user") {
+        const attachments = attachmentsByMessageId?.get(message.id);
         return {
           kind: "user_message",
           id: message.id,
           content: message.content,
           createdAt: message.createdAt,
+          ...(attachments && attachments.length > 0 ? { attachments } : {}),
         };
       }
 
@@ -184,6 +194,7 @@ export function mapDivBrainMessageToShellTranscriptItem(
 export function mapMessagesToShellTranscriptItems(
   messages: readonly DivBrainMessage[],
   conversationId: string,
+  attachmentsByMessageId?: ReadonlyMap<string, readonly DivBrainShellAttachment[]>,
 ): DivBrainShellTranscriptItem[] {
   const items: DivBrainShellTranscriptItem[] = [];
 
@@ -191,6 +202,7 @@ export function mapMessagesToShellTranscriptItems(
     const item = mapDivBrainMessageToShellTranscriptItem(
       message,
       conversationId,
+      attachmentsByMessageId,
     );
     if (item) {
       items.push(item);
@@ -306,9 +318,46 @@ async function loadDivBrainShellTranscriptInner(
     return divBrainFailureFromCode("internal_error");
   }
 
+  const attachmentsByMessageId = new Map<
+    string,
+    DivBrainShellAttachment[]
+  >();
+
+  if (params.attachmentRepository) {
+    const userMessageIds = collected
+      .filter(
+        (message) =>
+          message.role === "user" && message.completionStatus === "completed",
+      )
+      .map((message) => message.id);
+
+    if (userMessageIds.length > 0) {
+      const listed = await params.attachmentRepository.listForMessages({
+        actorId: params.actorId,
+        conversationId: params.conversationId,
+        messageIds: userMessageIds,
+      });
+      if (listed.ok) {
+        for (const attachment of listed.data) {
+          if (!attachment.messageId) continue;
+          const shell = toDivBrainShellAttachment({
+            id: attachment.id,
+            filename: attachment.originalFilename,
+            mimeType: attachment.mimeType,
+            byteSize: attachment.byteSize,
+          });
+          const existing = attachmentsByMessageId.get(attachment.messageId) ?? [];
+          existing.push(shell);
+          attachmentsByMessageId.set(attachment.messageId, existing);
+        }
+      }
+    }
+  }
+
   const mapped = mapMessagesToShellTranscriptItems(
     collected,
     params.conversationId,
+    attachmentsByMessageId,
   );
 
   if (mapped.length === 0) {

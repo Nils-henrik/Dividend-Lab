@@ -14,13 +14,14 @@
 import { buildFinanceIntelligencePlan } from "../finance/intelligence";
 import type {
   DivBrainProviderContextBlock,
+  DivBrainProviderContentPart,
   DivBrainProviderMessage,
   DivBrainProviderRequest,
 } from "./types";
 
 export type DivBrainGatewayPromptMessage = {
   role: "system" | "user" | "assistant";
-  content: string;
+  content: string | DivBrainProviderContentPart[];
 };
 
 const CONTEXT_KIND_LABELS: Record<
@@ -50,25 +51,65 @@ function formatContextBlocks(
     .join("\n\n");
 }
 
+function textFromContent(
+  content: DivBrainProviderMessage["content"],
+): string {
+  if (typeof content === "string") {
+    return content;
+  }
+  return content
+    .filter((part): part is { type: "text"; text: string } => part.type === "text")
+    .map((part) => part.text)
+    .join("\n")
+    .trim();
+}
+
 function mapConversationMessage(
   message: DivBrainProviderMessage,
 ): DivBrainGatewayPromptMessage | null {
   if (message.role === "system") {
+    if (typeof message.content !== "string") {
+      return null;
+    }
     return { role: "system", content: message.content };
   }
 
   if (message.role === "user" || message.role === "assistant") {
-    return { role: message.role, content: message.content };
+    if (typeof message.content === "string") {
+      return { role: message.role, content: message.content };
+    }
+    if (message.role !== "user") {
+      return null;
+    }
+    return {
+      role: "user",
+      content: message.content.map((part) =>
+        part.type === "text"
+          ? { type: "text" as const, text: part.text }
+          : {
+              type: "file" as const,
+              mediaType: part.mediaType,
+              data: part.data,
+              ...(part.filename ? { filename: part.filename } : {}),
+            },
+      ),
+    };
   }
 
   return null;
 }
 
-function latestUserMessage(messages: readonly DivBrainGatewayPromptMessage[]): string | null {
+function latestUserMessageText(
+  messages: readonly DivBrainGatewayPromptMessage[],
+): string | null {
   for (let index = messages.length - 1; index >= 0; index -= 1) {
     const message = messages[index];
-    if (message?.role === "user" && message.content.trim()) {
-      return message.content;
+    if (!message || message.role !== "user") {
+      continue;
+    }
+    const text = textFromContent(message.content);
+    if (text) {
+      return text;
     }
   }
   return null;
@@ -96,7 +137,9 @@ export function mapDivBrainRequestToGatewayPrompt(
     const mapped = mapConversationMessage(message);
     if (!mapped) continue;
     if (mapped.role === "system") {
-      extraSystem.push(mapped.content);
+      if (typeof mapped.content === "string") {
+        extraSystem.push(mapped.content);
+      }
       continue;
     }
     conversation.push(mapped);
@@ -104,7 +147,7 @@ export function mapDivBrainRequestToGatewayPrompt(
 
   if (conversation.length === 0) return null;
 
-  const currentUserMessage = latestUserMessage(conversation);
+  const currentUserMessage = latestUserMessageText(conversation);
   const financePlan = currentUserMessage
     ? buildFinanceIntelligencePlan(currentUserMessage)
     : null;

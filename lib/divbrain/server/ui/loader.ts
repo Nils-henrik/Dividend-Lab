@@ -18,6 +18,7 @@ import type {
   DivBrainConversationRepository,
   DivBrainTrustedActorId,
 } from "../repository";
+import type { DivBrainAttachmentRepository } from "../attachments/repository";
 import type { DivBrainConversation } from "../../types";
 import {
   noopDivBrainShellDiagnosticSink,
@@ -38,6 +39,7 @@ export type LoadDivBrainShellDataParams = {
   /** Untrusted archive query — malformed values resolve to active. */
   archiveScope?: string | string[] | null;
   repository: DivBrainConversationRepository;
+  attachmentRepository?: DivBrainAttachmentRepository;
   /**
    * Optional fixed-category diagnostic sink.
    * Must never receive raw errors, secrets, or identity values.
@@ -89,6 +91,9 @@ async function buildShellViewFromConversationList(
       repository: params.repository,
       actorId: params.actorId,
       conversationId: defaultConversation.id,
+      ...(params.attachmentRepository
+        ? { attachmentRepository: params.attachmentRepository }
+        : {}),
     });
 
     if (!transcript.ok) {
@@ -146,6 +151,9 @@ async function buildShellViewFromConversationList(
     repository: params.repository,
     actorId: params.actorId,
     conversationId: owned.data.id,
+    ...(params.attachmentRepository
+      ? { attachmentRepository: params.attachmentRepository }
+      : {}),
   });
 
   if (!transcript.ok) {

@@ -42,6 +42,19 @@ export type MapAssembledContextToProviderRequestOptions = {
    * and the current user message as the final user message.
    */
   includeHistoryMessages?: boolean;
+  /**
+   * Optional multimodal file parts attached to the current user message.
+   * Text-only content remains a string when this is empty/omitted.
+   */
+  currentUserFileParts?: readonly import("../providers/types").DivBrainProviderFilePart[];
+  /**
+   * Optional untrusted extracted document blocks appended as user_owned_context.
+   */
+  userOwnedContextBlocks?: readonly string[];
+  /**
+   * Optional extra sources (e.g. user_provided attachments) merged into request.
+   */
+  extraSources?: readonly import("../../sources").DivBrainSource[];
 };
 
 /**
@@ -64,13 +77,29 @@ export function mapAssembledContextToProviderRequest(
       continue;
     }
 
-    if (section.content.length > DIVBRAIN_MESSAGE_CONTENT_MAX_LENGTH) {
+    const maxLength =
+      providerKind === "user_owned_context"
+        ? 50_000
+        : DIVBRAIN_MESSAGE_CONTENT_MAX_LENGTH;
+
+    if (section.content.length > maxLength) {
       return divBrainFailureFromCode("invalid_request");
     }
 
     contextBlocks.push({
       kind: providerKind,
       content: section.content,
+    });
+  }
+
+  for (const block of options.userOwnedContextBlocks ?? []) {
+    const content = block.normalize("NFC").trim();
+    if (!content || content.length > 50_000) {
+      return divBrainFailureFromCode("invalid_request");
+    }
+    contextBlocks.push({
+      kind: "user_owned_context",
+      content,
     });
   }
 
@@ -93,15 +122,36 @@ export function mapAssembledContextToProviderRequest(
     return divBrainFailureFromCode("invalid_request");
   }
 
-  messages.push({
-    role: "user",
-    content: assembled.currentUserMessage,
-  });
+  const fileParts = options.currentUserFileParts ?? [];
+  if (fileParts.length > 0) {
+    messages.push({
+      role: "user",
+      content: [
+        { type: "text", text: assembled.currentUserMessage },
+        ...fileParts.map((part) => ({
+          type: "file" as const,
+          mediaType: part.mediaType,
+          data: part.data,
+          ...(part.filename ? { filename: part.filename } : {}),
+        })),
+      ],
+    });
+  } else {
+    messages.push({
+      role: "user",
+      content: assembled.currentUserMessage,
+    });
+  }
+
+  const sources = [
+    ...assembled.includedSources,
+    ...(options.extraSources ?? []),
+  ];
 
   const request: DivBrainProviderRequest = {
     contextBlocks,
     messages,
-    sources: assembled.includedSources,
+    sources,
     timeoutMs: options.timeoutMs,
     signal: options.signal,
   };
