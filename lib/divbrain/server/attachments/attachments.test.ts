@@ -91,18 +91,15 @@ function createMemoryPorts(seed: DivBrainAttachmentRow[] = []) {
       // Mirror the DB BEFORE INSERT unlinked-quota guard (atomic in this fake:
       // count + insert has no await boundary, so concurrent prepares cannot
       // exceed the cap even when the app pre-check is raced).
-      const countsTowardQuota =
-        input.status !== "deleted";
-      if (countsTowardQuota) {
-        const activeUnlinked = [...rows.values()].filter(
-          (row) =>
-            row.user_id === input.user_id &&
-            row.message_id === null &&
-            row.status !== "deleted",
-        ).length;
-        if (activeUnlinked >= DIVBRAIN_ATTACHMENT_MAX_UNLINKED_PER_USER) {
-          return { ok: false, error: { kind: "quota_exceeded" } };
-        }
+      // Inserts are always pending and therefore count toward active quota.
+      const activeUnlinked = [...rows.values()].filter(
+        (row) =>
+          row.user_id === input.user_id &&
+          row.message_id === null &&
+          row.status !== "deleted",
+      ).length;
+      if (activeUnlinked >= DIVBRAIN_ATTACHMENT_MAX_UNLINKED_PER_USER) {
+        return { ok: false, error: { kind: "quota_exceeded" } };
       }
 
       const now = new Date().toISOString();
@@ -1042,10 +1039,14 @@ describe("DivBrain attachments migration contract", () => {
     assert.match(source, /active_count >= 20/i);
     assert.match(source, /message_id is null/i);
     assert.match(source, /status <> 'deleted'/i);
-    // Guard must not be an UPDATE trigger (linking / retirement stay free).
+    // Guard must be INSERT-only (linking / retirement UPDATEs stay free).
+    assert.match(
+      source,
+      /create trigger divbrain_attachments_enforce_unlinked_quota\s+before insert on public\.divbrain_attachments/i,
+    );
     assert.doesNotMatch(
       source,
-      /before update on public\.divbrain_attachments[\s\S]*enforce_unlinked_quota/i,
+      /create trigger divbrain_attachments_enforce_unlinked_quota\s+before update/i,
     );
   });
 });
