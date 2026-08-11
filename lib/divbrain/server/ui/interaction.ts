@@ -28,6 +28,12 @@ import {
   type DivBrainActionState,
 } from "../../action-state";
 import { createDivBrainRuntimeRepository } from "./runtime";
+import type { DivBrainAttachmentRepository } from "../attachments/repository";
+import {
+  createDivBrainServiceRoleAttachmentRepository,
+  divBrainAttachmentSafeMessage,
+} from "../attachments";
+import type { DivBrainShellAttachment } from "../../attachments";
 
 export type DivBrainInteractionActorResolver = {
   resolveActor(): Promise<DivBrainResult<{ actorId: DivBrainTrustedActorId }>>;
@@ -43,8 +49,10 @@ export type DivBrainInteractionDeps = {
   actorResolver: DivBrainInteractionActorResolver;
   accessGate: DivBrainInteractionAccessGate;
   createRepository?: () => DivBrainResult<DivBrainConversationRepository>;
+  createAttachmentRepository?: () => DivBrainResult<DivBrainAttachmentRepository>;
   createApplicationService?: (
     repository: DivBrainConversationRepository,
+    attachmentRepository?: DivBrainAttachmentRepository,
   ) => DivBrainApplicationService;
 };
 
@@ -143,6 +151,46 @@ function createRepository(
   }
 
   return createDivBrainRuntimeRepository();
+}
+
+function createAttachmentRepository(
+  deps: DivBrainInteractionDeps,
+): DivBrainResult<DivBrainAttachmentRepository> {
+  if (deps.createAttachmentRepository) {
+    try {
+      return deps.createAttachmentRepository();
+    } catch {
+      return {
+        ok: false,
+        error: createDivBrainError("internal_error"),
+      };
+    }
+  }
+
+  return createDivBrainServiceRoleAttachmentRepository();
+}
+
+function parseAttachmentIdsField(raw: string): string[] | null {
+  const trimmed = raw.trim();
+  if (!trimmed) {
+    return [];
+  }
+  try {
+    const parsed = JSON.parse(trimmed) as unknown;
+    if (!Array.isArray(parsed)) {
+      return null;
+    }
+    const ids: string[] = [];
+    for (const entry of parsed) {
+      if (typeof entry !== "string" || !isDivBrainUuid(entry)) {
+        return null;
+      }
+      ids.push(entry.toLowerCase());
+    }
+    return ids;
+  } catch {
+    return null;
+  }
 }
 
 function readConversationId(formData: FormData): string | null {
@@ -409,6 +457,14 @@ export async function runDeleteDivBrainConversation(
       };
     }
 
+    const attachmentRepositoryResult = createAttachmentRepository(deps);
+    if (attachmentRepositoryResult.ok) {
+      await attachmentRepositoryResult.data.cleanupConversationStorage({
+        actorId: access.actorId,
+        conversationId,
+      });
+    }
+
     const deleted = await repositoryResult.data.deleteConversation({
       actorId: access.actorId,
       conversationId,
@@ -487,9 +543,15 @@ export async function runSubmitDivBrainMessage(
 
     const conversationId = readConversationId(formData);
     const content = getFormString(formData, "content");
+    const attachmentIdsRaw = getFormString(formData, "attachmentIds");
+    const attachmentIds = parseAttachmentIdsField(attachmentIdsRaw);
 
     if (!conversationId) {
       return { kind: "state", state: mapCatalogError("not_found") };
+    }
+
+    if (attachmentIds === null) {
+      return { kind: "state", state: mapCatalogError("invalid_request") };
     }
 
     const repositoryResult = createRepository(deps);
@@ -505,19 +567,53 @@ export async function runSubmitDivBrainMessage(
       };
     }
 
+    const attachmentRepositoryResult = createAttachmentRepository(deps);
+    const attachmentRepository = attachmentRepositoryResult.ok
+      ? attachmentRepositoryResult.data
+      : undefined;
+
+    if (attachmentIds.length > 0 && !attachmentRepository) {
+      return {
+        kind: "state",
+        state: createDivBrainActionState({
+          status: "error",
+          safeMessage: attachmentRepositoryResult.ok
+            ? createDivBrainError("internal_error").message
+            : attachmentRepositoryResult.error.message,
+          persisted: false,
+          clearComposer: false,
+        }),
+      };
+    }
+
     const createApplicationService =
       deps.createApplicationService ??
-      ((repository: DivBrainConversationRepository) =>
-        createDivBrainAlphaApplicationService({ repository }));
+      ((
+        repository: DivBrainConversationRepository,
+        attachments?: DivBrainAttachmentRepository,
+      ) =>
+        createDivBrainAlphaApplicationService({
+          repository,
+          ...(attachments ? { attachmentRepository: attachments } : {}),
+        }));
 
-    const service = createApplicationService(repositoryResult.data);
+    const service = createApplicationService(
+      repositoryResult.data,
+      attachmentRepository,
+    );
 
     // Exact plain object — never spread FormData; never accept actor/role/status.
-    // Trusted browser fields remain only conversationId + content.
-    const submitInput = {
-      conversationId,
-      content,
-    };
+    const submitInput =
+      attachmentIds.length > 0
+        ? {
+            conversationId,
+            content,
+            attachmentIds,
+          }
+        : {
+            conversationId,
+            content,
+          };
 
     const result = await service.submitMessage(submitInput);
 
@@ -536,5 +632,173 @@ export async function runSubmitDivBrainMessage(
     return { kind: "state", state: mapSubmitOutcome(result.data) };
   } catch {
     return { kind: "state", state: internalErrorState() };
+  }
+}
+
+export type DivBrainPrepareAttachmentUploadResult =
+  | {
+      ok: true;
+      attachmentId: string;
+      signedUrl: string;
+      token: string;
+      shell: DivBrainShellAttachment;
+    }
+  | { ok: false; safeMessage: string };
+
+export async function runPrepareDivBrainAttachmentUpload(
+  deps: DivBrainInteractionDeps,
+  input: {
+    conversationId: string;
+    filename: string;
+    mimeType: string;
+    byteSize: number;
+  },
+): Promise<DivBrainPrepareAttachmentUploadResult> {
+  try {
+    const access = await resolveTrustedActorAndAccess(deps);
+    if (!access.ok) {
+      return {
+        ok: false,
+        safeMessage:
+          access.state.safeMessage ?? createDivBrainError("internal_error").message,
+      };
+    }
+
+    if (!isDivBrainUuid(input.conversationId)) {
+      return {
+        ok: false,
+        safeMessage: createDivBrainError("not_found").message,
+      };
+    }
+
+    const repositoryResult = createRepository(deps);
+    if (!repositoryResult.ok) {
+      return { ok: false, safeMessage: repositoryResult.error.message };
+    }
+
+    const conversation = await repositoryResult.data.getConversation({
+      actorId: access.actorId,
+      conversationId: input.conversationId,
+    });
+    if (!conversation.ok) {
+      return { ok: false, safeMessage: conversation.error.message };
+    }
+    if (conversation.data.archivedAt != null) {
+      return {
+        ok: false,
+        safeMessage: createDivBrainError("invalid_request").message,
+      };
+    }
+
+    const attachmentRepositoryResult = createAttachmentRepository(deps);
+    if (!attachmentRepositoryResult.ok) {
+      return {
+        ok: false,
+        safeMessage: attachmentRepositoryResult.error.message,
+      };
+    }
+
+    const prepared = await attachmentRepositoryResult.data.prepareUpload({
+      actorId: access.actorId,
+      conversationId: input.conversationId,
+      filename: input.filename,
+      mimeType: input.mimeType,
+      byteSize: input.byteSize,
+    });
+
+    if (!prepared.ok) {
+      if ("clientError" in prepared && prepared.clientError) {
+        return {
+          ok: false,
+          safeMessage: divBrainAttachmentSafeMessage(prepared.clientError),
+        };
+      }
+      if ("error" in prepared) {
+        return { ok: false, safeMessage: prepared.error.message };
+      }
+      return {
+        ok: false,
+        safeMessage: createDivBrainError("internal_error").message,
+      };
+    }
+
+    return {
+      ok: true,
+      attachmentId: prepared.attachmentId,
+      signedUrl: prepared.signedUrl,
+      token: prepared.token,
+      shell: prepared.shell,
+    };
+  } catch {
+    return {
+      ok: false,
+      safeMessage: createDivBrainError("internal_error").message,
+    };
+  }
+}
+
+export type DivBrainConfirmAttachmentUploadResult =
+  | { ok: true; shell: DivBrainShellAttachment }
+  | { ok: false; safeMessage: string };
+
+export async function runConfirmDivBrainAttachmentUpload(
+  deps: DivBrainInteractionDeps,
+  input: { attachmentId: string },
+): Promise<DivBrainConfirmAttachmentUploadResult> {
+  try {
+    const access = await resolveTrustedActorAndAccess(deps);
+    if (!access.ok) {
+      return {
+        ok: false,
+        safeMessage:
+          access.state.safeMessage ?? createDivBrainError("internal_error").message,
+      };
+    }
+
+    if (!isDivBrainUuid(input.attachmentId)) {
+      return {
+        ok: false,
+        safeMessage: createDivBrainError("not_found").message,
+      };
+    }
+
+    const attachmentRepositoryResult = createAttachmentRepository(deps);
+    if (!attachmentRepositoryResult.ok) {
+      return {
+        ok: false,
+        safeMessage: attachmentRepositoryResult.error.message,
+      };
+    }
+
+    const confirmed = await attachmentRepositoryResult.data.confirmUpload({
+      actorId: access.actorId,
+      attachmentId: input.attachmentId,
+    });
+
+    if (!confirmed.ok) {
+      if ("clientError" in confirmed && confirmed.clientError) {
+        return {
+          ok: false,
+          safeMessage: divBrainAttachmentSafeMessage(confirmed.clientError),
+        };
+      }
+      if ("error" in confirmed) {
+        return { ok: false, safeMessage: confirmed.error.message };
+      }
+      return {
+        ok: false,
+        safeMessage: createDivBrainError("internal_error").message,
+      };
+    }
+
+    return {
+      ok: true,
+      shell: confirmed.shell,
+    };
+  } catch {
+    return {
+      ok: false,
+      safeMessage: createDivBrainError("internal_error").message,
+    };
   }
 }

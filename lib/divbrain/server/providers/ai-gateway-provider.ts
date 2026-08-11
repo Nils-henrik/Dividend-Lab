@@ -48,7 +48,17 @@ export type AiGatewayGenerateText = (params: {
   system?: string;
   messages: Array<{
     role: "system" | "user" | "assistant";
-    content: string;
+    content:
+      | string
+      | Array<
+          | { type: "text"; text: string }
+          | {
+              type: "file";
+              mediaType: string;
+              data: Uint8Array;
+              filename?: string;
+            }
+        >;
   }>;
   maxOutputTokens: number;
   abortSignal?: AbortSignal;
@@ -102,10 +112,12 @@ function resolveLanguageModel(
 async function defaultGenerateTextAdapter(
   params: Parameters<AiGatewayGenerateText>[0],
 ): Promise<AiGatewayGenerateTextResult> {
+  // Multimodal file parts are DivBrain-owned shapes compatible with AI SDK UserContent.
+  // Cast at the adapter edge only — never leak SDK types into provider-neutral modules.
   const result = await defaultGenerateText({
     model: params.model,
     ...(params.system ? { system: params.system } : {}),
-    messages: params.messages,
+    messages: params.messages as never,
     maxOutputTokens: params.maxOutputTokens,
     abortSignal: params.abortSignal,
     timeout: params.timeout,
@@ -125,7 +137,18 @@ async function defaultGenerateTextAdapter(
 function latestUserMessage(request: DivBrainProviderRequest): string | null {
   for (let index = request.messages.length - 1; index >= 0; index -= 1) {
     const message = request.messages[index];
-    if (message?.role === "user" && message.content.trim()) return message.content.trim();
+    if (message?.role !== "user") continue;
+    if (typeof message.content === "string") {
+      const trimmed = message.content.trim();
+      if (trimmed) return trimmed;
+      continue;
+    }
+    const text = message.content
+      .filter((part): part is { type: "text"; text: string } => part.type === "text")
+      .map((part) => part.text)
+      .join("\n")
+      .trim();
+    if (text) return text;
   }
   return null;
 }
