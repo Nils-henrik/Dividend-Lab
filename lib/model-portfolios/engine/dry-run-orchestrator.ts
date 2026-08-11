@@ -4,13 +4,23 @@ import { createModelPortfolioAdminClient } from "../admin";
 import { aggregatePortfolioAiUsage, type ModelPortfolioAiUsage, type ModelPortfolioBatchAiUsage } from "./ai-usage";
 import { buildDecisionAuditRow, persistDecisionAuditBatch, type DecisionAuditRow } from "./decision-audit";
 import { buildInvestorFacingDecisionRationale } from "./decision-narrative";
+import type { ModelPortfolioDecision, ModelPortfolioEvidence } from "./decision";
 import { runPortfolioDryRun } from "./dry-run";
 import type { EodhdCallBudgetSnapshot, ModelPortfolioResearchPass } from "./eodhd-budget";
 import type { DelayedQuote } from "./eodhd";
+import { fetchFxRateToSek } from "./fx-adapter";
+import { convertNativeMinorToSek, currencyForExchange, type FxRateQuote, type SupportedFxCurrency } from "./fx";
 import type { ModelPortfolioStrategyKey } from "./policy";
 import { buildFollowerTradePayload } from "./pricing";
+import type { ResearchCandidate } from "./research";
 import { runModelPortfolioResearchPipeline, type ResearchCandidateDiagnostic } from "./research-pipeline";
 import { settleModelPortfolioDecision } from "./settle-service";
+import { planSimulatedSettlement } from "./settlement";
+import {
+  persistModelPortfolioValuationSnapshots,
+  refreshModelPortfolioHoldingPrices,
+} from "./valuation-snapshots";
+import { evaluateWholeShareBuyEligibility } from "./whole-share-eligibility";
 
 type PortfolioRow = {
   id: string;
@@ -100,7 +110,9 @@ function buildPortfolioSnapshot(input: {
     `Status: ${input.portfolio.status}`,
     `Mål: ${input.portfolio.objective}`,
     `Tillgänglig modellkassa (minor SEK): ${input.cashMinor}`,
-    "Courtage: varje köp kostar exakt 10,00 SEK och belastar både kassa och snittkostnad.",
+    "Handelsregel: simuleringen köper och säljer endast hela aktier; fraktionerade aktier är inte tillåtna.",
+    "Nya köpkandidater har förfiltrerats så att minst en hel aktie kan köpas utan att bryta mot kassa-, positions- eller equity-regler.",
+    "Courtage: 0,00 SEK för både köp och sälj i DivLabs modellportföljer.",
     "Befintliga innehav:",
     ...holdingLines,
   ].join("\n");
@@ -123,8 +135,8 @@ function parseRiskRules(raw: Record<string, unknown> | null): {
 
 function quoteToSimulatedFill(quote: DelayedQuote, instrumentName: string) {
   if (quote.close === null || !Number.isFinite(quote.close) || quote.close <= 0) return null;
-  const exchange = quote.exchange.toUpperCase();
-  const nativeCurrency = exchange === "US" || exchange === "NASDAQ" || exchange === "NYSE" ? "USD" : "SEK";
+  const nativeCurrency = currencyForExchange(quote.exchange);
+  if (!nativeCurrency) return null;
   return {
     symbol: quote.symbol,
     exchange: quote.exchange,
@@ -135,6 +147,190 @@ function quoteToSimulatedFill(quote: DelayedQuote, instrumentName: string) {
     sourcePublisher: "Yahoo Finance market data",
     delayed: true as const,
   };
+}
+
+function investedValueMinor(holdings: readonly HoldingRow[]): number {
+  return holdings.reduce((sum, holding) => {
+    const quantity = Number(holding.quantity);
+    const price = Number(holding.last_price_minor ?? 0);
+    if (!Number.isFinite(quantity) || !Number.isFinite(price) || quantity <= 0 || price <= 0) return sum;
+    return sum + Math.round(quantity * price);
+  }, 0);
+}
+
+function evidenceMatchesCandidate(evidence: ModelPortfolioEvidence, candidate: ResearchCandidate): boolean {
+  const id = evidence.id.toUpperCase();
+  const title = evidence.title.toUpperCase();
+  const symbol = candidate.symbol.toUpperCase();
+  const exchange = candidate.exchange.toUpperCase();
+  const instrumentToken = `(${symbol}.${exchange})`;
+  return id.startsWith(`RESEARCH:${symbol}:${exchange}:`)
+    || id.startsWith(`GOOGLE:${symbol}:`)
+    || id.startsWith(`PRIMARY:${symbol}:`)
+    || (id.startsWith("RESEARCH-CACHE:") && title.includes(instrumentToken));
+}
+
+async function filterPortfolioDecisionInputs(input: {
+  portfolio: PortfolioRow;
+  holdings: HoldingRow[];
+  cashMinor: number;
+  now: Date;
+  candidates: ResearchCandidate[];
+  evidence: ModelPortfolioEvidence[];
+  quotes: Map<string, DelayedQuote>;
+}): Promise<{ candidates: ResearchCandidate[]; evidence: ModelPortfolioEvidence[] }> {
+  const heldKeys = new Set(
+    input.holdings.map((holding) => instrumentKey(holding.instrument_symbol, holding.exchange)),
+  );
+  const investedMinor = investedValueMinor(input.holdings);
+  const portfolioValueMinor = input.cashMinor + investedMinor;
+  const rules = parseRiskRules(input.portfolio.strategy_rules);
+  const fxCache = new Map<SupportedFxCurrency, FxRateQuote | null>();
+  const selected: ResearchCandidate[] = [];
+
+  for (const candidate of input.candidates) {
+    const candidateKey = instrumentKey(candidate.symbol, candidate.exchange);
+    if (heldKeys.has(candidateKey)) {
+      selected.push(candidate);
+      continue;
+    }
+
+    const quote = input.quotes.get(candidateKey);
+    const fill = quote ? quoteToSimulatedFill(quote, candidate.symbol) : null;
+    if (!fill) continue;
+
+    const nativeCurrency = currencyForExchange(candidate.exchange);
+    if (!nativeCurrency) continue;
+
+    let fxRate: FxRateQuote | null = null;
+    if (nativeCurrency !== "SEK") {
+      if (fxCache.has(nativeCurrency)) {
+        fxRate = fxCache.get(nativeCurrency) ?? null;
+      } else {
+        const fetched = await fetchFxRateToSek(nativeCurrency, input.now);
+        fxRate = fetched.ok ? fetched.quote : null;
+        fxCache.set(nativeCurrency, fxRate);
+      }
+      if (!fxRate) continue;
+    }
+
+    const conversion = convertNativeMinorToSek({
+      nativeCurrency,
+      nativeAmountMinor: fill.nativePriceMinor,
+      fxRateToSek: fxRate,
+    });
+    if (!conversion.ok || conversion.sekAmountMinor <= 0) continue;
+
+    const eligibility = evaluateWholeShareBuyEligibility({
+      strategyKey: input.portfolio.strategy_key,
+      rules,
+      cashMinor: input.cashMinor,
+      portfolioValueMinor,
+      investedMinor,
+      currentPositionValueMinor: 0,
+      priceSekMinor: conversion.sekAmountMinor,
+    });
+    if (eligibility.eligible) selected.push(candidate);
+  }
+
+  const evidence = input.evidence.filter((item) =>
+    selected.some((candidate) => evidenceMatchesCandidate(item, candidate)),
+  );
+  return { candidates: selected, evidence };
+}
+
+function failClosedExecutionHold(
+  decision: ModelPortfolioDecision,
+  reason: string,
+): ModelPortfolioDecision {
+  return {
+    action: "hold",
+    symbol: null,
+    exchange: null,
+    instrumentName: null,
+    proposedPortfolioPct: 0,
+    convictionScore: Math.min(decision.convictionScore, 0.49),
+    materialThesisBreak: false,
+    thesis: "Det föreslagna portföljbeslutet klarade inte den deterministiska exekveringskontrollen för hela aktier.",
+    bearCase: decision.bearCase,
+    catalyst: decision.catalyst,
+    valuationView: decision.valuationView,
+    keyRisks: [...decision.keyRisks, `Exekveringsspärr: ${reason}.`],
+    evidenceIds: decision.evidenceIds,
+    disconfirmingEvidenceIds: decision.disconfirmingEvidenceIds,
+    rationale: `Ingen affär genomförs. AI-förslaget var inte exekverbart med hela aktier inom portföljens kassa och riskregler (${reason}), därför används HOLD som säkerhetsbeslut.`,
+  };
+}
+
+async function preflightGeneratedDecision(input: {
+  decision: ModelPortfolioDecision;
+  portfolio: PortfolioRow;
+  holdings: HoldingRow[];
+  cashMinor: number;
+  quotes: Map<string, DelayedQuote>;
+  recentTx: TransactionTimeRow[];
+  now: Date;
+}): Promise<ModelPortfolioDecision> {
+  const action = input.decision.action;
+  if (action !== "buy" && action !== "sell" && action !== "trim" && action !== "rebalance") {
+    return input.decision;
+  }
+  if (!input.decision.symbol || !input.decision.exchange) {
+    return failClosedExecutionHold(input.decision, "missing_decision_instrument");
+  }
+
+  const quote = input.quotes.get(instrumentKey(input.decision.symbol, input.decision.exchange));
+  const fill = quote ? quoteToSimulatedFill(quote, input.decision.instrumentName ?? input.decision.symbol) : null;
+  if (!fill) return failClosedExecutionHold(input.decision, "missing_simulated_quote");
+
+  const investedMinor = investedValueMinor(input.holdings);
+  const currentHolding = input.holdings.find((holding) =>
+    holding.instrument_symbol === input.decision.symbol && holding.exchange === input.decision.exchange,
+  );
+  const lastTrade = input.recentTx.find((row) =>
+    row.portfolio_id === input.portfolio.id &&
+    row.instrument_symbol === input.decision.symbol &&
+    row.exchange === input.decision.exchange,
+  );
+  const hoursSince = lastTrade
+    ? (input.now.getTime() - Date.parse(lastTrade.executed_at)) / (60 * 60 * 1_000)
+    : null;
+
+  const nativeCurrency = currencyForExchange(fill.exchange);
+  if (!nativeCurrency) return failClosedExecutionHold(input.decision, "unsupported_currency");
+  let fxRate: FxRateQuote | null = null;
+  if (nativeCurrency !== "SEK") {
+    const fetched = await fetchFxRateToSek(nativeCurrency, input.now);
+    if (!fetched.ok) return failClosedExecutionHold(input.decision, "fx_unavailable");
+    fxRate = fetched.quote;
+  }
+
+  const plan = planSimulatedSettlement({
+    side: action === "buy" ? "buy" : "sell",
+    portfolioStatus: input.portfolio.status,
+    executionAllowedAtDecisionTime: true,
+    strategyKey: input.portfolio.strategy_key,
+    rules: parseRiskRules(input.portfolio.strategy_rules),
+    now: input.now,
+    cashMinor: input.cashMinor,
+    portfolioValueMinor: input.cashMinor + investedMinor,
+    investedMinor,
+    currentHolding: currentHolding
+      ? {
+          quantity: Number(currentHolding.quantity),
+          averageCostMinor: Number(currentHolding.average_cost_minor),
+          lastPriceMinor: currentHolding.last_price_minor,
+        }
+      : null,
+    targetWeightPct: input.decision.proposedPortfolioPct,
+    quote: fill,
+    fxRateToSek: fxRate,
+    convictionScore: input.decision.convictionScore,
+    materialThesisBreak: input.decision.materialThesisBreak,
+    hoursSinceLastTradeInInstrument: hoursSince,
+  });
+
+  return plan.ok ? input.decision : failClosedExecutionHold(input.decision, plan.reason);
 }
 
 async function markDecisionSettlementRejected(
@@ -203,6 +399,18 @@ export async function runAllModelPortfoliosDryRun(
     now,
   });
 
+  await refreshModelPortfolioHoldingPrices({
+    supabase,
+    holdings,
+    quotes: research.quotes,
+    now,
+  });
+  await persistModelPortfolioValuationSnapshots({
+    supabase,
+    portfolioIds: portfolios.map((portfolio) => portfolio.id),
+    now,
+  });
+
   const portfolioResults: DryRunOrchestrationResult["portfolios"] = [];
   const auditRows: DecisionAuditRow[] = [];
   let spentTodayUsdMicros = 0;
@@ -211,13 +419,22 @@ export async function runAllModelPortfoliosDryRun(
     const portfolioHoldings = holdings.filter((holding) => holding.portfolio_id === portfolio.id);
     const cashMinor = cashByPortfolio.get(portfolio.id) ?? 0;
     const portfolioSnapshot = buildPortfolioSnapshot({ portfolio, cashMinor, holdings: portfolioHoldings });
+    const decisionInputs = await filterPortfolioDecisionInputs({
+      portfolio,
+      holdings: portfolioHoldings,
+      cashMinor,
+      now,
+      candidates: research.candidates,
+      evidence: research.evidence,
+      quotes: research.quotes,
+    });
 
     const result = await runPortfolioDryRun({
       strategyKey: portfolio.strategy_key,
       runKind: "primary",
       portfolioSnapshot,
-      candidates: research.candidates,
-      evidence: research.evidence,
+      candidates: decisionInputs.candidates,
+      evidence: decisionInputs.evidence,
       spentTodayUsdMicros,
       runId: audit?.runId ?? null,
     });
@@ -228,18 +445,27 @@ export async function runAllModelPortfoliosDryRun(
     }
 
     spentTodayUsdMicros += result.estimatedCostUsdMicros;
+    const decision = await preflightGeneratedDecision({
+      decision: result.decision,
+      portfolio,
+      holdings: portfolioHoldings,
+      cashMinor,
+      quotes: research.quotes,
+      recentTx,
+      now,
+    });
     const rationale = buildInvestorFacingDecisionRationale({
       researchSummary: research.summary,
-      decision: result.decision,
+      decision,
     });
     portfolioResults.push({
       id: portfolio.id,
       slug: portfolio.slug,
       name: portfolio.name,
       ok: true,
-      action: result.decision.action,
-      symbol: result.decision.symbol,
-      convictionScore: result.decision.convictionScore,
+      action: decision.action,
+      symbol: decision.symbol,
+      convictionScore: decision.convictionScore,
       rationale,
       model: result.model,
       estimatedCostUsdMicros: result.estimatedCostUsdMicros,
@@ -252,8 +478,8 @@ export async function runAllModelPortfoliosDryRun(
         runId: audit.runId,
         portfolioId: portfolio.id,
         strategyKey: portfolio.strategy_key,
-        decision: result.decision,
-        evidence: research.evidence,
+        decision,
+        evidence: decisionInputs.evidence,
         rankedCandidates: result.rankedCandidates,
         modelName: result.model,
         estimatedCostUsdMicros: result.estimatedCostUsdMicros,
@@ -306,12 +532,7 @@ export async function runAllModelPortfoliosDryRun(
 
         const portfolioHoldings = holdings.filter((holding) => holding.portfolio_id === portfolio.id);
         const cashMinor = cashByPortfolio.get(portfolio.id) ?? 0;
-        const investedMinor = portfolioHoldings.reduce((sum, holding) => {
-          const quantity = Number(holding.quantity);
-          const price = Number(holding.last_price_minor ?? 0);
-          if (!Number.isFinite(quantity) || !Number.isFinite(price) || quantity <= 0) return sum;
-          return sum + Math.round(quantity * price);
-        }, 0);
+        const investedMinor = investedValueMinor(portfolioHoldings);
         const currentHoldingRow = portfolioHoldings.find((holding) =>
           holding.instrument_symbol === auditRow.instrument_symbol && holding.exchange === auditRow.exchange,
         );

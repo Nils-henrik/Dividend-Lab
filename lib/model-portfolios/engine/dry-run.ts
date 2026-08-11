@@ -7,7 +7,10 @@ import {
   generatePortfolioAiDecision,
   type ModelPortfolioAiModel,
 } from "./ai";
-import type { ModelPortfolioAiUsage } from "./ai-usage";
+import {
+  MODEL_PORTFOLIO_AI_PROVIDER,
+  type ModelPortfolioAiUsage,
+} from "./ai-usage";
 import { validateEvidenceReferences, type ModelPortfolioDecision, type ModelPortfolioEvidence } from "./decision";
 import type { ModelPortfolioStrategyKey } from "./policy";
 import { rankResearchUniverse, selectDeepResearchCandidates, type ResearchCandidate } from "./research";
@@ -29,7 +32,7 @@ export type PortfolioDryRunResult =
       ok: true;
       decision: ModelPortfolioDecision;
       rankedCandidates: ReturnType<typeof selectDeepResearchCandidates>;
-      model: ModelPortfolioAiModel;
+      model: string;
       estimatedCostUsdMicros: number;
       usage: ModelPortfolioAiUsage;
       executionAllowed: false;
@@ -37,7 +40,6 @@ export type PortfolioDryRunResult =
   | {
       ok: false;
       reason:
-        | "no_candidates"
         | "no_evidence"
         | "daily_ai_budget_exhausted"
         | "event_reserve_protected";
@@ -141,11 +143,61 @@ function failClosedHold(evidence: readonly ModelPortfolioEvidence[]): ModelPortf
   };
 }
 
+function noExecutableCandidatesHold(): ModelPortfolioDecision {
+  return {
+    action: "hold",
+    symbol: null,
+    exchange: null,
+    instrumentName: null,
+    proposedPortfolioPct: 0,
+    convictionScore: 0.5,
+    materialThesisBreak: false,
+    thesis:
+      "Ingen ny kandidat klarade portföljens deterministiska köpbarhetsfilter för hela aktier i den här körningen.",
+    bearCase:
+      "Att välja en aktie som inte kan köpas med hela aktier inom kassa- och riskramarna skulle skapa ett beslut som inte går att genomföra.",
+    catalyst:
+      "Nästa marknads- eller portföljförändring kan göra andra kandidater köpbara inom mandatet.",
+    valuationView:
+      "Ingen ny värderingsslutsats används som köpbeslut när kandidaten inte är exekverbar inom portföljens regler.",
+    keyRisks: ["Kapital- och positionsgränser begränsar det köpbara universet när portföljen är liten."],
+    evidenceIds: [],
+    disconfirmingEvidenceIds: [],
+    rationale:
+      "HOLD. Efter helaktie-, kassa- och riskfiltrering fanns ingen ny kandidat som kunde köpas korrekt i den här portföljen. Systemet väljer därför ingen icke-exekverbar aktie.",
+  };
+}
+
+function deterministicNoTradeUsage(runId: string | null): ModelPortfolioAiUsage {
+  return {
+    provider: MODEL_PORTFOLIO_AI_PROVIDER,
+    model: "deterministic/no-executable-candidates",
+    inputTokens: 0,
+    cachedInputTokens: 0,
+    outputTokens: 0,
+    totalTokens: 0,
+    estimatedCostUsdMicros: 0,
+    costSource: "catalog_estimate",
+    timestamp: new Date().toISOString(),
+    runId,
+  };
+}
+
 export async function runPortfolioDryRun(request: PortfolioDryRunRequest): Promise<PortfolioDryRunResult> {
   const rankedCandidates = selectDeepResearchCandidates(
     rankResearchUniverse(request.candidates, request.strategyKey),
   );
-  if (!rankedCandidates.length) return { ok: false, reason: "no_candidates" };
+  if (!rankedCandidates.length) {
+    return {
+      ok: true,
+      decision: noExecutableCandidatesHold(),
+      rankedCandidates,
+      model: "deterministic/no-executable-candidates",
+      estimatedCostUsdMicros: 0,
+      usage: deterministicNoTradeUsage(request.runId ?? null),
+      executionAllowed: false,
+    };
+  }
   if (!request.evidence.length) return { ok: false, reason: "no_evidence" };
 
   const expectedCallUsdMicros = estimateDryRunCallCost(Boolean(request.useEscalationModel));
