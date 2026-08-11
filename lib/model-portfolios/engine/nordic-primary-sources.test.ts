@@ -38,6 +38,14 @@ describe("Nordic primary-source event enrichment", () => {
                   releaseTime: "2026-07-16 06:15:37 +0000",
                   market: "Main Market, Stockholm",
                   cnsCategory: "Half Year financial report",
+                  attachment: [
+                    {
+                      mimetype: "application/pdf",
+                      fileName: "07169373.pdf",
+                      attachmentUrl:
+                        "https://attachment.news.eu.nasdaq.com/a9787a85fa3ab61bd444ea10dd512a474",
+                    },
+                  ],
                 },
               ],
             },
@@ -51,6 +59,12 @@ describe("Nordic primary-source event enrichment", () => {
     assert.equal(hits.length, 1);
     assert.equal(hits[0]?.sourceKind, "company_primary");
     assert.equal(hits[0]?.publisher, "view.news.eu.nasdaq.com");
+    assert.equal(hits[0]?.category, "Half Year financial report");
+    assert.equal(hits[0]?.attachments.length, 1);
+    assert.equal(
+      hits[0]?.attachments[0]?.url,
+      "https://attachment.news.eu.nasdaq.com/a9787a85fa3ab61bd444ea10dd512a474",
+    );
     assert.match(hits[0]?.snippet ?? "", /Primärkälla/i);
     assert.doesNotMatch(hits[0]?.snippet ?? "", /\d+(\.\d+)?%/);
 
@@ -86,5 +100,49 @@ describe("Nordic primary-source event enrichment", () => {
         }),
     });
     assert.deepEqual(hits, []);
+  });
+
+  it("requests CNS attachments and ignores non-Nasdaq attachment hosts", async () => {
+    let showAttachments: string | null = null;
+    const hits = await fetchNordicPrimarySourceEvents({
+      companyName: "Investor AB",
+      symbol: "INVE-B",
+      exchange: "ST",
+      now: new Date("2026-08-11T07:20:00.000Z"),
+      fetchImpl: async (input) => {
+        const url = new URL(String(input));
+        showAttachments = url.searchParams.get("showAttachments");
+        return Response.json({
+          count: 1,
+          results: {
+            item: [
+              {
+                headline: "Press release",
+                company: "Investor AB",
+                messageUrl: "https://view.news.eu.nasdaq.com/view?id=safe&lang=en&src=listed",
+                releaseTime: "2026-08-11 06:00:00 +0000",
+                market: "Main Market, Stockholm",
+                cnsCategory: "Investor News",
+                attachment: [
+                  {
+                    mimetype: "application/pdf",
+                    fileName: "evil.pdf",
+                    attachmentUrl: "https://evil.example/report.pdf",
+                  },
+                  {
+                    mimetype: "application/pdf",
+                    fileName: "ok.pdf",
+                    attachmentUrl: "https://attachment.news.eu.nasdaq.com/ok-doc",
+                  },
+                ],
+              },
+            ],
+          },
+        });
+      },
+    });
+    assert.equal(showAttachments, "true");
+    assert.equal(hits[0]?.attachments.length, 1);
+    assert.equal(hits[0]?.attachments[0]?.url, "https://attachment.news.eu.nasdaq.com/ok-doc");
   });
 });
