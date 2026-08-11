@@ -5,16 +5,16 @@ type Props = {
 };
 
 /**
- * Compact Learning list thumbnail.
- * Taller than the shared news row crop on mobile so embedded editorial
- * cover headlines remain readable, while keeping a compact desktop chip.
+ * Learning library thumbnail.
+ * Covers use their native 3:2 editorial shape so embedded headlines remain
+ * readable instead of being compressed into a small desktop chip.
  */
 export default function LearningArticleThumbnail({
   imageUrl,
   objectPosition = "center",
 }: Props) {
   return (
-    <div className="h-[168px] w-full shrink-0 overflow-hidden rounded-lg border divlab-border-neutral bg-divlab-surface md:h-[96px] md:w-[156px]">
+    <div className="aspect-[3/2] w-full shrink-0 overflow-hidden rounded-xl border divlab-border-neutral bg-divlab-surface md:w-[270px]">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={imageUrl}
