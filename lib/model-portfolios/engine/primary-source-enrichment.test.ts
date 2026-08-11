@@ -57,7 +57,7 @@ describe("primary source enrichment", () => {
     const enriched = await enrichNordicPrimarySourceHits({
       hits: [baseHit()],
       fetchImpl: async () =>
-        new Response(pdf, {
+        new Response(Buffer.from(pdf), {
           status: 200,
           headers: { "content-type": "application/pdf" },
         }),
@@ -94,7 +94,7 @@ describe("primary source enrichment", () => {
         }),
       ],
       fetchImpl: async () =>
-        new Response(pdf, {
+        new Response(Buffer.from(pdf), {
           status: 200,
           headers: { "content-type": "application/pdf" },
         }),
