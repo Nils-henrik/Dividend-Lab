@@ -9,6 +9,10 @@ const article: LearningArticle = {
   "category": "Privatekonomi",
   "publishedAt": "2026-08-11",
   "updatedAt": "2026-08-11",
+  "coverImage": "/learning/isk-eller-kapitalforsakring.png",
+  "coverImageAlt":
+    "Mörkt skrivbord med laptop, DivLab-mugg, kalkylator och anteckningar framför rubriken ISK eller KF.",
+  "thumbnailObjectPosition": "center top",
   "authorName": "DivLab Redaktion",
   "relatedArticleSlugs": [
     "borja-investera-pa-borsen",
