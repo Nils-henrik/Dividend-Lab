@@ -13,7 +13,6 @@ import {
   newsArticleJsonLd,
 } from "@/lib/seo/json-ld";
 import { getNewsCategoryLabel } from "@/lib/news/categories";
-import { DIVLAB_BRAND_NAME } from "@/lib/site/brand";
 
 type Props = {
   params: Promise<{
@@ -45,7 +44,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     : undefined;
 
   return {
-    title: `${pageTitle} | ${DIVLAB_BRAND_NAME}`,
+    title: pageTitle,
     description,
     ...(article.seoKeywords ? { keywords: article.seoKeywords } : {}),
     alternates: {
