@@ -16,6 +16,7 @@ import { getForumAuthorStats } from "@/lib/forum/forum-status.server";
 import { getAvatarPublicUrl } from "@/lib/profiles/identity";
 import { getPublicProfileByUsername } from "@/lib/profiles/profile";
 import { getStaffRolesForUser } from "@/lib/profiles/staff-roles.server";
+import { isTemporaryUsername } from "@/lib/profiles/username";
 import { getCanonicalUrl } from "@/lib/seo/canonical";
 
 type Props = {
@@ -31,6 +32,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!profile) {
     return {
       title: "Profilen hittades inte | DivLab",
+      robots: { index: false, follow: false },
+    };
+  }
+
+  if (isTemporaryUsername(profile.username)) {
+    return {
+      title: "Medlemsprofil | DivLab",
       robots: { index: false, follow: false },
     };
   }
