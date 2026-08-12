@@ -32,7 +32,7 @@ export {
 const rawArticles: LearningArticle[] = [
   {
     ...hurMycketSparatEfterAlder,
-    coverImage: "/learning/hur-mycket-bor-man-ha-sparat-vid-25-35-45-65.webp",
+    coverImage: "/learning/sparande_genom_livet_med_divlab.png",
     coverImageAlt:
       "Mörkt skrivbord med laptop, miniräknare och anteckningar om sparande vid 25, 35, 45 och 65 år.",
     thumbnailObjectPosition: "center",
