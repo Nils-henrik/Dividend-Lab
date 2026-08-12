@@ -49,6 +49,8 @@ const PROFILE_FOCUS: Record<ModelPortfolioStrategyKey, readonly string[]> = {
   high_risk: [
     "katalysator och sannolik tidslinje",
     "vinst- eller tillväxtacceleration",
+    "fallen-quality/recovery: om kvaliteten är intakt, varför aktien föll och om entryn faktiskt har börjat stabiliseras",
+    "small/mid-cap-möjligheter i Norden och USA, utan att offra likviditet, evidens eller riskkontroll",
     "asymmetri mellan uppsida och nedsida",
     "likviditet, finansieringsrisk och vad som invalidiserar caset",
   ],
