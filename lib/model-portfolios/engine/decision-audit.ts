@@ -6,11 +6,28 @@ import type { ModelPortfolioAiUsage } from "./ai-usage";
 import { MODEL_PORTFOLIO_AI_PROVIDER } from "./ai-usage";
 import { buildInvestorFacingDecisionRationale } from "./decision-narrative";
 import { canonicalizeInstrumentSymbol } from "./instrument-symbol";
-import type { RankedResearchCandidate } from "./research";
+import type {
+  ResearchCandidate,
+  ResearchMarketCapSegment,
+  ResearchRecoverySetup,
+} from "./research";
 
 export const MODEL_PORTFOLIO_PROMPT_VERSION = "portfolio-manager-tools-v2" as const;
 export const MODEL_PORTFOLIO_MODEL_PROVIDER = MODEL_PORTFOLIO_AI_PROVIDER;
 const MODEL_PORTFOLIO_RATIONALE_MAX_CHARS = 2000;
+
+/**
+ * The audit layer only requires the long-standing candidate score contract.
+ * New ranking diagnostics are optional here so historical fixtures and stored
+ * candidate snapshots remain readable while live rankResearchUniverse output
+ * can carry the richer recovery metadata.
+ */
+export type DecisionAuditCandidate = ResearchCandidate & {
+  deterministicScore: number;
+  reasons: readonly string[];
+  marketCapSegment?: ResearchMarketCapSegment;
+  recoverySetup?: ResearchRecoverySetup;
+};
 
 export type DecisionAuditInput = {
   runId: string;
@@ -18,7 +35,7 @@ export type DecisionAuditInput = {
   strategyKey: string;
   decision: ModelPortfolioDecision;
   evidence: readonly ModelPortfolioEvidence[];
-  rankedCandidates: readonly RankedResearchCandidate[];
+  rankedCandidates: readonly DecisionAuditCandidate[];
   modelName: string;
   estimatedCostUsdMicros: number;
   usage: ModelPortfolioAiUsage;
@@ -72,12 +89,14 @@ function latestMarketDataTimestamp(evidence: readonly ModelPortfolioEvidence[]):
   return latest?.iso ?? null;
 }
 
-function candidateAuditSnapshot(candidates: readonly RankedResearchCandidate[]) {
+function candidateAuditSnapshot(candidates: readonly DecisionAuditCandidate[]) {
   return candidates.slice(0, 6).map((candidate) => ({
     symbol: candidate.symbol,
     exchange: candidate.exchange,
     deterministicScore: candidate.deterministicScore,
     reasons: candidate.reasons,
+    marketCapSegment: candidate.marketCapSegment ?? null,
+    recoverySetup: candidate.recoverySetup ?? null,
     marketCapSek: candidate.marketCapSek ?? null,
     avgDailyTurnoverSek: candidate.avgDailyTurnoverSek ?? null,
     priceMomentum20d: candidate.priceMomentum20d ?? null,
