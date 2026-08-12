@@ -29,4 +29,20 @@ describe("model portfolio investment horizons", () => {
       assert.ok(mandate.explicitDoNot.some((item) => /utgångsdatum/.test(item)));
     }
   });
+
+  it("encodes the high-risk fallen-quality recovery playbook", () => {
+    const mandate = buildModelPortfolioSystemMandate("high_risk");
+    assert.match(mandate, /kvalitetsbolag som fallit materiellt/);
+    assert.match(mandate, /Försök inte pricka absoluta botten/);
+    assert.match(mandate, /entry-bekräftelse/);
+    assert.match(mandate, /fallande kniv/);
+  });
+
+  it("prefers Nordic and US small-mid caps without banning exceptional large caps", () => {
+    const mandate = buildModelPortfolioSystemMandate("high_risk");
+    assert.match(mandate, /small- och mid-cap-bolag i Norden/);
+    assert.match(mandate, /Russell-universumet/);
+    assert.match(mandate, /stora amerikanska kvalitetsbolag är fortsatt tillåtna/);
+    assert.match(mandate, /Påstå inte Russell-medlemskap/);
+  });
 });
