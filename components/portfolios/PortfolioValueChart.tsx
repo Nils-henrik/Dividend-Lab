@@ -11,6 +11,11 @@ import {
   YAxis,
 } from "recharts";
 import type { PortfolioValuePoint } from "@/lib/model-portfolios/transparency";
+import {
+  MODEL_PORTFOLIO_CHART_RANGES,
+  filterPortfolioValueHistory,
+  type ModelPortfolioChartRange,
+} from "@/lib/model-portfolios/value-history";
 
 const colorBySlug: Record<string, string> = {
   forsiktig: "#60a5fa",
@@ -34,10 +39,19 @@ function formatAxisSek(value: number): string {
   }).format(value);
 }
 
-function formatChartDate(value: string, expanded: boolean): string {
+function formatChartDate(value: string, expanded: boolean, range: ModelPortfolioChartRange): string {
+  const date = new Date(value);
+  if (range === "1D") {
+    return new Intl.DateTimeFormat("sv-SE", { hour: "2-digit", minute: "2-digit" }).format(date);
+  }
+  if (range === "1Y" || range === "ALL") {
+    return new Intl.DateTimeFormat("sv-SE", expanded
+      ? { day: "2-digit", month: "short", year: "2-digit" }
+      : { month: "short", year: "2-digit" }).format(date);
+  }
   return new Intl.DateTimeFormat("sv-SE", expanded
     ? { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }
-    : { day: "2-digit", month: "short" }).format(new Date(value));
+    : { day: "2-digit", month: "short" }).format(date);
 }
 
 function formatFullDate(value: string): string {
@@ -60,13 +74,15 @@ export default function PortfolioValueChart({
   points: PortfolioValuePoint[];
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [range, setRange] = useState<ModelPortfolioChartRange>("ALL");
   const color = colorBySlug[slug] ?? colorBySlug.forsiktig;
+  const visiblePoints = useMemo(() => filterPortfolioValueHistory(points, range), [points, range]);
   const chartData = useMemo(
-    () => points.map((point) => ({
+    () => visiblePoints.map((point) => ({
       ...point,
       valueSek: point.totalValueMinor / 100,
     })),
-    [points],
+    [visiblePoints],
   );
   const latest = points.at(-1) ?? null;
   const returnPct = latest && latest.contributedCapitalMinor > 0
@@ -99,12 +115,12 @@ export default function PortfolioValueChart({
               </h2>
               {returnPct !== null ? (
                 <span className={returnPct >= 0 ? "text-sm font-semibold text-emerald-400" : "text-sm font-semibold text-red-400"}>
-                  {returnPct >= 0 ? "+" : ""}{returnPct.toFixed(2)}%
+                  {returnPct >= 0 ? "+" : ""}{returnPct.toFixed(2)}% sedan start
                 </span>
               ) : null}
             </div>
             <p className="mt-1 text-xs leading-5 text-divlab-text-muted">
-              Mark-to-market i SEK. Kurvan uppdateras med portföljens senaste marknadsvärde även när AI:n inte gör någon affär.
+              Mark-to-market i SEK. Samma värderingspunkter används här och på portföljöversikten.
             </p>
           </div>
           <button
@@ -117,8 +133,9 @@ export default function PortfolioValueChart({
           </button>
         </div>
 
-        <div className="mt-5 h-[280px] w-full">
-          <ChartBody data={chartData} color={color} expanded={false} slug={slug} />
+        <RangeSelector range={range} onChange={setRange} />
+        <div className="mt-4 h-[280px] w-full">
+          <ChartBody data={chartData} color={color} expanded={false} slug={slug} range={range} />
         </div>
         {latest?.marketDataAsOf ? (
           <p className="mt-2 text-[11px] text-divlab-text-muted">Senaste marknadsdata: {formatFullDate(latest.marketDataAsOf)}</p>
@@ -151,8 +168,9 @@ export default function PortfolioValueChart({
                 Stäng ×
               </button>
             </div>
-            <div className="mt-5 min-h-0 flex-1">
-              <ChartBody data={chartData} color={color} expanded slug={slug} />
+            <RangeSelector range={range} onChange={setRange} />
+            <div className="mt-4 min-h-0 flex-1">
+              <ChartBody data={chartData} color={color} expanded slug={slug} range={range} />
             </div>
             <p className="mt-3 text-xs text-divlab-text-muted">
               Datum och tid visas längs axeln. Värdet består av kassa plus marknadsvärdet på alla innehav till senast tillgängliga kurs och valutakurs.
@@ -164,16 +182,40 @@ export default function PortfolioValueChart({
   );
 }
 
+function RangeSelector({ range, onChange }: { range: ModelPortfolioChartRange; onChange: (range: ModelPortfolioChartRange) => void }) {
+  return (
+    <div className="mt-4 flex flex-wrap gap-1.5" role="group" aria-label="Tidsperiod för värdegraf">
+      {MODEL_PORTFOLIO_CHART_RANGES.map((option) => (
+        <button
+          key={option}
+          type="button"
+          aria-pressed={range === option}
+          onClick={() => onChange(option)}
+          className={`min-w-11 border px-2.5 py-1.5 text-[11px] font-semibold transition ${
+            range === option
+              ? "border-divlab-blue/60 bg-divlab-blue/10 text-divlab-blue"
+              : "divlab-border-neutral text-divlab-text-muted hover:border-white/20 hover:text-divlab-text"
+          }`}
+        >
+          {option}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function ChartBody({
   data,
   color,
   expanded,
   slug,
+  range,
 }: {
   data: Array<PortfolioValuePoint & { valueSek: number }>;
   color: string;
   expanded: boolean;
   slug: string;
+  range: ModelPortfolioChartRange;
 }) {
   if (!data.length) {
     return (
@@ -196,7 +238,7 @@ function ChartBody({
         <CartesianGrid stroke="rgba(148,163,184,0.12)" vertical={false} />
         <XAxis
           dataKey="snapshotAt"
-          tickFormatter={(value) => formatChartDate(String(value), expanded)}
+          tickFormatter={(value) => formatChartDate(String(value), expanded, range)}
           tick={{ fill: "#94a3b8", fontSize: expanded ? 12 : 10 }}
           axisLine={{ stroke: "rgba(148,163,184,0.18)" }}
           tickLine={false}

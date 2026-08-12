@@ -4,6 +4,8 @@ import { getModelPortfolioReadContext } from "@/lib/model-portfolios/read-client
 import type { ModelPortfolioStrategyKey } from "./engine/policy";
 
 export const MODEL_PORTFOLIO_TRADES_PAGE_SIZE = 25;
+const MODEL_PORTFOLIO_SNAPSHOT_PAGE_SIZE = 1000;
+const MODEL_PORTFOLIO_SNAPSHOT_MAX_POINTS = 20_000;
 
 export type PortfolioTransparencyTrade = {
   id: string;
@@ -38,6 +40,21 @@ export type PortfolioValuePoint = {
   marketDataAsOf: string | null;
 };
 
+export type PortfolioTransparencyHolding = {
+  instrumentSymbol: string;
+  exchange: string;
+  instrumentName: string;
+  quantity: number;
+  averageCostMinor: number;
+  purchaseValueMinor: number;
+  lastPriceMinor: number | null;
+  currentValueMinor: number | null;
+  dividendsMinor: number;
+  lastPriceAsOf: string | null;
+  loggedAt: string;
+  accountType: "ISK" | "KF" | null;
+};
+
 export type PortfolioTransparencyDetail = {
   id: string;
   slug: string;
@@ -60,6 +77,7 @@ export type PortfolioTransparencyDetail = {
     createdAt: string;
   } | null;
   valueHistory: PortfolioValuePoint[];
+  holdings: PortfolioTransparencyHolding[];
   trades: PortfolioTransparencyTrade[];
   tradeCount: number;
   page: number;
@@ -154,7 +172,7 @@ export async function loadPortfolioTransparencyDetail(
 
   if (portfolioError || !portfolio) return null;
 
-  const [tradeResult, decisionResult, snapshotResult] = await Promise.all([
+  const [tradeResult, decisionResult, holdingResult, dividendResult] = await Promise.all([
     supabase
       .from("model_portfolio_transactions")
       .select("id,decision_id,transaction_type,instrument_symbol,exchange,instrument_name,quantity,price_minor,gross_amount_minor,fee_minor,currency,executed_at,market_data_as_of,rationale,native_currency,native_price_minor,native_gross_amount_minor,fx_rate_to_sek,fx_as_of,fx_source_publisher,fill_label", { count: "exact" })
@@ -169,14 +187,61 @@ export async function loadPortfolioTransparencyDetail(
       .limit(1)
       .maybeSingle(),
     supabase
+      .from("model_portfolio_holdings")
+      .select("instrument_symbol,exchange,instrument_name,quantity,average_cost_minor,last_price_minor,last_price_as_of,updated_at,account_type")
+      .eq("portfolio_id", portfolio.id)
+      .gt("quantity", 0)
+      .order("instrument_symbol", { ascending: true }),
+    supabase
+      .from("model_portfolio_transactions")
+      .select("instrument_symbol,exchange,gross_amount_minor")
+      .eq("portfolio_id", portfolio.id)
+      .eq("transaction_type", "dividend"),
+  ]);
+
+  if (tradeResult.error || decisionResult.error || holdingResult.error || dividendResult.error) return null;
+
+  const snapshotRows: Record<string, unknown>[] = [];
+  for (let offset = 0; offset < MODEL_PORTFOLIO_SNAPSHOT_MAX_POINTS; offset += MODEL_PORTFOLIO_SNAPSHOT_PAGE_SIZE) {
+    const { data, error } = await supabase
       .from("model_portfolio_snapshots")
       .select("snapshot_at,total_value_minor,cash_value_minor,invested_value_minor,contributed_capital_minor,market_data_as_of")
       .eq("portfolio_id", portfolio.id)
       .order("snapshot_at", { ascending: true })
-      .limit(1000),
-  ]);
+      .range(offset, offset + MODEL_PORTFOLIO_SNAPSHOT_PAGE_SIZE - 1);
+    if (error) return null;
+    const rows = (data ?? []) as Record<string, unknown>[];
+    snapshotRows.push(...rows);
+    if (rows.length < MODEL_PORTFOLIO_SNAPSHOT_PAGE_SIZE) break;
+  }
 
-  if (tradeResult.error || decisionResult.error || snapshotResult.error) return null;
+  const dividendsByHolding = new Map<string, number>();
+  for (const row of (dividendResult.data ?? []) as Record<string, unknown>[]) {
+    const key = `${String(row.instrument_symbol).toUpperCase()}.${String(row.exchange).toUpperCase()}`;
+    dividendsByHolding.set(key, (dividendsByHolding.get(key) ?? 0) + Number(row.gross_amount_minor ?? 0));
+  }
+
+  const holdings: PortfolioTransparencyHolding[] = ((holdingResult.data ?? []) as Record<string, unknown>[]).map((row) => {
+    const quantity = Number(row.quantity);
+    const averageCostMinor = Number(row.average_cost_minor ?? 0);
+    const lastPriceMinor = row.last_price_minor == null ? null : Number(row.last_price_minor);
+    const key = `${String(row.instrument_symbol).toUpperCase()}.${String(row.exchange).toUpperCase()}`;
+    const accountType = row.account_type === "ISK" || row.account_type === "KF" ? row.account_type : null;
+    return {
+      instrumentSymbol: String(row.instrument_symbol),
+      exchange: String(row.exchange),
+      instrumentName: String(row.instrument_name),
+      quantity,
+      averageCostMinor,
+      purchaseValueMinor: Math.round(quantity * averageCostMinor),
+      lastPriceMinor,
+      currentValueMinor: lastPriceMinor === null ? null : Math.round(quantity * lastPriceMinor),
+      dividendsMinor: dividendsByHolding.get(key) ?? 0,
+      lastPriceAsOf: row.last_price_as_of ? String(row.last_price_as_of) : null,
+      loggedAt: String(row.updated_at),
+      accountType,
+    };
+  });
 
   const tradeCount = tradeResult.count ?? 0;
   const pageCount = Math.max(1, Math.ceil(tradeCount / MODEL_PORTFOLIO_TRADES_PAGE_SIZE));
@@ -204,7 +269,8 @@ export async function loadPortfolioTransparencyDetail(
           createdAt: String(decisionResult.data.created_at),
         }
       : null,
-    valueHistory: ((snapshotResult.data ?? []) as Record<string, unknown>[]).map(mapValuePoint),
+    valueHistory: snapshotRows.map(mapValuePoint),
+    holdings,
     trades: ((tradeResult.data ?? []) as Record<string, unknown>[]).map(mapTrade),
     tradeCount,
     page,

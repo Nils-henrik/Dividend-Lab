@@ -36,6 +36,16 @@ describe("DivBrain Response Quality v2", () => {
     assert.match(block.content, /numrerade citeringar/);
   });
 
+  it("teaches multi-factor investment analysis through the financial policy contract", () => {
+    const block = getDivBrainPolicyBlock();
+
+    assert.match(block.content, /affärskvalitet och kassaflöde/);
+    assert.match(block.content, /Värdering är priset på framtida förväntningar/);
+    assert.match(block.content, /nedsidan före uppsidan/);
+    assert.match(block.content, /Sök aktivt efter motbevis/);
+    assert.match(block.content, /ingen metod kan garantera vinst/);
+  });
+
   it("preserves the deterministic current-data and advice boundaries", () => {
     const currentData = getDivBrainPolicyBlock(["require_current_data"]);
     assert.match(currentData.content, /påstå inte livevärden/);
