@@ -49,10 +49,10 @@ export const MODEL_PORTFOLIO_PUBLIC_CATALOG: readonly ModelPortfolioPublicCatalo
     strategyKey: "high_risk",
     riskLabel: "Hög risk",
     horizonLabel: "1 vecka–12 månader",
-    workStyle: "Är den mest opportunistiska portföljen men bedriver inte daytrading. Söker asymmetrisk uppsida, verifierade katalysatorer, tillväxt, estimatförändringar och stark trend och omprövar snabbare när tesen bryts.",
+    workStyle: "Är den mest opportunistiska portföljen men bedriver inte daytrading. Söker både katalysator-/momentumcase och kvalitetsbolag som fallit kraftigt men där fundamenta fortfarande håller. AI:n väntar hellre på en bekräftad entry än försöker fånga absoluta botten och har tydlig preferens för likvida small/mid-cap-bolag i Norden och USA.",
     title: "Högrisk AI-portfölj | DivLab",
-    description: "DivLabs högrisk-AI-portfölj har tidshorisonten 1 vecka–12 månader och söker asymmetrisk uppsida via katalysatorer, tillväxt och momentum inom fasta riskgränser.",
-    summary: "Högrisk arbetar med 1 vecka–12 månaders tidshorisont. AI:n får reagera snabbare på katalysatorer, resultatrevideringar och trendbrott men måste fortfarande passera alla risk- och evidenskrav.",
+    description: "DivLabs högrisk-AI-portfölj söker asymmetrisk uppsida via katalysatorer, small/mid-cap-case och kvalificerade återhämtningscase i kvalitetsbolag inom fasta riskgränser.",
+    summary: "Högrisk arbetar med 1 vecka–12 månaders tidshorisont. AI:n kombinerar katalysatorer och momentum med fallen-quality/recovery-case, prioriterar likvida small/mid caps och kräver entry-bekräftelse innan stora kursfall behandlas som köplägen.",
   },
   {
     slug: "utdelning",

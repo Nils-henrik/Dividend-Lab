@@ -1,5 +1,6 @@
 import "server-only";
 
+import { NORDIC_SMALL_MID_OPPORTUNITY_SEEDS } from "./high-risk-universe";
 import {
   NORDIC_RESEARCH_BOUNDS,
   NORDIC_SEED_UNIVERSE,
@@ -103,6 +104,11 @@ const DEFAULT_SCREENS: YahooDiscoveryScreen[] = ["day_gainers", "day_losers", "m
 const YAHOO_SCREENER_ENDPOINT = "https://query1.finance.yahoo.com/v1/finance/screener/predefined/saved";
 const YAHOO_QUOTE_ENDPOINT = "https://query1.finance.yahoo.com/v7/finance/quote";
 const USER_AGENT = "DivLab/1.0 market-discovery";
+const NORDIC_OPPORTUNITY_MIN_MARKET_CAP_SEK = 1_000_000_000;
+const DEFAULT_NORDIC_DISCOVERY_SEEDS: readonly NordicSeedInstrument[] = [
+  ...NORDIC_SMALL_MID_OPPORTUNITY_SEEDS,
+  ...NORDIC_SEED_UNIVERSE,
+];
 
 function finiteNumber(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
@@ -118,6 +124,18 @@ function sourcePage(screen: YahooDiscoveryScreen): string {
   return "https://finance.yahoo.com/markets/stocks/most-active/";
 }
 
+function smallMidOpportunitySizeScore(marketCap: number | null): number {
+  if (!marketCap || marketCap <= 0) return 0.5;
+  if (marketCap >= 300_000_000 && marketCap <= 20_000_000_000) return 1;
+  if (marketCap <= 60_000_000_000) return 0.6;
+  return 0.2;
+}
+
+/**
+ * Discovery intentionally favors liquid small/mid-cap movers while retaining
+ * enough large-cap representation for the other mandates. Ranking and portfolio
+ * risk gates decide whether a discovered name is actually actionable.
+ */
 function discoveryScore(candidate: {
   changePct: number | null;
   volume: number | null;
@@ -132,10 +150,8 @@ function discoveryScore(candidate: {
   const liquidity = candidate.averageDailyVolume3Month
     ? Math.min(Math.log10(Math.max(candidate.averageDailyVolume3Month, 1)) / 8, 1)
     : 0;
-  const size = candidate.marketCap
-    ? Math.min(Math.log10(Math.max(candidate.marketCap, 1)) / 12, 1)
-    : 0;
-  return move * 0.45 + relativeVolume * 0.25 + liquidity * 0.2 + size * 0.1;
+  const opportunitySize = smallMidOpportunitySizeScore(candidate.marketCap);
+  return move * 0.42 + relativeVolume * 0.24 + liquidity * 0.2 + opportunitySize * 0.14;
 }
 
 function normalizeQuote(quote: YahooQuote, screen: YahooDiscoveryScreen, now: Date): YahooDiscoveryCandidate | null {
@@ -234,8 +250,8 @@ export async function discoverYahooCandidates(options: YahooDiscoveryOptions = {
 }
 
 /**
- * Cheap Nordic discovery: batch-quote a maintained large/mid-cap seed universe,
- * then return a bounded shortlist with SE/NO/FI/DK representation.
+ * Cheap Nordic discovery: batch-quote the maintained universe plus a bounded
+ * small/mid-cap opportunity set, then return a four-country shortlist.
  */
 export async function discoverNordicYahooCandidates(
   options: NordicYahooDiscoveryOptions = {},
@@ -243,7 +259,7 @@ export async function discoverNordicYahooCandidates(
   screened: NordicYahooDiscoveryCandidate[];
   shortlist: NordicYahooDiscoveryCandidate[];
 }> {
-  const seeds = (options.seeds ?? NORDIC_SEED_UNIVERSE).slice(
+  const seeds = (options.seeds ?? DEFAULT_NORDIC_DISCOVERY_SEEDS).slice(
     0,
     Math.max(1, Math.min(options.broadLimit ?? NORDIC_RESEARCH_BOUNDS.broadDiscoveryCandidateCount, 200)),
   );
@@ -253,7 +269,7 @@ export async function discoverNordicYahooCandidates(
   );
   const perCountryMin = options.perCountryMin ?? NORDIC_RESEARCH_BOUNDS.perCountryMinShortlist;
   const perCountryMax = options.perCountryMax ?? NORDIC_RESEARCH_BOUNDS.perCountryMaxShortlist;
-  const minimumMarketCap = Math.max(0, options.minimumMarketCap ?? NORDIC_RESEARCH_BOUNDS.minimumMarketCapSek);
+  const minimumMarketCap = Math.max(0, options.minimumMarketCap ?? NORDIC_OPPORTUNITY_MIN_MARKET_CAP_SEK);
   const minimumAverageDailyVolume = Math.max(
     0,
     options.minimumAverageDailyVolume ?? NORDIC_RESEARCH_BOUNDS.minimumAverageDailyVolume,
@@ -368,7 +384,7 @@ export async function discoverNordicYahooCandidates(
         volume: null,
         averageDailyVolume3Month: null,
         marketCap: null,
-        score: seed.segment === "large_cap" ? 0.2 : 0.1,
+        score: seed.segment === "mid_cap" ? 0.3 : 0.16,
         source: "yahoo_finance" as const,
         sourceUrl: `https://finance.yahoo.com/quote/${encodeURIComponent(toNordicYahooSymbol(seed.symbol, seed.exchange))}`,
         discoveredAt: now.toISOString(),
