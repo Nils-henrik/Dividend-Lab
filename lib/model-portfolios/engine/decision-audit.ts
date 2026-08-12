@@ -47,10 +47,10 @@ export type DecisionAuditRow = {
 };
 
 function databaseDecisionType(action: ModelPortfolioDecision["action"]): "hold" | "buy" | "sell" {
-  // A trim is an investor-facing partial reduction, but the database audit contract
-  // stores executable directions as buy/sell/hold. Keep the original action in
-  // input_snapshot.original_action so no semantics are lost.
-  if (action === "trim") return "sell";
+  // The settlement planner treats buy as the only buy-side action; trim and
+  // rebalance are reductions on the sell side. The DB audit contract only stores
+  // buy/sell/hold, while input_snapshot.original_action preserves the AI action.
+  if (action === "trim" || action === "rebalance") return "sell";
   return action;
 }
 
