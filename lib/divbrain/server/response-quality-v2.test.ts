@@ -7,12 +7,12 @@ import {
   getDivBrainResponseFormatBlock,
 } from "./policy";
 
-describe("DivBrain Response Quality v2", () => {
-  it("uses the v2 direct-first adaptive response contract", () => {
+describe("DivBrain Response Quality v3", () => {
+  it("uses the v3 direct-first adaptive response contract", () => {
     const block = getDivBrainResponseFormatBlock();
 
-    assert.equal(DIVBRAIN_RESPONSE_FORMAT_VERSION, 2);
-    assert.equal(block.version, 2);
+    assert.equal(DIVBRAIN_RESPONSE_FORMAT_VERSION, 3);
+    assert.equal(block.version, 3);
     assert.match(block.content, /Börja med själva svaret/);
     assert.match(block.content, /en enkel definitionsfråga ska normalt besvaras kort/);
     assert.match(block.content, /Gör inte en enkel fråga till en miniartikel/);
@@ -34,6 +34,16 @@ describe("DivBrain Response Quality v2", () => {
     assert.match(block.content, /aktuell verifierad data saknas/);
     assert.match(block.content, /syntetisera relevant innehåll med egna ord/);
     assert.match(block.content, /numrerade citeringar/);
+  });
+
+  it("teaches multi-factor investment analysis without promising outcomes", () => {
+    const block = getDivBrainResponseFormatBlock();
+
+    assert.match(block.content, /affärskvalitet och kassaflöde/);
+    assert.match(block.content, /Värdering är priset på framtida förväntningar/);
+    assert.match(block.content, /nedsidan före uppsidan/);
+    assert.match(block.content, /Sök aktivt efter motbevis/);
+    assert.match(block.content, /ingen metod kan garantera vinst/);
   });
 
   it("preserves the deterministic current-data and advice boundaries", () => {
