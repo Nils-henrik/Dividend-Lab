@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { DelayedQuote } from "./eodhd";
 import { fetchFxRateToSek } from "./fx-adapter";
 import { convertNativeMinorToSek, currencyForExchange, type FxRateQuote, type SupportedFxCurrency } from "./fx";
+import { fetchYahooHistoryResearch, toYahooSymbol } from "./yahoo-research";
 
 export type ValuationHolding = {
   portfolio_id: string;
@@ -31,8 +32,9 @@ async function resolveFx(
 }
 
 /**
- * Mark existing holdings to the latest quote available in the current research pass.
- * Other-market holdings keep their last known SEK price until their own market pass refreshes them.
+ * Mark every existing holding to the freshest Yahoo quote available for the run.
+ * Reuse quotes from the current research pass first; holdings from another market
+ * are fetched explicitly so an hourly AI pass still produces a current portfolio value.
  */
 export async function refreshModelPortfolioHoldingPrices(input: {
   supabase: SupabaseClient;
@@ -41,9 +43,24 @@ export async function refreshModelPortfolioHoldingPrices(input: {
   now: Date;
 }): Promise<void> {
   const fxCache = new Map<SupportedFxCurrency, FxRateQuote | null>();
+  const quoteCache = new Map(input.quotes);
+  const externalQuoteAttempts = new Set<string>();
 
   for (const holding of input.holdings) {
-    const quote = input.quotes.get(instrumentKey(holding.instrument_symbol, holding.exchange));
+    const key = instrumentKey(holding.instrument_symbol, holding.exchange);
+    let quote = quoteCache.get(key);
+
+    if (!quote && !externalQuoteAttempts.has(key)) {
+      externalQuoteAttempts.add(key);
+      const research = await fetchYahooHistoryResearch(
+        toYahooSymbol(holding.instrument_symbol, holding.exchange),
+      );
+      if (research?.quote) {
+        quote = research.quote;
+        quoteCache.set(key, research.quote);
+      }
+    }
+
     if (!quote || quote.close === null || !Number.isFinite(quote.close) || quote.close <= 0) continue;
 
     const nativeCurrency = currencyForExchange(holding.exchange);
