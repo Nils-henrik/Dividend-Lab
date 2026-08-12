@@ -13,8 +13,9 @@ export type SitemapEntry = {
 
 /**
  * Stable public marketing, legal, listing, forum hub and public product paths.
- * Auth, dashboard, settings, messages, profiles and API routes are intentionally omitted.
- * Prefer INDEXABLE_STATIC_PUBLIC_PATHS as the authoritative registry.
+ * Auth, dashboard, settings, messages and API routes are intentionally omitted.
+ * Public profile URLs are discovered dynamically below.
+ * Prefer INDEXABLE_STATIC_PUBLIC_PATHS as the authoritative static registry.
  */
 export const STATIC_PUBLIC_PATHS = INDEXABLE_STATIC_PUBLIC_PATHS;
 
@@ -60,17 +61,21 @@ async function loadDynamicPublicEntries(): Promise<SitemapEntry[]> {
     const [
       { listPublicForumThreadSitemapEntries },
       { listActiveForumCompanySitemapEntries },
+      { listPublicProfileSitemapEntries },
     ] = await Promise.all([
       import("@/lib/seo/sitemap-forum-threads"),
       import("@/lib/seo/sitemap-forum-companies"),
+      import("@/lib/seo/sitemap-profiles"),
     ]);
 
-    const [forumThreadEntries, forumCompanyEntries] = await Promise.all([
-      listPublicForumThreadSitemapEntries(),
-      listActiveForumCompanySitemapEntries(),
-    ]);
+    const [forumThreadEntries, forumCompanyEntries, profileEntries] =
+      await Promise.all([
+        listPublicForumThreadSitemapEntries(),
+        listActiveForumCompanySitemapEntries(),
+        listPublicProfileSitemapEntries(),
+      ]);
 
-    return [...forumThreadEntries, ...forumCompanyEntries];
+    return [...forumThreadEntries, ...forumCompanyEntries, ...profileEntries];
   } catch {
     // Fail-soft outside the Next.js server runtime (unit tests) or when DB is unavailable.
     return [];

@@ -11,7 +11,11 @@ import sitemap from "@/app/sitemap";
 import { learningArticles } from "@/data/learning";
 import { MODEL_PORTFOLIO_INDEXABLE_PATHS } from "@/lib/model-portfolios/public";
 import { getNewsArticlesWithSlug } from "@/lib/news/get-articles";
-import { ROBOTS_DISALLOW_PATHS } from "@/lib/seo/robots-policy";
+import { isTemporaryUsername } from "@/lib/profiles/username";
+import {
+  ROBOTS_DISALLOW_PATHS,
+  isPathBlockedByRobotsPolicy,
+} from "@/lib/seo/robots-policy";
 import {
   REQUIRED_INDEXABLE_PRODUCT_PATHS,
   STATIC_PUBLIC_PATHS,
@@ -93,16 +97,11 @@ describe("buildSitemapEntries", () => {
 
     for (const url of urls) {
       const path = url.slice(PRODUCTION_SITE_ORIGIN.length) || "/";
-      for (const prefix of ROBOTS_DISALLOW_PATHS) {
-        const isPrivate =
-          path === prefix ||
-          path.startsWith(prefix.endsWith("/") ? prefix : `${prefix}/`);
-        assert.equal(
-          isPrivate,
-          false,
-          `unexpected private route in sitemap: ${url}`,
-        );
-      }
+      assert.equal(
+        isPathBlockedByRobotsPolicy(path),
+        false,
+        `unexpected robots-blocked route in sitemap: ${url}`,
+      );
     }
 
     assert.equal(
@@ -150,6 +149,77 @@ describe("buildSitemapEntries", () => {
       );
       assert.ok(entry?.images?.length, `missing learning image ${article.slug}`);
     }
+  });
+});
+
+describe("public profile SEO contract", () => {
+  it("distinguishes temporary onboarding usernames from settled public usernames", () => {
+    assert.equal(isTemporaryUsername("u_a9d10b2f8ead"), true);
+    assert.equal(isTemporaryUsername("U_A9D10B2F8EAD"), true);
+    assert.equal(isTemporaryUsername("karlsson"), false);
+    assert.equal(isTemporaryUsername("divlab_mod"), false);
+    assert.equal(isTemporaryUsername(null), false);
+  });
+});
+
+describe("robots indexability contract", () => {
+  it("never blocks registered indexable static routes", () => {
+    for (const path of STATIC_PUBLIC_PATHS) {
+      assert.equal(
+        isPathBlockedByRobotsPolicy(path),
+        false,
+        `public route is accidentally blocked by robots prefix: ${path}`,
+      );
+    }
+  });
+
+  it("keeps public profiles and AI portfolio routes crawlable", () => {
+    const publicPaths = [
+      "/profile/divlab_mod",
+      "/portfolios",
+      "/portfolios/sa-fungerar-ai-processen",
+      "/portfolios/forsiktig",
+      "/portfolios/medelrisk",
+      "/portfolios/hog-risk",
+      "/portfolios/utdelning",
+    ];
+
+    for (const path of publicPaths) {
+      assert.equal(
+        isPathBlockedByRobotsPolicy(path),
+        false,
+        `expected public route to remain crawlable: ${path}`,
+      );
+    }
+  });
+
+  it("keeps private app surfaces blocked", () => {
+    const privatePaths = [
+      "/dashboard",
+      "/dashboard/overview",
+      "/messages",
+      "/messages/example",
+      "/notifications",
+      "/notifications/example",
+      "/account",
+      "/settings",
+      "/watchlist",
+      "/brain",
+      "/api/example",
+    ];
+
+    for (const path of privatePaths) {
+      assert.equal(
+        isPathBlockedByRobotsPolicy(path),
+        true,
+        `expected private route to remain robots-blocked: ${path}`,
+      );
+    }
+  });
+
+  it("does not reintroduce the legacy /portfolio prefix collision", () => {
+    assert.equal(new Set<string>(ROBOTS_DISALLOW_PATHS).has("/portfolio"), false);
+    assert.equal(isPathBlockedByRobotsPolicy("/portfolios"), false);
   });
 });
 

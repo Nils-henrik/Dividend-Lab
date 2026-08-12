@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import AppShell from "@/components/layout/AppShell";
 import PublicProfileView from "@/components/profile/PublicProfileView";
@@ -15,12 +16,52 @@ import { getForumAuthorStats } from "@/lib/forum/forum-status.server";
 import { getAvatarPublicUrl } from "@/lib/profiles/identity";
 import { getPublicProfileByUsername } from "@/lib/profiles/profile";
 import { getStaffRolesForUser } from "@/lib/profiles/staff-roles.server";
+import { isTemporaryUsername } from "@/lib/profiles/username";
+import { getCanonicalUrl } from "@/lib/seo/canonical";
 
 type Props = {
   params: Promise<{
     username: string;
   }>;
 };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { username } = await params;
+  const profile = await getPublicProfileByUsername(username);
+
+  if (!profile) {
+    return {
+      title: "Profilen hittades inte | DivLab",
+      robots: { index: false, follow: false },
+    };
+  }
+
+  if (isTemporaryUsername(profile.username)) {
+    return {
+      title: "Medlemsprofil | DivLab",
+      robots: { index: false, follow: false },
+    };
+  }
+
+  const profileLabel = profile.displayName?.trim() || `@${profile.username}`;
+  const title = `${profileLabel} | DivLab`;
+  const description = `Se ${profileLabel} på DivLab: publik medlemsprofil, forumaktivitet och investerarprofil.`;
+  const canonical = getCanonicalUrl(`/profile/${profile.username}`);
+
+  return {
+    title: { absolute: title },
+    description,
+    robots: { index: true, follow: true },
+    alternates: { canonical },
+    openGraph: {
+      title,
+      description,
+      url: canonical,
+      type: "profile",
+      locale: "sv_SE",
+    },
+  };
+}
 
 function ProfileNotFound() {
   return (
