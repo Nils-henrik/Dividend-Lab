@@ -207,7 +207,7 @@ describe("robots indexability contract", () => {
   });
 
   it("does not reintroduce the legacy /portfolio prefix collision", () => {
-    assert.equal(ROBOTS_DISALLOW_PATHS.includes("/portfolio"), false);
+    assert.equal(new Set<string>(ROBOTS_DISALLOW_PATHS).has("/portfolio"), false);
     assert.equal(isPathBlockedByRobotsPolicy("/portfolios"), false);
   });
 });
