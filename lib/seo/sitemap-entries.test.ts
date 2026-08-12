@@ -11,6 +11,7 @@ import sitemap from "@/app/sitemap";
 import { learningArticles } from "@/data/learning";
 import { MODEL_PORTFOLIO_INDEXABLE_PATHS } from "@/lib/model-portfolios/public";
 import { getNewsArticlesWithSlug } from "@/lib/news/get-articles";
+import { isTemporaryUsername } from "@/lib/profiles/username";
 import {
   ROBOTS_DISALLOW_PATHS,
   isPathBlockedByRobotsPolicy,
@@ -148,6 +149,16 @@ describe("buildSitemapEntries", () => {
       );
       assert.ok(entry?.images?.length, `missing learning image ${article.slug}`);
     }
+  });
+});
+
+describe("public profile SEO contract", () => {
+  it("distinguishes temporary onboarding usernames from settled public usernames", () => {
+    assert.equal(isTemporaryUsername("u_a9d10b2f8ead"), true);
+    assert.equal(isTemporaryUsername("U_A9D10B2F8EAD"), true);
+    assert.equal(isTemporaryUsername("karlsson"), false);
+    assert.equal(isTemporaryUsername("divlab_mod"), false);
+    assert.equal(isTemporaryUsername(null), false);
   });
 });
 
