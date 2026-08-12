@@ -106,6 +106,18 @@ export const NEWS_SEO_OVERRIDES: Record<string, NewsSeoOverride> = {
  * These are deliberately factual and evergreen; article bodies remain unchanged.
  */
 export const LEARNING_SEO_OVERRIDES: Record<string, LearningSeoOverride> = {
+  "hur-mycket-bor-man-ha-sparat-vid-25-35-45-65": {
+    seoTitle: "Hur mycket bör man ha sparat vid 25, 35, 45 och 65?",
+    description:
+      "Hur mycket pengar bör man ha sparat vid 25, 35, 45 och 65? Jämför olika åldrar och se hur sparande, pension och risk kan förändras genom livet.",
+    relatedArticleSlugs: [
+      "sparkvot-budgetera-lonen-i-procent",
+      "ranta-pa-ranta",
+      "fire-ekonomisk-frihet",
+      "borja-investera-pa-borsen",
+      "ta-kontroll-over-premiepensionen",
+    ],
+  },
   "borja-investera-pa-borsen": {
     seoTitle: "Börja investera på börsen: guide för nybörjare 2026",
     description:
