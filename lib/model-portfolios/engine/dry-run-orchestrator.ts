@@ -112,7 +112,7 @@ function buildPortfolioSnapshot(input: {
     `Tillgänglig modellkassa (minor SEK): ${input.cashMinor}`,
     "Handelsregel: simuleringen köper och säljer endast hela aktier; fraktionerade aktier är inte tillåtna.",
     "Nya köpkandidater har förfiltrerats så att minst en hel aktie kan köpas utan att bryta mot kassa-, positions- eller equity-regler.",
-    "Courtage: 0,00 SEK för både köp och sälj i DivLabs modellportföljer.",
+    "Courtage: 10,00 SEK per genomfört köp och 0,00 SEK vid sälj i DivLabs modellportföljer.",
     "Befintliga innehav:",
     ...holdingLines,
   ].join("\n");
