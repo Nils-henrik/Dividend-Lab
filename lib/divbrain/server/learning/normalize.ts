@@ -33,6 +33,7 @@ const STOPWORDS = new Set([
   "eller",
   "för",
   "från",
+  "ha",
   "har",
   "hur",
   "här",
