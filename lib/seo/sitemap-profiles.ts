@@ -1,5 +1,6 @@
 import "server-only";
 
+import { isTemporaryUsername } from "@/lib/profiles/username";
 import { createClient } from "@/lib/supabase/server";
 import { absoluteUrl } from "@/lib/seo/site";
 
@@ -22,8 +23,8 @@ function parseReliableDate(value: string | null): Date | undefined {
 
 /**
  * Fail-soft discovery of public member profiles for the canonical sitemap.
- * Profiles are publicly readable by product policy; private account surfaces
- * remain excluded separately through robots and sitemap registries.
+ * Profiles are publicly readable by product policy; temporary onboarding
+ * identities are omitted until the member has selected a real username.
  */
 export async function listPublicProfileSitemapEntries(): Promise<
   SitemapEntry[]
@@ -43,7 +44,7 @@ export async function listPublicProfileSitemapEntries(): Promise<
 
     return (data ?? []).flatMap((row) => {
       const username = row.username?.trim().toLowerCase();
-      if (!username) return [];
+      if (!username || isTemporaryUsername(username)) return [];
 
       return [
         {
