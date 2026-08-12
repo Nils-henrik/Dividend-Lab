@@ -32,6 +32,13 @@ describe("DivBrain Intelligence v2 Learning retrieval", () => {
     ]);
   });
 
+  it("drops generic Swedish function words that could invent retrieval relevance", () => {
+    assert.deepEqual(
+      tokenizeDivBrainLearningText("vilket däcktryck ska en personbil ha"),
+      ["däcktryck", "personbil"],
+    );
+  });
+
   it("recognizes only long conservative Swedish compound prefixes", () => {
     assert.equal(
       countLongCompoundTokenOverlap(
