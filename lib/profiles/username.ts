@@ -1,4 +1,5 @@
 export const USERNAME_PATTERN = /^[a-z0-9_]{3,20}$/;
+export const TEMPORARY_USERNAME_PATTERN = /^u_[0-9a-f]{12}$/;
 
 export const RESERVED_USERNAMES = [
   "divlab",
@@ -41,6 +42,11 @@ export function isReservedUsername(username: string) {
   return (RESERVED_USERNAMES as readonly string[]).includes(username);
 }
 
+export function isTemporaryUsername(value: string | null | undefined): boolean {
+  const username = normalizeUsername(value);
+  return username !== null && TEMPORARY_USERNAME_PATTERN.test(username);
+}
+
 export function createTemporaryUsername() {
   const hex = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
   return `u_${hex}`;
@@ -74,7 +80,7 @@ export function validateUsername(
   if (isReservedUsername(username)) {
     return {
       ok: false,
-      error: "Det användarnamnet är reserverat. Välj ett annat.",
+      error: "Det användarnamnet är redan upptaget. Välj ett annat.",
     };
   }
 
