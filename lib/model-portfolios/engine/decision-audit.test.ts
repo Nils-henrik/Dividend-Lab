@@ -205,6 +205,52 @@ describe("model portfolio decision audit", () => {
     assert.equal(row.input_snapshot.original_action, "trim");
   });
 
+  it("stores rebalance on the sell side while preserving the original action", () => {
+    const row = buildDecisionAuditRow({
+      runId: "run-rebalance",
+      portfolioId: "portfolio-rebalance",
+      strategyKey: "balanced",
+      decision: {
+        action: "rebalance",
+        symbol: "EVO",
+        exchange: "ST",
+        instrumentName: "Evolution AB",
+        proposedPortfolioPct: 7,
+        convictionScore: 0.68,
+        materialThesisBreak: false,
+        thesis: "Portfolio concentration has risen enough to justify reducing the position toward its target weight.",
+        bearCase: "Leaving concentration unchanged can make portfolio risk depend too heavily on one holding.",
+        catalyst: "Rebalancing restores the intended portfolio risk distribution.",
+        valuationView: "The case remains investable, but the current weight is above the preferred risk allocation.",
+        keyRisks: ["Concentration risk remains elevated without a reduction"],
+        evidenceIds: ["market:INVE-B"],
+        disconfirmingEvidenceIds: ["market:VOLV-B"],
+        rationale: "Reduce the position toward its intended portfolio weight while retaining exposure to the underlying thesis.",
+      },
+      evidence,
+      rankedCandidates,
+      modelName: "openai/gpt-5.6-luna",
+      estimatedCostUsdMicros: 1000,
+      usage: {
+        provider: "vercel-ai-gateway",
+        model: "openai/gpt-5.6-luna",
+        inputTokens: 800,
+        cachedInputTokens: null,
+        outputTokens: 150,
+        totalTokens: 950,
+        estimatedCostUsdMicros: 1000,
+        costSource: "catalog_estimate",
+        timestamp: "2026-08-12T09:00:00.000Z",
+        runId: "run-rebalance",
+      },
+      portfolioSnapshot: "holding=EVO",
+      executionAllowed: false,
+    });
+
+    assert.equal(row.decision_type, "sell");
+    assert.equal(row.input_snapshot.original_action, "rebalance");
+  });
+
   it("caps rationale at the database character limit without splitting Unicode characters", () => {
     const longRationale = "🚀".repeat(2100);
     const row = buildDecisionAuditRow({
