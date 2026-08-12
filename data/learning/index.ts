@@ -30,7 +30,13 @@ export {
 } from "./reading-time";
 
 const rawArticles: LearningArticle[] = [
-  hurMycketSparatEfterAlder,
+  {
+    ...hurMycketSparatEfterAlder,
+    coverImage: "/learning/hur-mycket-bor-man-ha-sparat-vid-25-35-45-65.webp",
+    coverImageAlt:
+      "Mörkt skrivbord med laptop, miniräknare och anteckningar om sparande vid 25, 35, 45 och 65 år.",
+    thumbnailObjectPosition: "center",
+  },
   iskEllerKapitalforsakring,
   rantaPaRanta,
   peTal,
