@@ -1,5 +1,6 @@
 import Link from "next/link";
 import MarketLiveBadge from "@/components/portfolios/MarketLiveBadge";
+import PortfolioHoldingsOverview from "@/components/portfolios/PortfolioHoldingsOverview";
 import PortfolioValueChart from "@/components/portfolios/PortfolioValueChart";
 import { MODEL_PORTFOLIO_MANDATES } from "@/lib/model-portfolios/engine/mandates";
 import { resolveMarketLiveStatus } from "@/lib/model-portfolios/engine/market-status";
@@ -55,6 +56,8 @@ export default function PortfolioDetailView({ detail }: { detail: PortfolioTrans
       </section>
 
       <PortfolioValueChart slug={detail.slug} portfolioName={detail.name} points={detail.valueHistory} />
+
+      <PortfolioHoldingsOverview holdings={detail.holdings} showAccount={showDividendAccount} />
 
       <section className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="border divlab-border-neutral bg-divlab-surface/45 px-5 py-6 sm:px-7">
