@@ -2,6 +2,7 @@ import borjaInvestera from "./articles/borja-investera-pa-borsen";
 import direktavkastning from "./articles/direktavkastning-och-utdelningssakerhet";
 import etf from "./articles/vad-ar-en-etf";
 import fireEkonomiskFrihet from "./articles/fire-ekonomisk-frihet";
+import hurMycketSparatEfterAlder from "./articles/hur-mycket-bor-man-ha-sparat-vid-25-35-45-65";
 import iskEllerKapitalforsakring from "./articles/isk-eller-kapitalforsakring";
 import peTal from "./articles/pe-tal-vad-betyder-det";
 import premiepension from "./articles/ta-kontroll-over-premiepensionen";
@@ -29,6 +30,7 @@ export {
 } from "./reading-time";
 
 const rawArticles: LearningArticle[] = [
+  hurMycketSparatEfterAlder,
   iskEllerKapitalforsakring,
   rantaPaRanta,
   peTal,
