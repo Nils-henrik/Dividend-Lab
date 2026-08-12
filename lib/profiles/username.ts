@@ -80,7 +80,7 @@ export function validateUsername(
   if (isReservedUsername(username)) {
     return {
       ok: false,
-      error: "Det användarnamnet är redan upptaget. Välj ett annat.",
+      error: "Det användarnamnet är reserverat. Välj ett annat.",
     };
   }
 
