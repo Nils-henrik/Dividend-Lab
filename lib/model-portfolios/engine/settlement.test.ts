@@ -162,7 +162,7 @@ describe("model portfolio simulated settlement", () => {
     assert.equal(plan.reason, "fx_unavailable");
   });
 
-  it("updates holdings and cash on sell and charges exactly SEK 10 courtage", () => {
+  it("updates holdings and cash on sell without buy-side courtage", () => {
     const plan = planSimulatedSettlement({
       ...baseBuyInput,
       side: "sell",
@@ -178,8 +178,8 @@ describe("model portfolio simulated settlement", () => {
     if (!plan.ok) return;
     assert.equal(plan.quantity, 10);
     assert.equal(plan.quantityAfter, 0);
-    assert.equal(plan.feeSekMinor, 1_000);
-    assert.equal(plan.cashDeltaMinor, plan.grossAmountSekMinor - 1_000);
+    assert.equal(plan.feeSekMinor, 0);
+    assert.equal(plan.cashDeltaMinor, plan.grossAmountSekMinor);
   });
 
   it("treats duplicate settlement plans as identical for the same inputs", () => {
