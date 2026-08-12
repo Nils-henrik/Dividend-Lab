@@ -44,6 +44,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: pageTitle,
     description: article.description,
+    authors: [{ name: article.authorName ?? "DivLab Redaktion" }],
     alternates: {
       canonical,
     },

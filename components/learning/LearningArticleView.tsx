@@ -29,6 +29,14 @@ function MetadataIcon({ children }: { children: ReactNode }) {
   );
 }
 
+function MetadataSeparator() {
+  return (
+    <span aria-hidden="true" className="text-divlab-text-subtle">
+      ·
+    </span>
+  );
+}
+
 function LearningArticleBreadcrumb({ category }: { category?: string }) {
   return (
     <nav aria-label="Brödsmulor">
@@ -98,9 +106,14 @@ function LearningArticleRelatedAside({
 export default function LearningArticleView({ article }: Props) {
   const introParagraphs = getIntroParagraphs(article.intro);
   const showDefaultDisclaimer = article.showDefaultDisclaimer ?? true;
+  const formattedPublishedAt = article.publishedAt
+    ? formatLearningArticleDate(article.publishedAt)
+    : null;
   const formattedUpdatedAt = article.updatedAt
     ? formatLearningArticleDate(article.updatedAt)
     : null;
+  const showUpdatedAt =
+    Boolean(formattedUpdatedAt) && article.updatedAt !== article.publishedAt;
   const relatedArticles = getRelatedLearningArticles(
     article.slug,
     article.relatedArticleSlugs,
@@ -140,20 +153,35 @@ export default function LearningArticleView({ article }: Props) {
             </MetadataIcon>
             {article.readingMinutes} min läsning
           </span>
-          {formattedUpdatedAt && (
+          {formattedPublishedAt && article.publishedAt && (
             <>
-              <span aria-hidden="true" className="text-divlab-text-subtle">
-                ·
-              </span>
-              <span className="inline-flex items-center gap-2">
+              <MetadataSeparator />
+              <time
+                dateTime={article.publishedAt}
+                className="inline-flex items-center gap-2"
+              >
                 <MetadataIcon>
                   <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.5">
                     <path d="M3 2.75h10v11.5H3z" strokeLinejoin="round" />
                     <path d="M3 5.75h10M5.5 1.5v2.5M10.5 1.5v2.5" strokeLinecap="round" />
                   </svg>
                 </MetadataIcon>
-                Uppdaterad: {formattedUpdatedAt}
-              </span>
+                Publicerad {formattedPublishedAt}
+              </time>
+            </>
+          )}
+          {showUpdatedAt && formattedUpdatedAt && article.updatedAt && (
+            <>
+              <MetadataSeparator />
+              <time dateTime={article.updatedAt}>
+                Uppdaterad {formattedUpdatedAt}
+              </time>
+            </>
+          )}
+          {article.authorName && (
+            <>
+              <MetadataSeparator />
+              <span>{article.authorName}</span>
             </>
           )}
         </div>

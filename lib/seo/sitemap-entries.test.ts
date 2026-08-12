@@ -81,6 +81,10 @@ describe("buildSitemapEntries", () => {
     for (const entry of await buildSitemapEntries()) {
       assert.match(entry.url, /^https:\/\/divlab\.se(\/|$)/);
       assert.doesNotMatch(entry.url, /vercel\.app|www\.divlab\.se/i);
+
+      for (const image of entry.images ?? []) {
+        assert.match(image, /^https:\/\//);
+      }
     }
   });
 
@@ -90,8 +94,6 @@ describe("buildSitemapEntries", () => {
     for (const url of urls) {
       const path = url.slice(PRODUCTION_SITE_ORIGIN.length) || "/";
       for (const prefix of ROBOTS_DISALLOW_PATHS) {
-        // Match exact path or a true path-segment prefix so /portfolio does not
-        // falsely exclude the public /portfolios product hub.
         const isPrivate =
           path === prefix ||
           path.startsWith(prefix.endsWith("/") ? prefix : `${prefix}/`);
@@ -110,13 +112,10 @@ describe("buildSitemapEntries", () => {
     assert.ok(urls.includes("https://divlab.se/portfolios"));
   });
 
-  it("sets lastModified only from reliable article dates", async () => {
+  it("sets lastModified from the latest reliable editorial date", async () => {
     const entries = await buildSitemapEntries();
-    const newsWithDates = getNewsArticlesWithSlug().filter((article) =>
-      Boolean(article.publishedAt),
-    );
 
-    for (const article of newsWithDates) {
+    for (const article of getNewsArticlesWithSlug()) {
       const entry = entries.find(
         (item) => item.url === absoluteUrl(`/news/${article.slug}`),
       );
@@ -124,13 +123,33 @@ describe("buildSitemapEntries", () => {
       assert.ok(entry.lastModified instanceof Date);
       assert.equal(
         entry.lastModified?.toISOString(),
-        new Date(article.publishedAt).toISOString(),
+        new Date(article.updatedAt ?? article.publishedAt).toISOString(),
       );
     }
 
     const staticHome = entries.find((entry) => entry.url === absoluteUrl("/"));
     assert.ok(staticHome);
     assert.equal(staticHome.lastModified, undefined);
+  });
+
+  it("adds crawlable article images to the canonical sitemap", async () => {
+    const entries = await buildSitemapEntries();
+
+    for (const article of getNewsArticlesWithSlug().filter(
+      (item) => item.imageUrl,
+    )) {
+      const entry = entries.find(
+        (item) => item.url === absoluteUrl(`/news/${article.slug}`),
+      );
+      assert.ok(entry?.images?.length, `missing news image ${article.slug}`);
+    }
+
+    for (const article of learningArticles.filter((item) => item.coverImage)) {
+      const entry = entries.find(
+        (item) => item.url === absoluteUrl(`/learning/${article.slug}`),
+      );
+      assert.ok(entry?.images?.length, `missing learning image ${article.slug}`);
+    }
   });
 });
 
@@ -143,9 +162,12 @@ describe("Next.js metadata routes", () => {
     );
   });
 
-  it("robots() allows public crawling and references the production sitemap", () => {
+  it("robots() allows public crawling and references both production sitemaps", () => {
     const config = robots();
-    assert.equal(config.sitemap, "https://divlab.se/sitemap.xml");
+    assert.deepEqual(config.sitemap, [
+      "https://divlab.se/sitemap.xml",
+      "https://divlab.se/news-sitemap.xml",
+    ]);
     assert.equal(config.host, "https://divlab.se");
 
     const rules = Array.isArray(config.rules) ? config.rules[0] : config.rules;

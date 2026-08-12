@@ -7,5 +7,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return entries.map((entry) => ({
     url: entry.url,
     ...(entry.lastModified ? { lastModified: entry.lastModified } : {}),
+    ...(entry.images?.length ? { images: entry.images } : {}),
   }));
 }

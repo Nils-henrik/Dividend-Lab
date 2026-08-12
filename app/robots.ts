@@ -5,7 +5,7 @@ import { PRODUCTION_SITE_ORIGIN } from "@/lib/seo/site";
 
 /**
  * Allow public crawling while blocking authenticated, private and non-indexable areas.
- * Sitemap is always the canonical production endpoint.
+ * Advertise both the canonical sitemap and the rolling Google News sitemap.
  */
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -14,7 +14,10 @@ export default function robots(): MetadataRoute.Robots {
       allow: "/",
       disallow: [...ROBOTS_DISALLOW_PATHS],
     },
-    sitemap: `${PRODUCTION_SITE_ORIGIN}/sitemap.xml`,
+    sitemap: [
+      `${PRODUCTION_SITE_ORIGIN}/sitemap.xml`,
+      `${PRODUCTION_SITE_ORIGIN}/news-sitemap.xml`,
+    ],
     host: PRODUCTION_SITE_ORIGIN,
   };
 }

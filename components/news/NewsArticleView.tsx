@@ -23,6 +23,14 @@ function MetadataIcon({ children }: { children: ReactNode }) {
   );
 }
 
+function MetadataSeparator() {
+  return (
+    <span aria-hidden="true" className="text-divlab-text-subtle">
+      ·
+    </span>
+  );
+}
+
 function NewsArticleBreadcrumb({ category }: { category: NewsArticle["category"] }) {
   return (
     <nav aria-label="Brödsmulor">
@@ -51,6 +59,8 @@ export default function NewsArticleView({ article }: Props) {
   const sections = article.sections ?? [];
   const sources = article.sources ?? [];
   const showDisclaimer = article.showDisclaimer ?? false;
+  const showUpdatedAt =
+    Boolean(article.updatedAt) && article.updatedAt !== article.publishedAt;
 
   return (
     <article className="mx-auto w-full max-w-3xl space-y-8 px-4 sm:px-6 lg:px-8">
@@ -109,25 +119,25 @@ export default function NewsArticleView({ article }: Props) {
         </p>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-divlab-text-muted">
           {article.readingMinutes != null && (
-            <span className="inline-flex items-center gap-2">
-              <MetadataIcon>
-                <svg
-                  viewBox="0 0 16 16"
-                  className="h-4 w-4"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                >
-                  <circle cx="8" cy="8" r="6.25" />
-                  <path d="M8 4.5V8l2.25 2.25" strokeLinecap="round" />
-                </svg>
-              </MetadataIcon>
-              {article.readingMinutes} min läsning
-            </span>
+            <>
+              <span className="inline-flex items-center gap-2">
+                <MetadataIcon>
+                  <svg
+                    viewBox="0 0 16 16"
+                    className="h-4 w-4"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                  >
+                    <circle cx="8" cy="8" r="6.25" />
+                    <path d="M8 4.5V8l2.25 2.25" strokeLinecap="round" />
+                  </svg>
+                </MetadataIcon>
+                {article.readingMinutes} min läsning
+              </span>
+              <MetadataSeparator />
+            </>
           )}
-          <span aria-hidden="true" className="text-divlab-text-subtle">
-            ·
-          </span>
           <time dateTime={article.publishedAt} className="inline-flex items-center gap-2">
             <MetadataIcon>
               <svg
@@ -144,11 +154,17 @@ export default function NewsArticleView({ article }: Props) {
                 />
               </svg>
             </MetadataIcon>
-            {formatNewsPublishedAt(article.publishedAt)}
+            Publicerad {formatNewsPublishedAt(article.publishedAt)}
           </time>
-          <span aria-hidden="true" className="text-divlab-text-subtle">
-            ·
-          </span>
+          {showUpdatedAt && article.updatedAt && (
+            <>
+              <MetadataSeparator />
+              <time dateTime={article.updatedAt}>
+                Uppdaterad {formatNewsPublishedAt(article.updatedAt)}
+              </time>
+            </>
+          )}
+          <MetadataSeparator />
           <span>{article.source}</span>
         </div>
       </header>

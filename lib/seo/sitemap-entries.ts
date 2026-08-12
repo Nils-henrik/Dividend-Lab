@@ -8,6 +8,7 @@ import { absoluteUrl } from "@/lib/seo/site";
 export type SitemapEntry = {
   url: string;
   lastModified?: Date;
+  images?: string[];
 };
 
 /**
@@ -28,6 +29,14 @@ function parseReliableDate(value: string | undefined): Date | undefined {
   }
 
   return parsed;
+}
+
+function absoluteAssetUrl(value: string | null | undefined): string | undefined {
+  if (!value?.trim()) {
+    return undefined;
+  }
+
+  return value.startsWith("http") ? value : absoluteUrl(value);
 }
 
 function uniqueByUrl(entries: SitemapEntry[]): SitemapEntry[] {
@@ -86,22 +95,31 @@ export async function buildSitemapEntries(): Promise<SitemapEntry[]> {
         return [];
       }
 
-      // News articles currently expose publishedAt only; do not fabricate updatedAt.
+      const imageUrl = absoluteAssetUrl(article.imageUrl);
+
       return [
         {
           url: absoluteUrl(`/news/${article.slug}`),
-          lastModified: parseReliableDate(article.publishedAt),
+          lastModified:
+            parseReliableDate(article.updatedAt) ??
+            parseReliableDate(article.publishedAt),
+          ...(imageUrl ? { images: [imageUrl] } : {}),
         },
       ];
     },
   );
 
-  const learningEntries: SitemapEntry[] = learningArticles.map((article) => ({
-    url: absoluteUrl(`/learning/${article.slug}`),
-    lastModified:
-      parseReliableDate(article.updatedAt) ??
-      parseReliableDate(article.publishedAt),
-  }));
+  const learningEntries: SitemapEntry[] = learningArticles.map((article) => {
+    const imageUrl = absoluteAssetUrl(article.coverImage);
+
+    return {
+      url: absoluteUrl(`/learning/${article.slug}`),
+      lastModified:
+        parseReliableDate(article.updatedAt) ??
+        parseReliableDate(article.publishedAt),
+      ...(imageUrl ? { images: [imageUrl] } : {}),
+    };
+  });
 
   const dynamicEntries = await loadDynamicPublicEntries();
 

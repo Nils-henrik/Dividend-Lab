@@ -20,12 +20,13 @@ import { SINCH_RASAR_EFTER_Q2_RAPPORTEN_2026_ARTICLE } from "@/data/news-article
 import { SIVERS_RUSAR_AI_FOTONIK_USA_IMPORTREGLER_ARTICLE } from "@/data/news-articles/sivers-rusar-ai-fotonik-usa-importregler";
 import { UKRAINA_WILDBERRIES_RYSSLAND_BENSIN_INFLATION_ARTICLE } from "@/data/news-articles/ukraina-wildberries-ryssland-bensin-inflation";
 import { USA_BORSEN_FALLER_ALPHABET_TESLA_OLJA_ARTICLE } from "@/data/news-articles/usa-borsen-faller-alphabet-tesla-olja";
+import { applyNewsSearchSeo } from "@/lib/seo/editorial-content";
 
 /**
  * Published Börsnyheter articles.
  * Image assets currently live under /public/news-demo/ for historical path stability.
  */
-export const DEMO_NEWS_ARTICLES: NewsArticle[] = [
+const PUBLISHED_NEWS_ARTICLES: NewsArticle[] = [
   BORSSVERIGE_12_AUGUSTI_2026_ARTICLE,
   NORDEN_I_CENTRUM_12_AUGUSTI_2026_ARTICLE,
   NORDEN_I_CENTRUM_11_AUGUSTI_2026_ARTICLE,
@@ -48,3 +49,6 @@ export const DEMO_NEWS_ARTICLES: NewsArticle[] = [
   ONSDAGENS_RAPPORTER_TESLA_IBM_ARTICLE,
   IRAN_OLJEPRIS_HORMUZ_BORSEN_ARTICLE,
 ];
+
+export const DEMO_NEWS_ARTICLES: NewsArticle[] =
+  PUBLISHED_NEWS_ARTICLES.map(applyNewsSearchSeo);

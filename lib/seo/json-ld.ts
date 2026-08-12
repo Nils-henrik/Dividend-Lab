@@ -63,7 +63,7 @@ export function newsArticleJsonLd(input: {
     headline: input.title,
     description: input.description,
     datePublished: input.publishedAt,
-    ...(input.updatedAt ? { dateModified: input.updatedAt } : {}),
+    dateModified: input.updatedAt ?? input.publishedAt,
     mainEntityOfPage: absoluteUrl(input.path),
     url: absoluteUrl(input.path),
     inLanguage: "sv-SE",

@@ -13,6 +13,7 @@ import vadArEnAktie from "./articles/vad-ar-en-aktie";
 import vadArEnIndexfond from "./articles/vad-ar-en-indexfond";
 import { withReadingTime, type LearningArticleWithReadingTime } from "./reading-time";
 import type { LearningArticle } from "./types";
+import { applyLearningSearchSeo } from "@/lib/seo/editorial-content";
 
 export type {
   LearningArticle,
@@ -44,7 +45,7 @@ const rawArticles: LearningArticle[] = [
 ];
 
 export const learningArticles: LearningArticleWithReadingTime[] =
-  rawArticles.map(withReadingTime);
+  rawArticles.map(applyLearningSearchSeo).map(withReadingTime);
 
 export function getLearningArticle(slug: string) {
   return learningArticles.find((article) => article.slug === slug) ?? null;

@@ -46,6 +46,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: pageTitle,
     description,
+    authors: [{ name: article.source }],
     ...(article.seoKeywords ? { keywords: article.seoKeywords } : {}),
     alternates: {
       canonical,
@@ -57,6 +58,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       url: canonical,
       locale: "sv_SE",
       publishedTime: article.publishedAt,
+      ...(article.updatedAt ? { modifiedTime: article.updatedAt } : {}),
       ...(imageUrl
         ? {
             images: [
@@ -100,6 +102,7 @@ export default async function NewsArticlePage({ params }: Props) {
             description: article.summary,
             path,
             publishedAt: article.publishedAt,
+            updatedAt: article.updatedAt,
             imageUrl: article.imageUrl ?? undefined,
             authorName: article.source,
           }),

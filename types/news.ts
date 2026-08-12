@@ -31,6 +31,8 @@ export interface NewsArticle {
   category: NewsCategory;
   source: string;
   publishedAt: string;
+  /** ISO date-time for a material editorial update. Never set for SEO-only changes. */
+  updatedAt?: string;
   url: string | null;
   featured: boolean;
   imageUrl?: string | null;
