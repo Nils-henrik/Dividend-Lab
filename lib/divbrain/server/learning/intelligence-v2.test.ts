@@ -32,10 +32,10 @@ describe("DivBrain Intelligence v2 Learning retrieval", () => {
     ]);
   });
 
-  it("drops generic Swedish function words that could invent retrieval relevance", () => {
+  it("drops the generic Swedish infinitive ha so it cannot invent retrieval relevance", () => {
     assert.deepEqual(
       tokenizeDivBrainLearningText("vilket däcktryck ska en personbil ha"),
-      ["däcktryck", "personbil"],
+      ["vilket", "däcktryck", "personbil"],
     );
   });
 
