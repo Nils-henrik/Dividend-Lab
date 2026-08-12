@@ -1,0 +1,96 @@
+import type { NewsArticle } from "@/types/news";
+
+/** Approved Börsnyheter article — do not rewrite body copy. */
+export const NORDEN_I_CENTRUM_12_AUGUSTI_2026_ARTICLE: NewsArticle = {
+  id: "norden-i-centrum-12-augusti-2026",
+  slug: "norden-i-centrum-12-augusti-2026",
+  title: "Norden i centrum – 12 augusti: Sampo höjer utsikterna när rapporterna tar över",
+  summary: "Sampo höjer utsikterna, Ferronordic visar en tydlig resultatvändning och Demant går in i andra halvåret med högre prognos. I Norge är bilden mer blandad efter ett svagt kvartal från Borr Drilling.",
+  category: "market",
+  source: "DivLab",
+  publishedAt: "2026-08-12T08:30:00+02:00",
+  url: "/news/norden-i-centrum-12-augusti-2026",
+  featured: true,
+  imageUrl: "/news-demo/norden-i-centrum-12-augusti-2026.webp",
+  thumbnailObjectPosition: "center 50%",
+  mobileThumbnailObjectPosition: "center 46%",
+  imageAlt: "Norden i centrum 12 augusti 2026 med Sampo, Ferronordic, Borr Drilling och Demant i fokus.",
+  imageCaption: "Illustration: DivLab.",
+  readingMinutes: 7,
+  seoTitle: "Norden i centrum 12 augusti: Sampo höjer utsikterna",
+  seoDescription: "Sampo höjer utsikterna, Ferronordic lyfter resultatet och Borr Drilling pressas. Demant höjer prognosen inför onsdagens nordiska börsöppning.",
+  seoKeywords: [
+    "Norden i centrum",
+    "börsen idag",
+    "nordiska börsen",
+    "Sampo",
+    "Ferronordic",
+    "Borr Drilling",
+    "Demant",
+    "Vestas",
+    "börsnyheter",
+    "aktier idag",
+    "börsen 12 augusti 2026",
+  ],
+  showDisclaimer: true,
+  intro: [
+    "Den nordiska börsmorgonen domineras av nya rapporter och höjda prognoser, samtidigt som ett oljepris nära 90 dollar och väntan på amerikansk inflation håller makrobilden i bakgrunden. Sampo skruvar upp sina utsikter, svenska Ferronordic visar en kraftig resultatförbättring och danska Demant går in i andra halvåret med högre prognos. I Norge är bilden mer blandad efter ett betydligt svagare kvartal från Borr Drilling.",
+    "Inför börsöppningen är det därför framför allt bolagsspecifika besked som kan sätta riktningen i Norden. Samtidigt stiger oljepriset på nytt när geopolitisk oro kring Mellanöstern och sjöfarten ökar, medan investerare väntar på amerikanska inflationssiffror senare under dagen.",
+  ],
+  sections: [
+    {
+      heading: "Finland: Sampo höjer prognosen efter starkt försäkringskvartal",
+      paragraphs: [
+        "Sampo levererade på onsdagsmorgonen ännu ett stabilt kvartal. Den jämförbara tillväxten ökade till 5 procent under andra kvartalet och försäkringskoncernens underwritingresultat steg valutajusterat med 5 procent till 418 miljoner euro. Combined ratio uppgick till 82,9 procent, medan det operativa resultatet per aktie ökade med 6 procent.",
+        "Det viktigaste beskedet ligger dock i prognosen.",
+        "Sampo höjer intervallet för årets försäkringsintäkter till 9,70–9,85 miljarder euro, från tidigare 9,6–9,8 miljarder. Prognosen för underwritingresultatet justeras samtidigt till 1,55–1,625 miljarder euro, vilket innebär att den nedre delen av intervallet höjs från tidigare 1,525 miljarder euro.",
+        "Första halvårets underwritingresultat uppgår därmed till 786 miljoner euro och kapitalpositionen är fortsatt stark med en Solvency II-kvot på 174 procent.",
+        "En detalj värd att följa är skadeutvecklingen. Första halvåret präglades av ett gynnsamt skadeutfall, men Sampo har samtidigt räknat in effekten från en större bostadsbrand i norska Drammen i juli som bedöms orsaka omkring 15 miljoner euro i skadekostnader. Trots detta höjs helårsutsikterna.",
+        "För investerare är signalen ganska tydlig: den underliggande försäkringsverksamheten fortsätter att växa samtidigt som lönsamheten hålls på en hög nivå.",
+      ],
+    },
+    {
+      heading: "Sverige: Ferronordic vänder förlust till tydlig vinst",
+      paragraphs: [
+        "På Stockholmsbörsen kommer ett av morgonens tydligaste resultatlyft från Ferronordic.",
+        "Omsättningen steg 43 procent till 1 558 miljoner kronor under andra kvartalet. Rörelseresultatet förbättrades samtidigt från minus 5 miljoner kronor för ett år sedan till plus 68 miljoner kronor, vilket gav en rörelsemarginal på 4,3 procent. EBITDA ökade från 95 till 180 miljoner kronor.",
+        "Framför allt är utvecklingen i USA stark.",
+        "Den amerikanska omsättningen ökade 39 procent till 969 miljoner kronor, och räknat i dollar var tillväxten 53 procent. Rörelseresultatet i USA steg från 26 till 74 miljoner kronor. Ferronordic beskriver juni som en rekordmånad och pekar bland annat ut fortsatt infrastruktursatsning och accelererande byggnation av datacenter och AI-infrastruktur som drivkrafter bakom efterfrågan på anläggningsmaskiner.",
+        "Även den tidigare problematiska tyska verksamheten visar förbättring. Tyskland redovisade ett rörelseresultat på 8 miljoner kronor jämfört med minus 13 miljoner året innan, vilket innebär ett andra kvartal i rad med positivt rörelseresultat.",
+        "Det gör Ferronordic till ett intressant mindre nordiskt case denna morgon: rapporten visar inte bara högre försäljning utan också att resultatförbättringen börjar synas i samtliga marknader. Samtidigt ligger nettoskulden fortfarande på 1,85 miljarder kronor, vilket gör fortsatt kassaflöde och lönsamhetsförbättring viktiga att bevaka.",
+      ],
+    },
+    {
+      heading: "Norge: Borr Drilling får ett tungt kvartal – men ser förbättring framför sig",
+      paragraphs: [
+        "På Oslobörsen är kontrasten stor.",
+        "Borr Drilling rapporterade sent på tisdagen intäkter på 232,3 miljoner dollar under andra kvartalet, 6 procent lägre än föregående kvartal. Justerad EBITDA sjönk hela 51 procent till 43,8 miljoner dollar.",
+        "Bolaget redovisade dessutom en nettoförlust på 241,4 miljoner dollar. Den siffran påverkas kraftigt av en kostnad på 176,3 miljoner dollar kopplad till refinansiering och inlösen av tidigare skulder, men även den underliggande verksamheten hade ett besvärligt kvartal.",
+        "Sex riggar befann sig i övergång mellan kontrakt, samtidigt som riggen Odin drog högre kostnader än väntat inför sin amerikanska start. Konflikten i Mellanöstern ökade också kostnaderna för bland annat bränsle och försäkring.",
+        "Här finns samtidigt en viktig motvikt. De omfattande riggövergångarna är nu till stor del avslutade och Borr räknar med omkring 23 aktiva riggar under tredje kvartalet. Bolaget väntar sig därför att justerad EBITDA ska förbättras betydligt från andra kvartalet. Hittills i år har Borr dessutom säkrat 21 kontraktsåtaganden motsvarande omkring 4 350 dagar och 541 miljoner dollar i så kallad dayrate equivalent backlog.",
+        "Med Brentoljan åter kring 90 dollar är energisektorn samtidigt tillbaka i det globala blickfånget. För Borr är frågan dock mer komplicerad än ett högt oljepris: geopolitiken kan både stödja framtida borraktivitet och samtidigt fördröja kontrakt och höja de egna kostnaderna.",
+      ],
+    },
+    {
+      heading: "Danmark: Demant skruvar upp prognosen – Vestas står näst på tur",
+      paragraphs: [
+        "Danmarks starkaste färska besked kommer från hörselkoncernen Demant, som publicerade sitt halvårsresultat efter tisdagens handel.",
+        "Omsättningen steg 15 procent under första halvåret, varav den organiska tillväxten var 7 procent. EBIT före särskilda poster ökade till 2,134 miljarder danska kronor, motsvarande en ökning på 19 procent i lokala valutor.",
+        "Demant höjer nu prognosen för den organiska tillväxten under helåret till 6–7 procent, från tidigare 3–6 procent. Prognosen för EBIT före särskilda poster höjs samtidigt till 4,4–4,8 miljarder danska kronor, från tidigare 4,1–4,5 miljarder.",
+        "Bolaget pekar bland annat på stark efterfrågan inom hörapparater och god utveckling för Oticon Zeal. Under andra halvåret ska dessutom nästa premiumprodukt, Oticon Reveal, rullas ut med bolagets nya AI-baserade ljudteknik.",
+        "Men Köpenhamnsbörsen har ytterligare ett tungt rapportkort kvar att vända på.",
+        "Vestas lämnar sin rapport för andra kvartalet i dag, med rapportpresentation klockan 10.00. Inför rapporten ligger bolagets befintliga helårsprognos på intäkter om 20–22 miljarder euro och en EBIT-marginal före särskilda poster på 6–8 procent. Rapporten var ännu inte publicerad när denna morgonbrief sammanställdes.",
+      ],
+    },
+    {
+      heading: "Blicken framåt: inflationen kan ta över efter rapportmorgonen",
+      paragraphs: [
+        "Den första delen av onsdagen tillhör alltså de nordiska bolagen. Senare flyttas uppmärksamheten snabbt tillbaka till makroekonomin.",
+        "Amerikanska konsumentpriser för juli publiceras under dagen och väntas bli nästa stora test för marknadens syn på Federal Reserve. Samtidigt har Brentoljan stigit sex handelsdagar i följd när geopolitisk oro kring Mellanöstern och sjöfarten har ökat. Europeiska terminer handlades försiktigt inför morgonen.",
+        "För Norden innebär det en ovanligt tydlig dubbel agenda: först rapporterna, därefter räntorna och oljan.",
+        "Sampo går in i andra halvåret med höjda utsikter. Ferronordic visar att flera års förbättringsarbete börjar synas på sista raden. Demant skruvar upp sina mål. Borr Drilling visar däremot hur snabbt kostnader och kontraktsförskjutningar kan slå mot resultatet i offshoremarknaden.",
+        "Och innan dagen är över kommer Vestas och amerikansk inflation att ge marknaden ytterligare två stora pusselbitar.",
+      ],
+    },
+  ],
+};

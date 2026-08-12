@@ -1,6 +1,7 @@
 import type { NewsArticle } from "@/types/news";
 import { AKTIEREKAR_INFOR_NASTA_VECKA_MICROSOFT_META_AMAZON_SINCH_ARTICLE } from "@/data/news-articles/aktierekar-infor-nasta-vecka-microsoft-meta-amazon-sinch";
 import { AMAZON_RUSAR_MICRON_TVAVANDER_AI_BOOMEN_WALL_STREET_ARTICLE } from "@/data/news-articles/amazon-rusar-micron-tvavander-ai-boomen-wall-street";
+import { BORSSVERIGE_12_AUGUSTI_2026_ARTICLE } from "@/data/news-articles/borssverige-12-augusti-2026";
 import { BORSVECKA_32_INVESTOR_INFLATION_USA_JOBB_ARTICLE } from "@/data/news-articles/borsvecka-32-investor-inflation-usa-jobb";
 import { BORSVECKA_33_ARTICLE } from "@/data/news-articles/borsvecka-33";
 import { BORSVECKAN_I_KORTHET_AI_FROSSA_OLJERUSNING_RANTEHOT_ARTICLE } from "@/data/news-articles/borsveckan-i-korthet-ai-frossa-oljerusning-rantehot";
@@ -13,6 +14,7 @@ import { NORDEN_I_CENTRUM_6_AUGUSTI_2026_ARTICLE } from "@/data/news-articles/no
 import { NORDEN_I_CENTRUM_7_AUGUSTI_2026_ARTICLE } from "@/data/news-articles/norden-i-centrum-7-augusti-2026";
 import { NORDEN_I_CENTRUM_10_AUGUSTI_2026_ARTICLE } from "@/data/news-articles/norden-i-centrum-10-augusti-2026";
 import { NORDEN_I_CENTRUM_11_AUGUSTI_2026_ARTICLE } from "@/data/news-articles/norden-i-centrum-11-augusti-2026";
+import { NORDEN_I_CENTRUM_12_AUGUSTI_2026_ARTICLE } from "@/data/news-articles/norden-i-centrum-12-augusti-2026";
 import { ONSDAGENS_RAPPORTER_TESLA_IBM_ARTICLE } from "@/data/news-articles/onsdagens-rapporter-tesla-ibm";
 import { SINCH_RASAR_EFTER_Q2_RAPPORTEN_2026_ARTICLE } from "@/data/news-articles/sinch-rasar-efter-q2-rapporten-2026";
 import { SIVERS_RUSAR_AI_FOTONIK_USA_IMPORTREGLER_ARTICLE } from "@/data/news-articles/sivers-rusar-ai-fotonik-usa-importregler";
@@ -24,6 +26,8 @@ import { USA_BORSEN_FALLER_ALPHABET_TESLA_OLJA_ARTICLE } from "@/data/news-artic
  * Image assets currently live under /public/news-demo/ for historical path stability.
  */
 export const DEMO_NEWS_ARTICLES: NewsArticle[] = [
+  BORSSVERIGE_12_AUGUSTI_2026_ARTICLE,
+  NORDEN_I_CENTRUM_12_AUGUSTI_2026_ARTICLE,
   NORDEN_I_CENTRUM_11_AUGUSTI_2026_ARTICLE,
   NORDEN_I_CENTRUM_10_AUGUSTI_2026_ARTICLE,
   BORSVECKA_33_ARTICLE,
