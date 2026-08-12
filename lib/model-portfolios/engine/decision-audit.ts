@@ -10,6 +10,7 @@ import type { RankedResearchCandidate } from "./research";
 
 export const MODEL_PORTFOLIO_PROMPT_VERSION = "portfolio-manager-tools-v2" as const;
 export const MODEL_PORTFOLIO_MODEL_PROVIDER = MODEL_PORTFOLIO_AI_PROVIDER;
+const MODEL_PORTFOLIO_RATIONALE_MAX_CHARS = 2000;
 
 export type DecisionAuditInput = {
   runId: string;
@@ -31,7 +32,7 @@ export type DecisionAuditInput = {
 export type DecisionAuditRow = {
   portfolio_id: string;
   run_id: string;
-  decision_type: "hold" | "buy" | "sell" | "rebalance";
+  decision_type: "hold" | "buy" | "sell";
   status: "skipped" | "proposed";
   instrument_symbol: string | null;
   exchange: string | null;
@@ -45,9 +46,19 @@ export type DecisionAuditRow = {
   input_snapshot: Record<string, unknown>;
 };
 
-function databaseDecisionType(action: ModelPortfolioDecision["action"]): "hold" | "buy" | "sell" | "rebalance" {
-  if (action === "trim") return "rebalance";
+function databaseDecisionType(action: ModelPortfolioDecision["action"]): "hold" | "buy" | "sell" {
+  // A trim is an investor-facing partial reduction, but the database audit contract
+  // stores executable directions as buy/sell/hold. Keep the original action in
+  // input_snapshot.original_action so no semantics are lost.
+  if (action === "trim") return "sell";
   return action;
+}
+
+function databaseRationale(value: string): string {
+  // PostgreSQL char_length counts Unicode characters, while String#slice counts
+  // UTF-16 code units. Array.from keeps this guard aligned with the DB <= 2000
+  // character check and avoids cutting a surrogate pair in half.
+  return Array.from(value).slice(0, MODEL_PORTFOLIO_RATIONALE_MAX_CHARS).join("");
 }
 
 function latestMarketDataTimestamp(evidence: readonly ModelPortfolioEvidence[]): string | null {
@@ -112,7 +123,7 @@ export function buildDecisionAuditRow(input: DecisionAuditInput): DecisionAuditR
     instrument_symbol: canonicalInstrument?.baseSymbol ?? null,
     exchange: canonicalInstrument?.exchange ?? null,
     instrument_name: input.decision.instrumentName,
-    rationale: rationale.slice(0, 4000),
+    rationale: databaseRationale(rationale),
     model_provider: MODEL_PORTFOLIO_MODEL_PROVIDER,
     model_name: input.modelName,
     prompt_version: MODEL_PORTFOLIO_PROMPT_VERSION,
