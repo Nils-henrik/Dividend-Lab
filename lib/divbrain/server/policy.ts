@@ -7,6 +7,7 @@
  * Must never be imported by client components or exposed to the browser.
  */
 
+import { DIVLAB_INVESTMENT_ANALYSIS_CORE_SV } from "@/lib/investment-analysis/doctrine";
 import {
   DIVBRAIN_GUARDRAIL_CONSTRAINTS,
   DIVBRAIN_GUARDRAIL_POLICY_VERSION,
@@ -14,7 +15,7 @@ import {
   type DivBrainGuardrailConstraint,
 } from "../guardrails";
 
-export const DIVBRAIN_RESPONSE_FORMAT_VERSION = 2 as const;
+export const DIVBRAIN_RESPONSE_FORMAT_VERSION = 3 as const;
 
 export const DIVBRAIN_FINANCIAL_SAFETY_POLICY_TEXT_SV = [
   "Finansiell säkerhetspolicy (måste följas):",
@@ -72,6 +73,8 @@ export const DIVBRAIN_RESPONSE_FORMAT_TEXT_SV = [
   "- Finansprecision: kombinera inte tekniska indikatorer mekaniskt. Resonera i lager: marknadsstruktur/trend, momentum, volym, volatilitet och risk/positionering.",
   "- Finansprecision: värdera inte ett bolag med en ensam multipel om frågan kräver analys. Relatera värdering till tillväxt, marginaler, kapitalavkastning, kassaflöde, balansräkning och risk.",
   "- Finansprecision: prioritera primärkällor för verifierbara finansiella fakta och behandla aggregatorer/plattformar som sekundära när kritiska siffror eller aktuella regler diskuteras.",
+  "Gemensam DivLab-analysdisciplin för börs- och bolagsfrågor:",
+  DIVLAB_INVESTMENT_ANALYSIS_CORE_SV,
 ].join("\n");
 
 export type DivBrainPolicyBlock = {
