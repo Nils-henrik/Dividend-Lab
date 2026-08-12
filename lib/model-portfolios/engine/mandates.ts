@@ -84,9 +84,12 @@ export const MODEL_PORTFOLIO_MANDATES: Record<
     name: "Utdelning",
     horizonLabel: "5–10+ år",
     horizonGuidance: "Bedöm bolag för långsiktig utdelnings- och totalavkastningskompoundering över fem till tio år eller längre. Utdelningssäkerhet, fritt kassaflöde, skuldsättning, utdelningstillväxt och rimlig värdering väger mer än hög direktavkastning i sig.",
-    objective: "Bygga hållbar och växande utdelningsinkomst med fokus på långsiktig totalavkastning och kvalitet.",
+    objective: "Bygga hållbar och växande utdelningsinkomst genom en diversifierad kassaflödesstrategi där utdelningar och nya insättningar återinvesteras i nästa kvalificerade utdelningscase, med lägre risk än en ren högutdelningsstrategi.",
     behavior: [
       "Prioritera utdelningens hållbarhet, fritt kassaflöde, skuldsättning och utdelningstillväxt.",
+      "Arbeta med en kassaflödestrappa: återinvestera nya insättningar och mottagna utdelningar löpande i nästa kvalificerade utdelningscase i stället för att låta kassaflödet bli passivt.",
+      "Bygg en diversifierad mix av svenska och utländska utdelningsbolag. Månads- eller kvartalsutdelning är ett plus först efter att kvalitet, utdelningstäckning, balansräkning och värdering klarat kraven.",
+      "Tillåt högutdelande, preferens- eller fastighetsinriktade kassaflödescase som begränsade satelliter när fundamenta och riskspridning motiverar det; de får inte bli portföljens riskmotor.",
       "Undvik yield traps och bolag där utdelningen saknar tydlig täckning.",
       "Behandla utdelningssänkning eller suspendering som en högprioriterad omprövningssignal.",
       "Behåll kvalitetsbolag genom normalt marknadsbrus när utdelningscaset är intakt.",
@@ -94,6 +97,7 @@ export const MODEL_PORTFOLIO_MANDATES: Record<
     ],
     explicitDoNot: [
       "Välj högsta direktavkastning utan kvalitetskontroll.",
+      "Bygg inte portföljens kärna på derivatdrivna eller syntetiska högutdelande produkter; utdelningsnivån får inte köpas till priset av oproportionerlig kapital- eller komplexitetsrisk.",
       "Öka i ett bolag enbart för att kursfallet höjt direktavkastningen.",
       "Låt en översåld oscillator ensam motivera köp i ett fundamentalt försvagat utdelningscase.",
       "Tvångssälj ett kvalitetsinnehav enbart på grund av innehavstid; horisonten är ett analysfilter, inte ett utgångsdatum.",
@@ -117,6 +121,12 @@ export function buildModelPortfolioSystemMandate(strategyKey: ModelPortfolioStra
     "När du överväger en faktisk förändring ska du aktivt kontrollera både stödjande och motsägande signaler med de tillgängliga analysverktygen.",
     ...mandate.behavior.map((item) => `GÖR: ${item}`),
     ...mandate.explicitDoNot.map((item) => `GÖR INTE: ${item}`),
+    ...(strategyKey === "dividend"
+      ? [
+          "KONTOSTRUKTUR: svenska utdelningsinnehav bokförs på simulerat ISK och utländska utdelningsinnehav på simulerat KF.",
+          "Kontotypen ändrar inte kvalitetskraven eller motiverar ett köp i sig; den styr endast hur ett kvalificerat innehav bokförs i modellportföljen.",
+        ]
+      : []),
     buildDecisionFramework(strategyKey),
     "COURTAGE OCH OMSÄTTNING:",
     "Varje genomfört KÖP kostar exakt 10,00 SEK i simulerad courtageavgift.",

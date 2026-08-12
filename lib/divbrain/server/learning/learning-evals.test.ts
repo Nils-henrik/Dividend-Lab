@@ -61,11 +61,17 @@ describe("DivBrain Learning retrieval eval fixture", () => {
 
   it("passes the complete deterministic retrieval suite", () => {
     const report = runDivBrainLearningEvals();
+    const failedCases = report.cases.filter((evalCase) => !evalCase.passed);
+    const failureSummary = JSON.stringify(failedCases);
 
     assert.equal(report.total, 36);
-    assert.equal(report.passed, 36);
-    assert.equal(report.failed, 0);
-    assert.equal(report.allPassed, true);
+    assert.equal(
+      report.passed,
+      36,
+      `DivBrain Learning eval failures: ${failureSummary}`,
+    );
+    assert.equal(report.failed, 0, `DivBrain Learning eval failures: ${failureSummary}`);
+    assert.equal(report.allPassed, true, `DivBrain Learning eval failures: ${failureSummary}`);
     assert.deepEqual(report.duplicateIds, []);
     assert.deepEqual(
       report.categoriesCovered,

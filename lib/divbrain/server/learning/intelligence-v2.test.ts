@@ -32,6 +32,13 @@ describe("DivBrain Intelligence v2 Learning retrieval", () => {
     ]);
   });
 
+  it("drops the generic Swedish infinitive ha so it cannot invent retrieval relevance", () => {
+    assert.deepEqual(
+      tokenizeDivBrainLearningText("vilket däcktryck ska en personbil ha"),
+      ["vilket", "däcktryck", "personbil"],
+    );
+  });
+
   it("recognizes only long conservative Swedish compound prefixes", () => {
     assert.equal(
       countLongCompoundTokenOverlap(
