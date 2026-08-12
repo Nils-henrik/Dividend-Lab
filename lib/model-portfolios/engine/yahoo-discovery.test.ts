@@ -80,6 +80,35 @@ describe("Yahoo market discovery", () => {
     assert.equal(result[0]?.symbol, "AAA");
   });
 
+  it("prefers a liquid US small-mid mover over an otherwise identical mega cap", async () => {
+    const fetchImpl: typeof fetch = async () => responseFor([
+      {
+        symbol: "SMALLMID",
+        shortName: "Small Mid",
+        regularMarketChangePercent: -12,
+        regularMarketVolume: 3_000_000,
+        averageDailyVolume3Month: 1_000_000,
+        marketCap: 5_000_000_000,
+      },
+      {
+        symbol: "MEGA",
+        shortName: "Mega",
+        regularMarketChangePercent: -12,
+        regularMarketVolume: 3_000_000,
+        averageDailyVolume3Month: 1_000_000,
+        marketCap: 500_000_000_000,
+      },
+    ]);
+
+    const result = await discoverYahooCandidates({
+      screens: ["day_losers"],
+      shortlistLimit: 1,
+      fetchImpl,
+    });
+
+    assert.equal(result[0]?.symbol, "SMALLMID");
+  });
+
   it("screens a broad Nordic seed universe and returns a bounded four-country shortlist", async () => {
     const calls: string[] = [];
     const fetchImpl: typeof fetch = async (input) => {
@@ -129,6 +158,26 @@ describe("Yahoo market discovery", () => {
     assert.deepEqual([...countries].sort(), ["DK", "FI", "NO", "SE"]);
     assert.ok(result.shortlist.every((item) => item.source === "yahoo_finance"));
     assert.ok(result.shortlist.every((item) => /\.(ST|CO|HE|OL)$/.test(item.yahooSymbol)));
+  });
+
+  it("includes the supplemental Nordic small-mid opportunity set by default", async () => {
+    const requestedSymbols = new Set<string>();
+    const fetchImpl: typeof fetch = async (input) => {
+      const url = new URL(String(input));
+      const symbols = (url.searchParams.get("symbols") ?? "").split(",").filter(Boolean);
+      for (const symbol of symbols) requestedSymbols.add(symbol);
+      return quoteResponse([]);
+    };
+
+    await discoverNordicYahooCandidates({
+      broadLimit: NORDIC_RESEARCH_BOUNDS.broadDiscoveryCandidateCount,
+      fetchImpl,
+    });
+
+    assert.ok(requestedSymbols.has("YUBICO.ST"));
+    assert.ok(requestedSymbols.has("KIT.OL"));
+    assert.ok(requestedSymbols.has("HARVIA.HE"));
+    assert.ok(requestedSymbols.has("NETC.CO"));
   });
 
   it("falls back to deterministic seed ranking when Yahoo quotes are unavailable", async () => {
