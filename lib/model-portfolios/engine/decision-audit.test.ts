@@ -201,7 +201,54 @@ describe("model portfolio decision audit", () => {
       executionAllowed: false,
     });
 
-    assert.equal(row.decision_type, "rebalance");
+    assert.equal(row.decision_type, "sell");
     assert.equal(row.input_snapshot.original_action, "trim");
+  });
+
+  it("caps rationale at the database character limit without splitting Unicode characters", () => {
+    const longRationale = "🚀".repeat(2100);
+    const row = buildDecisionAuditRow({
+      runId: "run-long-rationale",
+      portfolioId: "portfolio-long-rationale",
+      strategyKey: "balanced",
+      decision: {
+        action: "hold",
+        symbol: null,
+        exchange: null,
+        instrumentName: null,
+        proposedPortfolioPct: 0,
+        convictionScore: 0.5,
+        materialThesisBreak: false,
+        thesis: "Long rationale regression test.",
+        bearCase: "No trade is executed in this test.",
+        catalyst: "None.",
+        valuationView: "Neutral.",
+        keyRisks: ["Oversized audit text"],
+        evidenceIds: [],
+        disconfirmingEvidenceIds: [],
+        rationale: longRationale,
+      },
+      evidence,
+      rankedCandidates,
+      modelName: "openai/gpt-5.6-luna",
+      estimatedCostUsdMicros: 0,
+      usage: {
+        provider: "vercel-ai-gateway",
+        model: "openai/gpt-5.6-luna",
+        inputTokens: 0,
+        cachedInputTokens: null,
+        outputTokens: 0,
+        totalTokens: 0,
+        estimatedCostUsdMicros: 0,
+        costSource: "catalog_estimate",
+        timestamp: "2026-08-12T09:00:00.000Z",
+        runId: "run-long-rationale",
+      },
+      portfolioSnapshot: "cash=1000000",
+      executionAllowed: false,
+    });
+
+    assert.equal(Array.from(row.rationale).length, 2000);
+    assert.equal(row.rationale, "🚀".repeat(2000));
   });
 });
