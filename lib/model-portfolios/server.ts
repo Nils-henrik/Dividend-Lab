@@ -19,6 +19,15 @@ export type ModelPortfolioTransaction = {
   rationale: string;
 };
 
+export type ModelPortfolioValuePoint = {
+  snapshotAt: string;
+  totalValueMinor: number;
+  cashValueMinor: number;
+  investedValueMinor: number;
+  contributedCapitalMinor: number;
+  marketDataAsOf: string | null;
+};
+
 export type ModelPortfolioOverview = {
   id: string;
   slug: string;
@@ -42,6 +51,7 @@ export type ModelPortfolioOverview = {
   followerCount: number;
   isFollowing: boolean;
   launchedAt: string | null;
+  valueHistory: ModelPortfolioValuePoint[];
   latestDecision: {
     type: string;
     rationale: string;
@@ -114,6 +124,26 @@ type TransactionRow = {
   executed_at: string;
   rationale: string;
 };
+type SnapshotRow = {
+  portfolio_id: string;
+  snapshot_at: string;
+  total_value_minor: number;
+  cash_value_minor: number;
+  invested_value_minor: number;
+  contributed_capital_minor: number;
+  market_data_as_of: string | null;
+};
+
+function mapSnapshot(row: SnapshotRow): ModelPortfolioValuePoint {
+  return {
+    snapshotAt: row.snapshot_at,
+    totalValueMinor: Number(row.total_value_minor),
+    cashValueMinor: Number(row.cash_value_minor),
+    investedValueMinor: Number(row.invested_value_minor),
+    contributedCapitalMinor: Number(row.contributed_capital_minor),
+    marketDataAsOf: row.market_data_as_of ? String(row.market_data_as_of) : null,
+  };
+}
 
 export async function loadModelPortfoliosOverview(): Promise<ModelPortfoliosOverviewResult> {
   const { client: supabase, user } = await getModelPortfolioReadContext();
@@ -134,6 +164,7 @@ export async function loadModelPortfoliosOverview(): Promise<ModelPortfoliosOver
     decisionsResult,
     followersResult,
     transactionsResult,
+    snapshotsResult,
   ] = await Promise.all([
     supabase
       .from("model_portfolios")
@@ -161,6 +192,14 @@ export async function loadModelPortfoliosOverview(): Promise<ModelPortfoliosOver
       )
       .order("executed_at", { ascending: false })
       .limit(50),
+    // The overview cards must use the same persisted valuation history as the
+    // detail chart. Keep a bounded recent window for the tiny card sparkline;
+    // the detail loader owns the full paginated ALL history.
+    supabase
+      .from("model_portfolio_snapshots")
+      .select("portfolio_id,snapshot_at,total_value_minor,cash_value_minor,invested_value_minor,contributed_capital_minor,market_data_as_of")
+      .order("snapshot_at", { ascending: false })
+      .limit(4000),
   ]);
 
   if (
@@ -169,7 +208,8 @@ export async function loadModelPortfoliosOverview(): Promise<ModelPortfoliosOver
     holdingsResult.error ||
     decisionsResult.error ||
     followersResult.error ||
-    transactionsResult.error
+    transactionsResult.error ||
+    snapshotsResult.error
   ) {
     return {
       ok: false,
@@ -211,6 +251,16 @@ export async function loadModelPortfoliosOverview(): Promise<ModelPortfoliosOver
     );
   }
 
+  const valueHistoryByPortfolio = new Map<string, ModelPortfolioValuePoint[]>();
+  for (const row of (snapshotsResult.data ?? []) as SnapshotRow[]) {
+    const points = valueHistoryByPortfolio.get(row.portfolio_id) ?? [];
+    points.push(mapSnapshot(row));
+    valueHistoryByPortfolio.set(row.portfolio_id, points);
+  }
+  for (const points of valueHistoryByPortfolio.values()) {
+    points.sort((a, b) => Date.parse(a.snapshotAt) - Date.parse(b.snapshotAt));
+  }
+
   const latestDecisionByPortfolio = new Map<string, DecisionRow>();
   for (const row of (decisionsResult.data ?? []) as DecisionRow[]) {
     if (!latestDecisionByPortfolio.has(row.portfolio_id)) {
@@ -231,10 +281,15 @@ export async function loadModelPortfoliosOverview(): Promise<ModelPortfoliosOver
   const portfolioMeta = new Map<string, { name: string; slug: string }>();
   const portfolios = ((portfolioResult.data ?? []) as PortfolioRow[]).map((row) => {
     portfolioMeta.set(row.id, { name: row.name, slug: row.slug });
-    const cashMinor = cashByPortfolio.get(row.id) ?? 0;
-    const investedMinor = investedByPortfolio.get(row.id) ?? 0;
-    const totalValueMinor = cashMinor + investedMinor;
-    const contributedCapitalMinor = contributedByPortfolio.get(row.id) ?? Number(row.initial_capital_minor);
+    const valueHistory = valueHistoryByPortfolio.get(row.id) ?? [];
+    const latestSnapshot = valueHistory.at(-1) ?? null;
+    const fallbackCashMinor = cashByPortfolio.get(row.id) ?? 0;
+    const fallbackInvestedMinor = investedByPortfolio.get(row.id) ?? 0;
+    const fallbackContributedMinor = contributedByPortfolio.get(row.id) ?? Number(row.initial_capital_minor);
+    const cashMinor = latestSnapshot?.cashValueMinor ?? fallbackCashMinor;
+    const investedMinor = latestSnapshot?.investedValueMinor ?? fallbackInvestedMinor;
+    const totalValueMinor = latestSnapshot?.totalValueMinor ?? (fallbackCashMinor + fallbackInvestedMinor);
+    const contributedCapitalMinor = latestSnapshot?.contributedCapitalMinor ?? fallbackContributedMinor;
     const performancePct = contributedCapitalMinor > 0
       ? ((totalValueMinor - contributedCapitalMinor) / contributedCapitalMinor) * 100
       : 0;
@@ -263,6 +318,7 @@ export async function loadModelPortfoliosOverview(): Promise<ModelPortfoliosOver
       followerCount: followerCountByPortfolio.get(row.id) ?? 0,
       isFollowing: followedByUser.has(row.id),
       launchedAt: row.launched_at ? String(row.launched_at) : null,
+      valueHistory,
       latestDecision: latest
         ? {
             type: latest.decision_type,
