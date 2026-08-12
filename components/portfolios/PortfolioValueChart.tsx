@@ -11,6 +11,11 @@ import {
   YAxis,
 } from "recharts";
 import type { PortfolioValuePoint } from "@/lib/model-portfolios/transparency";
+import {
+  MODEL_PORTFOLIO_CHART_RANGES,
+  filterPortfolioValueHistory,
+  type ModelPortfolioChartRange,
+} from "@/lib/model-portfolios/value-history";
 
 const colorBySlug: Record<string, string> = {
   forsiktig: "#60a5fa",
@@ -18,9 +23,6 @@ const colorBySlug: Record<string, string> = {
   "hog-risk": "#fb923c",
   utdelning: "#c084fc",
 };
-
-const CHART_RANGES = ["1D", "1M", "3M", "YTD", "1Y", "ALL"] as const;
-type ChartRange = (typeof CHART_RANGES)[number];
 
 function formatSekMinor(minor: number): string {
   return new Intl.NumberFormat("sv-SE", {
@@ -37,7 +39,7 @@ function formatAxisSek(value: number): string {
   }).format(value);
 }
 
-function formatChartDate(value: string, expanded: boolean, range: ChartRange): string {
+function formatChartDate(value: string, expanded: boolean, range: ModelPortfolioChartRange): string {
   const date = new Date(value);
   if (range === "1D") {
     return new Intl.DateTimeFormat("sv-SE", { hour: "2-digit", minute: "2-digit" }).format(date);
@@ -62,35 +64,6 @@ function formatFullDate(value: string): string {
   }).format(new Date(value));
 }
 
-function rangeCutoff(range: ChartRange, latestTimestamp: string): number | null {
-  if (range === "ALL") return null;
-  const latest = new Date(latestTimestamp);
-  const cutoff = new Date(latest);
-  if (range === "1D") cutoff.setTime(latest.getTime() - 24 * 60 * 60 * 1000);
-  if (range === "1M") cutoff.setMonth(cutoff.getMonth() - 1);
-  if (range === "3M") cutoff.setMonth(cutoff.getMonth() - 3);
-  if (range === "1Y") cutoff.setFullYear(cutoff.getFullYear() - 1);
-  if (range === "YTD") cutoff.setMonth(0, 1), cutoff.setHours(0, 0, 0, 0);
-  return cutoff.getTime();
-}
-
-export function filterPortfolioValueHistory(
-  points: readonly PortfolioValuePoint[],
-  range: ChartRange,
-): PortfolioValuePoint[] {
-  if (range === "ALL" || points.length <= 1) return [...points];
-  const latest = points.at(-1);
-  if (!latest) return [];
-  const cutoff = rangeCutoff(range, latest.snapshotAt);
-  if (cutoff === null) return [...points];
-  const filtered = points.filter((point) => Date.parse(point.snapshotAt) >= cutoff);
-  if (filtered.length >= 2 || filtered.length === points.length) return filtered;
-  const firstIncluded = filtered[0];
-  const firstIndex = firstIncluded ? points.findIndex((point) => point.snapshotAt === firstIncluded.snapshotAt) : points.length;
-  const previous = points[Math.max(0, firstIndex - 1)];
-  return previous ? [previous, ...filtered] : filtered;
-}
-
 export default function PortfolioValueChart({
   slug,
   portfolioName,
@@ -101,7 +74,7 @@ export default function PortfolioValueChart({
   points: PortfolioValuePoint[];
 }) {
   const [expanded, setExpanded] = useState(false);
-  const [range, setRange] = useState<ChartRange>("ALL");
+  const [range, setRange] = useState<ModelPortfolioChartRange>("ALL");
   const color = colorBySlug[slug] ?? colorBySlug.forsiktig;
   const visiblePoints = useMemo(() => filterPortfolioValueHistory(points, range), [points, range]);
   const chartData = useMemo(
@@ -209,10 +182,10 @@ export default function PortfolioValueChart({
   );
 }
 
-function RangeSelector({ range, onChange }: { range: ChartRange; onChange: (range: ChartRange) => void }) {
+function RangeSelector({ range, onChange }: { range: ModelPortfolioChartRange; onChange: (range: ModelPortfolioChartRange) => void }) {
   return (
     <div className="mt-4 flex flex-wrap gap-1.5" role="group" aria-label="Tidsperiod för värdegraf">
-      {CHART_RANGES.map((option) => (
+      {MODEL_PORTFOLIO_CHART_RANGES.map((option) => (
         <button
           key={option}
           type="button"
@@ -242,7 +215,7 @@ function ChartBody({
   color: string;
   expanded: boolean;
   slug: string;
-  range: ChartRange;
+  range: ModelPortfolioChartRange;
 }) {
   if (!data.length) {
     return (
