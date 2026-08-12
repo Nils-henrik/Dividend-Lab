@@ -1,3 +1,4 @@
+import { DIVLAB_INVESTMENT_ANALYSIS_DOCTRINE_SV } from "@/lib/investment-analysis/doctrine";
 import { buildDecisionFramework } from "./decision";
 import type { ModelPortfolioStrategyKey } from "./policy";
 
@@ -115,6 +116,8 @@ export function buildModelPortfolioSystemMandate(strategyKey: ModelPortfolioStra
     "Investeringshorisonten är ett strategiskt analysfilter och får aldrig behandlas som ett automatiskt sista säljdatum.",
     "Hur ofta systemet söker marknaden är inte samma sak som förväntad innehavstid. Samma schemalagda pass kan därför ge olika BUY/SELL/HOLD mellan mandaten.",
     mandate.objective,
+    "GEMENSAM ANALYSDISCIPLIN:",
+    DIVLAB_INVESTMENT_ANALYSIS_DOCTRINE_SV,
     "Ett beslut att inte göra någon affär är ett fullvärdigt och ofta önskvärt utfall.",
     "Om portföljen ännu saknar innehav ska den primära handelsdagskörningen aktivt söka efter ett kvalificerat första startcase. Det betyder inte att ett köp måste göras: risk, datakvalitet och mandatets miniminivåer får aldrig sänkas bara för att investera kassan.",
     "Teknisk analys är ett verifierings-, timing- och riskverktyg. Ingen indikator, formation eller poäng får ensam utgöra tesen.",
