@@ -24,6 +24,7 @@ import { SINCH_RASAR_EFTER_Q2_RAPPORTEN_2026_ARTICLE } from "@/data/news-article
 import { SIVERS_RUSAR_AI_FOTONIK_USA_IMPORTREGLER_ARTICLE } from "@/data/news-articles/sivers-rusar-ai-fotonik-usa-importregler";
 import { UKRAINA_WILDBERRIES_RYSSLAND_BENSIN_INFLATION_ARTICLE } from "@/data/news-articles/ukraina-wildberries-ryssland-bensin-inflation";
 import { USA_BORSEN_FALLER_ALPHABET_TESLA_OLJA_ARTICLE } from "@/data/news-articles/usa-borsen-faller-alphabet-tesla-olja";
+import { WALL_STREET_REKORDNIVA_SVALARE_INFLATION_TECHAKTIERNA_ARTICLE } from "@/data/news-articles/wall-street-rekordniva-svalare-inflation-techaktierna";
 import { applyNewsSearchSeo } from "@/lib/seo/editorial-content";
 
 /**
@@ -31,6 +32,7 @@ import { applyNewsSearchSeo } from "@/lib/seo/editorial-content";
  * Image assets currently live under /public/news-demo/ for historical path stability.
  */
 const PUBLISHED_NEWS_ARTICLES: NewsArticle[] = [
+  WALL_STREET_REKORDNIVA_SVALARE_INFLATION_TECHAKTIERNA_ARTICLE,
   BORSSVERIGE_LUNCH_13_AUGUSTI_2026_ARTICLE,
   MILJARDBUD_PA_EVOLUTION_ARTICLE,
   BORSSVERIGE_13_AUGUSTI_2026_ARTICLE,
