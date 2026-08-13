@@ -17,8 +17,8 @@
     max-width: 1440px !important;
     grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr) !important;
     gap: 48px !important;
-    padding-top: 48px !important;
-    padding-bottom: 48px !important;
+    padding-top: 12px !important;
+    padding-bottom: 12px !important;
   }
 
   .heroWrap h1 {
