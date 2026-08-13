@@ -33,7 +33,6 @@ export default function NewsFeaturedStory({
             variant="featured"
             objectPosition={article.thumbnailObjectPosition ?? "center 40%"}
             mobileObjectPosition={article.mobileThumbnailObjectPosition}
-            showBrandOverlay={article.showImageBrandOverlay}
             priority
           />
         )}
