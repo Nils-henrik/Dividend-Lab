@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import UniqueReaderCount from "@/components/analytics/UniqueReaderCount";
 import { LearningRichText } from "@/components/learning/LearningRichText";
 import type { NewsArticle } from "@/types/news";
 import { getNewsCategoryLabel } from "@/lib/news/categories";
@@ -13,6 +14,7 @@ import {
 
 type Props = {
   article: NewsArticle;
+  initialUniqueReaders?: number;
 };
 
 function MetadataIcon({ children }: { children: ReactNode }) {
@@ -54,7 +56,10 @@ function NewsArticleBreadcrumb({ category }: { category: NewsArticle["category"]
   );
 }
 
-export default function NewsArticleView({ article }: Props) {
+export default function NewsArticleView({
+  article,
+  initialUniqueReaders = 0,
+}: Props) {
   const introParagraphs = article.intro ?? [];
   const sections = article.sections ?? [];
   const sources = article.sources ?? [];
@@ -166,6 +171,33 @@ export default function NewsArticleView({ article }: Props) {
           )}
           <MetadataSeparator />
           <span>{article.source}</span>
+          {article.slug && (
+            <>
+              <MetadataSeparator />
+              <span className="inline-flex items-center gap-2">
+                <MetadataIcon>
+                  <svg
+                    viewBox="0 0 16 16"
+                    className="h-4 w-4"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                  >
+                    <path
+                      d="M1.75 8s2.15-3.5 6.25-3.5S14.25 8 14.25 8 12.1 11.5 8 11.5 1.75 8 1.75 8Z"
+                      strokeLinejoin="round"
+                    />
+                    <circle cx="8" cy="8" r="1.75" />
+                  </svg>
+                </MetadataIcon>
+                <UniqueReaderCount
+                  contentType="news"
+                  slug={article.slug}
+                  initialCount={initialUniqueReaders}
+                />
+              </span>
+            </>
+          )}
         </div>
       </header>
 
