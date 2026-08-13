@@ -1,12 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { ContentReaderType } from "@/lib/content-readers/server";
-
-function formatUniqueReaderLabel(count: number): string {
-  const safeCount = Number.isFinite(count) && count > 0 ? Math.floor(count) : 0;
-  return safeCount === 1 ? "1 unik läsare" : `${safeCount.toLocaleString("sv-SE")} unika läsare`;
-}
+import {
+  formatUniqueReaderLabel,
+  type ContentReaderType,
+} from "@/lib/content-readers/types";
 
 type Props = {
   contentType: ContentReaderType;
