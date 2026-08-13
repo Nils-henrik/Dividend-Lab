@@ -79,29 +79,33 @@ export default function HomeFeatureGrid() {
               key={feature.title}
               href={feature.href}
               aria-label={`${feature.title}: ${feature.linkLabel ?? "Läs mer"}`}
-              className="group flex min-h-[11rem] flex-col rounded-xl border divlab-border-neutral bg-white/[0.02] p-4 transition hover:-translate-y-0.5 hover:border-divlab-border-strong hover:bg-white/[0.035] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/40"
+              className="group flex min-h-[10.5rem] flex-col rounded-xl border divlab-border-neutral bg-white/[0.02] p-4 transition hover:-translate-y-0.5 hover:border-divlab-border-strong hover:bg-white/[0.035] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/40"
             >
-              <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-3">
                 <span
                   aria-hidden="true"
                   className="inline-flex shrink-0 text-[#168cff]"
                 >
                   <AppIcon
                     name={feature.icon}
-                    className="h-9 w-9"
-                    strokeWidth={2.15}
+                    className="h-10 w-10"
+                    strokeWidth={2.2}
                   />
                 </span>
-                {feature.status ? (
-                  <span className="rounded-md border border-violet-500/30 bg-violet-500/10 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.1em] text-violet-300">
-                    {feature.status}
-                  </span>
-                ) : null}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="text-sm font-semibold leading-snug text-divlab-text transition group-hover:text-white">
+                      {feature.title}
+                    </h3>
+                    {feature.status ? (
+                      <span className="shrink-0 rounded-md border border-violet-500/30 bg-violet-500/10 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.1em] text-violet-300">
+                        {feature.status}
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
               </div>
-              <h3 className="mt-4 text-sm font-semibold text-divlab-text transition group-hover:text-white">
-                {feature.title}
-              </h3>
-              <p className="mt-2 text-[0.82rem] leading-[1.45] text-divlab-text-secondary">
+              <p className="mt-3 text-[0.82rem] leading-[1.45] text-divlab-text-secondary">
                 {feature.description}
               </p>
               <span className="mt-auto pt-4 text-xs font-semibold text-divlab-blue transition group-hover:text-divlab-blue-muted">

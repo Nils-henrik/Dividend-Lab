@@ -80,8 +80,8 @@ export default function Hero() {
                 >
                   <AppIcon
                     name={point.icon}
-                    className="h-7 w-7"
-                    strokeWidth={2}
+                    className="h-9 w-9"
+                    strokeWidth={2.2}
                   />
                 </span>
                 <div>
