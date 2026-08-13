@@ -8,6 +8,7 @@ import LearningArticleView, {
 import JsonLdScript from "@/components/seo/JsonLd";
 import { getLearningArticle, learningArticles } from "@/data/learning-articles";
 import { getAuthenticatedUser } from "@/lib/auth/session";
+import { getContentReaderCount } from "@/lib/content-readers/server";
 import { getProfileForUser } from "@/lib/profiles/profile";
 import { getCanonicalUrl } from "@/lib/seo/canonical";
 import { articleJsonLd, breadcrumbJsonLd } from "@/lib/seo/json-ld";
@@ -88,7 +89,10 @@ export default async function LearningArticlePage({ params }: Props) {
     notFound();
   }
 
-  const user = await getAuthenticatedUser();
+  const [user, uniqueReaders] = await Promise.all([
+    getAuthenticatedUser(),
+    getContentReaderCount("learning", article.slug),
+  ]);
   const profile = user ? await getProfileForUser(user.id) : null;
   const path = `/learning/${article.slug}`;
 
@@ -116,7 +120,10 @@ export default async function LearningArticlePage({ params }: Props) {
         ]}
       />
       <div className="space-y-6">
-        <LearningArticleView article={article} />
+        <LearningArticleView
+          article={article}
+          initialUniqueReaders={uniqueReaders}
+        />
         <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8">
           <LearningArticleComments
             articleSlug={article.slug}
