@@ -78,9 +78,10 @@ export default function CookiesPageContent() {
     >
       <LegalSection title="Översikt">
         <p>
-          {serviceName} använder i nuläget endast teknik som behövs för inloggning, sessioner och
-          lösenordsåterställning. Denna policy beskriver den verifierade implementationen — inte
-          framtida planer.
+          {serviceName} använder i nuläget endast webbläsarlagring som behövs för inloggning,
+          sessioner och lösenordsåterställning. Denna policy beskriver den verifierade
+          implementationen — inte framtida planer. DivLabs räknare för unika läsare arbetar
+          server-side och skapar ingen cookie eller annan beständig identifierare i webbläsaren.
         </p>
       </LegalSection>
 
@@ -120,7 +121,8 @@ export default function CookiesPageContent() {
       <LegalSection title="Lokal lagring i webbläsaren">
         <p>
           {serviceName} använder för närvarande inte localStorage, sessionStorage eller IndexedDB
-          för funktioner i betan. Tidigare betaversioner kunde spara onboarding-status lokalt; detta
+          för funktioner i betan. Räknaren för unika läsare använder inte heller någon sådan
+          webbläsarlagring. Tidigare betaversioner kunde spara onboarding-status lokalt; detta
           används inte längre.
         </p>
       </LegalSection>
@@ -156,7 +158,10 @@ export default function CookiesPageContent() {
         />
         <p>
           Vercel Web Analytics används för anonym, aggregerad trafikstatistik och sätter inte
-          cookies. Den tekniken beskrivs i integritetspolicyn, inte som cookie i tabellen ovan.
+          cookies. DivLabs egen räknare för unika läsare gör en förstapartsförfrågan efter att en
+          börsnyhet eller utbildningsartikel har öppnats och deduplicerar server-side med en saltad
+          hash; den sätter ingen cookie och använder inte localStorage. Behandlingen beskrivs i
+          integritetspolicyn.
         </p>
         <p>
           DivLab visar därför ingen cookie-banner i den nuvarande betan. En mekanism för samtycke
@@ -178,7 +183,7 @@ export default function CookiesPageContent() {
       <LegalSection title="Mer information">
         <p>
           Se integritetspolicyn för hur personuppgifter behandlas i samband med autentisering,
-          hosting och externa tjänster som TradingView.
+          hosting, den server-side läsarräknaren och externa tjänster som TradingView.
         </p>
       </LegalSection>
     </LegalPageLayout>
