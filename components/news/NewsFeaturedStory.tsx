@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { NewsArticle } from "@/types/news";
+import { formatUniqueReaderLabel } from "@/lib/content-readers/types";
 import { getNewsCategoryLabel } from "@/lib/news/categories";
 import { formatNewsPublishedAt } from "@/lib/news/format";
 import {
@@ -10,9 +11,13 @@ import NewsArticleThumbnail from "./NewsArticleThumbnail";
 
 type Props = {
   article: NewsArticle;
+  uniqueReaders?: number;
 };
 
-export default function NewsFeaturedStory({ article }: Props) {
+export default function NewsFeaturedStory({
+  article,
+  uniqueReaders = 0,
+}: Props) {
   const href = getNewsArticleHref(article);
   const listImageUrl = article.thumbnailImageUrl ?? article.imageUrl;
 
@@ -68,6 +73,12 @@ export default function NewsFeaturedStory({ article }: Props) {
             <time dateTime={article.publishedAt}>
               {formatNewsPublishedAt(article.publishedAt)}
             </time>
+            {article.slug && (
+              <>
+                <span aria-hidden="true">·</span>
+                <span>{formatUniqueReaderLabel(uniqueReaders)}</span>
+              </>
+            )}
           </div>
 
           <div className="mt-4">
