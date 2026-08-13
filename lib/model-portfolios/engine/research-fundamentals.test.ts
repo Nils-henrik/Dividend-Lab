@@ -4,6 +4,7 @@ import { buildMarketResearchCandidate, deriveResearchMarketSignals } from "./res
 import {
   parseEodhdFundamentalsPayload,
   scoreEodhdFundamentals,
+  scoreNormalizedFundamentals,
 } from "./research-fundamentals";
 import { rankResearchUniverse } from "./research";
 
@@ -87,6 +88,60 @@ describe("research fundamental enrichment", () => {
     const highRisk = rankResearchUniverse([calm, hot], "high_risk");
     assert.equal(dividend[0]?.symbol, "TEL2-B");
     assert.equal(highRisk[0]?.symbol, "EVO");
+  });
+
+  it("does not create dividend quality from company quality when yield is zero or missing", () => {
+    const zeroYield = scoreNormalizedFundamentals({
+      dividendYield: 0,
+      payoutRatio: 0.45,
+      returnOnEquityTtm: 0.2,
+      profitMargin: 0.2,
+    }, 1);
+    const missingYield = scoreNormalizedFundamentals({
+      payoutRatio: 0.45,
+      returnOnEquityTtm: 0.2,
+      profitMargin: 0.2,
+    }, 1);
+
+    assert.equal(zeroYield.dividendQualityScore, undefined);
+    assert.equal(missingYield.dividendQualityScore, undefined);
+  });
+
+  it("hard-gates dividend ranking to verified payers plus preference/D shares and approved dividend ETFs", () => {
+    const ranked = rankResearchUniverse([
+      {
+        symbol: "NONPAYER",
+        exchange: "ST",
+        qualityScore: 0.95,
+        balanceSheetScore: 0.95,
+        valuationScore: 0.8,
+      },
+      {
+        symbol: "DIVPAYER",
+        exchange: "ST",
+        dividendQualityScore: 0.72,
+        qualityScore: 0.7,
+        balanceSheetScore: 0.7,
+        valuationScore: 0.65,
+      },
+      {
+        symbol: "SAGA-D",
+        exchange: "ST",
+        qualityScore: 0.55,
+        balanceSheetScore: 0.55,
+        valuationScore: 0.55,
+      },
+      {
+        symbol: "XACTHDIV",
+        exchange: "ST",
+      },
+    ], "dividend");
+
+    assert.doesNotMatch(ranked.map((item) => item.symbol).join(" "), /NONPAYER/);
+    assert.ok(ranked.some((item) => item.symbol === "DIVPAYER"));
+    assert.ok(ranked.some((item) => item.symbol === "SAGA-D"));
+    assert.ok(ranked.some((item) => item.symbol === "XACTHDIV"));
+    assert.ok((ranked.find((item) => item.symbol === "SAGA-D")?.reasons ?? []).some((item) => /förtur/.test(item)));
   });
 
   it("scores verified EODHD fundamentals payloads into strategy-relevant fields", () => {

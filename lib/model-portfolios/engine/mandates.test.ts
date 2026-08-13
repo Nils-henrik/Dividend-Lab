@@ -26,7 +26,10 @@ describe("model portfolio investment horizons", () => {
   it("does not turn the horizon into an automatic sell timer", () => {
     for (const strategyKey of ["conservative", "balanced", "high_risk", "dividend"] as const) {
       const mandate = MODEL_PORTFOLIO_MANDATES[strategyKey];
-      assert.ok(mandate.explicitDoNot.some((item) => /utgångsdatum/.test(item)));
+      assert.ok(
+        mandate.explicitDoNot.some((item) => /utgångsdatum|innehavstid/.test(item)),
+        `${strategyKey} must state that horizon is not an automatic sell timer`,
+      );
     }
   });
 
@@ -44,5 +47,15 @@ describe("model portfolio investment horizons", () => {
     assert.match(mandate, /Russell-universumet/);
     assert.match(mandate, /stora amerikanska kvalitetsbolag är fortsatt tillåtna/);
     assert.match(mandate, /Påstå inte Russell-medlemskap/);
+  });
+
+  it("restricts the dividend mandate to income securities and prioritizes preference/D shares", () => {
+    const mandate = buildModelPortfolioSystemMandate("dividend");
+    assert.match(mandate, /Sök endast bland utdelande stamaktier, preferensaktier, D-aktier och utdelande ETF:er/);
+    assert.match(mandate, /preferensaktier och D-aktier förtur/i);
+    assert.match(mandate, /vanlig aktie utan verifierad positiv utdelning är inte en ny köpkandidat/i);
+    assert.match(mandate, /XACT Norden Högutdelande/);
+    assert.match(mandate, /Montrose Global Monthly Dividend/);
+    assert.match(mandate, /covered-call\/optionskomponent/);
   });
 });

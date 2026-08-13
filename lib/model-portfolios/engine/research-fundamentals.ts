@@ -48,7 +48,7 @@ function scorePe(value: number | null | undefined): number | undefined {
 }
 
 function scoreYield(value: number | null | undefined): number | undefined {
-  if (!Number.isFinite(value) || (value as number) < 0) return undefined;
+  if (!Number.isFinite(value) || (value as number) <= 0) return undefined;
   const y = value as number;
   if (y > 0.09) return 0.25;
   if (y < 0.005) return 0.35;
@@ -115,7 +115,12 @@ export function scoreNormalizedFundamentals(
     ? revisionParts.reduce((sum, value) => sum + value, 0) / revisionParts.length
     : undefined;
 
-  const dividendParts = [yieldScore, payoutScore, qualityScore].filter((value): value is number => value !== undefined);
+  // A dividend score is only valid when the provider confirms a positive
+  // current/forward yield. Payout or company quality alone must never make a
+  // non-dividend stock eligible for the dividend mandate.
+  const dividendParts = yieldScore === undefined
+    ? []
+    : [yieldScore, payoutScore, qualityScore].filter((value): value is number => value !== undefined);
   const dividendQualityScore = dividendParts.length
     ? dividendParts.reduce((sum, value) => sum + value, 0) / dividendParts.length
     : undefined;

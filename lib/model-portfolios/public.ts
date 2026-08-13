@@ -60,10 +60,10 @@ export const MODEL_PORTFOLIO_PUBLIC_CATALOG: readonly ModelPortfolioPublicCatalo
     strategyKey: "dividend",
     riskLabel: "Medelrisk",
     horizonLabel: "5–10+ år",
-    workStyle: "Bygger för långsiktig utdelnings- och totalavkastningskompoundering. Utdelningssäkerhet, fritt kassaflöde, skuldnivå, utdelningstillväxt och värdering väger mer än hög direktavkastning i sig.",
+    workStyle: "Söker enbart utdelande värdepapper. Preferens- och D-aktier får förtur, medan vanliga utdelningsaktier och utdelande ETF:er används för kvalitet, riskspridning och ett jämnare kassaflöde. Utdelningssäkerhet och emittentrisk går alltid före hög direktavkastning.",
     title: "Utdelning AI-portfölj | DivLab",
-    description: "DivLabs utdelnings-AI-portfölj har tidshorisonten 5–10+ år och fokuserar på hållbar utdelning, kassaflöde, balansräkning, utdelningstillväxt och totalavkastning.",
-    summary: "Utdelning arbetar med 5–10+ års tidshorisont. AI:n söker hållbara utdelningsbolag och undviker yield traps genom att prioritera kassaflöde, skuldsättning, utdelningstillväxt och kvalitet.",
+    description: "DivLabs utdelnings-AI-portfölj investerar endast i utdelande aktier, preferens- och D-aktier samt utdelande ETF:er. Preferens/D har förtur, med fokus på hållbart kassaflöde och långsiktig totalavkastning.",
+    summary: "Utdelning arbetar med 5–10+ års tidshorisont och söker bara utdelande värdepapper. AI:n prioriterar preferens- och D-aktier, kan köpa utdelande ETF:er som XACT Norden Högutdelande och Montrose Global Monthly Dividend och filtrerar bort vanliga aktier utan verifierad utdelning.",
   },
 ] as const;
 

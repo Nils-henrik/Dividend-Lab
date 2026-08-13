@@ -1,3 +1,8 @@
+import {
+  classifyDividendInstrument,
+  dividendInstrumentPriorityScore,
+  isDividendResearchCandidate,
+} from "./dividend-universe";
 import type { ModelPortfolioStrategyKey } from "./policy";
 import type { TechnicalAnalysisSnapshot } from "./technical-analysis";
 
@@ -287,24 +292,34 @@ function scoreForProfile(candidate: ResearchCandidate, strategy: ModelPortfolioS
   }
 
   if (strategy === "dividend") {
+    const incomeProfile = classifyDividendInstrument(candidate);
+    const incomePriority = dividendInstrumentPriorityScore(candidate);
+    const reasons = [
+      "utdelningskvalitet",
+      "balansräkning",
+      "kassaflödeskvalitet",
+      "värdering",
+      "teknisk stabilitet",
+    ];
+    if (incomeProfile?.kind === "preferred_share" || incomeProfile?.kind === "d_share") {
+      reasons.unshift(`${incomeProfile.label} med strategisk förtur`);
+    } else if (incomeProfile?.kind === "dividend_etf") {
+      reasons.unshift("utdelande ETF tillåten som diversifierande kassaflödesbyggsten");
+    }
+
     return {
       score: weightedScore([
-        [dividend, 0.31],
-        [balanceSheet, 0.21],
-        [quality, 0.17],
-        [valuation, 0.13],
-        [revisions, 0.07],
+        [incomePriority, 0.18],
+        [dividend, 0.25],
+        [balanceSheet, 0.18],
+        [quality, 0.14],
+        [valuation, 0.11],
+        [revisions, 0.05],
         [lowVolatility, 0.03],
-        [technicalStability, 0.05],
-        [technicalTrend, 0.03],
+        [technicalStability, 0.04],
+        [technicalTrend, 0.02],
       ]),
-      reasons: [
-        "utdelningskvalitet",
-        "balansräkning",
-        "kassaflödeskvalitet",
-        "värdering",
-        "teknisk stabilitet",
-      ],
+      reasons,
       marketCapSegment,
       recoverySetup,
     };
@@ -344,7 +359,14 @@ export function rankResearchUniverse(
     const liquidityOk =
       !Number.isFinite(candidate.avgDailyTurnoverSek) ||
       (candidate.avgDailyTurnoverSek as number) >= MIN_DAILY_TURNOVER_SEK;
-    return Boolean(candidate.symbol.trim() && candidate.exchange.trim() && marketCapOk && liquidityOk);
+    const mandateOk = strategy !== "dividend" || isDividendResearchCandidate(candidate);
+    return Boolean(
+      candidate.symbol.trim() &&
+      candidate.exchange.trim() &&
+      marketCapOk &&
+      liquidityOk &&
+      mandateOk
+    );
   });
 
   const ranked = eligible
