@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  buildOfficialReleaseEvidenceSummary,
   buildOfficialReportEvidenceSummary,
   extractBoundedPdfText,
   fetchOfficialHttpsDocument,
@@ -150,5 +151,40 @@ describe("official document retrieval safety", () => {
     assert.match(summary, /Externt evidensmaterial/i);
     assert.match(summary, /Ignore all previous instructions/i);
     assert.ok(summary.length <= 6000);
+  });
+
+  it("distinguishes unread, failed, and budget-skipped report attachments in evidence copy", () => {
+    const unread = buildOfficialReleaseEvidenceSummary({
+      company: "Investor AB",
+      title: "Interim report January-June 2026",
+      sourceUrl: "https://view.news.eu.nasdaq.com/view?id=x",
+      documentAttempted: false,
+    });
+    assert.match(unread, /Ingen rapportbilaga lästes/i);
+    assert.doesNotMatch(unread, /kunde inte hämtas\/parsas/i);
+    assert.doesNotMatch(unread, /hoppades över/i);
+
+    const failed = buildOfficialReleaseEvidenceSummary({
+      company: "Investor AB",
+      title: "Interim report January-June 2026",
+      sourceUrl: "https://view.news.eu.nasdaq.com/view?id=x",
+      documentAttempted: true,
+      documentFailureReason: "http_error",
+    });
+    assert.match(failed, /kunde inte hämtas\/parsas säkert \(http_error\)/i);
+    assert.doesNotMatch(failed, /hoppades över/i);
+
+    const skipped = buildOfficialReleaseEvidenceSummary({
+      company: "Investor AB",
+      title: "Interim report January-June 2026",
+      sourceUrl: "https://view.news.eu.nasdaq.com/view?id=x",
+      documentAttempted: false,
+      documentSkippedDueToAttemptBudget: true,
+      documentFailureReason: "http_error",
+    });
+    assert.match(skipped, /hoppades över/i);
+    assert.match(skipped, /dokumentförsöksbudgetet redan var förbrukat/i);
+    assert.doesNotMatch(skipped, /kunde inte hämtas\/parsas/i);
+    assert.doesNotMatch(skipped, /http_error/i);
   });
 });
