@@ -16,8 +16,13 @@ import { fetchFxRateToSek } from "./fx-adapter";
 import { convertNativeMinorToSek, currencyForExchange, type FxRateQuote, type SupportedFxCurrency } from "./fx";
 import type { ModelPortfolioStrategyKey } from "./policy";
 import { buildFollowerTradePayload } from "./pricing";
+import { MODEL_PORTFOLIO_MANDATES } from "./mandates";
 import { rankResearchUniverse, type ResearchCandidate } from "./research";
 import { runModelPortfolioResearchPipeline, type ResearchCandidateDiagnostic } from "./research-pipeline";
+import {
+  attentionCandidatesAsResearch,
+  selectPortfolioAttentionCandidates,
+} from "./strategy-attention";
 import { settleModelPortfolioDecision } from "./settle-service";
 import { planSimulatedSettlement } from "./settlement";
 import {
@@ -251,11 +256,17 @@ function buildPortfolioResearchSummary(input: {
   names: ReadonlyMap<string, string>;
   quotes: ReadonlyMap<string, DelayedQuote>;
 }): string {
-  const ranked = rankResearchUniverse(input.candidates, input.strategyKey);
   const heldKeys = new Set(
     input.holdings.map((holding) => instrumentKey(holding.instrument_symbol, holding.exchange)),
   );
-  const narrative = ranked.map((candidate) => {
+  const ranked = rankResearchUniverse(input.candidates, input.strategyKey);
+  const rankedKeys = new Set(ranked.map((candidate) => instrumentKey(candidate.symbol, candidate.exchange)));
+  const monitoredHoldings = input.candidates.filter((candidate) => {
+    const candidateKey = instrumentKey(candidate.symbol, candidate.exchange);
+    return heldKeys.has(candidateKey) && !rankedKeys.has(candidateKey);
+  });
+  const investigated = [...ranked, ...monitoredHoldings];
+  const narrative = investigated.map((candidate) => {
     const candidateKey = instrumentKey(candidate.symbol, candidate.exchange);
     const quote = input.quotes.get(candidateKey);
     return {
@@ -263,11 +274,12 @@ function buildPortfolioResearchSummary(input: {
         held: heldKeys.has(candidateKey),
         changePct: quote?.changePct ?? null,
       }),
-      reasons: candidate.reasons,
+      reasons: "reasons" in candidate ? candidate.reasons : undefined,
     };
   });
   return buildInvestorFacingResearchSummary({
     pass: input.pass,
+    strategyName: MODEL_PORTFOLIO_MANDATES[input.strategyKey].name,
     investigated: narrative,
     topCandidates: narrative.slice(0, 4),
   });
@@ -453,19 +465,28 @@ export async function runAllModelPortfoliosDryRun(
     const portfolioHoldings = holdings.filter((holding) => holding.portfolio_id === portfolio.id);
     const cashMinor = cashByPortfolio.get(portfolio.id) ?? 0;
     const portfolioSnapshot = buildPortfolioSnapshot({ portfolio, cashMinor, holdings: portfolioHoldings });
+    const attention = selectPortfolioAttentionCandidates({
+      universe: research.candidates,
+      strategyKey: portfolio.strategy_key,
+      heldInstruments: portfolioHoldings.map((holding) => ({
+        symbol: holding.instrument_symbol,
+        exchange: holding.exchange,
+      })),
+    });
+    const attentionCandidates = attentionCandidatesAsResearch(attention);
     const decisionInputs = await filterPortfolioDecisionInputs({
       portfolio,
       holdings: portfolioHoldings,
       cashMinor,
       now,
-      candidates: research.candidates,
+      candidates: attentionCandidates,
       evidence: research.evidence,
       quotes: research.quotes,
     });
     const portfolioResearchSummary = buildPortfolioResearchSummary({
       pass: researchPass,
       strategyKey: portfolio.strategy_key,
-      candidates: decisionInputs.candidates,
+      candidates: attentionCandidates,
       holdings: portfolioHoldings,
       names: research.names,
       quotes: research.quotes,

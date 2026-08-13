@@ -130,20 +130,23 @@ export function toNarrativeCandidate(
  * Keeps the detailed ranking machinery internal and presents only the shortlist
  * in short, plain-language sections for readers.
  *
- * Holding ownership is intentionally not described here because the research
- * pass is shared by several portfolios. Portfolio-specific holdings are supplied
- * separately to each decision engine and must never be inferred from this shared summary.
+ * The shared fetch pool can still be common, but each portfolio summary must
+ * describe only the mandate-specific attention set that portfolio investigated.
+ * Holding ownership is still not inferred here; holdings are supplied separately
+ * to each decision engine.
  */
 export function buildInvestorFacingResearchSummary(input: {
   pass: ModelPortfolioResearchPass;
   investigated: readonly NarrativeCandidate[];
   topCandidates: readonly NarrativeCandidate[];
+  strategyName?: string;
 }): string {
   const investigated = input.investigated;
   const top = input.topCandidates.slice(0, 4);
+  const mandatePrefix = input.strategyName ? `${input.strategyName}: ` : "";
   const intro = top.length
-    ? `Sökt ${investigated.length} bolag. ${top.length} av dessa bedöms vara intressanta för djupare analys.`
-    : `Sökt ${investigated.length} bolag. Ingen kandidat bedöms vara tillräckligt intressant för djupare analys i detta pass.`;
+    ? `${mandatePrefix}Sökt ${investigated.length} bolag. ${top.length} av dessa bedöms vara intressanta för djupare analys.`
+    : `${mandatePrefix}Sökt ${investigated.length} bolag. Ingen kandidat bedöms vara tillräckligt intressant för djupare analys i detta pass.`;
 
   const companySections = top.map((item) => `${item.name}\n${candidateAnalysis(item)}`);
 
