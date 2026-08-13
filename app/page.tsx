@@ -10,17 +10,17 @@ import { DIVLAB_BRAND_NAME } from "@/lib/site/brand";
 
 export const metadata: Metadata = {
   title: {
-    absolute: `${DIVLAB_BRAND_NAME} | Börsnyheter, AI-portföljer och ekonomisk frihet`,
+    absolute: `${DIVLAB_BRAND_NAME} | Börsnyheter, utbildning och investerarverktyg`,
   },
   description:
-    "DivLab är den svenska plattformen för börsnyheter, AI-portföljer, utbildning, investerarverktyg och community. Utforska öppet innehåll eller skapa ett gratis konto.",
+    "DivLab är en svensk plattform för börsnyheter, utbildning, investerarverktyg och diskussioner om marknaden och långsiktigt sparande.",
   alternates: {
     canonical: getCanonicalUrl("/"),
   },
   openGraph: {
-    title: `${DIVLAB_BRAND_NAME} | Börsnyheter, AI-portföljer och ekonomisk frihet`,
+    title: `${DIVLAB_BRAND_NAME} | Börsnyheter, utbildning och investerarverktyg`,
     description:
-      "Svensk plattform för börsnyheter, AI-portföljer, utbildning, investerarverktyg och community.",
+      "Svensk plattform för börsnyheter, utbildning, investerarverktyg och långsiktigt sparande.",
     url: getCanonicalUrl("/"),
     type: "website",
     locale: "sv_SE",
