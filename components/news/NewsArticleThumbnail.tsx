@@ -11,6 +11,8 @@ type Props = {
   objectPosition?: string;
   /** Mobile-only object-position; falls back to `objectPosition`. */
   mobileObjectPosition?: string;
+  /** Show a compact DivLab brand lockup over the image. */
+  showBrandOverlay?: boolean;
   priority?: boolean;
 };
 
@@ -19,6 +21,7 @@ export default function NewsArticleThumbnail({
   variant = "row",
   objectPosition,
   mobileObjectPosition,
+  showBrandOverlay = false,
   priority = false,
 }: Props) {
   const isFeatured = variant === "featured";
@@ -49,6 +52,15 @@ export default function NewsArticleThumbnail({
           fallbackDesktop,
         })}
       />
+
+      {showBrandOverlay && (
+        <div className="pointer-events-none absolute left-2 top-2 z-10 flex items-center gap-1.5 rounded-md border border-white/15 bg-black/70 px-2 py-1 shadow-sm backdrop-blur-sm">
+          <span className="divlab-brand-logo text-sm">DL</span>
+          <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white">
+            DivLab
+          </span>
+        </div>
+      )}
     </div>
   );
 }
