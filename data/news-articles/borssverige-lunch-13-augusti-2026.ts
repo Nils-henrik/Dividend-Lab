@@ -13,8 +13,8 @@ export const BORSSVERIGE_LUNCH_13_AUGUSTI_2026_ARTICLE: NewsArticle = {
   url: "/news/borssverige-lunch-13-augusti-2026",
   featured: true,
   imageUrl: "/news-demo/file_0000000082488211b2dbe615932a6b79.png",
-  thumbnailObjectPosition: "center 50%",
-  mobileThumbnailObjectPosition: "center 44%",
+  thumbnailObjectPosition: "center 18%",
+  mobileThumbnailObjectPosition: "center 18%",
   imageAlt:
     "BörsSverige Lunch den 13 augusti 2026 med fokus på Embracers rapport och svenska börsnyheter vid lunchtid.",
   imageCaption: "Illustration: DivLab.",
