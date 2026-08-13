@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import PublicContentShell from "@/components/layout/PublicContentShell";
 import NewsArticleView from "@/components/news/NewsArticleView";
 import JsonLdScript from "@/components/seo/JsonLd";
+import { getContentReaderCount } from "@/lib/content-readers/server";
 import {
   getNewsArticleBySlug,
   getNewsArticlesWithSlug,
@@ -92,6 +93,7 @@ export default async function NewsArticlePage({ params }: Props) {
   }
 
   const path = `/news/${article.slug}`;
+  const uniqueReaders = await getContentReaderCount("news", article.slug);
 
   return (
     <PublicContentShell>
@@ -117,7 +119,7 @@ export default async function NewsArticlePage({ params }: Props) {
           ]),
         ]}
       />
-      <NewsArticleView article={article} />
+      <NewsArticleView article={article} initialUniqueReaders={uniqueReaders} />
     </PublicContentShell>
   );
 }
