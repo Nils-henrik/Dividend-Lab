@@ -129,6 +129,10 @@ export function toNarrativeCandidate(
  * User-facing Swedish summary for Senaste beslut.
  * Keeps the detailed ranking machinery internal and presents only the shortlist
  * in short, plain-language sections for readers.
+ *
+ * Holding ownership is intentionally not described here because the research
+ * pass is shared by several portfolios. Portfolio-specific holdings are supplied
+ * separately to each decision engine and must never be inferred from this shared summary.
  */
 export function buildInvestorFacingResearchSummary(input: {
   pass: ModelPortfolioResearchPass;
@@ -137,16 +141,11 @@ export function buildInvestorFacingResearchSummary(input: {
 }): string {
   const investigated = input.investigated;
   const top = input.topCandidates.slice(0, 4);
-  const searchedLabel = investigated.length === 1 ? "bolag" : "bolag";
   const intro = top.length
-    ? `Sökt ${investigated.length} ${searchedLabel}. ${top.length} av dessa bedöms vara intressanta för djupare analys.`
-    : `Sökt ${investigated.length} ${searchedLabel}. Ingen kandidat bedöms vara tillräckligt intressant för djupare analys i detta pass.`;
+    ? `Sökt ${investigated.length} bolag. ${top.length} av dessa bedöms vara intressanta för djupare analys.`
+    : `Sökt ${investigated.length} bolag. Ingen kandidat bedöms vara tillräckligt intressant för djupare analys i detta pass.`;
 
-  const companySections = top.map((item) => {
-    const heldNote = item.held ? " (befintligt innehav i den här portföljen)" : "";
-    const symbol = toInvestorFacingSymbol(item.symbol, item.exchange);
-    return `${item.name}${heldNote}\n${candidateAnalysis(item)} Instrument: ${symbol}.`;
-  });
+  const companySections = top.map((item) => `${item.name}\n${candidateAnalysis(item)}`);
 
   return [
     `Dagens aktiesökning\n${intro}`,
