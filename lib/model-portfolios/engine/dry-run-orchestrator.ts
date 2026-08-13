@@ -269,12 +269,15 @@ function buildPortfolioResearchSummary(input: {
   const narrative = investigated.map((candidate) => {
     const candidateKey = instrumentKey(candidate.symbol, candidate.exchange);
     const quote = input.quotes.get(candidateKey);
+    const reasons = "reasons" in candidate && Array.isArray(candidate.reasons)
+      ? candidate.reasons.filter((reason): reason is string => typeof reason === "string")
+      : undefined;
     return {
       ...toNarrativeCandidate(candidate, input.names, {
         held: heldKeys.has(candidateKey),
         changePct: quote?.changePct ?? null,
       }),
-      reasons: "reasons" in candidate ? candidate.reasons : undefined,
+      reasons,
     };
   });
   return buildInvestorFacingResearchSummary({

@@ -418,7 +418,11 @@ export function selectPortfolioAttentionCandidates(
     heldCandidates.push(universeByKey.get(key) ?? toHeldStub(held));
   }
 
-  const rejectedNewEntries: AttentionSelectionResult["rejectedNewEntries"] = [];
+  const rejectedNewEntries: Array<{
+    symbol: string;
+    exchange: string;
+    reasons: readonly AttentionReasonTag[];
+  }> = [];
   const eligibleNewEntries: ResearchCandidate[] = [];
   const newEntryReasons = new Map<string, readonly AttentionReasonTag[]>();
 
@@ -438,8 +442,8 @@ export function selectPortfolioAttentionCandidates(
     newEntryReasons.set(key, decision.reasons);
   }
 
-  rejectedNewEntries.sort((a, b) =>
-    instrumentKey(a.symbol, a.exchange).localeCompare(instrumentKey(b.symbol, b.exchange)),
+  rejectedNewEntries.sort((left, right) =>
+    instrumentKey(left.symbol, left.exchange).localeCompare(instrumentKey(right.symbol, right.exchange)),
   );
 
   const rankedNewEntries = rankResearchUniverse(eligibleNewEntries, input.strategyKey)
