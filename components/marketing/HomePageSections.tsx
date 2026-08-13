@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import AppIcon from "@/components/layout/AppIcon";
 import {
   learningArticles,
   type LearningArticleWithReadingTime,
@@ -59,6 +60,22 @@ async function getLatestPublicForumThread(): Promise<ForumThread | null> {
   }
 }
 
+const swedishContextItems = [
+  "ISK och KF",
+  "Pension",
+  "Indexfonder",
+  "Sparkvot",
+  "FIRE",
+  "Svenska börsnyheter",
+] as const;
+
+const accountBenefits = [
+  "Följ AI-portföljer",
+  "Delta i forumet",
+  "Kommentera",
+  "Bygg din DivLab-miljö",
+] as const;
+
 function SectionHeading({
   id,
   eyebrow,
@@ -68,7 +85,7 @@ function SectionHeading({
   id: string;
   eyebrow: string;
   title: string;
-  description: string;
+  description?: string;
 }) {
   return (
     <div className="max-w-2xl">
@@ -77,30 +94,15 @@ function SectionHeading({
       </p>
       <h2
         id={id}
-        className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-divlab-text sm:text-3xl"
+        className="mt-2.5 text-2xl font-semibold tracking-[-0.03em] text-divlab-text sm:text-3xl"
       >
         {title}
       </h2>
-      <p className="mt-3 text-base leading-7 text-divlab-text-secondary">
-        {description}
-      </p>
-    </div>
-  );
-}
-
-function BenefitItem({
-  title,
-  description,
-}: {
-  title: string;
-  description: string;
-}) {
-  return (
-    <div className="border-t divlab-border-neutral pt-5">
-      <h3 className="text-sm font-semibold text-divlab-text">{title}</h3>
-      <p className="mt-2 text-sm leading-6 text-divlab-text-secondary">
-        {description}
-      </p>
+      {description ? (
+        <p className="mt-2.5 text-sm leading-6 text-divlab-text-secondary sm:text-base sm:leading-7">
+          {description}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -120,7 +122,7 @@ export default async function HomePageSections() {
         aria-labelledby="aktuellt-heading"
         className="border-t divlab-border-neutral bg-divlab-bg"
       >
-        <div className="mx-auto max-w-7xl px-6 py-16 md:px-8 md:py-20">
+        <div className="mx-auto max-w-7xl px-6 py-12 md:px-8 md:py-14">
           <SectionHeading
             id="aktuellt-heading"
             eyebrow="Aktuellt"
@@ -128,16 +130,16 @@ export default async function HomePageSections() {
             description="Senaste publicerade innehållet från Börsnyheter, Utbildning och Forum."
           />
 
-          <div className="mt-10 grid gap-6 lg:grid-cols-3">
-            <div className="lg:col-span-1">
+          <div className="mt-6 grid gap-3 lg:grid-cols-3">
+            <article className="rounded-xl border divlab-border-neutral bg-white/[0.02] p-3.5 sm:p-4">
               {latestNews && newsHref ? (
                 isInternalNewsArticleHref(newsHref) ? (
                   <Link
                     href={newsHref}
-                    className="group block space-y-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/40"
+                    className="group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/40"
                   >
                     {newsImage ? (
-                      <div className="relative aspect-[16/10] overflow-hidden rounded-xl border divlab-border-neutral bg-divlab-surface">
+                      <div className="relative mb-3 aspect-[2/1] overflow-hidden rounded-lg border divlab-border-neutral bg-divlab-surface">
                         <Image
                           src={newsImage}
                           alt=""
@@ -147,15 +149,15 @@ export default async function HomePageSections() {
                         />
                       </div>
                     ) : null}
-                    <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-divlab-text-muted">
+                    <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-divlab-blue-muted">
                       Börsnyheter
                       <span aria-hidden="true"> · </span>
                       {getNewsCategoryLabel(latestNews.category)}
                     </p>
-                    <h3 className="text-lg font-semibold leading-snug tracking-[-0.02em] text-divlab-text transition group-hover:text-white">
+                    <h3 className="mt-2 text-base font-semibold leading-snug tracking-[-0.02em] text-divlab-text transition group-hover:text-white">
                       {latestNews.title}
                     </h3>
-                    <p className="text-sm text-divlab-text-muted">
+                    <p className="mt-2 text-sm text-divlab-text-muted">
                       <time dateTime={latestNews.publishedAt}>
                         {formatNewsPublishedAt(latestNews.publishedAt)}
                       </time>
@@ -166,22 +168,22 @@ export default async function HomePageSections() {
                     href={newsHref}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="group block space-y-4"
+                    className="group block"
                   >
-                    <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-divlab-text-muted">
+                    <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-divlab-blue-muted">
                       Börsnyheter
                     </p>
-                    <h3 className="text-lg font-semibold text-divlab-text">
+                    <h3 className="mt-2 text-base font-semibold text-divlab-text">
                       {latestNews.title}
                     </h3>
                   </a>
                 )
               ) : (
                 <div>
-                  <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-divlab-text-muted">
+                  <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-divlab-blue-muted">
                     Börsnyheter
                   </p>
-                  <p className="mt-3 text-sm text-divlab-text-secondary">
+                  <p className="mt-2 text-sm text-divlab-text-secondary">
                     Inga artiklar just nu.
                   </p>
                   <Link href="/news" className="divlab-link mt-3 inline-flex text-sm">
@@ -189,35 +191,46 @@ export default async function HomePageSections() {
                   </Link>
                 </div>
               )}
-            </div>
+            </article>
 
-            <div className="space-y-8 border-t divlab-border-neutral pt-6 lg:border-t-0 lg:border-l lg:pl-6 lg:pt-0">
+            <article className="rounded-xl border divlab-border-neutral bg-white/[0.02] p-3.5 sm:p-4">
               {latestLearning ? (
                 <Link
                   href={`/learning/${latestLearning.slug}`}
                   className="group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/40"
                 >
-                  <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-divlab-text-muted">
+                  <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-divlab-blue-muted">
                     Utbildning
                   </p>
-                  <h3 className="mt-3 text-base font-semibold leading-snug text-divlab-text transition group-hover:text-white">
+                  <h3 className="mt-2 text-base font-semibold leading-snug text-divlab-text transition group-hover:text-white">
                     {latestLearning.title}
                   </h3>
                   <p className="mt-2 text-sm text-divlab-text-muted">
                     {latestLearning.readingMinutes} min läsning
                   </p>
                 </Link>
-              ) : null}
+              ) : (
+                <div>
+                  <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-divlab-blue-muted">
+                    Utbildning
+                  </p>
+                  <Link href="/learning" className="divlab-link mt-3 inline-flex text-sm">
+                    Till Utbildning
+                  </Link>
+                </div>
+              )}
+            </article>
 
+            <article className="flex flex-col rounded-xl border divlab-border-neutral bg-white/[0.02] p-3.5 sm:p-4">
               {latestThread ? (
                 <Link
                   href={`/forum/${latestThread.slug}`}
                   className="group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/40"
                 >
-                  <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-divlab-text-muted">
+                  <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-divlab-blue-muted">
                     Forum
                   </p>
-                  <h3 className="mt-3 text-base font-semibold leading-snug text-divlab-text transition group-hover:text-white">
+                  <h3 className="mt-2 text-base font-semibold leading-snug text-divlab-text transition group-hover:text-white">
                     {latestThread.title}
                   </h3>
                   <p className="mt-2 text-sm text-divlab-text-muted">
@@ -231,60 +244,61 @@ export default async function HomePageSections() {
                   href="/forum"
                   className="group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/40"
                 >
-                  <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-divlab-text-muted">
+                  <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-divlab-blue-muted">
                     Forum
                   </p>
-                  <h3 className="mt-3 text-base font-semibold text-divlab-text transition group-hover:text-white">
+                  <h3 className="mt-2 text-base font-semibold text-divlab-text transition group-hover:text-white">
                     Diskutera marknaden med andra sparintresserade
                   </h3>
                 </Link>
               )}
-            </div>
 
-            <div className="flex flex-col justify-between border-t divlab-border-neutral pt-6 lg:border-t-0 lg:border-l lg:pl-6 lg:pt-0">
-              <div>
+              <div className="mt-auto border-t divlab-border-neutral pt-3.5">
                 <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-divlab-text-muted">
-                  Utan konto
+                  Med ett gratis konto
                 </p>
-                <p className="mt-3 text-sm leading-6 text-divlab-text-secondary">
-                  Du kan läsa Börsnyheter, Utbildning, Forum och använda
-                  Frihetsmaskinen utan att registrera dig.
-                </p>
+                <ul className="mt-2 space-y-1">
+                  {accountBenefits.map((item) => (
+                    <li
+                      key={item}
+                      className="flex items-center gap-2 text-sm text-divlab-text-secondary"
+                    >
+                      <AppIcon
+                        name="check"
+                        className="h-3.5 w-3.5 shrink-0 text-divlab-blue"
+                        strokeWidth={1.75}
+                      />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
               </div>
-              <Link
-                href="/news"
-                className="mt-6 inline-flex min-h-11 items-center text-sm font-medium text-divlab-blue transition hover:text-divlab-blue-hover"
-              >
-                Utforska öppet innehåll
-              </Link>
-            </div>
+            </article>
           </div>
         </div>
       </section>
 
       <section
         aria-labelledby="frihet-heading"
-        className="border-t divlab-border-neutral bg-[#0b0b0b]"
+        className="border-t divlab-border-neutral bg-divlab-bg"
       >
-        <div className="mx-auto grid max-w-7xl gap-10 px-6 py-16 md:px-8 md:py-20 lg:grid-cols-2 lg:items-center">
-          <SectionHeading
-            id="frihet-heading"
-            eyebrow="Frihetsmaskinen"
-            title="Vägen mot ekonomisk frihet"
-            description="Testa hur kapital, sparkvot och avkastningsantaganden påverkar tidslinjen. Exemplet nedan är illustrativt — justera siffrorna själv."
-          />
-          <div className="rounded-xl border divlab-border-neutral bg-white/[0.02] p-6">
-            <p className="text-xs font-medium uppercase tracking-[0.16em] text-divlab-text-muted">
-              Illustrativt exempel
-            </p>
-            <dl className="mt-5 space-y-3 text-sm">
-              <div className="flex justify-between gap-4">
+        <div className="mx-auto grid max-w-7xl gap-4 px-6 py-12 md:px-8 md:py-14 lg:grid-cols-2 lg:gap-5 lg:items-stretch">
+          <div className="rounded-xl border divlab-border-neutral bg-white/[0.02] p-5 sm:p-5">
+            <SectionHeading
+              id="frihet-heading"
+              eyebrow="Frihetsmaskinen"
+              title="Vägen mot ekonomisk frihet"
+              description="Testa hur kapital, sparkvot och avkastningsantaganden påverkar tidslinjen. Exemplet är illustrativt — justera siffrorna själv."
+            />
+
+            <dl className="mt-4 space-y-2 text-sm">
+              <div className="flex justify-between gap-4 border-b divlab-border-neutral pb-2">
                 <dt className="text-divlab-text-secondary">Kapital</dt>
                 <dd className="tabular-nums text-divlab-text">
                   {formatSek(250_000)}
                 </dd>
               </div>
-              <div className="flex justify-between gap-4">
+              <div className="flex justify-between gap-4 border-b divlab-border-neutral pb-2">
                 <dt className="text-divlab-text-secondary">Månadssparande</dt>
                 <dd className="tabular-nums text-divlab-text">
                   {formatSek(5_000)}
@@ -299,88 +313,44 @@ export default async function HomePageSections() {
                 </dd>
               </div>
             </dl>
-            <p className="mt-5 text-sm leading-6 text-divlab-text-secondary">
+
+            <p className="mt-3.5 text-sm leading-6 text-divlab-text-secondary">
               Resultatet beror på dina egna antaganden om avkastning och
               utgifter. Det är en uppskattning — inte ett löfte.
             </p>
+
             <Link
               href="/frihetsmaskinen#kalkylator"
-              className="divlab-btn-primary mt-6 inline-flex min-h-11 items-center px-6 py-3 text-sm font-semibold"
+              className="divlab-btn-primary mt-4 inline-flex min-h-11 items-center px-6 py-3 text-sm font-semibold"
             >
               Öppna Frihetsmaskinen
             </Link>
           </div>
-        </div>
-      </section>
 
-      <section
-        aria-labelledby="benefits-heading"
-        className="border-t divlab-border-neutral bg-divlab-bg"
-      >
-        <div className="mx-auto max-w-7xl px-6 py-16 md:px-8 md:py-20">
-          <SectionHeading
-            id="benefits-heading"
-            eyebrow="Fördelar"
-            title="Det här får du med DivLab"
-            description="Funktioner som finns tillgängliga idag — utan överdrivna löften."
-          />
-          <div className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            <BenefitItem
-              title="Svenska börsnyheter"
-              description="Aktuella artiklar om marknaden, bolag och makro — för allmän information."
+          <div className="rounded-xl border divlab-border-neutral bg-white/[0.02] p-5 sm:p-5">
+            <SectionHeading
+              id="sweden-heading"
+              eyebrow="Svensk kontext"
+              title="Byggt för svenska sparare"
+              description="DivLab utgår från svensk privatekonomi: ISK och KF, pensionssparande, indexfonder, sparkvot och långsiktigt investerande."
             />
-            <BenefitItem
-              title="Utbildningsguider"
-              description="Sakliga guider om aktier, fonder, privatekonomi, pension och FIRE."
-            />
-            <BenefitItem
-              title="Frihetsmaskinen"
-              description="Interaktiv kalkyl för att utforska ekonomisk frihet utifrån dina antaganden."
-            />
-            <BenefitItem
-              title="Forum och kommentarer"
-              description="Läs diskussioner öppet. Delta och kommentera efter registrering."
-            />
-            <BenefitItem
-              title="Kontakter och meddelanden"
-              description="Bygg nätverk och kommunicera privat i din DivLab-miljö."
-            />
-            <BenefitItem
-              title="Personlig DivLab-miljö"
-              description="Efter inloggning får du en samlad översikt med genvägar till aktiva verktyg."
-            />
+
+            <ul className="mt-4 grid gap-2 sm:grid-cols-2">
+              {swedishContextItems.map((item) => (
+                <li
+                  key={item}
+                  className="flex items-center gap-2.5 text-sm leading-6 text-divlab-text-secondary"
+                >
+                  <AppIcon
+                    name="check"
+                    className="h-3.5 w-3.5 shrink-0 text-divlab-blue"
+                    strokeWidth={1.75}
+                  />
+                  {item}
+                </li>
+              ))}
+            </ul>
           </div>
-        </div>
-      </section>
-
-      <section
-        aria-labelledby="sweden-heading"
-        className="border-t divlab-border-neutral bg-[#0b0b0b]"
-      >
-        <div className="mx-auto max-w-7xl px-6 py-16 md:px-8 md:py-20">
-          <SectionHeading
-            id="sweden-heading"
-            eyebrow="Sverige"
-            title="Byggt för svenska sparare"
-            description="DivLab utgår från svensk privatekonomi: ISK och KF, pensionssparande, indexfonder, sparkvot och långsiktigt investerande."
-          />
-          <ul className="mt-8 grid gap-3 text-sm text-divlab-text-secondary sm:grid-cols-2 lg:grid-cols-3">
-            {[
-              "ISK och kapitalförsäkring",
-              "Pensionssparande och premiepension",
-              "Indexfonder och långsiktigt sparande",
-              "Sparkvot och budgetvanor",
-              "FIRE och ekonomiskt oberoende",
-              "Börsnyheter med svensk kontext",
-            ].map((item) => (
-              <li
-                key={item}
-                className="border-l border-divlab-blue/30 pl-4 leading-6"
-              >
-                {item}
-              </li>
-            ))}
-          </ul>
         </div>
       </section>
 
@@ -388,31 +358,36 @@ export default async function HomePageSections() {
         aria-labelledby="cta-heading"
         className="border-t divlab-border-neutral bg-divlab-bg"
       >
-        <div className="mx-auto max-w-3xl px-6 py-16 text-center md:px-8 md:py-20">
-          <h2
-            id="cta-heading"
-            className="text-2xl font-semibold tracking-[-0.03em] text-divlab-text sm:text-3xl"
-          >
-            Skapa konto och fortsätt i DivLab
-          </h2>
-          <p className="mt-4 text-base leading-7 text-divlab-text-secondary">
-            DivLab är för närvarande en kostnadsfri beta. Registrera dig för att
-            använda forum, kommentarer, kontakter, meddelanden och din personliga
-            DivLab-miljö.
-          </p>
-          <div className="mt-8 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
-            <Link
-              href="/register"
-              className="divlab-btn-primary inline-flex min-h-11 items-center justify-center px-8 py-3.5 text-base"
+        <div className="relative mx-auto max-w-3xl overflow-hidden px-6 py-12 text-center md:px-8 md:py-14">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(0,132,255,0.12),transparent_55%)]"
+          />
+          <div className="relative">
+            <h2
+              id="cta-heading"
+              className="text-2xl font-semibold tracking-[-0.03em] text-divlab-text sm:text-3xl"
             >
-              Skapa konto
-            </Link>
-            <Link
-              href="/about"
-              className="inline-flex min-h-11 items-center justify-center rounded-xl border divlab-border-neutral px-6 py-3.5 text-sm font-medium text-divlab-text-secondary transition hover:border-divlab-border-strong hover:text-divlab-text"
-            >
-              Om DivLab
-            </Link>
+              Börja använda hela DivLab
+            </h2>
+            <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-divlab-text-secondary sm:text-base sm:leading-7">
+              Följ AI-portföljerna, delta i forumet och bygg din egen
+              DivLab-miljö. Gratis under betan.
+            </p>
+            <div className="mt-5 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
+              <Link
+                href="/register"
+                className="divlab-btn-primary inline-flex min-h-11 items-center justify-center px-8 py-3.5 text-base font-semibold"
+              >
+                Skapa gratis konto
+              </Link>
+              <Link
+                href="/about"
+                className="inline-flex min-h-11 items-center justify-center rounded-xl border divlab-border-neutral px-6 py-3.5 text-sm font-medium text-divlab-text-secondary transition hover:border-divlab-border-strong hover:text-divlab-text"
+              >
+                Om DivLab
+              </Link>
+            </div>
           </div>
         </div>
       </section>
