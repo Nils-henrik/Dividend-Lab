@@ -1,12 +1,17 @@
+import { NORDIC_DIVIDEND_PRIORITY_SEEDS } from "./dividend-universe";
 import type { NordicSeedInstrument } from "./nordic-universe";
 
 /**
- * Supplemental Nordic opportunity universe for the high-risk discovery funnel.
- * Runtime Yahoo market-cap/liquidity data decides whether a name remains eligible;
- * these labels are discovery hints, not a permanent statement about index status.
+ * Supplemental Nordic opportunity universe used by the shared discovery funnel.
+ * It starts with dividend-specific preference/D shares and distributing ETFs so
+ * the dividend mandate can actually see them, followed by small/mid-cap names
+ * used by the high-risk mandate. Runtime Yahoo market-cap/liquidity data and the
+ * downstream portfolio-specific ranking decide whether a name remains eligible.
  */
 export const NORDIC_SMALL_MID_OPPORTUNITY_SEEDS: readonly NordicSeedInstrument[] = [
-  // Sweden
+  ...NORDIC_DIVIDEND_PRIORITY_SEEDS,
+
+  // Sweden — high-risk small/mid opportunities
   { symbol: "YUBICO", exchange: "ST", country: "SE", name: "Yubico AB", segment: "mid_cap" },
   { symbol: "LAGR-B", exchange: "ST", country: "SE", name: "Lagercrantz Group AB ser. B", segment: "mid_cap" },
   { symbol: "NCAB", exchange: "ST", country: "SE", name: "NCAB Group AB", segment: "mid_cap" },
