@@ -1,6 +1,7 @@
 import type { NewsArticle } from "@/types/news";
 import { AKTIEREKAR_INFOR_NASTA_VECKA_MICROSOFT_META_AMAZON_SINCH_ARTICLE } from "@/data/news-articles/aktierekar-infor-nasta-vecka-microsoft-meta-amazon-sinch";
 import { AMAZON_RUSAR_MICRON_TVAVANDER_AI_BOOMEN_WALL_STREET_ARTICLE } from "@/data/news-articles/amazon-rusar-micron-tvavander-ai-boomen-wall-street";
+import { MILJARDBUD_PA_EVOLUTION_ARTICLE } from "@/data/news-articles/miljardbud-pa-evolution";
 import { BORSSVERIGE_13_AUGUSTI_2026_ARTICLE } from "@/data/news-articles/borssverige-13-augusti-2026";
 import { BORSSVERIGE_12_AUGUSTI_2026_ARTICLE } from "@/data/news-articles/borssverige-12-augusti-2026";
 import { BORSVECKA_32_INVESTOR_INFLATION_USA_JOBB_ARTICLE } from "@/data/news-articles/borsvecka-32-investor-inflation-usa-jobb";
@@ -29,6 +30,7 @@ import { applyNewsSearchSeo } from "@/lib/seo/editorial-content";
  * Image assets currently live under /public/news-demo/ for historical path stability.
  */
 const PUBLISHED_NEWS_ARTICLES: NewsArticle[] = [
+  MILJARDBUD_PA_EVOLUTION_ARTICLE,
   BORSSVERIGE_13_AUGUSTI_2026_ARTICLE,
   NORDEN_I_CENTRUM_13_AUGUSTI_2026_ARTICLE,
   BORSSVERIGE_12_AUGUSTI_2026_ARTICLE,
