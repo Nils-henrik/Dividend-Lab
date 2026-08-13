@@ -9,6 +9,10 @@
 }
 
 @media (min-width: 1024px) {
+  :global(.divlab-shell-header > div) {
+    max-width: 1440px !important;
+  }
+
   .heroWrap > section > div:nth-child(2) {
     max-width: 1440px !important;
     grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr) !important;
