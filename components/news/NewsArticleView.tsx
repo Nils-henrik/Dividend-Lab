@@ -73,7 +73,7 @@ export default function NewsArticleView({
 
       {article.imageUrl && article.imageAlt && (
         <figure className="space-y-2">
-          <div className="overflow-hidden rounded-xl border divlab-border-neutral bg-divlab-surface">
+          <div className="relative overflow-hidden rounded-xl border divlab-border-neutral bg-divlab-surface">
             <Image
               src={article.imageUrl}
               alt={article.imageAlt}
@@ -87,6 +87,15 @@ export default function NewsArticleView({
                 mobile: article.mobileThumbnailObjectPosition,
               })}
             />
+
+            {article.showImageBrandOverlay && (
+              <div className="pointer-events-none absolute left-3 top-3 z-10 flex items-center gap-2 rounded-md border border-white/15 bg-black/70 px-2.5 py-1.5 shadow-sm backdrop-blur-sm sm:left-4 sm:top-4">
+                <span className="divlab-brand-logo text-base sm:text-lg">DL</span>
+                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white sm:text-xs">
+                  DivLab
+                </span>
+              </div>
+            )}
           </div>
           {(article.imageCaptionParts?.length || article.imageCaption) && (
             <figcaption className="text-sm leading-6 text-divlab-text-muted">
