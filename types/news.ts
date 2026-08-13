@@ -54,6 +54,16 @@ export interface NewsArticle {
    * when omitted.
    */
   mobileThumbnailObjectPosition?: string;
+  /**
+   * When true, category + headline are rendered before the thumbnail on
+   * mobile list rows. Desktop keeps the standard thumbnail-left layout.
+   */
+  mobileHeadlineFirst?: boolean;
+  /**
+   * Adds a small DivLab brand lockup on top of the cover image in list cards
+   * and on the article hero. Intended for covers that do not contain branding.
+   */
+  showImageBrandOverlay?: boolean;
   /** When set, the article has an internal detail page at `/news/[slug]`. */
   slug?: string;
   /** Opening body paragraphs on the detail page (after the list ingress/summary). */
