@@ -75,13 +75,13 @@ export default function Hero() {
                 } ${index === valuePoints.length - 1 ? "sm:pr-0" : ""}`}
               >
                 <span
-                  className="mt-0.5 inline-flex shrink-0 text-[#168cff]"
+                  className="mt-0.5 inline-flex shrink-0 text-divlab-blue"
                   aria-hidden="true"
                 >
                   <AppIcon
                     name={point.icon}
-                    className="h-9 w-9"
-                    strokeWidth={2.2}
+                    className="h-7 w-7"
+                    strokeWidth={1.75}
                   />
                 </span>
                 <div>

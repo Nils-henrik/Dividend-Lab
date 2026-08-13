@@ -265,8 +265,8 @@ export default async function HomePageSections() {
                     >
                       <AppIcon
                         name="check"
-                        className="h-3.5 w-3.5 shrink-0 text-[#168cff]"
-                        strokeWidth={2.2}
+                        className="h-3.5 w-3.5 shrink-0 text-divlab-blue"
+                        strokeWidth={1.75}
                       />
                       {item}
                     </li>
@@ -343,8 +343,8 @@ export default async function HomePageSections() {
                 >
                   <AppIcon
                     name="check"
-                    className="h-4 w-4 shrink-0 text-[#168cff]"
-                    strokeWidth={2.2}
+                    className="h-3.5 w-3.5 shrink-0 text-divlab-blue"
+                    strokeWidth={1.75}
                   />
                   {item}
                 </li>

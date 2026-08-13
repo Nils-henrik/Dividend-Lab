@@ -73,9 +73,9 @@ export default async function HomePortfolioPreviewPanel() {
               <div className="flex items-center gap-2.5">
                 <span
                   aria-hidden="true"
-                  className="inline-flex text-[#168cff]"
+                  className="inline-flex text-divlab-blue"
                 >
-                  <AppIcon name={style.icon} className="h-5 w-5" strokeWidth={2.1} />
+                  <AppIcon name={style.icon} className="h-4 w-4" strokeWidth={1.75} />
                 </span>
                 <h3 className="truncate text-sm font-semibold text-divlab-text group-hover:text-white">
                   {portfolio.name}

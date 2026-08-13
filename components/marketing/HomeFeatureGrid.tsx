@@ -81,15 +81,15 @@ export default function HomeFeatureGrid() {
               aria-label={`${feature.title}: ${feature.linkLabel ?? "Läs mer"}`}
               className="group flex min-h-[10.5rem] flex-col rounded-xl border divlab-border-neutral bg-white/[0.02] p-4 transition hover:-translate-y-0.5 hover:border-divlab-border-strong hover:bg-white/[0.035] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/40"
             >
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2.5">
                 <span
                   aria-hidden="true"
-                  className="inline-flex shrink-0 text-[#168cff]"
+                  className="inline-flex shrink-0 text-divlab-blue"
                 >
                   <AppIcon
                     name={feature.icon}
-                    className="h-10 w-10"
-                    strokeWidth={2.2}
+                    className="h-8 w-8"
+                    strokeWidth={1.75}
                   />
                 </span>
                 <div className="min-w-0 flex-1">
