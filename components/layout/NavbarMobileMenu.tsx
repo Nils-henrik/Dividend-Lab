@@ -15,19 +15,12 @@ export default function NavbarMobileMenu({ user, desktopNav }: Props) {
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
-
+    if (!isOpen) return;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setIsOpen(false);
-      }
+      if (event.key === "Escape") setIsOpen(false);
     };
-
     document.addEventListener("keydown", onKeyDown);
     return () => {
       document.body.style.overflow = previousOverflow;
@@ -57,52 +50,27 @@ export default function NavbarMobileMenu({ user, desktopNav }: Props) {
       </div>
 
       {isOpen ? (
-        <nav
-          id="marketing-mobile-nav"
-          aria-label="Mobil navigering"
-          className="border-t divlab-border-neutral bg-divlab-shell lg:hidden"
-        >
+        <nav id="marketing-mobile-nav" aria-label="Mobil navigering" className="border-t divlab-border-neutral bg-divlab-shell lg:hidden">
           <div className="mx-auto max-w-7xl px-6 pb-6 pt-4 md:px-8">
             <ul className="space-y-1">
               {PUBLIC_NAV_LINKS.map((link) => (
                 <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    onClick={closeMenu}
-                    className="flex min-h-11 items-center rounded-lg px-3 text-sm font-medium text-divlab-text-secondary transition hover:bg-white/[0.04] hover:text-divlab-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
-                  >
+                  <Link href={link.href} onClick={closeMenu} className="flex min-h-11 items-center rounded-lg px-3 text-sm font-medium text-divlab-text-secondary transition hover:bg-white/[0.04] hover:text-divlab-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20">
                     {link.label}
                   </Link>
                 </li>
               ))}
             </ul>
 
-            <div className="mt-4 space-y-3 border-t divlab-border-neutral pt-4">
+            <div className="mt-4 border-t divlab-border-neutral pt-4">
               {user ? (
-                <Link
-                  href="/dashboard"
-                  onClick={closeMenu}
-                  className="divlab-btn-primary flex min-h-11 w-full items-center justify-center px-6 py-3 text-sm font-semibold"
-                >
+                <Link href="/dashboard" onClick={closeMenu} className="divlab-btn-primary flex min-h-11 w-full items-center justify-center px-6 py-3 text-sm font-semibold">
                   Öppna DivLab
                 </Link>
               ) : (
-                <>
-                  <Link
-                    href="/register"
-                    onClick={closeMenu}
-                    className="divlab-btn-primary flex min-h-11 w-full items-center justify-center px-6 py-3 text-sm font-semibold"
-                  >
-                    Skapa konto
-                  </Link>
-                  <Link
-                    href="/login"
-                    onClick={closeMenu}
-                    className="block min-h-11 w-full rounded-xl border divlab-border-neutral px-6 py-3 text-center text-sm font-medium leading-6 text-divlab-text-secondary transition hover:border-divlab-border-strong hover:text-divlab-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
-                  >
-                    Logga in
-                  </Link>
-                </>
+                <Link href="/login" onClick={closeMenu} className="divlab-btn-primary flex min-h-11 w-full items-center justify-center px-6 py-3 text-sm font-semibold">
+                  Logga in
+                </Link>
               )}
             </div>
           </div>
