@@ -1,4 +1,5 @@
 import type { NewsArticle, NewsCategoryFilter as NewsCategoryFilterValue } from "@/types/news";
+import type { ContentReaderCountMap } from "@/lib/content-readers/types";
 import { formatArticleCountLabel } from "@/lib/i18n/swedish-counts";
 import NewsArticleRow from "./NewsArticleRow";
 import NewsCategoryFilter from "./NewsCategoryFilter";
@@ -13,6 +14,7 @@ type Props = {
   totalPages: number;
   featuredArticle: NewsArticle | null;
   rowArticles: NewsArticle[];
+  readerCounts?: ContentReaderCountMap;
 };
 
 export default function NewsPageContent({
@@ -22,6 +24,7 @@ export default function NewsPageContent({
   totalPages,
   featuredArticle,
   rowArticles,
+  readerCounts = {},
 }: Props) {
   const hasArticles = totalCount > 0;
 
@@ -50,7 +53,12 @@ export default function NewsPageContent({
         <div className="space-y-6">
           {featuredArticle && (
             <div className="mb-2">
-              <NewsFeaturedStory article={featuredArticle} />
+              <NewsFeaturedStory
+                article={featuredArticle}
+                uniqueReaders={
+                  featuredArticle.slug ? readerCounts[featuredArticle.slug] ?? 0 : 0
+                }
+              />
             </div>
           )}
 
@@ -67,7 +75,13 @@ export default function NewsPageContent({
 
               <div>
                 {rowArticles.map((article) => (
-                  <NewsArticleRow key={article.id} article={article} />
+                  <NewsArticleRow
+                    key={article.id}
+                    article={article}
+                    uniqueReaders={
+                      article.slug ? readerCounts[article.slug] ?? 0 : 0
+                    }
+                  />
                 ))}
               </div>
             </section>
