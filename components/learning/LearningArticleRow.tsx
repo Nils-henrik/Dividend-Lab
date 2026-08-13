@@ -1,12 +1,17 @@
 import Link from "next/link";
 import type { LearningArticleWithReadingTime } from "@/data/learning-articles";
 import LearningArticleThumbnail from "@/components/learning/LearningArticleThumbnail";
+import { formatUniqueReaderLabel } from "@/lib/content-readers/types";
 
 type Props = {
   article: LearningArticleWithReadingTime;
+  uniqueReaders?: number;
 };
 
-export default function LearningArticleRow({ article }: Props) {
+export default function LearningArticleRow({
+  article,
+  uniqueReaders = 0,
+}: Props) {
   const listImageUrl = article.thumbnailImageUrl ?? article.coverImage;
 
   return (
@@ -35,8 +40,10 @@ export default function LearningArticleRow({ article }: Props) {
             </p>
 
             <div className="mt-4 flex flex-wrap items-center justify-between gap-3 md:mt-auto">
-              <p className="text-xs text-divlab-text-muted">
-                {article.readingMinutes} min läsning
+              <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-divlab-text-muted">
+                <span>{article.readingMinutes} min läsning</span>
+                <span aria-hidden="true">·</span>
+                <span>{formatUniqueReaderLabel(uniqueReaders)}</span>
               </p>
 
               <span className="divlab-btn-ghost shrink-0 px-3 py-1.5 text-xs">
