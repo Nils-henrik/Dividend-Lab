@@ -3,7 +3,11 @@ import "server-only";
 import { createModelPortfolioAdminClient } from "../admin";
 import { aggregatePortfolioAiUsage, type ModelPortfolioAiUsage, type ModelPortfolioBatchAiUsage } from "./ai-usage";
 import { buildDecisionAuditRow, persistDecisionAuditBatch, type DecisionAuditRow } from "./decision-audit";
-import { buildInvestorFacingDecisionRationale } from "./decision-narrative";
+import {
+  buildInvestorFacingDecisionRationale,
+  buildInvestorFacingResearchSummary,
+  toNarrativeCandidate,
+} from "./decision-narrative";
 import type { ModelPortfolioDecision, ModelPortfolioEvidence } from "./decision";
 import { runPortfolioDryRun } from "./dry-run";
 import type { EodhdCallBudgetSnapshot, ModelPortfolioResearchPass } from "./eodhd-budget";
@@ -12,7 +16,7 @@ import { fetchFxRateToSek } from "./fx-adapter";
 import { convertNativeMinorToSek, currencyForExchange, type FxRateQuote, type SupportedFxCurrency } from "./fx";
 import type { ModelPortfolioStrategyKey } from "./policy";
 import { buildFollowerTradePayload } from "./pricing";
-import type { ResearchCandidate } from "./research";
+import { rankResearchUniverse, type ResearchCandidate } from "./research";
 import { runModelPortfolioResearchPipeline, type ResearchCandidateDiagnostic } from "./research-pipeline";
 import { settleModelPortfolioDecision } from "./settle-service";
 import { planSimulatedSettlement } from "./settlement";
@@ -239,6 +243,36 @@ async function filterPortfolioDecisionInputs(input: {
   return { candidates: selected, evidence };
 }
 
+function buildPortfolioResearchSummary(input: {
+  pass: ModelPortfolioResearchPass;
+  strategyKey: ModelPortfolioStrategyKey;
+  candidates: readonly ResearchCandidate[];
+  holdings: readonly HoldingRow[];
+  names: ReadonlyMap<string, string>;
+  quotes: ReadonlyMap<string, DelayedQuote>;
+}): string {
+  const ranked = rankResearchUniverse(input.candidates, input.strategyKey);
+  const heldKeys = new Set(
+    input.holdings.map((holding) => instrumentKey(holding.instrument_symbol, holding.exchange)),
+  );
+  const narrative = ranked.map((candidate) => {
+    const candidateKey = instrumentKey(candidate.symbol, candidate.exchange);
+    const quote = input.quotes.get(candidateKey);
+    return {
+      ...toNarrativeCandidate(candidate, input.names, {
+        held: heldKeys.has(candidateKey),
+        changePct: quote?.changePct ?? null,
+      }),
+      reasons: candidate.reasons,
+    };
+  });
+  return buildInvestorFacingResearchSummary({
+    pass: input.pass,
+    investigated: narrative,
+    topCandidates: narrative.slice(0, 4),
+  });
+}
+
 function failClosedExecutionHold(
   decision: ModelPortfolioDecision,
   reason: string,
@@ -428,6 +462,14 @@ export async function runAllModelPortfoliosDryRun(
       evidence: research.evidence,
       quotes: research.quotes,
     });
+    const portfolioResearchSummary = buildPortfolioResearchSummary({
+      pass: researchPass,
+      strategyKey: portfolio.strategy_key,
+      candidates: decisionInputs.candidates,
+      holdings: portfolioHoldings,
+      names: research.names,
+      quotes: research.quotes,
+    });
 
     const result = await runPortfolioDryRun({
       strategyKey: portfolio.strategy_key,
@@ -455,7 +497,7 @@ export async function runAllModelPortfoliosDryRun(
       now,
     });
     const rationale = buildInvestorFacingDecisionRationale({
-      researchSummary: research.summary,
+      researchSummary: portfolioResearchSummary,
       decision,
     });
     portfolioResults.push({
@@ -486,7 +528,7 @@ export async function runAllModelPortfoliosDryRun(
         usage: result.usage,
         portfolioSnapshot,
         executionAllowed,
-        researchSummary: research.summary,
+        researchSummary: portfolioResearchSummary,
         operationalSummary: research.operationalSummary,
       }));
     }
