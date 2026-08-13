@@ -17,8 +17,10 @@ export const MILJARDBUD_PA_EVOLUTION_ARTICLE: NewsArticle = {
   url: "/news/miljardbud-pa-evolution",
   featured: true,
   imageUrl: "/news-demo/file_00000000b36881f489650afecf2504af.png",
-  thumbnailObjectPosition: "center 50%",
-  mobileThumbnailObjectPosition: "center 50%",
+  thumbnailObjectPosition: "center 38%",
+  mobileThumbnailObjectPosition: "center 30%",
+  mobileHeadlineFirst: true,
+  showImageBrandOverlay: true,
   imageAlt:
     "Illustration till Börsnyheten Miljardbud på Evolution med Evolution-logotyp, svensk flagga och kursgrafik.",
   imageCaption: "Illustration: DivLab.",
