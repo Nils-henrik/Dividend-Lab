@@ -42,6 +42,7 @@ export default function PrivacyPageContent() {
             "sessions- och säkerhetsrelaterad teknisk data",
             "server- och felsökningsloggar hos driftleverantör",
             "anonymiserad, aggregerad trafik- och sidvisningsdata via Vercel Web Analytics (utan cookies)",
+            "pseudonymiserad läsaridentifierare för att räkna unika läsare per börsnyhet och utbildningsartikel; DivLabs läsarräknare sparar endast en saltad hash och inte rå IP-adress eller user-agent i räknartabellen",
             "data kopplad till lösenordsåterställning",
           ]}
         />
@@ -53,6 +54,14 @@ export default function PrivacyPageContent() {
           forum, skickar meddelanden, kommenterar artiklar eller använder andra funktioner som
           kräver konto. Vissa tekniska uppgifter skapas automatiskt vid användning, till exempel
           sessionscookies, loggar och anonymiserad trafikstatistik via Vercel Web Analytics.
+        </p>
+        <p>
+          När en börsnyhet eller utbildningsartikel faktiskt öppnas gör DivLab även en
+          förstapartsförfrågan till den egna servern för att uppdatera artikelns räknare för unika
+          läsare. IP-adress och user-agent används då tillfälligt på serversidan för att skapa en
+          saltad envägshash. De råa värdena skrivs inte till DivLabs tabell för läsarräkning och
+          ingen cookie, localStorage eller annan beständig identifierare skapas i webbläsaren för
+          denna funktion.
         </p>
       </LegalSection>
 
@@ -67,6 +76,7 @@ export default function PrivacyPageContent() {
             "visa reaktioner och reputation",
             "driva, utveckla och felsöka tjänsten",
             "förstå aggregerad användning av webbplatsen via anonym trafikstatistik",
+            "mäta ungefärligt antal unika läsare per börsnyhet och utbildningsartikel utan att skapa en beständig spårningsidentifierare i webbläsaren",
             "hantera support och rättsliga skyldigheter",
             "förebygga missbruk och otillåten användning",
           ]}
@@ -81,7 +91,7 @@ export default function PrivacyPageContent() {
         <LegalList
           items={[
             "fullgörande av användaravtal — för konto, kärnfunktioner och meddelanden",
-            "berättigat intresse — för säkerhet, drift, missbruksförebyggande och utveckling, i den utsträckning intresset väger tyngre än den registrerades intressen",
+            "berättigat intresse — för säkerhet, drift, missbruksförebyggande, utveckling och integritetsbegränsad mätning av artikelanvändning, i den utsträckning intresset väger tyngre än den registrerades intressen",
             "rättslig förpliktelse — där tillämplig lag kräver det",
             "samtycke — endast för valfri teknik där samtycke faktiskt inhämtas och krävs; detta gäller inte valfria cookies i nuläget eftersom mekanism för det saknas",
           ]}
@@ -108,7 +118,7 @@ export default function PrivacyPageContent() {
         <p>Följande externa leverantörer används i den nuvarande tekniska driften:</p>
         <LegalList
           items={[
-            "Supabase — autentisering, databas, fillagring och relaterad infrastruktur",
+            "Supabase — autentisering, databas, fillagring och relaterad infrastruktur; den pseudonymiserade hash som används för DivLabs unika läsarräknare lagras i Supabase",
             "Vercel — hosting, server-side rendering och Vercel Web Analytics (anonym, aggregerad trafikstatistik utan cookies)",
             "TradingView — officiell Symbol Overview-widget i inloggad dashboard (skript: " +
               TRADINGVIEW_WIDGET_SCRIPT +
@@ -135,6 +145,12 @@ export default function PrivacyPageContent() {
           Konto- och innehållsdata kvarstår i regel så länge kontot finns, om inte innehåll tas
           bort enligt tillgängliga funktioner eller efter begäran som hanteras enligt tillämplig
           lag. Fasta lagringsperioder för all behandling är ännu inte angivna i tjänsten.
+        </p>
+        <p>
+          Den saltade hash som används för unika läsare sparas för att samma läsare inte ska
+          räknas flera gånger på samma artikel. DivLabs läsarräknare lagrar inte rå IP-adress eller
+          user-agent. Lagringstid och eventuell framtida aggregering eller gallring av dessa
+          pseudonymiserade nycklar ska följas upp i den fortsatta integritetsgenomgången.
         </p>
         <p>
           Tekniska loggar hos hosting-leverantör följer deras egna lagringsrutiner. Självbetjäning
@@ -178,9 +194,9 @@ export default function PrivacyPageContent() {
         <p>
           Tjänsten använder nödvändiga Supabase Auth-sessionscookies via @supabase/ssr samt
           återställningscookien {RECOVERY_COOKIE_NAME} (15 minuter). DivLab använder inte
-          localStorage eller sessionStorage i betan. Vercel Web Analytics använder inte cookies;
-          den behandlar anonymiserad, aggregerad trafikdata. Se cookiepolicyn för detaljer om
-          cookies.
+          localStorage eller sessionStorage i betan. Räknaren för unika läsare använder inte
+          cookies eller webbläsarlagring. Vercel Web Analytics använder inte cookies; den behandlar
+          anonymiserad, aggregerad trafikdata. Se cookiepolicyn för detaljer om cookies.
         </p>
       </LegalSection>
 
