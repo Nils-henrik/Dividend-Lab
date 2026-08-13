@@ -7,7 +7,7 @@ import {
 } from "./decision-narrative";
 
 describe("model portfolio decision narrative", () => {
-  it("describes investigated candidates and findings without API/cache diagnostics", () => {
+  it("shows a short shortlist in plain Swedish without shared holding ownership", () => {
     const summary = buildInvestorFacingResearchSummary({
       pass: "nordic_morning",
       investigated: [
@@ -46,21 +46,19 @@ describe("model portfolio decision narrative", () => {
       ],
     });
 
-    assert.match(summary, /Nordiska morgonpasset/);
+    assert.match(summary, /Dagens aktiesökning/);
+    assert.match(summary, /Sökt 2 bolag/);
+    assert.match(summary, /1 av dessa bedöms vara intressanta för djupare analys/);
     assert.match(summary, /Investor AB ser\. B/);
-    assert.match(summary, /Equinor ASA/);
-    assert.match(summary, /Mest relevanta kandidater/);
-    assert.match(summary, /befintligt innehav|befintliga innehav/);
-    assert.doesNotMatch(summary, /EODHD/i);
-    assert.doesNotMatch(summary, /cache/i);
-    assert.doesNotMatch(summary, /Google/i);
-    assert.doesNotMatch(summary, /Yahoo/i);
-    assert.doesNotMatch(summary, /budget/i);
+    assert.doesNotMatch(summary, /Equinor ASA/);
+    assert.doesNotMatch(summary, /befintligt innehav|befintliga innehav/);
+    assert.doesNotMatch(summary, /uptrend|0\.72|signaler:/i);
+    assert.doesNotMatch(summary, /EODHD|cache|Google|Yahoo|budget/i);
   });
 
-  it("frames BUY/SELL/HOLD reasons for Senaste beslut in Swedish", () => {
+  it("frames BUY/SELL/HOLD reasons for Senaste beslut in Swedish sections", () => {
     const hold = buildInvestorFacingDecisionRationale({
-      researchSummary: "Nordiska morgonpasset granskade 8 aktier mer i detalj.",
+      researchSummary: "Dagens aktiesökning\nSökt 8 bolag. 4 av dessa bedöms vara intressanta för djupare analys.",
       decision: {
         action: "hold",
         symbol: null,
@@ -80,13 +78,13 @@ describe("model portfolio decision narrative", () => {
       },
     });
 
-    assert.match(hold, /AVVAKTA \(HOLD\)/);
-    assert.match(hold, /Nordiska morgonpasset/);
-    assert.match(hold, /tröskel|kyltid|kassa/);
+    assert.match(hold, /Beslut\nAVVAKTA \(HOLD\)/);
+    assert.match(hold, /Dagens aktiesökning/);
+    assert.match(hold, /portföljens krav på underlag, risk och positionering/);
     assert.doesNotMatch(hold, /EODHD|cacheHits|Google-träff/i);
 
     const buy = buildInvestorFacingDecisionRationale({
-      researchSummary: "USA-passet (15.50) granskade 10 aktier mer i detalj.",
+      researchSummary: "Dagens aktiesökning\nSökt 10 bolag. 4 av dessa bedöms vara intressanta för djupare analys.",
       decision: {
         action: "buy",
         symbol: "MSFT",
@@ -105,7 +103,7 @@ describe("model portfolio decision narrative", () => {
         rationale: "Mandatpassning, kvalitet och trend talade för en startposition.",
       },
     });
-    assert.match(buy, /KÖP/);
+    assert.match(buy, /Beslut\nKÖP/);
     assert.match(buy, /Microsoft \(MSFT\.US\)/);
   });
 
@@ -140,7 +138,7 @@ describe("model portfolio decision narrative", () => {
         { symbol: "DNB.OL", exchange: "OL", name: "DNB Bank ASA", changePct: 0.4 },
       ],
     });
-    assert.match(summary, /DNB\.OL/);
+    assert.match(summary, /DNB Bank ASA/);
     assert.doesNotMatch(summary, /\.OL\.OL|\.ST\.ST|\.HE\.HE|\.CO\.CO/);
 
     const rationale = buildInvestorFacingDecisionRationale({
