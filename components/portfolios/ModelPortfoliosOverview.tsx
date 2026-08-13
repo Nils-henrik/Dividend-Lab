@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { setModelPortfolioFollowAction } from "@/app/portfolios/actions";
+import AiPortfolioProjectDescription from "@/components/portfolios/AiPortfolioProjectDescription";
 import MarketLiveBadge from "@/components/portfolios/MarketLiveBadge";
 import {
   MODEL_PORTFOLIO_PROCESS_PATH,
@@ -33,12 +34,14 @@ export default function ModelPortfoliosOverview({ portfolios, recentTransactions
     <div className="mx-auto w-full max-w-[1560px] space-y-5 pb-4">
       <section className="px-0.5 pt-1">
         <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-divlab-blue-muted">Nyligen lanserade · Live sedan {MODEL_PORTFOLIO_PUBLIC_LAUNCH_LABEL}</p>
-        <h1 className="mt-2 text-[28px] font-semibold tracking-[-0.04em] text-divlab-text sm:text-[32px]">Fyra AI-portföljer. Fyra olika strategier.</h1>
+        <h1 className="mt-2 text-[28px] font-semibold tracking-[-0.04em] text-divlab-text sm:text-[32px]">Kan AI slå en traditionell aktieförvaltare?</h1>
         <p className="mt-3 max-w-3xl text-sm leading-7 text-divlab-text-secondary">
-          DivLab har byggt fyra separata AI-förvaltade modellportföljer med varsin investeringsstrategi och tidshorisont: Försiktig, Medelrisk, Högrisk och Utdelning. Portföljerna gick live den {MODEL_PORTFOLIO_PUBLIC_LAUNCH_LABEL} och har därför fortfarande en kort historik. Varje AI arbetar inom sitt eget mandat, analyserar marknaden och dokumenterar varför en modellaffär föreslås eller genomförs.
+          På DivLab testar vi en enkel men spännande fråga: kan AI över tid fatta investeringsbeslut som står sig mot traditionell aktiv aktieförvaltning?
         </p>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-divlab-text-muted">Detta är allmän information om simulerade modellportföljer – inte personlig investeringsrådgivning eller verkliga mäklaraffärer. Historiken är för kort för att tolkas som långsiktig track record.</p>
+        <p className="mt-2 max-w-3xl text-sm leading-6 text-divlab-text-muted">Detta är allmän information om simulerade modellportföljer – inte personlig investeringsrådgivning eller verkliga mäklaraffärer. Historiken är fortfarande kort och ska inte tolkas som ett långsiktigt track record.</p>
       </section>
+
+      <AiPortfolioProjectDescription />
 
       <section className="grid overflow-hidden border divlab-border-neutral bg-divlab-surface/55 lg:grid-cols-[1fr_1fr_1.2fr]">
         <TopMetric label="Startkapital" value="10 000 kr" sub="Per portfölj" />
