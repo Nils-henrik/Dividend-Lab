@@ -12,7 +12,7 @@ export const BORSSVERIGE_LUNCH_13_AUGUSTI_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-08-13T13:12:00+02:00",
   url: "/news/borssverige-lunch-13-augusti-2026",
   featured: true,
-  imageUrl: "/news-demo/borssverige-13-augusti-2026.png",
+  imageUrl: "/news-demo/file_0000000082488211b2dbe615932a6b79.png",
   thumbnailObjectPosition: "center 50%",
   mobileThumbnailObjectPosition: "center 44%",
   imageAlt:
