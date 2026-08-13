@@ -31,6 +31,16 @@ export const NEWS_SEO_OVERRIDES: Record<string, NewsSeoOverride> = {
     seoDescription:
       "G5 tappar intäkter medan Ferronordic vänder till vinst. Här är dagens viktigaste svenska rapporter, order och börsnyheter den 12 augusti.",
   },
+  "borssverige-13-augusti-2026": {
+    seoTitle: "BörsSverige 13 augusti: Embracer, Morrow och RaySearch",
+    seoDescription:
+      "Embracer överraskar, Morrow Bank växer och RaySearch får nya USA-order. Här är de viktigaste svenska börsnyheterna den 13 augusti 2026.",
+  },
+  "borssverige-lunch-13-augusti-2026": {
+    seoTitle: "BörsSverige Lunch 13 augusti: Embracer rusar efter rapporten",
+    seoDescription:
+      "Embracer stiger omkring 9 procent efter en rapport klart över förväntningarna. DivLab går igenom resultatet, Gothic, Cash EBIT och vad som väntar nu.",
+  },
   "borsvecka-32-investor-inflation-usa-jobb": {
     seoTitle: "Börsen vecka 32: Investor, inflation och USA-jobb",
   },
@@ -45,6 +55,11 @@ export const NEWS_SEO_OVERRIDES: Record<string, NewsSeoOverride> = {
   },
   "iran-oljepris-hormuz-borsen": {
     seoTitle: "Iran och Hormuz: så påverkas oljepriset och börsen",
+  },
+  "miljardbud-pa-evolution": {
+    seoTitle: "Miljardbud på Evolution – Candle Lake erbjuder 695 kronor",
+    seoDescription:
+      "Candle Lake lägger ett budpliktsbud på Evolution på 695 kronor per aktie. Budet värderar hela bolaget till cirka 131,7 miljarder kronor.",
   },
   "nokia-overraskar-ai-forsaljningen-fordubblades": {
     seoTitle: "Nokia överraskar: AI-försäljningen fördubblas",
@@ -84,6 +99,12 @@ export const NEWS_SEO_OVERRIDES: Record<string, NewsSeoOverride> = {
     seoDescription:
       "Sampo höjer utsikterna, Ferronordic vänder till vinst och Demant höjer prognosen. Här är dagens viktigaste nordiska börsnyheter den 12 augusti.",
   },
+  "norden-i-centrum-13-augusti-2026": {
+    seoTitle:
+      "Norden i centrum 13 augusti 2026 – Maersk, Ørsted och Norges Bank i fokus",
+    seoDescription:
+      "De nordiska börserna går in i en rapporttung torsdag. Maersk, Ørsted, DNO och Kojamo står i fokus samtidigt som Norges Bank lämnar räntebesked.",
+  },
   "onsdagens-rapporter-tesla-ibm": {
     seoTitle: "Tesla och IBM rapporterar: det här bevakar marknaden",
   },
@@ -98,6 +119,11 @@ export const NEWS_SEO_OVERRIDES: Record<string, NewsSeoOverride> = {
   },
   "usa-borsen-faller-alphabet-tesla-olja": {
     seoTitle: "USA-börsen faller: Alphabet, Tesla och oljepriset i fokus",
+  },
+  "wall-street-rekordniva-svalare-inflation-techaktierna": {
+    seoTitle: "Wall Street på rekordnivå – svalare inflation lyfter tech",
+    seoDescription:
+      "S&P 500 når ny rekordnivå när USA:s producentinflation blir lägre än väntat. Läs om Fed, oljepriset, Microsoft, Nvidia och Ciscos kursras.",
   },
 };
 
