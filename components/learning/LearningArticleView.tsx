@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import UniqueReaderCount from "@/components/analytics/UniqueReaderCount";
 import {
   getLearningArticle,
   getRelatedLearningArticles,
@@ -15,6 +16,7 @@ import { formatLearningArticleDate } from "@/data/learning/dates";
 
 type Props = {
   article: LearningArticleWithReadingTime;
+  initialUniqueReaders?: number;
 };
 
 function getIntroParagraphs(intro: string | string[]) {
@@ -103,7 +105,10 @@ function LearningArticleRelatedAside({
   );
 }
 
-export default function LearningArticleView({ article }: Props) {
+export default function LearningArticleView({
+  article,
+  initialUniqueReaders = 0,
+}: Props) {
   const introParagraphs = getIntroParagraphs(article.intro);
   const showDefaultDisclaimer = article.showDefaultDisclaimer ?? true;
   const formattedPublishedAt = article.publishedAt
@@ -184,6 +189,29 @@ export default function LearningArticleView({ article }: Props) {
               <span>{article.authorName}</span>
             </>
           )}
+          <MetadataSeparator />
+          <span className="inline-flex items-center gap-2">
+            <MetadataIcon>
+              <svg
+                viewBox="0 0 16 16"
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+              >
+                <path
+                  d="M1.75 8s2.15-3.5 6.25-3.5S14.25 8 14.25 8 12.1 11.5 8 11.5 1.75 8 1.75 8Z"
+                  strokeLinejoin="round"
+                />
+                <circle cx="8" cy="8" r="1.75" />
+              </svg>
+            </MetadataIcon>
+            <UniqueReaderCount
+              contentType="learning"
+              slug={article.slug}
+              initialCount={initialUniqueReaders}
+            />
+          </span>
         </div>
       </header>
 
