@@ -21,13 +21,6 @@ export type NarrativeCandidate = {
   reasons?: readonly string[];
 };
 
-function passLabel(pass: ModelPortfolioResearchPass): string {
-  if (pass === "nordic_morning") return "Nordiska morgonpasset (09.20)";
-  if (pass === "us_1550") return "USA-passet (15.50)";
-  if (pass === "us_1830") return "USA-passet (18.30)";
-  return "USA-passet (21.30)";
-}
-
 function actionLabel(action: ModelPortfolioDecision["action"]): string {
   if (action === "buy") return "KÖP";
   if (action === "sell") return "SÄLJ";
@@ -36,55 +29,75 @@ function actionLabel(action: ModelPortfolioDecision["action"]): string {
   return "AVVAKTA (HOLD)";
 }
 
-function formatPct(value: number | null | undefined): string | null {
-  if (value == null || !Number.isFinite(value)) return null;
-  const sign = value > 0 ? "+" : "";
-  return `${sign}${value.toFixed(1)}%`;
+function joinSwedish(parts: readonly string[]): string {
+  if (!parts.length) return "";
+  if (parts.length === 1) return parts[0]!;
+  if (parts.length === 2) return `${parts[0]} och ${parts[1]}`;
+  return `${parts.slice(0, -1).join(", ")} och ${parts.at(-1)}`;
 }
 
-function scorePhrase(label: string, value: number | undefined): string | null {
-  if (value == null || !Number.isFinite(value)) return null;
-  if (value >= 0.7) return `stark ${label}`;
-  if (value >= 0.55) return `stabil ${label}`;
-  if (value >= 0.4) return `blandad ${label}`;
-  return `svag ${label}`;
+function trendSentence(regime: string | undefined): string | null {
+  if (regime === "strong_uptrend") return "Aktien visar en tydligt positiv trend.";
+  if (regime === "uptrend") return "Aktien visar en positiv trend.";
+  if (regime === "neutral") return "Kursutvecklingen är mer neutral just nu.";
+  if (regime === "downtrend") return "Aktien har en svagare trend just nu.";
+  if (regime === "strong_downtrend") return "Aktien befinner sig i en tydligt svag trend.";
+  return null;
 }
 
-function candidateFindings(candidate: NarrativeCandidate): string {
-  const parts: string[] = [];
-  const move = formatPct(candidate.changePct);
-  if (move) parts.push(`dagsrörelse ${move}`);
-  if (candidate.technicalRegime) {
-    parts.push(
-      candidate.technicalComposite != null && Number.isFinite(candidate.technicalComposite)
-        ? `trend ${candidate.technicalRegime} (${candidate.technicalComposite.toFixed(2)})`
-        : `trend ${candidate.technicalRegime}`,
-    );
-  }
-  for (const [label, value] of [
-    ["värdering", candidate.valuationScore],
-    ["kvalitet", candidate.qualityScore],
-    ["utdelning", candidate.dividendQualityScore],
-    ["balansräkning", candidate.balanceSheetScore],
-    ["katalysator", candidate.catalystScore],
-    ["revideringar", candidate.earningsRevisionScore],
-  ] as const) {
-    const phrase = scorePhrase(label, value);
-    if (phrase) parts.push(phrase);
-  }
-  if (candidate.reasons?.length) {
-    parts.push(`signaler: ${candidate.reasons.slice(0, 3).join(", ")}`);
-  }
-  if (!parts.length) return "begränsat underlag i detta pass";
-  return parts.join("; ");
+function positiveFindingPhrases(candidate: NarrativeCandidate): string[] {
+  const phrases: string[] = [];
+  if ((candidate.qualityScore ?? -1) >= 0.55) phrases.push("bolagskvaliteten ser bra ut");
+  if ((candidate.valuationScore ?? -1) >= 0.55) phrases.push("värderingen ger stöd");
+  if ((candidate.balanceSheetScore ?? -1) >= 0.55) phrases.push("balansräkningen ser stabil ut");
+  if ((candidate.earningsRevisionScore ?? -1) >= 0.55) phrases.push("vinstförväntningarna utvecklas positivt");
+  if ((candidate.catalystScore ?? -1) >= 0.55) phrases.push("det finns tydliga positiva katalysatorer");
+  if ((candidate.dividendQualityScore ?? -1) >= 0.55) phrases.push("utdelningsprofilen är stark");
+  return phrases;
 }
 
-function listNames(candidates: readonly NarrativeCandidate[], limit = 6): string {
-  if (!candidates.length) return "inga namn";
-  return candidates
-    .slice(0, limit)
-    .map((item) => `${item.name} (${toInvestorFacingSymbol(item.symbol, item.exchange)})`)
-    .join(", ");
+function cautionFindingPhrases(candidate: NarrativeCandidate): string[] {
+  const phrases: string[] = [];
+  if (candidate.valuationScore != null && candidate.valuationScore < 0.4) {
+    phrases.push("värderingen är däremot mer ansträngd");
+  }
+  if (candidate.qualityScore != null && candidate.qualityScore < 0.4) {
+    phrases.push("bolagskvaliteten är ett frågetecken");
+  }
+  if (candidate.balanceSheetScore != null && candidate.balanceSheetScore < 0.4) {
+    phrases.push("balansräkningen behöver granskas närmare");
+  }
+  if (candidate.earningsRevisionScore != null && candidate.earningsRevisionScore < 0.4) {
+    phrases.push("vinstförväntningarna ger ännu inget tydligt stöd");
+  }
+  if (candidate.catalystScore != null && candidate.catalystScore < 0.4) {
+    phrases.push("det saknas en tydlig positiv katalysator");
+  }
+  return phrases;
+}
+
+function capitalize(value: string): string {
+  if (!value) return value;
+  return `${value[0]!.toUpperCase()}${value.slice(1)}`;
+}
+
+function candidateAnalysis(candidate: NarrativeCandidate): string {
+  const sentences: string[] = [];
+  const trend = trendSentence(candidate.technicalRegime);
+  if (trend) sentences.push(trend);
+
+  const positives = positiveFindingPhrases(candidate).slice(0, 2);
+  if (positives.length) {
+    sentences.push(`${capitalize(joinSwedish(positives))}.`);
+  }
+
+  const caution = cautionFindingPhrases(candidate)[0];
+  if (caution) sentences.push(`${capitalize(caution)}.`);
+
+  if (!sentences.length) {
+    return "Underlaget är mer blandat, men bolaget har tillräckligt många positiva signaler för att vara intressant att analysera vidare.";
+  }
+  return sentences.slice(0, 3).join(" ");
 }
 
 export function toNarrativeCandidate(
@@ -114,7 +127,8 @@ export function toNarrativeCandidate(
 
 /**
  * User-facing Swedish summary for Senaste beslut.
- * Describes investigated names, findings and decision framing — not API/cache plumbing.
+ * Keeps the detailed ranking machinery internal and presents only the shortlist
+ * in short, plain-language sections for readers.
  */
 export function buildInvestorFacingResearchSummary(input: {
   pass: ModelPortfolioResearchPass;
@@ -123,28 +137,21 @@ export function buildInvestorFacingResearchSummary(input: {
 }): string {
   const investigated = input.investigated;
   const top = input.topCandidates.slice(0, 4);
-  const held = investigated.filter((item) => item.held);
+  const searchedLabel = investigated.length === 1 ? "bolag" : "bolag";
+  const intro = top.length
+    ? `Sökt ${investigated.length} ${searchedLabel}. ${top.length} av dessa bedöms vara intressanta för djupare analys.`
+    : `Sökt ${investigated.length} ${searchedLabel}. Ingen kandidat bedöms vara tillräckligt intressant för djupare analys i detta pass.`;
 
-  const findingLines = top.map((item) => {
-    const heldNote = item.held ? " (befintligt innehav)" : "";
-    return `${item.name}${heldNote}: ${candidateFindings(item)}.`;
+  const companySections = top.map((item) => {
+    const heldNote = item.held ? " (befintligt innehav i den här portföljen)" : "";
+    const symbol = toInvestorFacingSymbol(item.symbol, item.exchange);
+    return `${item.name}${heldNote}\n${candidateAnalysis(item)} Instrument: ${symbol}.`;
   });
 
-  const parts = [
-    `${passLabel(input.pass)} granskade ${investigated.length} aktier mer i detalj` +
-      (held.length ? `, varav ${held.length} befintliga innehav` : "") +
-      ".",
-    investigated.length
-      ? `Djupare analys omfattade bland annat ${listNames(investigated, 8)}.`
-      : "Inga kandidater hade tillräckligt underlag för djupare analys i detta pass.",
-    top.length
-      ? `Mest relevanta kandidater: ${listNames(top, 4)}.`
-      : "Ingen kandidat stack ut tillräckligt tydligt i ranking.",
-    ...findingLines,
-    "Teknisk analys väger in som stöd men får aldrig ensam avgöra köp eller sälj. Saknade fundamentala värden lämnas saknade.",
-  ];
-
-  return parts.filter(Boolean).join(" ");
+  return [
+    `Dagens aktiesökning\n${intro}`,
+    ...companySections,
+  ].join("\n\n");
 }
 
 export function buildInvestorFacingDecisionRationale(input: {
@@ -161,11 +168,11 @@ export function buildInvestorFacingDecisionRationale(input: {
 
   const holdHint =
     input.decision.action === "hold"
-      ? " HOLD betyder att ingen affär klarade strategins och riskreglernas tröskel i detta pass — till exempel för svagt underlag, starkare befintliga innehav, kassa-/riskgränser eller kyltid."
+      ? " Ingen affär genomförs när inget case klarar portföljens krav på underlag, risk och positionering."
       : "";
 
-  const prefix = research ? `${research} ` : "";
-  return `${prefix}Beslut: ${action}${instrument}. ${decisionText}${holdHint}`.slice(0, 4000);
+  const decisionSection = `Beslut\n${action}${instrument}. ${decisionText}${holdHint}`;
+  return `${research}${research ? "\n\n" : ""}${decisionSection}`.slice(0, 4000);
 }
 
 export function buildOperationalResearchDiagnostics(input: {
