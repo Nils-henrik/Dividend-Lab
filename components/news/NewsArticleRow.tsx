@@ -55,7 +55,6 @@ export default function NewsArticleRow({
             variant="row"
             objectPosition={article.thumbnailObjectPosition}
             mobileObjectPosition={article.mobileThumbnailObjectPosition}
-            showBrandOverlay={article.showImageBrandOverlay}
           />
         )}
 
