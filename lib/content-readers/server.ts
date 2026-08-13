@@ -1,10 +1,12 @@
 import "server-only";
 
 import { createClient } from "@supabase/supabase-js";
+import type {
+  ContentReaderCountMap,
+  ContentReaderType,
+} from "@/lib/content-readers/types";
 
-export type ContentReaderType = "news" | "learning";
-
-export type ContentReaderCountMap = Record<string, number>;
+export type { ContentReaderCountMap, ContentReaderType } from "@/lib/content-readers/types";
 
 type ContentReaderCountRow = {
   content_slug: string;
@@ -42,11 +44,6 @@ export function isValidContentSlug(value: unknown): value is string {
 
 export function isLikelyBotUserAgent(userAgent: string): boolean {
   return BOT_USER_AGENT_PATTERN.test(userAgent);
-}
-
-export function formatUniqueReaderLabel(count: number): string {
-  const safeCount = Number.isFinite(count) && count > 0 ? Math.floor(count) : 0;
-  return safeCount === 1 ? "1 unik läsare" : `${safeCount.toLocaleString("sv-SE")} unika läsare`;
 }
 
 export async function getContentReaderCounts(
