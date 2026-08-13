@@ -31,26 +31,26 @@ export default function Hero() {
     <section className="relative overflow-hidden bg-divlab-bg">
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(59,130,246,0.11),_transparent_58%)]"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_8%,rgba(0,132,255,0.13),transparent_34%),radial-gradient(circle_at_76%_12%,rgba(30,64,175,0.1),transparent_32%)]"
       />
-      <div className="relative z-10 mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 px-6 pb-16 pt-12 md:px-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-14 lg:pb-24 lg:pt-20">
+      <div className="relative z-10 mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-6 py-10 md:px-8 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] lg:gap-12 lg:py-12 xl:gap-14">
         <div>
-          <p className="text-xs font-medium uppercase tracking-[0.22em] text-divlab-blue-muted">
+          <p className="divlab-section-label text-[10px] tracking-[0.22em]">
             DivLab
           </p>
 
-          <h1 className="mt-6 text-4xl font-bold leading-[1.08] tracking-[-0.04em] text-divlab-text sm:text-5xl lg:text-[3.55rem]">
+          <h1 className="mt-4 max-w-[650px] text-4xl font-bold leading-[1.08] tracking-[-0.04em] text-divlab-text sm:text-5xl lg:text-[clamp(3.1rem,3.4vw,3.55rem)]">
             <span className="block">Börsen. AI. Kunskap.</span>
             <span className="mt-1 block">Samlat på ett ställe.</span>
           </h1>
 
-          <p className="mt-6 max-w-xl text-base leading-7 text-divlab-text-secondary sm:text-lg sm:leading-8">
+          <p className="mt-5 max-w-[560px] text-base leading-7 text-divlab-text-secondary">
             Följ marknaden, se hur DivLabs AI-portföljer agerar och lär dig mer
             om investeringar och privatekonomi. Skapa ett gratis konto och bygg
             din egen DivLab-miljö.
           </p>
 
-          <div className="mt-8 flex w-full max-w-md flex-col items-stretch gap-3 sm:max-w-none sm:flex-row sm:items-center">
+          <div className="mt-6 flex w-full max-w-md flex-col items-stretch gap-3 sm:max-w-none sm:flex-row sm:items-center">
             <Link
               href="/register"
               className="divlab-btn-primary inline-flex min-h-12 w-full items-center justify-center px-8 py-3.5 text-base font-semibold sm:w-auto"
@@ -66,14 +66,23 @@ export default function Hero() {
             </Link>
           </div>
 
-          <div className="mt-10 grid max-w-2xl grid-cols-1 gap-4 border-t divlab-border-neutral pt-7 sm:grid-cols-3">
-            {valuePoints.map((point) => (
-              <div key={point.title} className="flex gap-3 sm:block">
+          <div className="mt-8 grid max-w-2xl grid-cols-1 gap-5 sm:grid-cols-3 sm:gap-0">
+            {valuePoints.map((point, index) => (
+              <div
+                key={point.title}
+                className={`flex items-start gap-3 sm:px-5 ${
+                  index === 0 ? "sm:pl-0" : "sm:border-l sm:border-white/10"
+                } ${index === valuePoints.length - 1 ? "sm:pr-0" : ""}`}
+              >
                 <span
-                  className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-divlab-blue/20 bg-divlab-blue/[0.08] text-divlab-blue sm:mb-3"
+                  className="mt-0.5 inline-flex shrink-0 text-[#168cff]"
                   aria-hidden="true"
                 >
-                  <AppIcon name={point.icon} className="h-5 w-5" />
+                  <AppIcon
+                    name={point.icon}
+                    className="h-7 w-7"
+                    strokeWidth={2}
+                  />
                 </span>
                 <div>
                   <p className="text-sm font-semibold text-divlab-text">
@@ -89,7 +98,7 @@ export default function Hero() {
         </div>
 
         <div className="flex w-full justify-center lg:justify-end">
-          <div className="w-full max-w-[650px] rounded-2xl border divlab-border-neutral bg-white/[0.025] p-4 shadow-[0_24px_80px_rgba(0,0,0,0.24)] sm:p-5">
+          <div className="w-full max-w-[700px] rounded-2xl border border-white/[0.11] bg-[rgba(9,17,29,0.9)] p-4 shadow-[0_24px_90px_rgba(0,0,0,0.28)] sm:p-5">
             <Suspense fallback={<ProductPreviewPanelFallback />}>
               <HomePortfolioPreviewPanel />
             </Suspense>

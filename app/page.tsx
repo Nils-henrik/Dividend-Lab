@@ -7,7 +7,6 @@ import JsonLdScript from "@/components/seo/JsonLd";
 import { getCanonicalUrl } from "@/lib/seo/canonical";
 import { organizationJsonLd, websiteJsonLd } from "@/lib/seo/json-ld";
 import { DIVLAB_BRAND_NAME } from "@/lib/site/brand";
-import styles from "./home-visual.module.css";
 
 export const metadata: Metadata = {
   title: {
@@ -33,12 +32,8 @@ export default function Home() {
   return (
     <MarketingPageShell>
       <JsonLdScript data={[websiteJsonLd(), organizationJsonLd()]} />
-      <div className={styles.heroWrap}>
-        <Hero />
-      </div>
-      <div className={styles.featuresWrap}>
-        <HomeFeatureGrid />
-      </div>
+      <Hero />
+      <HomeFeatureGrid />
       <HomePageSections />
     </MarketingPageShell>
   );
