@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import PublicContentShell from "@/components/layout/PublicContentShell";
 import NewsPageContent from "@/components/news/NewsPageContent";
+import { getContentReaderCounts } from "@/lib/content-readers/server";
 import { getCanonicalUrl } from "@/lib/seo/canonical";
 import { getNewsArticles } from "@/lib/news/get-articles";
 import {
@@ -69,6 +70,11 @@ export default async function NewsPage({ searchParams }: Props) {
     redirect(buildNewsListHref({ category, page: listing.page }));
   }
 
+  const visibleSlugs = [listing.featuredArticle, ...listing.rowArticles]
+    .map((article) => article?.slug)
+    .filter((slug): slug is string => Boolean(slug));
+  const readerCounts = await getContentReaderCounts("news", visibleSlugs);
+
   return (
     <PublicContentShell>
       <NewsPageContent
@@ -78,6 +84,7 @@ export default async function NewsPage({ searchParams }: Props) {
         totalPages={listing.totalPages}
         featuredArticle={listing.featuredArticle}
         rowArticles={listing.rowArticles}
+        readerCounts={readerCounts}
       />
     </PublicContentShell>
   );
