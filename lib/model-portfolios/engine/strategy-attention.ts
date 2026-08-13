@@ -36,6 +36,7 @@ export type AttentionReasonTag =
   | "rejected_high_volatility"
   | "rejected_weak_quality"
   | "rejected_weak_balance_sheet"
+  | "rejected_weak_fundamentals"
   | "rejected_missing_quality"
   | "rejected_missing_balance_sheet"
   | "rejected_momentum_only"
@@ -137,6 +138,15 @@ function aligned(value: number | null, threshold = 0.55): boolean {
   return value !== null && value >= threshold;
 }
 
+/**
+ * Modest Medelrisk new-entry floor. Stays well below Försiktig (0.72 / 0.62)
+ * and below the GARP alignment threshold (0.55), so ordinary mid-quality
+ * revision/catalyst cases still pass. Both known scores must be clearly weak
+ * before a new entry is rejected for fundamental weakness.
+ */
+const BALANCED_NEW_ENTRY_QUALITY_FLOOR = 0.35;
+const BALANCED_NEW_ENTRY_BALANCE_SHEET_FLOOR = 0.4;
+
 function isDeriskedQualityRecovery(candidate: ResearchCandidate): boolean {
   const recovery = assessRecoverySetup(candidate);
   const quality = knownUnitInterval(candidate.qualityScore);
@@ -224,6 +234,7 @@ function balancedNewEntry(candidate: ResearchCandidate): NewEntryAttentionDecisi
   const revisions = knownUnitInterval(candidate.earningsRevisionScore);
   const catalyst = knownUnitInterval(candidate.catalystScore);
   const trend = knownUnitInterval(candidate.technicalAnalysis?.scores.trend);
+  const balanceSheet = knownUnitInterval(candidate.balanceSheetScore);
   const volatility = knownNonNegative(candidate.volatility20d);
   const recovery = assessRecoverySetup(candidate);
 
@@ -245,6 +256,22 @@ function balancedNewEntry(candidate: ResearchCandidate): NewEntryAttentionDecisi
     !aligned(catalyst)
   ) {
     return { eligible: false, reasons: ["rejected_volatility_only"] };
+  }
+
+  const qualityBelowFloor = quality !== null && quality < BALANCED_NEW_ENTRY_QUALITY_FLOOR;
+  const balanceBelowFloor =
+    balanceSheet !== null && balanceSheet < BALANCED_NEW_ENTRY_BALANCE_SHEET_FLOOR;
+  if (qualityBelowFloor && balanceBelowFloor) {
+    return { eligible: false, reasons: ["rejected_weak_fundamentals"] };
+  }
+
+  // Missing scores stay unknown. Never coerce them to a synthetic 0.5, which
+  // would sit above the modest floor and silently pass a catalyst package.
+  if (quality === null && !aligned(valuation)) {
+    return { eligible: false, reasons: ["rejected_missing_quality"] };
+  }
+  if (qualityBelowFloor && balanceSheet === null) {
+    return { eligible: false, reasons: ["rejected_weak_quality"] };
   }
 
   return { eligible: true, reasons: ["new_entry_eligible", "garp_alignment"] };

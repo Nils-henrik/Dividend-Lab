@@ -196,6 +196,52 @@ const MIXED_UNIVERSE: ResearchCandidate[] = [
   },
 ];
 
+const WEAK_FUNDAMENTALS: ResearchCandidate = {
+  ...base,
+  symbol: "WEAKFUND",
+  marketCapSek: 8_000_000_000,
+  qualityScore: 0.04,
+  balanceSheetScore: 0.29,
+  valuationScore: 0.32,
+  earningsRevisionScore: 1,
+  catalystScore: 1,
+  volatility20d: 0.28,
+  priceMomentum20d: 0.12,
+  technicalAnalysis: technical({
+    rsi14: 62,
+    breakout: 0.88,
+    momentum: 0.86,
+    volume: 0.82,
+    trend: 0.84,
+    distanceFromHigh: -0.04,
+  }),
+};
+
+const MID_QUALITY_GARP: ResearchCandidate = {
+  ...base,
+  symbol: "MIDGARP",
+  marketCapSek: 95_000_000_000,
+  qualityScore: 0.52,
+  valuationScore: 0.66,
+  earningsRevisionScore: 0.68,
+  catalystScore: 0.6,
+  balanceSheetScore: 0.58,
+  volatility20d: 0.24,
+  technicalAnalysis: technical({ trend: 0.62, distanceFromHigh: -0.08 }),
+};
+
+const MISSING_FUNDAMENTALS: ResearchCandidate = {
+  ...base,
+  symbol: "MISSINGQ",
+  qualityScore: undefined,
+  balanceSheetScore: undefined,
+  valuationScore: 0.32,
+  earningsRevisionScore: 1,
+  catalystScore: 1,
+  volatility20d: 0.28,
+  technicalAnalysis: technical({ trend: 0.84, breakout: 0.86, distanceFromHigh: -0.04 }),
+};
+
 function newEntrySymbols(candidates: readonly AttentionCandidate[]): string[] {
   return candidates
     .filter((item) => item.attentionEligibility === "new_entry")
@@ -381,6 +427,79 @@ describe("model portfolio strategy attention", () => {
     );
     assert.ok(doctrineCases.length >= 7);
     assert.ok(doctrineCases.every((item) => item.expectedPromptDecision === "allow"));
+  });
+
+  it("16. rejects a very weak-fundamental catalyst package as a Medelrisk new entry while Högrisk may still take it", () => {
+    const balancedDecision = evaluateNewEntryAttention(WEAK_FUNDAMENTALS, "balanced");
+    const highRiskDecision = evaluateNewEntryAttention(WEAK_FUNDAMENTALS, "high_risk");
+    const conservativeDecision = evaluateNewEntryAttention(WEAK_FUNDAMENTALS, "conservative");
+    const dividendDecision = evaluateNewEntryAttention(WEAK_FUNDAMENTALS, "dividend");
+
+    assert.equal(balancedDecision.eligible, false);
+    assert.ok(balancedDecision.reasons.includes("rejected_weak_fundamentals"));
+    assert.equal(highRiskDecision.eligible, true);
+    assert.ok(highRiskDecision.reasons.includes("catalyst_revision_fit"));
+    assert.equal(conservativeDecision.eligible, false);
+    assert.ok(conservativeDecision.reasons.includes("rejected_weak_quality"));
+    assert.equal(dividendDecision.eligible, false);
+    assert.ok(dividendDecision.reasons.includes("rejected_non_income"));
+
+    const balanced = selectPortfolioAttentionCandidates({
+      universe: [...MIXED_UNIVERSE, WEAK_FUNDAMENTALS],
+      strategyKey: "balanced",
+      heldInstruments: [],
+    });
+    const highRisk = selectPortfolioAttentionCandidates({
+      universe: [...MIXED_UNIVERSE, WEAK_FUNDAMENTALS],
+      strategyKey: "high_risk",
+      heldInstruments: [],
+    });
+    assert.ok(!newEntrySymbols(balanced.candidates).includes("WEAKFUND"));
+    assert.ok(balanced.rejectedNewEntries.some((item) => item.symbol === "WEAKFUND" && item.reasons.includes("rejected_weak_fundamentals")));
+    assert.ok(newEntrySymbols(highRisk.candidates).includes("WEAKFUND"));
+  });
+
+  it("17. still accepts a medium-quality GARP case that Försiktig would reject", () => {
+    const balancedDecision = evaluateNewEntryAttention(MID_QUALITY_GARP, "balanced");
+    const conservativeDecision = evaluateNewEntryAttention(MID_QUALITY_GARP, "conservative");
+    const highRiskDecision = evaluateNewEntryAttention(MID_QUALITY_GARP, "high_risk");
+
+    assert.equal(balancedDecision.eligible, true);
+    assert.ok(balancedDecision.reasons.includes("garp_alignment"));
+    assert.equal(conservativeDecision.eligible, false);
+    assert.ok(conservativeDecision.reasons.includes("rejected_weak_quality"));
+    assert.equal(highRiskDecision.eligible, false);
+    assert.ok(highRiskDecision.reasons.includes("rejected_generic_large_cap"));
+
+    const balanced = selectPortfolioAttentionCandidates({
+      universe: [...MIXED_UNIVERSE, MID_QUALITY_GARP],
+      strategyKey: "balanced",
+      heldInstruments: [],
+    });
+    assert.ok(newEntrySymbols(balanced.candidates).includes("MIDGARP"));
+    assert.ok(newEntrySymbols(select("balanced").candidates).includes("GARP"));
+  });
+
+  it("18. keeps a held weak-fundamental name in Medelrisk monitoring", () => {
+    const attention = selectPortfolioAttentionCandidates({
+      universe: [...MIXED_UNIVERSE, WEAK_FUNDAMENTALS],
+      strategyKey: "balanced",
+      heldInstruments: [{ symbol: "WEAKFUND", exchange: "ST" }],
+    });
+    const held = attention.candidates.find((item) => item.symbol === "WEAKFUND");
+    assert.ok(held);
+    assert.equal(held.attentionEligibility, "held_for_monitoring");
+    assert.deepEqual([...held.attentionReasons], ["held_for_monitoring"]);
+    assert.ok(!attention.rejectedNewEntries.some((item) => item.symbol === "WEAKFUND"));
+  });
+
+  it("19. does not treat missing Medelrisk quality/balance as a synthetic 0.5 pass", () => {
+    const balancedDecision = evaluateNewEntryAttention(MISSING_FUNDAMENTALS, "balanced");
+    assert.equal(balancedDecision.eligible, false);
+    assert.ok(balancedDecision.reasons.includes("rejected_missing_quality"));
+
+    const highRiskDecision = evaluateNewEntryAttention(MISSING_FUNDAMENTALS, "high_risk");
+    assert.equal(highRiskDecision.eligible, true);
   });
 
   it("15. does not raise current AI, research or external-call budget constants", () => {

@@ -50,4 +50,40 @@ describe("strategy attention policies", () => {
     assert.equal(RESEARCH_BUDGET.maxDeepResearchCandidates, 6);
     assert.equal(ATTENTION_BUDGET.maxNewEntryCandidates, RESEARCH_BUDGET.maxShortlistSize);
   });
+
+  it("rejects balanced new entries when known quality and balance sheet are both clearly weak", () => {
+    const decision = evaluateNewEntryAttention(
+      {
+        symbol: "WEAKFUND",
+        exchange: "ST",
+        marketCapSek: 8_000_000_000,
+        avgDailyTurnoverSek: 20_000_000,
+        qualityScore: 0.04,
+        balanceSheetScore: 0.29,
+        valuationScore: 0.32,
+        earningsRevisionScore: 1,
+        catalystScore: 1,
+        volatility20d: 0.28,
+      },
+      "balanced",
+    );
+    assert.equal(decision.eligible, false);
+    assert.ok(decision.reasons.includes("rejected_weak_fundamentals"));
+  });
+
+  it("does not let missing balanced quality pass as a synthetic 0.5 floor", () => {
+    const decision = evaluateNewEntryAttention(
+      {
+        symbol: "MISSINGQ",
+        exchange: "ST",
+        marketCapSek: 40_000_000_000,
+        avgDailyTurnoverSek: 40_000_000,
+        earningsRevisionScore: 1,
+        catalystScore: 1,
+      },
+      "balanced",
+    );
+    assert.equal(decision.eligible, false);
+    assert.ok(decision.reasons.includes("rejected_missing_quality"));
+  });
 });
