@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { learningArticles } from "@/data/learning-articles";
 import LearningArticleRow from "@/components/learning/LearningArticleRow";
+import { getContentReaderCounts } from "@/lib/content-readers/server";
 
 export const LEARNING_ARTICLES_PER_PAGE = 8;
 
@@ -12,7 +13,7 @@ function pageHref(page: number): string {
   return page <= 1 ? "/learning" : `/learning?page=${page}`;
 }
 
-export default function LearningArticleList({ currentPage = 1 }: Props) {
+export default async function LearningArticleList({ currentPage = 1 }: Props) {
   const totalPages = Math.max(
     1,
     Math.ceil(learningArticles.length / LEARNING_ARTICLES_PER_PAGE),
@@ -22,6 +23,10 @@ export default function LearningArticleList({ currentPage = 1 }: Props) {
   const visibleArticles = learningArticles.slice(
     startIndex,
     startIndex + LEARNING_ARTICLES_PER_PAGE,
+  );
+  const readerCounts = await getContentReaderCounts(
+    "learning",
+    visibleArticles.map((article) => article.slug),
   );
 
   return (
@@ -39,7 +44,11 @@ export default function LearningArticleList({ currentPage = 1 }: Props) {
 
       <div>
         {visibleArticles.map((article) => (
-          <LearningArticleRow key={article.slug} article={article} />
+          <LearningArticleRow
+            key={article.slug}
+            article={article}
+            uniqueReaders={readerCounts[article.slug] ?? 0}
+          />
         ))}
       </div>
 
