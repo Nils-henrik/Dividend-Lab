@@ -3,6 +3,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ModelPortfolioAiModel } from "@/lib/model-portfolios/engine/ai";
 import type { DivLabAnalystUsage } from "./analyst";
+import type { DivLabAnalystQualityGate } from "./analyst-quality-gate";
 import {
   DIVLAB_ANALYST_SCHEMA_VERSION,
   divLabAnalystDraftSchema,
@@ -17,6 +18,7 @@ export type PersistedDivLabAnalysisBundle = {
   versionNumber: number;
   contentId: string;
   schemaVersion: string;
+  analystQualityGateVersion: string;
   publishable: boolean;
 };
 
@@ -29,6 +31,10 @@ function readBundleResult(value: unknown): PersistedDivLabAnalysisBundle {
   const versionId = typeof row.version_id === "string" ? row.version_id : null;
   const contentId = typeof row.content_id === "string" ? row.content_id : null;
   const schemaVersion = typeof row.schema_version === "string" ? row.schema_version : null;
+  const analystQualityGateVersion =
+    typeof row.analyst_quality_gate_version === "string"
+      ? row.analyst_quality_gate_version
+      : null;
   const versionNumber = Number(row.version_number);
   const publishable = row.publishable === true;
   if (
@@ -36,6 +42,7 @@ function readBundleResult(value: unknown): PersistedDivLabAnalysisBundle {
     !versionId ||
     !contentId ||
     !schemaVersion ||
+    !analystQualityGateVersion ||
     !Number.isInteger(versionNumber) ||
     versionNumber <= 0
   ) {
@@ -47,6 +54,7 @@ function readBundleResult(value: unknown): PersistedDivLabAnalysisBundle {
     versionNumber,
     contentId,
     schemaVersion,
+    analystQualityGateVersion,
     publishable,
   };
 }
@@ -54,18 +62,23 @@ function readBundleResult(value: unknown): PersistedDivLabAnalysisBundle {
 /**
  * Atomically persists the final deterministic research packet and the validated
  * analyst interpretation as separate immutable records in one database RPC.
+ * The deterministic analyst-quality certification is stored with the content.
  * A content validation error rolls the research version back as well.
  */
 export async function persistDivLabAnalysisBundle(input: {
   supabase: SupabaseClient;
   packet: DivLabResearchPacket;
   analystDraft: DivLabAnalystDraft;
+  analystQualityGate: DivLabAnalystQualityGate;
   analystModel: ModelPortfolioAiModel;
   usage: DivLabAnalystUsage;
   generatedAt: string;
   slug?: string;
 }): Promise<PersistedDivLabAnalysisBundle> {
   const analystDraft = divLabAnalystDraftSchema.parse(input.analystDraft);
+  if (!input.analystQualityGate.publishable) {
+    throw new Error("divlab_analysis_bundle_requires_passing_analyst_quality_gate");
+  }
   const slug = input.slug?.trim() || defaultAnalysisSlug(input.packet);
   if (!slug) throw new Error("divlab_analysis_slug_required");
 
@@ -88,6 +101,8 @@ export async function persistDivLabAnalysisBundle(input: {
     p_publishable: input.packet.qualityGate.publishable,
     p_sources: input.packet.sources,
     p_content_schema_version: DIVLAB_ANALYST_SCHEMA_VERSION,
+    p_analyst_quality_gate_version: input.analystQualityGate.version,
+    p_analyst_quality_gate: input.analystQualityGate,
     p_analyst_model: input.analystModel,
     p_analyst_draft: analystDraft,
     p_ai_usage: input.usage,
