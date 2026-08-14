@@ -1,5 +1,6 @@
 import { analyzeTechnicalSignals, type TechnicalAnalysisSnapshot } from "@/lib/model-portfolios/engine/technical-analysis";
 import type { DailyBar } from "@/lib/model-portfolios/engine/eodhd";
+import type { AnalysisEvidence } from "./evidence";
 import {
   analyzeFundamentals,
   type FundamentalAnalysis,
@@ -44,6 +45,8 @@ export type DivLabResearchPacket = {
     levels: SupportResistanceAnalysis;
   };
   sources: AnalysisSource[];
+  /** Bounded source-linked external material actually read during research. */
+  evidence: AnalysisEvidence[];
   qualityGate: AnalysisQualityGate;
 };
 
@@ -104,6 +107,7 @@ export function buildDivLabResearchPacket(input: {
   fundamentals: FundamentalSnapshot;
   valuationScenarios: ValuationScenarioInput[];
   sources: readonly AnalysisSource[];
+  evidence?: readonly AnalysisEvidence[];
   now?: Date;
 }): DivLabResearchPacket {
   if (!input.symbol.trim() || !input.exchange.trim() || !input.name.trim()) {
@@ -133,6 +137,7 @@ export function buildDivLabResearchPacket(input: {
     scenarios: input.valuationScenarios,
   });
   const sources = input.sources.map((source) => ({ ...source }));
+  const evidence = (input.evidence ?? []).map((item) => ({ ...item }));
   const qualityGate = evaluateAnalysisQuality({
     now,
     fundamental,
@@ -140,6 +145,7 @@ export function buildDivLabResearchPacket(input: {
     technicalSessions: technicalSnapshot.sessions,
     levels,
     sources,
+    evidence,
   });
 
   return {
@@ -168,6 +174,7 @@ export function buildDivLabResearchPacket(input: {
       levels,
     },
     sources,
+    evidence,
     qualityGate,
   };
 }
