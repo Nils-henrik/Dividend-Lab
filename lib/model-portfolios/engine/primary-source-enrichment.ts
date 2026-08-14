@@ -16,6 +16,11 @@ import {
   type ReportPeriod,
 } from "./report-metadata";
 
+export const PRIMARY_SOURCE_ENRICHMENT_BOUNDS = {
+  /** Dedicated deep research may read larger issuer reports, never unbounded files. */
+  maxDocumentBytes: 12_000_000,
+} as const;
+
 export type EnrichedPrimarySourceHit = {
   hit: NordicPrimarySourceHit;
   kind: PrimaryEvidenceKind;
@@ -42,17 +47,34 @@ function toSourceType(
   return "company_release";
 }
 
+function boundedDocumentBytes(value: number | undefined): number {
+  if (value === undefined) return OFFICIAL_DOCUMENT_BOUNDS.maxBytes;
+  if (!Number.isFinite(value) || value <= 0) return OFFICIAL_DOCUMENT_BOUNDS.maxBytes;
+  return Math.min(
+    Math.floor(value),
+    PRIMARY_SOURCE_ENRICHMENT_BOUNDS.maxDocumentBytes,
+  );
+}
+
 /**
  * Enrich CNS primary hits with at most one official PDF *attempt* per
  * company/pass. The bound is consumed before fetch starts, whether or not
  * retrieval/parsing later succeeds. Headlines alone never become company_report.
+ *
+ * The default PDF byte ceiling remains the conservative portfolio-engine bound.
+ * A dedicated deep-research caller may explicitly request a larger ceiling,
+ * hard-capped at PRIMARY_SOURCE_ENRICHMENT_BOUNDS.maxDocumentBytes. HTTPS,
+ * hostname allowlisting, redirect limits, timeout, content-type/PDF-signature
+ * validation and bounded text extraction remain unchanged.
  */
 export async function enrichNordicPrimarySourceHits(input: {
   hits: readonly NordicPrimarySourceHit[];
   fetchImpl?: typeof fetch;
   maxDocuments?: number;
+  maxDocumentBytes?: number;
 }): Promise<EnrichedPrimarySourceHit[]> {
   const maxDocuments = input.maxDocuments ?? OFFICIAL_DOCUMENT_BOUNDS.maxDocumentsPerCompanyPass;
+  const maxDocumentBytes = boundedDocumentBytes(input.maxDocumentBytes);
   let documentsAttempted = 0;
   const enriched: EnrichedPrimarySourceHit[] = [];
 
@@ -84,6 +106,7 @@ export async function enrichNordicPrimarySourceHits(input: {
       const fetched = await fetchOfficialHttpsDocument({
         url: attachment.url,
         fetchImpl: input.fetchImpl,
+        maxBytes: maxDocumentBytes,
       });
       if (!fetched.ok) {
         failureReason = fetched.reason;
