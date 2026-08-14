@@ -152,6 +152,15 @@ describe("DivLab deep research packet", () => {
           verifiedAt: "2026-08-14T12:00:00.000Z",
           primary: false,
         },
+        {
+          id: "fundamental:test-20260814",
+          kind: "fundamental_data",
+          publisher: "Fundamental data provider",
+          url: "https://example.com/fundamentals",
+          publishedAt: "2026-08-14T12:00:00.000Z",
+          verifiedAt: "2026-08-14T12:00:00.000Z",
+          primary: false,
+        },
       ],
       evidence: [
         {
@@ -181,6 +190,7 @@ describe("DivLab deep research packet", () => {
     assert.ok(packet.technical.levels.resistances.length >= 1);
     assert.equal(packet.qualityGate.checks.multiYearFundamentalCoverage, true);
     assert.equal(packet.qualityGate.checks.primaryEvidenceCoverage, true);
+    assert.equal(packet.qualityGate.checks.valuationTraceability, true);
     assert.equal(packet.qualityGate.publishable, true);
     assert.equal(packet.qualityGate.blockers.length, 0);
   });
@@ -217,6 +227,7 @@ describe("DivLab deep research packet", () => {
     assert.equal(packet.qualityGate.publishable, false);
     assert.equal(packet.qualityGate.checks.multiYearFundamentalCoverage, false);
     assert.equal(packet.qualityGate.checks.primaryEvidenceCoverage, false);
+    assert.equal(packet.qualityGate.checks.valuationTraceability, false);
     assert.ok(packet.qualityGate.blockers.length >= 4);
   });
 });
