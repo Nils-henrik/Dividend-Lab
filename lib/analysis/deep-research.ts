@@ -32,6 +32,10 @@ import {
   type ValuationAnalysis,
   type ValuationScenarioInput,
 } from "./valuation";
+import {
+  buildValuationProvenance,
+  type DivLabValuationProvenance,
+} from "./valuation-provenance";
 
 export const DIVLAB_DEEP_RESEARCH_VERSION = "deep-research-v1" as const;
 
@@ -85,6 +89,8 @@ export type DivLabResearchPacket = {
   /** Auditable absolute amounts used for EV/EBIT and EV/EBITDA. */
   enterpriseValuationInputs: DivLabEnterpriseValuationInputs;
   valuation: ValuationAnalysis;
+  /** Source map for every available deterministic trailing valuation measure. */
+  valuationProvenance: DivLabValuationProvenance;
   technical: {
     snapshot: TechnicalAnalysisSnapshot;
     levels: SupportResistanceAnalysis;
@@ -293,6 +299,14 @@ export function buildDivLabResearchPacket(input: {
     scenarios: input.valuationScenarios,
   });
 
+  const valuationProvenance = buildValuationProvenance({
+    sources,
+    valuation,
+    valuationInputs,
+    enterpriseInputs: enterpriseValuationInputs,
+    reconciliation: primaryReportReconciliation,
+  });
+
   const qualityGate = evaluateAnalysisQuality({
     now,
     fundamental,
@@ -329,6 +343,7 @@ export function buildDivLabResearchPacket(input: {
     valuationInputs,
     enterpriseValuationInputs,
     valuation,
+    valuationProvenance,
     technical: {
       snapshot: technicalSnapshot,
       levels,
