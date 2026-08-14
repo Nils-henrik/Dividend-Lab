@@ -28,8 +28,19 @@ Confirmation-only primary-report reconciliation
         ↓
 Deterministic fundamental analysis + per-share trends
         ↓
-Audited valuationInputs in market currency
+Audited valuation inputs in market currency
+  - EPS / FCF per share
+  - market cap / cash / debt / EBIT / EBITDA
         ↓
+Deterministic trailing valuation
+  - P/E
+  - P/FCF + FCF yield
+  - Enterprise Value
+  - EV/EBIT
+  - EV/EBITDA
+        ↓
+Deterministic valuation provenance
+        +
 Deterministic technical analysis + support/resistance zones
         ↓
 Facts-only DivLabResearchPacket
@@ -73,16 +84,40 @@ Market currency, reporting currency and trailing-EPS currency are tracked separa
 
 When a per-share valuation input needs conversion, Deep Research creates a separate auditable `valuationInputs` layer containing original/source currency, normalized market-currency value, conversion state, FX rate/as-of timestamp and exact FX source IDs.
 
+Absolute valuation components use the same principle through `enterpriseValuationInputs`. Market cap is kept in the listed share currency. Statement-derived cash, debt, EBIT and EBITDA are normalized from the reporting currency into the market currency before enterprise value or an enterprise multiple may be calculated.
+
 `lib/analysis/fx.ts` derives direct or cross rates deterministically from the existing ECB/Frankfurter base-to-SEK reference-rate adapter. Missing, unsupported or invalid FX fails closed: the incompatible valuation measure stays unavailable rather than using an invented rate. Injected test fetches bypass the shared runtime FX cache so fixtures cannot poison real server cache entries.
 
 Valuation rules:
 
 - trailing P/E is calculated only from a verified market-currency EPS basis;
 - trailing P/FCF and FCF yield use a verified market-currency FCF/share basis, including deterministic FX when required;
+- enterprise value requires usable market cap, cash and debt in the same market currency;
+- EV/EBIT and EV/EBITDA require a positive enterprise value plus positive EBIT/EBITDA in the same normalized currency;
+- zero debt is valid; negative/non-positive operating earnings do not create a misleading positive enterprise multiple;
 - every Bear/Base/Bull scenario explicitly names the market currency;
-- the analyst may not perform its own FX arithmetic;
+- the analyst may not perform its own FX or enterprise-value arithmetic;
 - if a scenario uses a converted valuation input, its `sourceIds` must include every required FX source ID;
 - if verified FX is unavailable, cross-currency valuation remains unknown.
+
+## Deterministic valuation provenance
+
+`lib/analysis/valuation-provenance.ts` builds an explicit source map for each available trailing valuation measure:
+
+- P/E;
+- P/FCF;
+- FCF yield;
+- Enterprise Value;
+- EV/EBIT;
+- EV/EBITDA.
+
+Each measure records whether it is available, whether it is fully traceable, the exact source IDs required by its deterministic math and any relevant metric that was independently confirmed by primary-report reconciliation.
+
+A cross-currency EV/EBITDA can therefore map directly to, for example, the market-data source, the fundamental-data source and the exact EUR→SEK FX source instead of leaving that relationship implicit.
+
+The research publication quality gate now blocks a packet when any available trailing valuation measure is not fully traceable. A number existing in memory is therefore not enough for DivLab publication; its provider, market and required FX provenance must also be present.
+
+The analyst receives this provenance object and is instructed to use source IDs from the matching valuation measure when making concrete claims about P/E, P/FCF, FCF yield, EV, EV/EBIT or EV/EBITDA.
 
 ## Fundamental analysis
 
@@ -182,7 +217,7 @@ Observed facts:
 
 This verifies that the engine no longer mixes EUR accounting cash flow with a SEK share price and no longer has to discard FCF valuation when a verified cross-currency rate is available.
 
-The newer primary-report reconciliation code is contract-tested but has not yet been re-run live against these three issuer PDFs because the current Vercel build-rate limit prevents creation of a new preview containing that code. No live reconciliation claim is made yet.
+The newer primary-report reconciliation, enterprise valuation and valuation-provenance code is contract-tested but has not yet been re-run live against these three issuer datasets because the current Vercel build-rate limit prevents creation of a new preview containing that code. No live EV/EBIT, EV/EBITDA or reconciliation claim is made for Evolution yet.
 
 ## Source-grounded analyst layer
 
@@ -190,9 +225,9 @@ The newer primary-report reconciliation code is contract-tested but has not yet 
 
 The analyst may interpret thesis, latest report, fundamental trends, quality factors, catalysts, risks, contradictions, thesis breakers, the deterministic technical picture and explicit Bear/Base/Bull assumptions.
 
-The analyst may not change deterministic facts, invent missing numbers or source IDs, create technical levels, calculate FX itself, use an unavailable valuation basis, omit required FX provenance, fabricate an explicit DCF/fair value or turn a missing source into neutral evidence.
+The analyst may not change deterministic facts, invent missing numbers or source IDs, create technical levels, calculate FX or enterprise value itself, use an unavailable valuation basis, omit required FX provenance, fabricate an explicit DCF/fair value or turn a missing source into neutral evidence.
 
-Every structured claim references existing source IDs. `latestReport` must reference a primary source. Analyst output is schema-validated and checked against the packet before it can proceed.
+Every structured claim references existing source IDs. `latestReport` must reference a primary source. Analyst output is schema-validated and checked against the packet before it can proceed. Concrete trailing-valuation claims are grounded through `valuationProvenance` rather than an arbitrary source choice by the model.
 
 ### Vercel runtime OIDC handling
 
@@ -210,7 +245,7 @@ An earlier real analyst call in Vercel Preview stopped at `gateway_auth_missing`
 
 After the fallback was implemented and the full repository gate passed, a new Preview-only, branch-bound, read-only analyst smoke route was prepared to test Evolution without persistence. Vercel did **not** create a deployment for that commit: the GitHub Vercel status failed at deployment creation with `upgradeToPro=build-rate-limit`.
 
-Therefore the updated request-context OIDC path has not yet executed in a fresh Preview runtime. The smoke route was removed again immediately rather than left on the branch. No secret was copied, exposed or weakened.
+The same Vercel `build-rate-limit` status is still present on the latest green runtime head after the reconciliation/enterprise/provenance work. Therefore the updated request-context OIDC path has not yet executed in a fresh Preview runtime. The smoke route was removed again immediately rather than left on the branch. No secret was copied, exposed or weakened.
 
 Genuine real-company analyst-output review remains pending until a new authenticated Preview/runtime can actually be created.
 
@@ -219,15 +254,19 @@ Genuine real-company analyst-output review remains pending until a new authentic
 The AI does not own final valuation math:
 
 1. facts-only packet;
-2. analyst proposes explicit Bear/Base/Bull assumptions using verified `valuationInputs`;
-3. assumptions convert to `ValuationScenarioInput`;
-4. `lib/analysis/valuation.ts` calculates values deterministically;
-5. the research publication quality gate runs again;
-6. a separate analyst-content quality gate reviews the AI interpretation itself.
+2. deterministic trailing P/E, P/FCF, FCF yield, EV, EV/EBIT and EV/EBITDA are built only from normalized inputs;
+3. deterministic valuation provenance maps each available trailing measure to its exact source IDs;
+4. analyst proposes explicit Bear/Base/Bull assumptions using verified `valuationInputs`;
+5. assumptions convert to `ValuationScenarioInput`;
+6. `lib/analysis/valuation.ts` calculates scenario values deterministically;
+7. the research publication quality gate runs again;
+8. a separate analyst-content quality gate reviews the AI interpretation itself.
+
+Historical valuation ranges are deliberately not synthesized from the existing 18-month price history plus older financial periods. That would introduce misleading point-in-time/look-ahead semantics because old fiscal-year results were not known on their fiscal period-end dates. A future historical valuation range must use genuinely point-in-time-compatible data.
 
 ## Research publication quality gate
 
-The research gate currently requires sufficient fundamental and multi-year coverage, fully traceable sources, a fresh primary source, verified primary report evidence, complete Bear/Base/Bull scenarios in compatible currency, logical scenario ordering **Bear ≤ Base ≤ Bull**, sufficient technical history, and meaningful support plus either verified resistance or `no_validated_resistance_above`.
+The research gate currently requires sufficient fundamental and multi-year coverage, fully traceable sources, a fresh primary source, verified primary report evidence, **fully traceable available trailing valuation measures**, complete Bear/Base/Bull scenarios in compatible currency, logical scenario ordering **Bear ≤ Base ≤ Bull**, sufficient technical history, and meaningful support plus either verified resistance or `no_validated_resistance_above`.
 
 Failures are blockers, not silently neutral scores.
 
@@ -298,6 +337,10 @@ The timestamp alignment was filename-only; the already-reviewed SQL blobs were n
 - deterministic FX direct/cross-rate derivation: unit tested;
 - cross-currency FCF valuation while retaining raw reporting facts: unit tested and Evolution live verified;
 - explicit market/reporting/EPS currency semantics: unit tested;
+- absolute valuation FX normalization including zero/negative accounting amounts: unit tested;
+- deterministic Enterprise Value, EV/EBIT and EV/EBITDA: unit tested including cross-currency statement inputs, zero debt, negative EBITDA and missing FX;
+- deterministic valuation provenance: unit tested for complete market/fundamental/FX traceability and missing-source failure;
+- research publication blocker for untraceable available valuation measures: unit tested through publishable/non-publishable research packets;
 - missing FX remains fail-closed: unit tested;
 - converted scenario without required FX source ID: rejected by analyst contract test;
 - inverted Bear/Base/Bull valuation: rejected by quality-gate test;
@@ -306,14 +349,14 @@ The timestamp alignment was filename-only; the already-reviewed SQL blobs were n
 - normalized quarterly provider periods: unit tested;
 - primary-report reconciliation v1: unit tested for same-basis H1/FY confirmation and conservative ambiguity handling;
 - Vercel request-context OIDC policy: unit tested, live Preview execution pending because Vercel rejected the new deployment at build-rate-limit;
-- full repository lint, typecheck, core tests, SEO/news tests, DivBrain tests, Cursor bridge tests and production build passed on branch head `6408f2a34c46166dc57fff6e39c64983f724628e` before this documentation-only update;
+- full repository lint, typecheck, core tests, SEO/news tests, DivBrain tests, Cursor bridge tests and production build passed on runtime branch head `8bb9cb3c5567f69ebbec1594364c280543686878` before this documentation-only update;
 - real analyst narrative generation on the current analyst implementation: not yet live verified.
 
 ## Still deliberately not included
 
 1. authenticated end-to-end live execution and qualitative review of the **new AI analyst** on Atlas Copco, Evolution and Embracer;
-2. live real-company validation of `primary-report-reconciliation-v1` against the current Atlas Copco, Evolution and Embracer report PDFs;
-3. richer valuation inputs such as historical valuation ranges, EV/EBIT, EV/EBITDA and peer sets where verified data is available;
+2. live real-company validation of `primary-report-reconciliation-v1`, EV/EBIT, EV/EBITDA and valuation provenance against the current Atlas Copco, Evolution and Embracer datasets;
+3. genuine point-in-time historical valuation ranges and verified peer sets;
 4. automatic model-portfolio shortlist → Deep Research trigger;
 5. public `/analyses` and `/analyses/[slug]` UI;
 6. DivBrain retrieval of published analysis versions;
