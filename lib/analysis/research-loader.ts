@@ -12,6 +12,7 @@ import {
   toYahooTransportSymbol,
 } from "@/lib/model-portfolios/engine/instrument-symbol";
 import { fetchYahooHistoryResearch } from "@/lib/model-portfolios/engine/yahoo-research";
+import type { DivLabCompanyClassification } from "./company-classification";
 import type { AnalysisEvidence } from "./evidence";
 import type { CurrencyAwareFundamentalSnapshot } from "./financial-statement-normalizer";
 import {
@@ -34,6 +35,8 @@ export type DivLabResearchInputs = {
   };
   history: DailyBar[];
   fundamentals: FundamentalSnapshot;
+  /** Source-grounded provider metadata used to choose the correct fundamental methodology. */
+  companyClassification: DivLabCompanyClassification;
   /** Reporting-currency -> market-currency conversion, only when required and verified. */
   fxConversion: AnalysisFxConversion | null;
   sources: AnalysisSource[];
@@ -175,6 +178,7 @@ export async function loadDivLabResearchInputs(input: {
   }
 
   const marketPublishedAt = market.quote?.timestamp ?? isoDate(lastBar.date);
+  const financialSourceId = `yahoo-financials:${canonical.baseSymbol}:${financials.fetchedAt}`;
   const sources: AnalysisSource[] = [
     {
       id: `yahoo-market:${canonical.baseSymbol}:${marketPublishedAt}`,
@@ -186,7 +190,7 @@ export async function loadDivLabResearchInputs(input: {
       primary: false,
     },
     {
-      id: `yahoo-financials:${canonical.baseSymbol}:${financials.fetchedAt}`,
+      id: financialSourceId,
       kind: "fundamental_data",
       publisher: "Yahoo Finance",
       url: financials.sourceUrl,
@@ -195,6 +199,10 @@ export async function loadDivLabResearchInputs(input: {
       primary: false,
     },
   ];
+  const companyClassification: DivLabCompanyClassification = {
+    ...financials.companyClassification,
+    sourceIds: [financialSourceId],
+  };
   const evidence: AnalysisEvidence[] = [];
 
   const fx = await loadReportingToMarketFx({
@@ -230,6 +238,7 @@ export async function loadDivLabResearchInputs(input: {
       },
       history: [...market.history],
       fundamentals: financials.snapshot,
+      companyClassification,
       fxConversion: fx.conversion,
       sources,
       evidence,
