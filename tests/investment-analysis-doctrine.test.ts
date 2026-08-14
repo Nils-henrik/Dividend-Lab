@@ -6,6 +6,7 @@ import {
   DIVLAB_INVESTMENT_ANALYSIS_DOCTRINE_SV,
   DIVLAB_INVESTMENT_ANALYSIS_DOCTRINE_VERSION,
 } from "../lib/investment-analysis/doctrine";
+import { DIVBRAIN_FINANCIAL_SAFETY_POLICY_TEXT_SV } from "../lib/divbrain/server/policy";
 import { buildModelPortfolioSystemMandate } from "../lib/model-portfolios/engine/mandates";
 
 describe("shared DivLab investment-analysis doctrine", () => {
@@ -50,6 +51,13 @@ describe("shared DivLab investment-analysis doctrine", () => {
     assert.match(DIVLAB_INVESTMENT_ANALYSIS_DOCTRINE_SV, /Portföljmognad/);
     assert.match(DIVLAB_INVESTMENT_ANALYSIS_DOCTRINE_SV, /Inkomstvärdepapper/);
     assert.match(DIVLAB_INVESTMENT_ANALYSIS_DOCTRINE_SV, /Processkvalitet före utfallsbias/);
+  });
+
+  it("is injected into DivBrain financial policy", () => {
+    assert.match(DIVBRAIN_FINANCIAL_SAFETY_POLICY_TEXT_SV, /Gemensam DivLab-analysdisciplin/);
+    assert.match(DIVBRAIN_FINANCIAL_SAFETY_POLICY_TEXT_SV, /Riskspridning är normalläget/);
+    assert.match(DIVBRAIN_FINANCIAL_SAFETY_POLICY_TEXT_SV, /målviktsrekommendation/);
+    assert.match(DIVBRAIN_FINANCIAL_SAFETY_POLICY_TEXT_SV, /startfasfriktion/);
   });
 
   it("is injected into every model-portfolio manager mandate", () => {
