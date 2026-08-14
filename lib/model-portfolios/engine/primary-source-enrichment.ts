@@ -17,8 +17,13 @@ import {
 } from "./report-metadata";
 
 export const PRIMARY_SOURCE_ENRICHMENT_BOUNDS = {
-  /** Dedicated deep research may read larger issuer reports, never unbounded files. */
-  maxDocumentBytes: 12_000_000,
+  /**
+   * Dedicated Deep Research may read larger issuer reports, never unbounded files.
+   * 24 MB is intentionally above the measured 20,171,492-byte Embracer Q1 2026
+   * report while retaining a hard ceiling. The normal portfolio path still uses
+   * OFFICIAL_DOCUMENT_BOUNDS.maxBytes (5 MB) unless a caller explicitly opts in.
+   */
+  maxDocumentBytes: 24_000_000,
 } as const;
 
 export type EnrichedPrimarySourceHit = {
