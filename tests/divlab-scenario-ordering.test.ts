@@ -2,6 +2,9 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { buildDivLabResearchPacket } from "../lib/analysis/deep-research";
 import type { DailyBar } from "../lib/model-portfolios/engine/eodhd";
+import { operatingCompanyClassification } from "./helpers/divlab-company-classification";
+
+const FUNDAMENTAL_ID = "fundamental:test";
 
 function bars(): DailyBar[] {
   return Array.from({ length: 260 }, (_, index) => {
@@ -48,6 +51,7 @@ test("DivLab quality gate rejects an inverted Bear Base Bull valuation", () => {
         { period: "2025-12-31", revenue: 1_100 },
       ],
     },
+    companyClassification: operatingCompanyClassification(FUNDAMENTAL_ID),
     valuationScenarios: [
       {
         name: "bear",
@@ -90,6 +94,15 @@ test("DivLab quality gate rejects an inverted Bear Base Bull valuation", () => {
         verifiedAt: "2026-08-14T16:00:00.000Z",
         primary: false,
       },
+      {
+        id: FUNDAMENTAL_ID,
+        kind: "fundamental_data",
+        publisher: "Fundamental provider",
+        url: "https://example.com/fundamental",
+        publishedAt: "2026-08-14T16:00:00.000Z",
+        verifiedAt: "2026-08-14T16:00:00.000Z",
+        primary: false,
+      },
     ],
     evidence: [
       {
@@ -109,6 +122,8 @@ test("DivLab quality gate rejects an inverted Bear Base Bull valuation", () => {
     now: new Date("2026-08-14T17:00:00.000Z"),
   });
 
+  assert.equal(packet.qualityGate.checks.companyClassificationCoverage, true);
+  assert.equal(packet.qualityGate.checks.fundamentalMethodologyCoverage, true);
   assert.equal(packet.qualityGate.checks.valuationScenarioCoverage, false);
   assert.ok(
     packet.qualityGate.blockers.some((blocker) =>
