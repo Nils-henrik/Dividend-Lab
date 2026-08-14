@@ -18,7 +18,7 @@ export const WALL_STREET_REKORDNIVA_SVALARE_INFLATION_TECHAKTIERNA_ARTICLE: News
   featured: true,
   imageUrl: "/news-demo/file_000000000cd481f490eaf05c20ba7c0c.png",
   thumbnailObjectPosition: "center 50%",
-  mobileThumbnailObjectPosition: "center 50%",
+  mobileThumbnailObjectPosition: "center 30%",
   mobileHeadlineFirst: true,
   imageAlt:
     "Wall Street i New York med amerikanska flaggor, börsskärm och DivLab-omslag för rekordbörsen den 13 augusti 2026.",
