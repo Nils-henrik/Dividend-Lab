@@ -10,6 +10,9 @@ import type {
   LoadedPeerRegistrySet,
 } from "./peer-registry-read";
 
+export const DEFAULT_PEER_RESEARCH_CONCURRENCY = 3;
+export const MAX_PEER_RESEARCH_CONCURRENCY = 5;
+
 export type MissingRegistryPeer = {
   symbol: string;
   exchange: string;
@@ -37,6 +40,18 @@ export type RegistryPeerComparisonResult = {
 
 function identityKey(input: { symbol: string; exchange: string }): string {
   return `${input.exchange.trim().toUpperCase()}:${input.symbol.trim().toUpperCase()}`;
+}
+
+function resolveHydrationConcurrency(value: number | undefined): number {
+  const concurrency = value ?? DEFAULT_PEER_RESEARCH_CONCURRENCY;
+  if (
+    !Number.isInteger(concurrency) ||
+    concurrency < 1 ||
+    concurrency > MAX_PEER_RESEARCH_CONCURRENCY
+  ) {
+    throw new Error("peer_registry_hydration_concurrency_invalid");
+  }
+  return concurrency;
 }
 
 /**
@@ -137,18 +152,36 @@ export function buildPeerComparisonFromRegistry(input: {
 
 /**
  * Controlled async hydration boundary. Exactly one research lookup is requested
- * for every registered member. A loader may return null when a fresh packet is
- * unavailable, but it may not substitute another instrument; identity checking
- * remains authoritative in `buildPeerComparisonFromRegistry`.
+ * for every registered member. Lookups run through a bounded worker pool so a
+ * large registry cannot accidentally fan out into an unbounded burst of live
+ * research/API work. A loader may return null when a fresh packet is unavailable,
+ * but it may not substitute another instrument; identity checking remains
+ * authoritative in `buildPeerComparisonFromRegistry`.
  */
 export async function hydratePeerComparisonFromRegistry(input: {
   targetPacket: DivLabResearchPacket;
   registry: LoadedPeerRegistrySet;
   loadPeerResearch: RegistryPeerResearchLoader;
+  maxConcurrency?: number;
 }): Promise<RegistryPeerComparisonResult> {
-  const peerPackets = await Promise.all(
-    input.registry.members.map((member) => input.loadPeerResearch(member)),
-  );
+  const concurrency = resolveHydrationConcurrency(input.maxConcurrency);
+  const members = input.registry.members;
+  const peerPackets = new Array<DivLabResearchPacket | null>(members.length).fill(null);
+  let nextIndex = 0;
+
+  async function worker(): Promise<void> {
+    while (true) {
+      const index = nextIndex;
+      nextIndex += 1;
+      if (index >= members.length) return;
+      const member = members[index];
+      if (!member) return;
+      peerPackets[index] = await input.loadPeerResearch(member);
+    }
+  }
+
+  const workerCount = Math.min(concurrency, members.length);
+  await Promise.all(Array.from({ length: workerCount }, () => worker()));
 
   return buildPeerComparisonFromRegistry({
     targetPacket: input.targetPacket,
