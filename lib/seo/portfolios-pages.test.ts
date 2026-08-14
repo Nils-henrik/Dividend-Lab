@@ -153,8 +153,11 @@ describe("public AI portfolio SEO routes", () => {
     assert.equal(MODEL_PORTFOLIO_PUBLIC_LAUNCH_DATE, "2026-08-10");
     assert.equal(MODEL_PORTFOLIO_PUBLIC_LAUNCH_LABEL, "10 augusti 2026");
     assert.match(overviewSource, /MODEL_PORTFOLIO_PUBLIC_LAUNCH_LABEL/);
-    assert.match(overviewSource, /Fyra AI-portföljer\. Fyra olika strategier\./);
-    assert.match(overviewSource, /byggt fyra separata AI-förvaltade modellportföljer/);
+    assert.match(overviewSource, /Kan AI slå en traditionell aktieförvaltare\?/);
+    assert.match(
+      overviewSource,
+      /kan AI över tid fatta investeringsbeslut som står sig mot traditionell aktiv aktieförvaltning/,
+    );
     assert.doesNotMatch(overviewSource, /tränat upp/i);
   });
 
