@@ -1,90 +1,94 @@
 # DivLab Peer Registry v1
 
-Status: internal migration-ready foundation. The registry migrations are committed on the Deep Research PR but are intentionally **not applied persistently** to `dividend-lab-dev` yet.
+Status: internal backend foundation / APPLIED_TO_DEV. No public peer UI or analyst integration yet.
 
-## Purpose
+## Objective
 
-`peer-comparison-v1` can only be trustworthy if the comparison group itself is auditable. The peer registry therefore stores the peer-selection decision separately from the changing valuation data.
+Peer comparison must not let the AI choose whichever competitors make a valuation story look attractive. Peer selection is therefore versioned and source-backed separately from the market/fundamental data used to calculate current valuation multiples.
 
-The registry records:
+## Model
 
-- stable target instrument identity;
-- immutable peer-set version number;
-- target display name at that version;
-- peer-set data-as-of timestamp;
-- methodology version (`peer-comparison-v1`);
-- version-bound peer-basis sources;
-- version-bound peer members;
-- normalized member → relationship-source links.
+The registry stores the **relationship** between a target company and its verified comparison set. It deliberately does not persist today's P/E, P/FCF, EV/EBIT or EV/EBITDA values. Those are recalculated from fresh Deep Research packets by `peer-comparison-v1`.
 
-It deliberately does **not** store yesterday's P/E, P/FCF, EV/EBIT or EV/EBITDA. Fresh Deep Research packets provide those values later. This keeps the historical question “why were these companies considered peers?” separate from the time-varying question “how were they valued on this date?”.
+Tables:
 
-## Immutability model
+- `divlab_peer_targets` — stable target instrument identity;
+- `divlab_peer_sets` — immutable versions per target;
+- `divlab_peer_set_sources` — source material supporting the peer basis for one version;
+- `divlab_peer_set_members` — peer members for one version;
+- `divlab_peer_member_sources` — normalized member-to-source links constrained to the same immutable set version.
 
-`divlab_peer_targets` is the stable target identity used only to serialize version creation.
+RPC:
 
-Every call to `persist_divlab_peer_set(...)` creates a new row in `divlab_peer_sets` with `version_number = previous + 1`. Old peer sets are never updated in place.
+- `persist_divlab_peer_set(...)`
+- `SECURITY INVOKER`
+- fixed `search_path = public`
+- execute granted only to `service_role`
+- anon/authenticated have no table read access and cannot execute the RPC.
 
-Child tables are insert-only through the intended service-role path:
+The normal service-role path has `SELECT + INSERT` only. It has no `UPDATE` or `DELETE` privileges on registry tables.
 
-- `divlab_peer_set_sources`
-- `divlab_peer_set_members`
-- `divlab_peer_member_sources`
+## Invariants
 
-The member-source table uses same-peer-set composite foreign keys so a membership cannot accidentally reference a source belonging to another immutable peer-set version.
+A persisted peer set requires:
 
-## RPC invariants
-
-`persist_divlab_peer_set(...)` is `SECURITY INVOKER`, has a fixed `search_path`, is revoked from `public`, `anon` and `authenticated`, and is granted only to `service_role`.
-
-The RPC requires:
-
-- canonical target symbol/exchange and non-empty target name;
 - methodology exactly `peer-comparison-v1`;
-- 1–25 peer-basis sources;
-- 3–25 distinct peer members;
-- HTTPS source URLs;
-- non-future source verification timestamps;
-- every peer to have 1–10 relationship-source IDs;
-- every relationship-source ID to exist in the exact source bundle for that peer-set version;
-- no target-as-peer membership;
-- no duplicate peer identities;
-- no duplicate member→source references.
+- 3–25 distinct peer instruments;
+- 1–25 HTTPS peer-basis sources;
+- at least one explicit relationship-source ID for every peer;
+- no target company as its own peer;
+- no duplicate peer identity;
+- no duplicate source ID;
+- no unknown relationship-source reference;
+- bounded/canonical symbol, exchange, name, source and URL fields;
+- composite foreign keys preventing a peer member from referencing a source belonging to another set version.
 
-Stored target/member symbols and exchanges are constrained to canonical uppercase format with bounded lengths.
+Application code validates and normalizes the bundle first in `peer-registry-contract.ts`. PostgreSQL repeats the critical invariants and remains authoritative.
 
-## Application boundary
+## Version allocation and immutability
 
-`lib/analysis/peer-registry-contract.ts` performs the same critical checks before a database call and normalizes the RPC bundle.
+Version numbers are allocated serially per target. An initial implementation used `SELECT ... FOR UPDATE` on the stable target row, but a live service-role smoke correctly exposed that PostgreSQL requires `UPDATE` table privilege for that lock mode.
 
-`lib/analysis/peer-registry-repository.ts` is the server-only Supabase adapter. It does not discover peers and it does not persist peer-comparison output. It persists only the explicit, sourced relationship decision.
+DivLab does **not** grant `UPDATE` merely to obtain a lock. The final RPC uses a transaction-scoped advisory lock keyed by canonical `exchange:symbol`, then calculates the next immutable peer-set version. This preserves concurrency safety while the service role remains unable to mutate historical rows.
 
-PostgreSQL remains authoritative; application validation is defense in depth rather than a replacement for database constraints.
+## Supabase dev status — 14 August 2026
 
-## Verification performed without persistent schema mutation
+The registry is permanently applied to `dividend-lab-dev` (`faaxloafogpsywfkpbrm`). Supabase registered these migration versions:
 
-Before any permanent dev migration, the exact registry DDL/RPC shape was exercised inside a single explicit transaction against `dividend-lab-dev`:
+- `20260814211105_create_divlab_peer_registry.sql`
+- `20260814211115_index_divlab_peer_registry_member_sources.sql`
+- `20260814211138_harden_divlab_peer_registry.sql`
+- `20260814211543_fix_divlab_peer_registry_service_role_locking.sql`
 
-1. create the peer-registry tables and indexes;
-2. install the hardened RPC;
-3. persist a valid three-member source-backed peer set;
-4. attempt an invalid target-as-own-peer set and require it to fail;
-5. `ROLLBACK` the entire transaction.
+Repository filenames are aligned with those registered versions. The already-applied SQL blobs were not rewritten merely to align timestamps.
 
-A follow-up absence check was issued for all five tables and the RPC so the test is intended to leave no registry schema or fixture data behind.
+### Dev verification
 
-The permanent migration is deliberately deferred until the latest GitHub branch head has passed the complete repository Quality Gate. This also avoids creating Supabase migration-history drift while the schema is still being reviewed.
+Verified under the actual `service_role` database role:
 
-## Migration files in the PR
+- a valid 3-peer/1-source set reaches `persist_divlab_peer_set(...)` successfully;
+- the RPC returns version `1`, peer count `3`, source count `1` and methodology `peer-comparison-v1` for the isolated fixture;
+- a target included as its own peer is rejected with `divlab_peer_set_contains_target`;
+- both smoke transactions were rolled back;
+- post-smoke checks found zero `TEST/ST` target or peer-set rows;
+- all five peer tables have RLS enabled;
+- anon/authenticated cannot read the peer tables;
+- anon/authenticated cannot execute the persistence RPC;
+- `service_role` can `SELECT + INSERT` but cannot `UPDATE` or `DELETE` peer-registry rows;
+- the RPC is `SECURITY INVOKER`, not `SECURITY DEFINER`.
 
-- `20260814210000_create_divlab_peer_registry.sql`
-- `20260814210500_index_divlab_peer_registry_member_sources.sql`
-- `20260814211000_harden_divlab_peer_registry.sql`
+No real company peer memberships have been inserted yet.
 
-## What is still missing
+## Advisor boundary
 
-The registry currently has **no real peer memberships**. That is intentional.
+The Supabase project already contains existing security/performance advisor notices outside this feature (for example older `SECURITY DEFINER` functions and unrelated unindexed foreign keys). Registry verification compares the post-migration advisor output against that pre-migration baseline and treats only new `divlab_peer_*` notices as belonging to this milestone.
 
-A real peer set must come from an explicit, auditable peer-selection source or registry. Index membership alone is not treated as proof of operational comparability, and the AI analyst is not allowed to choose its own peer group.
+## Deliberately not included yet
 
-Only after a verified relationship source is available should real Atlas Copco, Evolution, Embracer or other peer memberships be inserted and then connected to `peer-comparison-v1`.
+1. a production-quality source/curation workflow for selecting real peers;
+2. any real Atlas Copco, Evolution, Embracer or other company peer membership;
+3. automatic ingestion of registry versions into the AI analyst;
+4. public display of peer comparison;
+5. a rule that a lower peer multiple means a better investment.
+
+The analyst is not allowed to invent its own comparison group. Peer data reaches the analyst only after a verified registry version exists.
