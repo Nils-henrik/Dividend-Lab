@@ -2,7 +2,9 @@ import "server-only";
 
 import { APICallError, generateText, Output } from "ai";
 import {
+  MODEL_PORTFOLIO_AI_MODELS,
   estimateAiCostUsdMicros,
+  resolveModelPortfolioAiConfig,
   type ModelPortfolioAiModel,
 } from "@/lib/model-portfolios/engine/ai";
 import { resolveDivLabAnalystAiConfig } from "./analyst-auth";
@@ -113,7 +115,10 @@ export async function generateDivLabAnalystDraft(input: {
   );
   if (!primaryEvidence) throw new Error("divlab_analyst_primary_evidence_missing");
 
-  const config = resolveDivLabAnalystAiConfig();
+  const config = resolveDivLabAnalystAiConfig({
+    baseConfig: resolveModelPortfolioAiConfig(),
+    models: MODEL_PORTFOLIO_AI_MODELS,
+  });
   if (!config.configured) throw new Error(config.reason);
   const model = input.useEscalationModel ? config.escalationModel : config.primaryModel;
 
