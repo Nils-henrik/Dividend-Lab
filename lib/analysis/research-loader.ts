@@ -1,12 +1,23 @@
 import "server-only";
 
 import type { DailyBar } from "@/lib/model-portfolios/engine/eodhd";
+import { fetchFxRateToSek } from "@/lib/model-portfolios/engine/fx-adapter";
+import {
+  isSupportedFxCurrency,
+  type FxRateQuote,
+  type SupportedFxCurrency,
+} from "@/lib/model-portfolios/engine/fx";
 import {
   canonicalizeInstrumentSymbol,
   toYahooTransportSymbol,
 } from "@/lib/model-portfolios/engine/instrument-symbol";
 import { fetchYahooHistoryResearch } from "@/lib/model-portfolios/engine/yahoo-research";
 import type { AnalysisEvidence } from "./evidence";
+import type { CurrencyAwareFundamentalSnapshot } from "./financial-statement-normalizer";
+import {
+  deriveAnalysisFxConversion,
+  type AnalysisFxConversion,
+} from "./fx";
 import type { FundamentalSnapshot } from "./fundamental-analysis";
 import type { AnalysisSource } from "./quality-gate";
 import { fetchNordicDivLabAnalysisResearch } from "./nordic-primary-sources";
@@ -23,6 +34,8 @@ export type DivLabResearchInputs = {
   };
   history: DailyBar[];
   fundamentals: FundamentalSnapshot;
+  /** Reporting-currency -> market-currency conversion, only when required and verified. */
+  fxConversion: AnalysisFxConversion | null;
   sources: AnalysisSource[];
   evidence: AnalysisEvidence[];
   loadedAt: string;
@@ -46,6 +59,79 @@ function isoDate(value: string): string {
 
 function isNordicExchange(exchange: string): boolean {
   return ["ST", "CO", "HE", "OL"].includes(exchange.toUpperCase());
+}
+
+function fxSourceId(quote: FxRateQuote): string {
+  return `fx:${quote.base}:SEK:${quote.asOf}`;
+}
+
+function fxAnalysisSource(quote: FxRateQuote, verifiedAt: string): AnalysisSource {
+  return {
+    id: fxSourceId(quote),
+    kind: "fx_data",
+    publisher: quote.sourcePublisher,
+    url: `https://api.frankfurter.app/latest?from=${encodeURIComponent(quote.base)}&to=SEK`,
+    publishedAt: quote.asOf,
+    verifiedAt,
+    primary: false,
+  };
+}
+
+async function loadReportingToMarketFx(input: {
+  snapshot: FundamentalSnapshot;
+  marketCurrency: string;
+  now: Date;
+  fetchImpl?: typeof fetch;
+}): Promise<{
+  conversion: AnalysisFxConversion | null;
+  sources: AnalysisSource[];
+}> {
+  const currencyAware = input.snapshot as CurrencyAwareFundamentalSnapshot;
+  const reportingCurrency = currencyAware.reportingCurrency?.trim().toUpperCase() ?? "";
+  const marketCurrency = input.marketCurrency.trim().toUpperCase();
+
+  if (!reportingCurrency || reportingCurrency === marketCurrency) {
+    return { conversion: null, sources: [] };
+  }
+  if (
+    !isSupportedFxCurrency(reportingCurrency) ||
+    !isSupportedFxCurrency(marketCurrency)
+  ) {
+    return { conversion: null, sources: [] };
+  }
+
+  const bases = new Set<SupportedFxCurrency>();
+  if (reportingCurrency !== "SEK") bases.add(reportingCurrency);
+  if (marketCurrency !== "SEK") bases.add(marketCurrency);
+
+  const quotes = new Map<SupportedFxCurrency, FxRateQuote>();
+  for (const base of bases) {
+    const result = await fetchFxRateToSek(
+      base,
+      input.now,
+      input.fetchImpl ?? fetch,
+    );
+    if (!result.ok) return { conversion: null, sources: [] };
+    quotes.set(base, result.quote);
+  }
+
+  const sourceQuotes = [...quotes.values()];
+  const sources = sourceQuotes.map((quote) =>
+    fxAnalysisSource(quote, input.now.toISOString()),
+  );
+  const sourceIds = sources.map((source) => source.id);
+  const conversion = deriveAnalysisFxConversion({
+    fromCurrency: reportingCurrency,
+    toCurrency: marketCurrency,
+    fromToSek: reportingCurrency === "SEK" ? null : quotes.get(reportingCurrency),
+    toToSek: marketCurrency === "SEK" ? null : quotes.get(marketCurrency),
+    sourceIds,
+    now: input.now,
+  });
+
+  return conversion
+    ? { conversion, sources }
+    : { conversion: null, sources: [] };
 }
 
 export async function loadDivLabResearchInputs(input: {
@@ -111,6 +197,14 @@ export async function loadDivLabResearchInputs(input: {
   ];
   const evidence: AnalysisEvidence[] = [];
 
+  const fx = await loadReportingToMarketFx({
+    snapshot: financials.snapshot,
+    marketCurrency: currency,
+    now,
+    fetchImpl: input.fetchImpl,
+  });
+  sources.push(...fx.sources);
+
   if (isNordicExchange(canonical.exchange)) {
     const primaryResearch = await fetchNordicDivLabAnalysisResearch({
       companyName: name,
@@ -136,6 +230,7 @@ export async function loadDivLabResearchInputs(input: {
       },
       history: [...market.history],
       fundamentals: financials.snapshot,
+      fxConversion: fx.conversion,
       sources,
       evidence,
       loadedAt: now.toISOString(),
