@@ -12,12 +12,7 @@ export const DIVLAB_INVESTMENT_ANALYSIS_CORE_SV = [
   "Skilj verifierad katalysator från berättelse. Bedöm vad marknaden redan verkar prisa in och om estimat, guidance eller fundamenta faktiskt förändras.",
   "Teknisk trend och momentum kan hjälpa timing och riskbedömning men kan reversera. Använd trend, momentum, volym och volatilitet som bekräftelse — aldrig som ensam tes.",
   "Bedöm nedsidan före uppsidan: tesbrott, balansräkningsrisk, cyklikalitet, reglering, likviditet, valuta, koncentration och korrelation mot övriga innehav.",
-  "Riskspridning är normalläget i en portfölj. Ett positions- eller koncentrationstak är ett absolut säkerhetstak, inte en målviktsrekommendation och inte ett skäl att använda hela utrymmet.",
-  "Diversifiera efter verkliga riskkällor, inte bara antal tickers: emittent, sektor, affärsmodell, geografi, valuta, faktor, finansiering, likviditet och korrelation kan skapa dold koncentration även när portföljen äger flera aktier.",
-  "Positionsstorlek ska bestämmas av nedsida, osäkerhet, likviditet, korrelation och portföljens befintliga exponering — inte av conviction ensam. Hög conviction får aldrig betyda att riskgränser eller riskspridning ignoreras.",
-  "I en liten portfölj som bara kan handla hela aktier kan en enskild position tillfälligt behöva bli större för att en affär ska vara tekniskt möjlig. Behandla det som startfasfriktion, inte som önskad koncentration, och sök gradvis bättre riskspridning när kapitalet växer.",
   "Portföljbeslut handlar om alternativkostnad. Jämför ett nytt case mot befintliga innehav och kassa, och kräv att förväntad riskjusterad förbättring tydligt överstiger courtage, skatteliknande friktion och omsättningsrisk.",
-  "Ett nytt innehav bör om möjligt förbättra portföljens samlade riskstruktur, inte bara vara attraktivt fristående. Var särskilt vaksam när flera innehav drivs av samma makro-, sektor-, ränte-, valuta- eller momentumfaktor.",
   "Sök aktivt efter motbevis innan conviction höjs. Motverka confirmation bias, recency bias, ankare, FOMO och överdriven säkerhet.",
   "Okänd data är okänd: fyll aldrig null, gamla siffror eller saknade rapportuppgifter med antaganden. Prioritera primärkällor och markera färskhet och osäkerhet. Saknad, gammal eller motstridig data är inte ett neutralt 0,5-betyg och får inte höja conviction.",
   "Klassificera caset innan värderingen: compounder, mogen kvalitet, cykliskt, turnaround/recovery, event/katalysator eller inkomstvärdepapper. Metod och relevanta nyckeltal beror på casetyp.",
@@ -25,8 +20,20 @@ export const DIVLAB_INVESTMENT_ANALYSIS_CORE_SV = [
   "HOLD är ett fullvärdigt beslut. Hög aktivitet är inte samma sak som hög kvalitet, och ingen metod kan garantera vinst. En bra process kan ge ett dåligt kortsiktigt utfall och tvärtom; skriv inte om ett gammalt beslut i efterhand.",
 ].join("\n");
 
+/**
+ * Shared portfolio-risk discipline. Kept separate from the original analysis core
+ * so DivBrain can receive diversification guidance without displacing established
+ * safety instructions under provider prompt budgets.
+ */
+export const DIVLAB_PORTFOLIO_DIVERSIFICATION_CORE_SV = [
+  "Riskspridning är normalläget: maxvikt är ett absolut säkerhetstak, inte en målviktsrekommendation. Bedöm även dold koncentration via sektor, geografi, valuta, faktor och korrelation.",
+  "Positionsstorlek ska styras av nedsida, osäkerhet, likviditet och befintlig exponering. I små helaktieportföljer kan högre vikt vara startfasfriktion, inte önskad koncentration; förbättra riskspridningen när kapitalet växer.",
+].join("\n");
+
 export const DIVLAB_INVESTMENT_ANALYSIS_DOCTRINE_SV = [
   DIVLAB_INVESTMENT_ANALYSIS_CORE_SV,
+  "PORTFÖLJRISK OCH RISKSPRIDNING:",
+  DIVLAB_PORTFOLIO_DIVERSIFICATION_CORE_SV,
   "FÖRDJUPAD CHECKLISTA:",
   "- Affärsmodell: identifiera intäktsmotorer, konkurrensfördelar, prissättningskraft, kund-/leverantörskoncentration och cyklikalitet.",
   "- Resultatkvalitet: jämför redovisad vinst med operativt kassaflöde och fritt kassaflöde; granska rörelsekapital, engångsposter, aktiebaserad ersättning, förvärv och justerade mått.",
