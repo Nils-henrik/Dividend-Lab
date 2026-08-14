@@ -15,9 +15,16 @@ Official issuer disclosures / report PDFs
         +
 Verified reference FX when reporting currency differs from market currency
         ↓
-Normalized FundamentalSnapshot (TTM + multi-year periods)
+Normalized FundamentalSnapshot
+  - TTM
+  - annual history
+  - separate normalized quarterly periods
         +
 Bounded, source-linked report evidence
+  - wrapped analyst evidence
+  - separate clean bounded documentExcerpt
+        ↓
+Confirmation-only primary-report reconciliation
         ↓
 Deterministic fundamental analysis + per-share trends
         ↓
@@ -35,12 +42,15 @@ Source-grounded analyst AI
         ↓
 Deterministic valuation math
         ↓
-Full publication quality gate
+Research publication quality gate
+        +
+Separate Analyst Content Quality Gate
         ↓
 Atomic persistence
   - immutable research version
   - source provenance
   - separate immutable analyst content
+  - immutable analyst-quality certification
 ```
 
 The public `/analyses` product is intentionally not part of this PR.
@@ -51,14 +61,15 @@ The public `/analyses` product is intentionally not part of this PR.
 - `lib/analysis/financial-statement-normalizer.ts` is a pure deterministic parser.
 - income statement, balance sheet and cash-flow history are normalized into `FundamentalSnapshot`.
 - TTM values use verified provider fields or four complete quarters; incomplete four-quarter calculations fail closed.
-- up to five normalized annual periods are retained.
-- annual per-share analysis prefers period-average diluted/basic shares rather than silently using a current share count.
+- up to five normalized annual periods are retained for multi-year trend work.
+- up to eight normalized quarterly periods are retained separately for same-period report reconciliation; they do not replace annual history or silently change existing TTM calculations.
+- annual and quarterly per-share analysis prefers period-average diluted/basic shares rather than silently using a current share count.
 - capex sign conventions are handled explicitly when FCF is derived.
 - unknown accounting fields remain unknown.
 
 ### Currency invariant and deterministic FX
 
-Market currency and reporting currency are tracked separately. Raw accounting facts are never rewritten into the market currency.
+Market currency, reporting currency and trailing-EPS currency are tracked separately in `currencyContext`. Raw accounting facts are never rewritten merely because the listed share trades in another currency.
 
 When a per-share valuation input needs conversion, Deep Research creates a separate auditable `valuationInputs` layer containing original/source currency, normalized market-currency value, conversion state, FX rate/as-of timestamp and exact FX source IDs.
 
@@ -99,6 +110,42 @@ The 24 MB Deep Research limit was chosen after measuring a real official Embrace
 
 `lib/analysis/evidence.ts` stores bounded material actually read from a source. An official report URL alone is not enough for publication. A public-quality packet must contain a source-ID-linked `official_report_excerpt` whose underlying primary document was successfully retrieved. Evidence is always treated as untrusted external content, never instructions.
 
+A retrieved report now keeps two deliberately different representations:
+
+- `content` — bounded DivLab-wrapped evidence used by the analyst layer;
+- `documentExcerpt` — the clean bounded PDF text before DivLab metadata wrapping, used only for deterministic primary-report reconciliation.
+
+The clean excerpt is not duplicated into the analyst prompt, avoiding duplicate tokens and accidental overweighting of the same source.
+
+## Primary-report reconciliation v1
+
+`lib/analysis/primary-report-reconciliation.ts` performs a conservative, confirmation-only cross-check between provider-normalized statement periods and clean bounded text from an official report.
+
+It never overwrites provider data and is not a publication blocker in v1.
+
+Current eligible metrics are:
+
+- revenue / net sales;
+- operating income / operating profit;
+- net income / profit for the period;
+- EPS when the row explicitly states the reporting currency.
+
+Period rules are explicit:
+
+- Q1 → one matching provider quarter;
+- Q2 or H1 → two same-year provider quarters;
+- Q3 → three same-year provider quarters;
+- Q4 or FY → matching annual period;
+- ambiguous or unsupported period → `not_applicable`.
+
+Currency/unit rules are equally strict. A report amount must have a uniquely detectable scale tied to the verified reporting currency before monetary totals can be confirmed. Ordinary ASCII spaces in flattened PDF tables are deliberately **not** interpreted as thousands separators because they may simply separate table columns. Locale-ambiguous comma/dot formats produce candidate interpretations, but a metric is certified only when exactly one interpretation matches the same-basis provider value within a narrow deterministic tolerance.
+
+Possible metric states are `confirmed`, `not_confirmed` and `provider_missing`. `not_confirmed` never means that the issuer report contradicts the provider; it means the bounded deterministic parser could not safely certify the number.
+
+The aggregate reconciliation status is `not_applicable`, `not_confirmed`, `partial` or `confirmed`. The analyst is explicitly instructed to use only `confirmed` metrics as extra support and never turn a failed reconciliation into a claimed accounting discrepancy.
+
+Contract tests cover H1 aggregation, annual locale formats, missing units, missing report text, nonmatching figures and the safety case where `123 456` must not be guessed as `123456`.
+
 ## Real-company validation completed
 
 The research/source pipeline has been exercised against three deliberately different Stockholm-listed profiles:
@@ -135,6 +182,8 @@ Observed facts:
 
 This verifies that the engine no longer mixes EUR accounting cash flow with a SEK share price and no longer has to discard FCF valuation when a verified cross-currency rate is available.
 
+The newer primary-report reconciliation code is contract-tested but has not yet been re-run live against these three issuer PDFs because the current Vercel build-rate limit prevents creation of a new preview containing that code. No live reconciliation claim is made yet.
+
 ## Source-grounded analyst layer
 
 `lib/analysis/analyst-schema.ts`, `analyst-contract.ts`, `analyst.ts` and `ai-analysis-service.ts` define the internal AI analyst.
@@ -145,15 +194,25 @@ The analyst may not change deterministic facts, invent missing numbers or source
 
 Every structured claim references existing source IDs. `latestReport` must reference a primary source. Analyst output is schema-validated and checked against the packet before it can proceed.
 
-If AI Gateway authentication is operationally unavailable, `createDivLabAiAnalysis()` fails closed at `stage: "analyst"` while retaining the verified facts packet in-memory for inspection/retry. Other analyst/schema errors still throw.
+### Vercel runtime OIDC handling
 
-### AI Gateway validation boundary
+The generic model-portfolio AI resolver remains strict and unchanged in policy.
 
-A real analyst call was attempted in Vercel Preview after the research stage completed. It stopped at `gateway_auth_missing`.
+The analyst has a separate runtime-auth policy in `lib/analysis/analyst-auth.ts`. Explicit API-key or materialized OIDC auth keeps priority. When no explicit credential is visible but the analyst is running inside a real Vercel runtime, the analyst lets the Vercel AI Gateway attempt request-context OIDC instead of failing prematurely from a `process.env`-only check. Ordinary local/CI execution remains fail-closed.
 
-This matches the existing deployment policy: `AI_GATEWAY_API_KEY` is Production-only, not Preview. A bounded GitHub Actions presence probe also confirmed that no repository-level `AI_GATEWAY_API_KEY` secret exists. The probe and the preview-only analyst endpoint were removed immediately after verification.
+A genuine AI Gateway HTTP 401 is mapped back to `gateway_auth_missing`, so the fallback does not convert real authentication failures into success.
 
-No secret was copied, exposed or weakened merely to make the smoke test pass. Genuine real-company analyst-output review remains pending until the analyst can run in an approved authenticated server context.
+This policy is unit tested for API-key priority, explicit OIDC, Preview runtime-context OIDC and ordinary CI failure.
+
+### AI Gateway live-validation boundary
+
+An earlier real analyst call in Vercel Preview stopped at `gateway_auth_missing` before the request-context OIDC fallback existed.
+
+After the fallback was implemented and the full repository gate passed, a new Preview-only, branch-bound, read-only analyst smoke route was prepared to test Evolution without persistence. Vercel did **not** create a deployment for that commit: the GitHub Vercel status failed at deployment creation with `upgradeToPro=build-rate-limit`.
+
+Therefore the updated request-context OIDC path has not yet executed in a fresh Preview runtime. The smoke route was removed again immediately rather than left on the branch. No secret was copied, exposed or weakened.
+
+Genuine real-company analyst-output review remains pending until a new authenticated Preview/runtime can actually be created.
 
 ## Two-stage valuation
 
@@ -163,13 +222,29 @@ The AI does not own final valuation math:
 2. analyst proposes explicit Bear/Base/Bull assumptions using verified `valuationInputs`;
 3. assumptions convert to `ValuationScenarioInput`;
 4. `lib/analysis/valuation.ts` calculates values deterministically;
-5. the full quality gate runs again.
+5. the research publication quality gate runs again;
+6. a separate analyst-content quality gate reviews the AI interpretation itself.
 
-## Publication quality gate
+## Research publication quality gate
 
-The gate currently requires sufficient fundamental and multi-year coverage, fully traceable sources, a fresh primary source, verified primary report evidence, complete Bear/Base/Bull scenarios in compatible currency, logical scenario ordering **Bear ≤ Base ≤ Bull**, sufficient technical history, and meaningful support plus either verified resistance or `no_validated_resistance_above`.
+The research gate currently requires sufficient fundamental and multi-year coverage, fully traceable sources, a fresh primary source, verified primary report evidence, complete Bear/Base/Bull scenarios in compatible currency, logical scenario ordering **Bear ≤ Base ≤ Bull**, sufficient technical history, and meaningful support plus either verified resistance or `no_validated_resistance_above`.
 
 Failures are blockers, not silently neutral scores.
+
+## Analyst Content Quality Gate
+
+Schema-valid JSON is not automatically DivLab-quality. `analyst-quality-v1` independently evaluates the generated analyst interpretation before persistence.
+
+A passing analysis currently requires:
+
+- at least 6 of 11 qualitative company factors to be assessable;
+- confidence calibrated to the number of remaining unknown factors;
+- at least two distinct cited sources;
+- strictly differentiated final scenario values: **Bear < Base < Bull**;
+- distinct assumptions across all three scenarios;
+- DivLab's positive/neutral/negative stock view to be consistent with the deterministic base-case valuation.
+
+A thin, overconfident or internally contradictory result returns `stage: "analyst_quality"` for internal QA but cannot be persisted as an approved DivLab analysis.
 
 ## Persistence and immutability
 
@@ -178,11 +253,13 @@ The Supabase model separates facts from interpretation:
 - `divlab_analyses` — stable instrument identity / slug;
 - `divlab_analysis_versions` — immutable research snapshots;
 - `divlab_analysis_sources` — source provenance per research version;
-- `divlab_analysis_contents` — one immutable analyst-content row per research version.
+- `divlab_analysis_contents` — one immutable analyst-content row per research version, including analyst-quality certification.
 
-`persist_divlab_analysis_bundle(...)` atomically persists the final research version, source rows and analyst content. If analyst-content validation fails, the newly created research version is rolled back too.
+`persist_divlab_analysis_bundle(...)` atomically persists the final research version, source rows, analyst content and its quality-gate result. If analyst-content validation fails, the newly created research version is rolled back too.
 
-Database checks cover packet identity/engine/currency/quality consistency, exact packet-source matching, evidence source IDs, genuine primary evidence, unique Bear/Base/Bull scenarios in parent currency, nested analyst source IDs, primary-source latest-report provenance and non-negative AI usage.
+Only a fully passing `analyst-quality-v1` result may be written through the current analyst-content RPC. Historical internal rows that predate this gate are explicitly marked `pre-quality-gate`, `publishable=false`; they are not retroactively certified.
+
+Database checks cover packet identity/engine/currency/quality consistency, exact packet-source matching, evidence source IDs, genuine primary evidence, unique Bear/Base/Bull scenarios in parent currency, nested analyst source IDs, primary-source latest-report provenance, non-negative AI usage and the immutable analyst-quality certification.
 
 The normal service-role path has SELECT + INSERT but no UPDATE/DELETE on analyst content. Anon/authenticated users have no table access and cannot execute the bundle RPC.
 
@@ -190,29 +267,52 @@ The normal service-role path has SELECT + INSERT but no UPDATE/DELETE on analyst
 
 - correct evidence packet creates analysis + version + source atomically and can be rolled back cleanly;
 - false primary evidence is rejected before insert and leaves zero rows;
-- correct research+analyst bundle creates 1 analysis + 1 version + 1 source + 1 content row atomically;
+- correct research+analyst bundle creates analysis + version + source + content atomically;
 - an EUR analyst scenario against a SEK version is rejected;
-- rejection leaves 0 analysis/version/source/content rows for the test identity;
+- rejection leaves zero analysis/version/source/content rows for the test identity;
+- a passing `analyst-quality-v1` certification is accepted and stored;
+- a failing analyst-quality certification is rejected by PostgreSQL before a content row is created;
+- test fixtures were explicitly removed after smoke verification;
 - anon/authenticated cannot read analyst content or execute the bundle RPC;
 - service role can SELECT/INSERT content but cannot UPDATE/DELETE through normal grants;
 - Supabase security/performance advisors were run after DDL.
 
 The analysis tables intentionally have RLS enabled with no client policies while the feature remains internal.
 
+## Migration-history integrity
+
+Repository migration filenames are aligned with the versions actually registered in `dividend-lab-dev`:
+
+- `20260814163904_create_divlab_analysis_foundation.sql`
+- `20260814163935_create_divlab_analysis_persistence_rpc.sql`
+- `20260814165534_harden_divlab_analysis_integrity.sql`
+- `20260814184227_harden_divlab_analysis_evidence_integrity.sql`
+- `20260814185045_create_divlab_analysis_contents.sql`
+- `20260814185151_fix_divlab_analysis_content_source_scan.sql`
+- `20260814194526_persist_divlab_analyst_quality_gate.sql`
+
+The timestamp alignment was filename-only; the already-reviewed SQL blobs were not altered merely to make migration history look aligned.
+
 ## Verification status
 
 - deterministic FX direct/cross-rate derivation: unit tested;
 - cross-currency FCF valuation while retaining raw reporting facts: unit tested and Evolution live verified;
+- explicit market/reporting/EPS currency semantics: unit tested;
 - missing FX remains fail-closed: unit tested;
 - converted scenario without required FX source ID: rejected by analyst contract test;
 - inverted Bear/Base/Bull valuation: rejected by quality-gate test;
-- full repository lint, typecheck, core tests, SEO/news tests, DivBrain tests, Cursor bridge tests and production build passed on the FX/provenance implementation before final documentation cleanup;
-- real analyst narrative generation: not yet live verified because approved non-production AI Gateway authentication is unavailable.
+- Analyst Content Quality Gate: unit tested for pass, excessive unknowns/confidence, duplicate assumptions and view/base-case inconsistency;
+- passing/failing analyst-quality persistence: verified against `dividend-lab-dev`;
+- normalized quarterly provider periods: unit tested;
+- primary-report reconciliation v1: unit tested for same-basis H1/FY confirmation and conservative ambiguity handling;
+- Vercel request-context OIDC policy: unit tested, live Preview execution pending because Vercel rejected the new deployment at build-rate-limit;
+- full repository lint, typecheck, core tests, SEO/news tests, DivBrain tests, Cursor bridge tests and production build passed on branch head `6408f2a34c46166dc57fff6e39c64983f724628e` before this documentation-only update;
+- real analyst narrative generation on the current analyst implementation: not yet live verified.
 
 ## Still deliberately not included
 
 1. authenticated end-to-end live execution and qualitative review of the **new AI analyst** on Atlas Copco, Evolution and Embracer;
-2. direct accounting-number reconciliation from official report/IR PDFs against normalized provider statement values;
+2. live real-company validation of `primary-report-reconciliation-v1` against the current Atlas Copco, Evolution and Embracer report PDFs;
 3. richer valuation inputs such as historical valuation ranges, EV/EBIT, EV/EBITDA and peer sets where verified data is available;
 4. automatic model-portfolio shortlist → Deep Research trigger;
 5. public `/analyses` and `/analyses/[slug]` UI;
