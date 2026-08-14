@@ -17,7 +17,7 @@ import type { ValuationScenarioInput } from "./valuation";
 export const DIVLAB_ANALYST_AI_BUDGET = {
   maxOutputTokens: 4_200,
   maxEvidenceChars: 14_000,
-  maxPromptFactsChars: 30_000,
+  maxPromptFactsChars: 50_000,
 } as const;
 
 export type DivLabAnalystUsage = {
@@ -61,7 +61,11 @@ function buildAnalystFacts(packet: DivLabResearchPacket): string {
     evidence: boundedEvidence(packet),
     preAnalystQualityGate: packet.qualityGate,
   };
-  return JSON.stringify(facts).slice(0, DIVLAB_ANALYST_AI_BUDGET.maxPromptFactsChars);
+  const serialized = JSON.stringify(facts);
+  if (serialized.length > DIVLAB_ANALYST_AI_BUDGET.maxPromptFactsChars) {
+    throw new Error("divlab_analyst_prompt_facts_too_large");
+  }
+  return serialized;
 }
 
 function allDraftSourceIds(draft: DivLabAnalystDraft): string[] {
