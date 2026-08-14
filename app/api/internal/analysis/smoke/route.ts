@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { analyzeFundamentals } from "@/lib/analysis/fundamental-analysis";
+import type { CurrencyAwareFundamentalSnapshot } from "@/lib/analysis/financial-statement-normalizer";
 import { loadDivLabResearchInputs } from "@/lib/analysis/research-loader";
 import { analyzeSupportResistance } from "@/lib/analysis/support-resistance";
 
@@ -71,6 +72,7 @@ export async function GET(request: Request) {
       continue;
     }
 
+    const currencyAware = loaded.value.fundamentals as CurrencyAwareFundamentalSnapshot;
     const fundamental = analyzeFundamentals(loaded.value.fundamentals);
     const levels = analyzeSupportResistance(loaded.value.history);
     const primarySources = loaded.value.sources.filter((source) => source.primary);
@@ -92,7 +94,19 @@ export async function GET(request: Request) {
       })),
       fundamentals: {
         asOf: loaded.value.fundamentals.asOf,
+        marketCurrency: loaded.value.fundamentals.currency,
+        reportingCurrency: currencyAware.reportingCurrency ?? null,
+        epsTtmCurrency: currencyAware.epsTtmCurrency ?? null,
         historicalPeriods: loaded.value.fundamentals.historicalPeriods?.length ?? 0,
+        historicalPeriodCoverage: loaded.value.fundamentals.historicalPeriods?.map((period) => ({
+          period: period.period,
+          hasRevenue: typeof period.revenue === "number",
+          hasOperatingIncome: typeof period.operatingIncome === "number",
+          hasNetIncome: typeof period.netIncome === "number",
+          hasFreeCashFlow: typeof period.freeCashFlow === "number",
+          hasEps: typeof period.eps === "number",
+          hasShares: typeof period.sharesOutstanding === "number",
+        })) ?? [],
         scorecard: fundamental.scorecard,
         trends: fundamental.trends,
         metrics: fundamental.metrics,
@@ -105,6 +119,8 @@ export async function GET(request: Request) {
         sessions: levels.sessions,
         currentPrice: levels.currentPrice,
         zoneTolerancePct: levels.zoneTolerancePct,
+        resistanceState: levels.resistanceState,
+        priorHigh: levels.priorHigh,
         supports: levels.supports.map(zoneSummary),
         resistances: levels.resistances.map(zoneSummary),
       },
