@@ -55,38 +55,56 @@ export const divLabAnalystScenarioSchema = z
     }
   });
 
-export const divLabAnalystDraftSchema = z.object({
-  view: z.enum(["positive", "neutral", "negative"]),
-  riskLevel: z.enum(["low", "medium", "high"]),
-  confidence: z.enum(["low", "medium", "high"]),
-  horizonMonths: z.object({
-    min: z.number().int().min(1).max(120),
-    max: z.number().int().min(1).max(120),
-  }),
-  executiveSummary: z.string().trim().min(20).max(1400),
-  investmentCase: z.array(divLabAnalystClaimSchema).min(2).max(6),
-  latestReport: z.array(divLabAnalystClaimSchema).min(1).max(6),
-  fundamentalInterpretation: z.array(divLabAnalystClaimSchema).min(2).max(8),
-  qualityFactors: z.object({
-    competitiveAdvantage: divLabAnalystFactorSchema,
-    pricingPower: divLabAnalystFactorSchema,
-    marketPosition: divLabAnalystFactorSchema,
-    managementAndCapitalAllocation: divLabAnalystFactorSchema,
-    reinvestmentRunway: divLabAnalystFactorSchema,
-    cyclicality: divLabAnalystFactorSchema,
-    customerConcentration: divLabAnalystFactorSchema,
-    regulatoryRisk: divLabAnalystFactorSchema,
-    currencyRisk: divLabAnalystFactorSchema,
-    acquisitionRisk: divLabAnalystFactorSchema,
-    disruptionRisk: divLabAnalystFactorSchema,
-  }),
-  catalysts: z.array(divLabAnalystClaimSchema).min(1).max(6),
-  risks: z.array(divLabAnalystClaimSchema).min(2).max(8),
-  contradictions: z.array(divLabAnalystClaimSchema).min(1).max(6),
-  thesisBreakers: z.array(divLabAnalystClaimSchema).min(1).max(6),
-  technicalInterpretation: z.array(divLabAnalystClaimSchema).min(1).max(5),
-  valuationScenarios: z.array(divLabAnalystScenarioSchema).length(3),
-});
+export const divLabAnalystDraftSchema = z
+  .object({
+    view: z.enum(["positive", "neutral", "negative"]),
+    riskLevel: z.enum(["low", "medium", "high"]),
+    confidence: z.enum(["low", "medium", "high"]),
+    horizonMonths: z.object({
+      min: z.number().int().min(1).max(120),
+      max: z.number().int().min(1).max(120),
+    }),
+    executiveSummary: z.string().trim().min(20).max(1400),
+    investmentCase: z.array(divLabAnalystClaimSchema).min(2).max(6),
+    latestReport: z.array(divLabAnalystClaimSchema).min(1).max(6),
+    fundamentalInterpretation: z.array(divLabAnalystClaimSchema).min(2).max(8),
+    qualityFactors: z.object({
+      competitiveAdvantage: divLabAnalystFactorSchema,
+      pricingPower: divLabAnalystFactorSchema,
+      marketPosition: divLabAnalystFactorSchema,
+      managementAndCapitalAllocation: divLabAnalystFactorSchema,
+      reinvestmentRunway: divLabAnalystFactorSchema,
+      cyclicality: divLabAnalystFactorSchema,
+      customerConcentration: divLabAnalystFactorSchema,
+      regulatoryRisk: divLabAnalystFactorSchema,
+      currencyRisk: divLabAnalystFactorSchema,
+      acquisitionRisk: divLabAnalystFactorSchema,
+      disruptionRisk: divLabAnalystFactorSchema,
+    }),
+    catalysts: z.array(divLabAnalystClaimSchema).min(1).max(6),
+    risks: z.array(divLabAnalystClaimSchema).min(2).max(8),
+    contradictions: z.array(divLabAnalystClaimSchema).min(1).max(6),
+    thesisBreakers: z.array(divLabAnalystClaimSchema).min(1).max(6),
+    technicalInterpretation: z.array(divLabAnalystClaimSchema).min(1).max(5),
+    valuationScenarios: z.array(divLabAnalystScenarioSchema).length(3),
+  })
+  .superRefine((draft, ctx) => {
+    if (draft.horizonMonths.min > draft.horizonMonths.max) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["horizonMonths"],
+        message: "horizon_min_must_not_exceed_max",
+      });
+    }
+    const names = new Set(draft.valuationScenarios.map((scenario) => scenario.name));
+    if (names.size !== 3 || !names.has("bear") || !names.has("base") || !names.has("bull")) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["valuationScenarios"],
+        message: "valuation_scenarios_must_include_unique_bear_base_bull",
+      });
+    }
+  });
 
 export type DivLabAnalystClaim = z.infer<typeof divLabAnalystClaimSchema>;
 export type DivLabAnalystDraft = z.infer<typeof divLabAnalystDraftSchema>;
