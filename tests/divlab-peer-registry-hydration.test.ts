@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import type { DivLabResearchPacket } from "../lib/analysis/deep-research";
-import { buildPeerComparisonFromRegistry } from "../lib/analysis/peer-registry-hydration";
+import {
+  buildPeerComparisonFromRegistry,
+  hydratePeerComparisonFromRegistry,
+} from "../lib/analysis/peer-registry-hydration";
 import type { LoadedPeerRegistrySet } from "../lib/analysis/peer-registry-read";
 
 function packet(symbol: string, name = symbol, base = 10): DivLabResearchPacket {
@@ -145,6 +148,48 @@ describe("DivLab registry peer hydration", () => {
           peerPackets: [packet("AAA"), packet("BBB"), packet("CCC")],
         }),
       /peer_registry_hydration_target_mismatch:ST:EVO:ST:ATCO-A/,
+    );
+  });
+
+  it("requests exactly one research packet for each registered member", async () => {
+    const requested: string[] = [];
+    const result = await hydratePeerComparisonFromRegistry({
+      targetPacket: packet("EVO", "Evolution", 12),
+      registry: registry(),
+      loadPeerResearch: async (member) => {
+        requested.push(`${member.exchange}:${member.symbol}`);
+        return packet(member.symbol, member.name, member.symbol === "AAA" ? 9 : member.symbol === "BBB" ? 10 : 11);
+      },
+    });
+
+    assert.deepEqual(requested, ["ST:AAA", "ST:BBB", "ST:CCC"]);
+    assert.equal(result.hydration.status, "complete");
+    assert.equal(result.comparison.status, "ready");
+  });
+
+  it("keeps a null loader result as an explicit missing registered peer", async () => {
+    const result = await hydratePeerComparisonFromRegistry({
+      targetPacket: packet("EVO", "Evolution", 12),
+      registry: registry(["AAA", "BBB", "CCC", "DDD"]),
+      loadPeerResearch: async (member) =>
+        member.symbol === "DDD" ? null : packet(member.symbol, member.name, 10),
+    });
+
+    assert.equal(result.hydration.status, "incomplete");
+    assert.deepEqual(result.hydration.missingPeers.map((peer) => peer.symbol), ["DDD"]);
+    assert.equal(result.comparison.status, "insufficient");
+  });
+
+  it("rejects a loader that returns research for a substitute instrument", async () => {
+    await assert.rejects(
+      () =>
+        hydratePeerComparisonFromRegistry({
+          targetPacket: packet("EVO", "Evolution", 12),
+          registry: registry(),
+          loadPeerResearch: async (member) =>
+            member.symbol === "BBB" ? packet("DDD", "Substitute") : packet(member.symbol, member.name),
+        }),
+      /peer_registry_hydration_unexpected_packet:ST:DDD/,
     );
   });
 });
