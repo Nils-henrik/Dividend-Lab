@@ -3,10 +3,12 @@ import { describe, it } from "node:test";
 import {
   selectDailyAnalysisCases,
   type DailyCaseSelectionCandidate,
+  type DailyCaseSelectionConfig,
   type DailyCaseSignalKey,
 } from "../lib/analysis/daily-case-selection";
 
 const SOURCE_IDS = ["market", "report", "fundamental", "analytics"] as const;
+const NOW = new Date("2026-08-15T01:00:00.000Z");
 
 function signal(value: number, sourceId = "market") {
   return {
@@ -14,6 +16,13 @@ function signal(value: number, sourceId = "market") {
     sourceIds: [sourceId],
     asOf: "2026-08-15T00:00:00.000Z",
   };
+}
+
+function select(
+  candidates: readonly DailyCaseSelectionCandidate[],
+  config: Omit<DailyCaseSelectionConfig, "now"> = {},
+) {
+  return selectDailyAnalysisCases(candidates, { ...config, now: NOW });
 }
 
 function strongCandidate(
@@ -67,7 +76,7 @@ describe("DivLab daily case selection", () => {
       },
     ];
 
-    const result = selectDailyAnalysisCases(candidates, { maxSameExchange: 4 });
+    const result = select(candidates, { maxSameExchange: 4 });
     assert.equal(result.version, "daily-case-selection-v1");
     assert.equal(result.selected.length, 4);
     assert.equal(result.blocked.length, 1);
@@ -77,7 +86,7 @@ describe("DivLab daily case selection", () => {
   });
 
   it("can return fewer cases instead of filling the quota", () => {
-    const result = selectDailyAnalysisCases([
+    const result = select([
       strongCandidate("ONE"),
       strongCandidate("TWO", { freshReport: signal(0.1, "report"), catalyst: signal(1, "report") }),
       {
@@ -108,7 +117,7 @@ describe("DivLab daily case selection", () => {
       dataReadiness: signal(0.9, "fundamental"),
     });
 
-    const result = selectDailyAnalysisCases([sparse]);
+    const result = select([sparse]);
     assert.equal(result.selected.length, 0);
     assert.equal(result.blocked[0]?.symbol, "SPARSE");
     assert.ok(result.blocked[0]?.score !== undefined && result.blocked[0].score < 0.45);
@@ -120,7 +129,7 @@ describe("DivLab daily case selection", () => {
       ...strongCandidate("BANK"),
       methodologyStatus: "specialized_required" as const,
     };
-    const result = selectDailyAnalysisCases([bank]);
+    const result = select([bank]);
     assert.equal(result.selected.length, 0);
     assert.deepEqual(result.blocked[0]?.blockers.includes("methodology_not_supported"), true);
   });
@@ -129,14 +138,11 @@ describe("DivLab daily case selection", () => {
     const candidate = strongCandidate("BAD_SOURCE", {
       catalyst: signal(1, "invented-source"),
     });
-    assert.throws(
-      () => selectDailyAnalysisCases([candidate]),
-      /daily_case_signal_source_unknown/,
-    );
+    assert.throws(() => select([candidate]), /daily_case_signal_source_unknown/);
   });
 
   it("uses deterministic symbol and exchange ordering for exact score ties", () => {
-    const result = selectDailyAnalysisCases([
+    const result = select([
       strongCandidate("BBB", { freshReport: signal(0.1, "report"), catalyst: signal(1, "report") }),
       strongCandidate("AAA", { freshReport: signal(0.1, "report"), catalyst: signal(1, "report") }),
     ]);
@@ -145,11 +151,7 @@ describe("DivLab daily case selection", () => {
 
   it("rejects duplicate instrument identities", () => {
     assert.throws(
-      () =>
-        selectDailyAnalysisCases([
-          strongCandidate("DUP"),
-          strongCandidate("dup", {}, "st"),
-        ]),
+      () => select([strongCandidate("DUP"), strongCandidate("dup", {}, "st")]),
       /daily_case_duplicate_identity:DUP@ST/,
     );
   });
@@ -163,7 +165,7 @@ describe("DivLab daily case selection", () => {
         technicalSetup: signal(0.2),
       });
 
-    const result = selectDailyAnalysisCases(
+    const result = select(
       [catalystPrimary("CAT1"), catalystPrimary("CAT2"), catalystPrimary("CAT3")],
       { maxSamePrimaryDriver: 2 },
     );
@@ -178,8 +180,38 @@ describe("DivLab daily case selection", () => {
 
   it("keeps the daily heavy-research budget hard-capped at four", () => {
     assert.throws(
-      () => selectDailyAnalysisCases([strongCandidate("ONE")], { maxSelections: 5 }),
+      () => select([strongCandidate("ONE")], { maxSelections: 5 }),
       /daily_case_config_invalid:maxSelections/,
     );
+  });
+
+  it("expires stale why-now evidence instead of recycling an old case", () => {
+    const staleReport = {
+      ...signal(1, "report"),
+      asOf: "2026-08-01T00:00:00.000Z",
+    };
+    const candidate = strongCandidate("STALE", {
+      freshReport: staleReport,
+      catalyst: null,
+      estimateRevisions: null,
+      technicalSetup: null,
+      abnormalVolume: null,
+      priceMove: null,
+    });
+
+    const result = select([candidate]);
+    assert.equal(result.selected.length, 0);
+    assert.ok(result.blocked[0]?.staleSignals.includes("freshReport"));
+    assert.ok(result.blocked[0]?.blockers.includes("missing_why_now_signal"));
+  });
+
+  it("rejects observations that are materially ahead of the selection clock", () => {
+    const futureSignal = {
+      ...signal(1, "report"),
+      asOf: "2026-08-15T01:06:00.000Z",
+    };
+    const candidate = strongCandidate("FUTURE", { freshReport: futureSignal });
+
+    assert.throws(() => select([candidate]), /daily_case_signal_from_future:FUTURE@ST:freshReport/);
   });
 });
