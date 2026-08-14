@@ -153,6 +153,22 @@ describe("DivLab deep research packet", () => {
           primary: false,
         },
       ],
+      evidence: [
+        {
+          id: "evidence:report:q2-2026",
+          sourceId: "report:q2-2026",
+          kind: "official_report_excerpt",
+          title: "Testbolaget Q2 2026",
+          content:
+            "Verifierat rapportutdrag med tillräckligt innehåll för att analysmotorn ska kunna tolka senaste rapporten utan att gissa. Omsättning, marginal, kassaflöde, balansräkning och ledningens kommentar finns i det kontrollerade underlaget. Detta är testtext som representerar ett bounded officiellt rapportutdrag och är längre än kvalitetsgrindens miniminivå.",
+          publishedAt: "2026-07-20T06:00:00.000Z",
+          primary: true,
+          documentRetrieved: true,
+          reportPeriod: "Q2",
+          reportYear: 2026,
+          documentType: "quarterly_report",
+        },
+      ],
       now: new Date("2026-08-14T16:00:00.000Z"),
     });
 
@@ -164,6 +180,7 @@ describe("DivLab deep research packet", () => {
     assert.ok(packet.technical.levels.supports.length >= 1);
     assert.ok(packet.technical.levels.resistances.length >= 1);
     assert.equal(packet.qualityGate.checks.multiYearFundamentalCoverage, true);
+    assert.equal(packet.qualityGate.checks.primaryEvidenceCoverage, true);
     assert.equal(packet.qualityGate.publishable, true);
     assert.equal(packet.qualityGate.blockers.length, 0);
   });
@@ -193,11 +210,13 @@ describe("DivLab deep research packet", () => {
         },
       ],
       sources: [],
+      evidence: [],
       now: new Date("2026-08-14T16:00:00.000Z"),
     });
 
     assert.equal(packet.qualityGate.publishable, false);
     assert.equal(packet.qualityGate.checks.multiYearFundamentalCoverage, false);
-    assert.ok(packet.qualityGate.blockers.length >= 3);
+    assert.equal(packet.qualityGate.checks.primaryEvidenceCoverage, false);
+    assert.ok(packet.qualityGate.blockers.length >= 4);
   });
 });
