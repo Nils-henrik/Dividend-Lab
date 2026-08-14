@@ -192,4 +192,54 @@ describe("DivLab registry peer hydration", () => {
       /peer_registry_hydration_unexpected_packet:ST:DDD/,
     );
   });
+
+  it("bounds simultaneous research loads to the requested concurrency", async () => {
+    const symbols = ["AAA", "BBB", "CCC", "DDD", "EEE", "FFF"];
+    let active = 0;
+    let maxActive = 0;
+    let calls = 0;
+
+    const result = await hydratePeerComparisonFromRegistry({
+      targetPacket: packet("EVO", "Evolution", 12),
+      registry: registry(symbols),
+      maxConcurrency: 2,
+      loadPeerResearch: async (member) => {
+        calls += 1;
+        active += 1;
+        maxActive = Math.max(maxActive, active);
+        await new Promise((resolve) => setTimeout(resolve, 2));
+        active -= 1;
+        return packet(member.symbol, member.name, 10);
+      },
+    });
+
+    assert.equal(calls, symbols.length);
+    assert.equal(maxActive, 2);
+    assert.equal(result.hydration.status, "complete");
+    assert.equal(result.hydration.hydratedPeerCount, symbols.length);
+  });
+
+  it("rejects hydration concurrency outside the hard safety bound", async () => {
+    await assert.rejects(
+      () =>
+        hydratePeerComparisonFromRegistry({
+          targetPacket: packet("EVO", "Evolution", 12),
+          registry: registry(),
+          maxConcurrency: 0,
+          loadPeerResearch: async (member) => packet(member.symbol, member.name),
+        }),
+      /peer_registry_hydration_concurrency_invalid/,
+    );
+
+    await assert.rejects(
+      () =>
+        hydratePeerComparisonFromRegistry({
+          targetPacket: packet("EVO", "Evolution", 12),
+          registry: registry(),
+          maxConcurrency: 6,
+          loadPeerResearch: async (member) => packet(member.symbol, member.name),
+        }),
+      /peer_registry_hydration_concurrency_invalid/,
+    );
+  });
 });
