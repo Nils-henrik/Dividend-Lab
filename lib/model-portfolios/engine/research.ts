@@ -53,25 +53,51 @@ export const RESEARCH_BUDGET = {
 const MIN_MARKET_CAP_SEK = 750_000_000;
 const MIN_DAILY_TURNOVER_SEK = 5_000_000;
 
-function clamp01(value: number | undefined, fallback = 0.5): number {
+function clamp01(value: number, fallback = 0): number {
   if (!Number.isFinite(value)) return fallback;
+  return Math.max(0, Math.min(1, value));
+}
+
+function knownUnitInterval(value: number | undefined): number | null {
+  if (!Number.isFinite(value)) return null;
   return Math.max(0, Math.min(1, value as number));
 }
 
-function normalizeMomentum(value: number | undefined): number {
-  if (!Number.isFinite(value)) return 0.5;
-  return clamp01(((value as number) + 0.2) / 0.4);
+function normalizeMomentum(value: number | undefined): number | null {
+  if (!Number.isFinite(value)) return null;
+  return knownUnitInterval(((value as number) + 0.2) / 0.4);
 }
 
-function inverseVolatility(value: number | undefined): number {
-  if (!Number.isFinite(value)) return 0.5;
-  return clamp01(1 - (value as number) / 0.8);
+function inverseVolatility(value: number | undefined): number | null {
+  if (!Number.isFinite(value)) return null;
+  return knownUnitInterval(1 - (value as number) / 0.8);
 }
 
-function weightedScore(parts: readonly [number, number][]): number {
-  const weighted = parts.reduce((sum, [score, weight]) => sum + score * weight, 0);
-  const weight = parts.reduce((sum, [, partWeight]) => sum + partWeight, 0);
-  return weight > 0 ? weighted / weight : 0;
+/**
+ * Coverage-aware weighted score in [0, 1].
+ *
+ * Known components keep their actual values, including a genuine 0.5.
+ * Missing/non-finite components are absent — never filled with a synthetic 0.5.
+ * The known weighted average is then multiplied by knownWeight / totalIntendedWeight
+ * so deleting a datum cannot raise or preserve a falsely high score through
+ * renormalization. Equivalent form: sum(knownScore * weight) / totalIntendedWeight.
+ */
+function weightedScore(parts: readonly (readonly [number | null, number])[]): number {
+  const totalIntendedWeight = parts.reduce((sum, [, weight]) => sum + Math.max(0, weight), 0);
+  if (totalIntendedWeight <= 0) return 0;
+
+  let knownWeighted = 0;
+  let knownWeight = 0;
+  for (const [score, weight] of parts) {
+    if (score === null || !Number.isFinite(score) || weight <= 0) continue;
+    knownWeighted += score * weight;
+    knownWeight += weight;
+  }
+  if (knownWeight <= 0) return 0;
+
+  const knownAverage = knownWeighted / knownWeight;
+  const coverage = knownWeight / totalIntendedWeight;
+  return clamp01(knownAverage * coverage);
 }
 
 function isUsExchange(exchange: string): boolean {
@@ -100,11 +126,11 @@ export function classifyResearchMarketCap(candidate: Pick<ResearchCandidate, "ex
   return "large_cap";
 }
 
-function marketCapPreference(segment: ResearchMarketCapSegment): number {
+function marketCapPreference(segment: ResearchMarketCapSegment): number | null {
   if (segment === "small_cap") return 1;
   if (segment === "mid_cap") return 0.9;
   if (segment === "large_cap") return 0.3;
-  return 0.5;
+  return null;
 }
 
 function drawdownOpportunityScore(drawdown: number | null): number {
@@ -121,18 +147,18 @@ function drawdownOpportunityScore(drawdown: number | null): number {
  * fundamentals must remain intact and the entry must show some stabilization.
  */
 export function assessRecoverySetup(candidate: ResearchCandidate): ResearchRecoverySetup {
-  const quality = clamp01(candidate.qualityScore);
-  const valuation = clamp01(candidate.valuationScore);
-  const revisions = clamp01(candidate.earningsRevisionScore);
-  const catalyst = clamp01(candidate.catalystScore);
-  const balanceSheet = clamp01(candidate.balanceSheetScore);
+  const quality = knownUnitInterval(candidate.qualityScore);
+  const valuation = knownUnitInterval(candidate.valuationScore);
+  const revisions = knownUnitInterval(candidate.earningsRevisionScore);
+  const catalyst = knownUnitInterval(candidate.catalystScore);
+  const balanceSheet = knownUnitInterval(candidate.balanceSheetScore);
   const technical = candidate.technicalAnalysis;
-  const trend = clamp01(technical?.scores.trend);
-  const technicalMomentum = clamp01(technical?.scores.momentum);
-  const volume = clamp01(technical?.scores.volume);
-  const breakout = clamp01(technical?.scores.breakout);
-  const stability = clamp01(technical?.scores.stability);
-  const composite = clamp01(technical?.scores.composite);
+  const trend = knownUnitInterval(technical?.scores.trend);
+  const technicalMomentum = knownUnitInterval(technical?.scores.momentum);
+  const volume = knownUnitInterval(technical?.scores.volume);
+  const breakout = knownUnitInterval(technical?.scores.breakout);
+  const stability = knownUnitInterval(technical?.scores.stability);
+  const composite = knownUnitInterval(technical?.scores.composite);
   const momentum20 = normalizeMomentum(candidate.priceMomentum20d);
   const distanceFromHigh = technical?.levels.distanceFrom52WeekHighPct;
   const drawdown = Number.isFinite(distanceFromHigh) && (distanceFromHigh as number) < 0
@@ -203,22 +229,22 @@ export function assessRecoverySetup(candidate: ResearchCandidate): ResearchRecov
 }
 
 function scoreForProfile(candidate: ResearchCandidate, strategy: ModelPortfolioStrategyKey) {
-  const quality = clamp01(candidate.qualityScore);
-  const valuation = clamp01(candidate.valuationScore);
-  const revisions = clamp01(candidate.earningsRevisionScore);
-  const dividend = clamp01(candidate.dividendQualityScore);
-  const catalyst = clamp01(candidate.catalystScore);
-  const balanceSheet = clamp01(candidate.balanceSheetScore);
+  const quality = knownUnitInterval(candidate.qualityScore);
+  const valuation = knownUnitInterval(candidate.valuationScore);
+  const revisions = knownUnitInterval(candidate.earningsRevisionScore);
+  const dividend = knownUnitInterval(candidate.dividendQualityScore);
+  const catalyst = knownUnitInterval(candidate.catalystScore);
+  const balanceSheet = knownUnitInterval(candidate.balanceSheetScore);
   const momentum20 = normalizeMomentum(candidate.priceMomentum20d);
   const momentum60 = normalizeMomentum(candidate.priceMomentum60d);
   const lowVolatility = inverseVolatility(candidate.volatility20d);
   const technical = candidate.technicalAnalysis;
-  const technicalComposite = clamp01(technical?.scores.composite);
-  const technicalTrend = clamp01(technical?.scores.trend);
-  const technicalMomentum = clamp01(technical?.scores.momentum);
-  const technicalVolume = clamp01(technical?.scores.volume);
-  const technicalBreakout = clamp01(technical?.scores.breakout);
-  const technicalStability = clamp01(technical?.scores.stability);
+  const technicalComposite = knownUnitInterval(technical?.scores.composite);
+  const technicalTrend = knownUnitInterval(technical?.scores.trend);
+  const technicalMomentum = knownUnitInterval(technical?.scores.momentum);
+  const technicalVolume = knownUnitInterval(technical?.scores.volume);
+  const technicalBreakout = knownUnitInterval(technical?.scores.breakout);
+  const technicalStability = knownUnitInterval(technical?.scores.stability);
   const marketCapSegment = classifyResearchMarketCap(candidate);
   const recoverySetup = assessRecoverySetup(candidate);
 

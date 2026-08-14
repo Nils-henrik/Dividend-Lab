@@ -13,7 +13,14 @@ import {
 } from "./ai-usage";
 import { validateEvidenceReferences, type ModelPortfolioDecision, type ModelPortfolioEvidence } from "./decision";
 import type { ModelPortfolioStrategyKey } from "./policy";
-import { rankResearchUniverse, selectDeepResearchCandidates, type ResearchCandidate } from "./research";
+import type { ResearchCandidate } from "./research";
+import {
+  evaluateNewEntryAttention,
+  isFreshBuyEligible,
+  selectDryRunAttentionSnapshot,
+  type AttentionCandidate,
+  type HeldInstrumentRef,
+} from "./strategy-attention";
 import type { TechnicalAnalysisSnapshot } from "./technical-analysis";
 
 export type PortfolioDryRunRequest = {
@@ -25,13 +32,15 @@ export type PortfolioDryRunRequest = {
   spentTodayUsdMicros: number;
   useEscalationModel?: boolean;
   runId?: string | null;
+  /** Current holdings. Used for an explicit monitoring path, never as a BUY bypass. */
+  heldInstruments?: readonly HeldInstrumentRef[];
 };
 
 export type PortfolioDryRunResult =
   | {
       ok: true;
       decision: ModelPortfolioDecision;
-      rankedCandidates: ReturnType<typeof selectDeepResearchCandidates>;
+      rankedCandidates: AttentionCandidate[];
       model: string;
       estimatedCostUsdMicros: number;
       usage: ModelPortfolioAiUsage;
@@ -94,11 +103,12 @@ function compactTechnical(technical: TechnicalAnalysisSnapshot | undefined): str
   ].join(" | ");
 }
 
-function compactCandidates(candidates: ReturnType<typeof selectDeepResearchCandidates>): string {
+function compactCandidates(candidates: readonly AttentionCandidate[]): string {
   return candidates
     .map((candidate, index) =>
       [
         `#${index + 1} ${candidate.symbol}.${candidate.exchange}`,
+        `role=${candidate.attentionEligibility === "held_for_monitoring" ? "held_for_monitoring_not_a_fresh_buy" : "new_entry"}`,
         `score=${candidate.deterministicScore}`,
         `reasons=${candidate.reasons.join(", ")}`,
         `capSegment=${candidate.marketCapSegment}`,
@@ -123,6 +133,45 @@ function compactCandidates(candidates: ReturnType<typeof selectDeepResearchCandi
       ].join(" | "),
     )
     .join("\n");
+}
+
+function instrumentKey(symbol: string, exchange: string): string {
+  return `${symbol}.${exchange}`.toUpperCase();
+}
+
+function evidenceMatchesCandidate(evidence: ModelPortfolioEvidence, candidate: ResearchCandidate): boolean {
+  const id = evidence.id.toUpperCase();
+  const title = evidence.title.toUpperCase();
+  const symbol = candidate.symbol.toUpperCase();
+  const exchange = candidate.exchange.toUpperCase();
+  const instrumentToken = `(${symbol}.${exchange})`;
+  return id.startsWith(`RESEARCH:${symbol}:${exchange}:`)
+    || id.startsWith(`GOOGLE:${symbol}:`)
+    || id.startsWith(`PRIMARY:${symbol}:`)
+    || (id.startsWith("RESEARCH-CACHE:") && title.includes(instrumentToken));
+}
+
+export function guardBuyAgainstHeldMonitoring(input: {
+  decision: ModelPortfolioDecision;
+  snapshot: readonly AttentionCandidate[];
+  strategyKey: ModelPortfolioStrategyKey;
+  evidence: readonly ModelPortfolioEvidence[];
+}): ModelPortfolioDecision {
+  if (input.decision.action !== "buy" || !input.decision.symbol || !input.decision.exchange) {
+    return input.decision;
+  }
+  const targetKey = instrumentKey(input.decision.symbol, input.decision.exchange);
+  const target = input.snapshot.find(
+    (item) => instrumentKey(item.symbol, item.exchange) === targetKey,
+  );
+  if (!target) return failClosedHold(input.evidence);
+  const newEntryEligible = evaluateNewEntryAttention(target, input.strategyKey).eligible;
+  if (isFreshBuyEligible(target, newEntryEligible)) return input.decision;
+  return {
+    ...failClosedHold(input.evidence),
+    rationale:
+      "KÖP stoppades. Innehavsstatus får inte göra ett bolag till en ny köpkandidat när det inte klarar mandatets entry-grind. Befintliga innehav kan bevakas för HOLD/SÄLJ/MINSKA.",
+  };
 }
 
 function failClosedHold(evidence: readonly ModelPortfolioEvidence[]): ModelPortfolioDecision {
@@ -191,8 +240,14 @@ function deterministicNoTradeUsage(runId: string | null): ModelPortfolioAiUsage 
 }
 
 export async function runPortfolioDryRun(request: PortfolioDryRunRequest): Promise<PortfolioDryRunResult> {
-  const rankedCandidates = selectDeepResearchCandidates(
-    rankResearchUniverse(request.candidates, request.strategyKey),
+  const assembled = selectDryRunAttentionSnapshot({
+    universe: request.candidates,
+    strategyKey: request.strategyKey,
+    heldInstruments: request.heldInstruments ?? [],
+  });
+  const rankedCandidates = assembled.snapshot;
+  const evidence = request.evidence.filter((item) =>
+    rankedCandidates.some((candidate) => evidenceMatchesCandidate(item, candidate)),
   );
   if (!rankedCandidates.length) {
     return {
@@ -205,7 +260,7 @@ export async function runPortfolioDryRun(request: PortfolioDryRunRequest): Promi
       executionAllowed: false,
     };
   }
-  if (!request.evidence.length) return { ok: false, reason: "no_evidence" };
+  if (!evidence.length) return { ok: false, reason: "no_evidence" };
 
   const expectedCallUsdMicros = estimateDryRunCallCost(Boolean(request.useEscalationModel));
   const budget = evaluateAiBudget({
@@ -221,15 +276,21 @@ export async function runPortfolioDryRun(request: PortfolioDryRunRequest): Promi
     portfolioSnapshot: request.portfolioSnapshot,
     candidateSnapshot: compactCandidates(rankedCandidates),
     candidates: rankedCandidates,
-    evidence: request.evidence,
+    evidence,
     useEscalationModel: Boolean(request.useEscalationModel),
     runId: request.runId ?? null,
   });
 
-  const evidenceValidation = validateEvidenceReferences(generated.decision, request.evidence);
-  const decision = evidenceValidation.ok
+  const evidenceValidation = validateEvidenceReferences(generated.decision, evidence);
+  const validated = evidenceValidation.ok
     ? generated.decision
-    : failClosedHold(request.evidence);
+    : failClosedHold(evidence);
+  const decision = guardBuyAgainstHeldMonitoring({
+    decision: validated,
+    snapshot: rankedCandidates,
+    strategyKey: request.strategyKey,
+    evidence,
+  });
 
   return {
     ok: true,

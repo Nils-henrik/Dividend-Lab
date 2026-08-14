@@ -4,10 +4,20 @@ import { describe, it } from "node:test";
 import {
   DIVLAB_INVESTMENT_ANALYSIS_CORE_SV,
   DIVLAB_INVESTMENT_ANALYSIS_DOCTRINE_SV,
+  DIVLAB_INVESTMENT_ANALYSIS_DOCTRINE_VERSION,
 } from "../lib/investment-analysis/doctrine";
 import { buildModelPortfolioSystemMandate } from "../lib/model-portfolios/engine/mandates";
 
 describe("shared DivLab investment-analysis doctrine", () => {
+  it("is version 2 and keeps the original safety core", () => {
+    assert.equal(DIVLAB_INVESTMENT_ANALYSIS_DOCTRINE_VERSION, 2);
+    assert.match(DIVLAB_INVESTMENT_ANALYSIS_CORE_SV, /Okänd data är okänd/);
+    assert.match(DIVLAB_INVESTMENT_ANALYSIS_CORE_SV, /inte ett neutralt 0,5-betyg/);
+    assert.match(DIVLAB_INVESTMENT_ANALYSIS_CORE_SV, /Klassificera caset innan värderingen/);
+    assert.match(DIVLAB_INVESTMENT_ANALYSIS_CORE_SV, /Ett bra bolag är inte automatiskt en bra aktie/);
+    assert.match(DIVLAB_INVESTMENT_ANALYSIS_CORE_SV, /skriv inte om ett gammalt beslut/);
+  });
+
   it("covers the core analytical layers and uncertainty discipline", () => {
     assert.match(DIVLAB_INVESTMENT_ANALYSIS_CORE_SV, /affärskvalitet och kassaflöde/);
     assert.match(DIVLAB_INVESTMENT_ANALYSIS_CORE_SV, /balansräkning/);
@@ -24,6 +34,15 @@ describe("shared DivLab investment-analysis doctrine", () => {
     assert.match(DIVLAB_INVESTMENT_ANALYSIS_DOCTRINE_SV, /refinansieringsbehov/);
     assert.match(DIVLAB_INVESTMENT_ANALYSIS_DOCTRINE_SV, /Förväntningar/);
     assert.match(DIVLAB_INVESTMENT_ANALYSIS_DOCTRINE_SV, /Efteranalys/);
+    assert.match(DIVLAB_INVESTMENT_ANALYSIS_DOCTRINE_SV, /ANALYSDISCIPLIN V2/);
+    assert.match(DIVLAB_INVESTMENT_ANALYSIS_DOCTRINE_SV, /Casetyp före värdering/);
+    assert.match(DIVLAB_INVESTMENT_ANALYSIS_DOCTRINE_SV, /Scenario och falsifierbarhet/);
+    assert.match(DIVLAB_INVESTMENT_ANALYSIS_DOCTRINE_SV, /Per-aktie-ekonomi och utspädning/);
+    assert.match(DIVLAB_INVESTMENT_ANALYSIS_DOCTRINE_SV, /Kapitalintensitet och återinvestering/);
+    assert.match(DIVLAB_INVESTMENT_ANALYSIS_DOCTRINE_SV, /Evidenskalibrering/);
+    assert.match(DIVLAB_INVESTMENT_ANALYSIS_DOCTRINE_SV, /Portföljpassning mot fristående kvalitet/);
+    assert.match(DIVLAB_INVESTMENT_ANALYSIS_DOCTRINE_SV, /Inkomstvärdepapper/);
+    assert.match(DIVLAB_INVESTMENT_ANALYSIS_DOCTRINE_SV, /Processkvalitet före utfallsbias/);
   });
 
   it("is injected into every model-portfolio manager mandate", () => {

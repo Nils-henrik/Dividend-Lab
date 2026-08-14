@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import { classifyDividendInstrument } from "./dividend-universe";
 import { NORDIC_RESEARCH_BOUNDS, NORDIC_SEED_UNIVERSE } from "./nordic-universe";
+import { classifyNordicDiscoveryLane } from "./research-lanes";
 import { discoverNordicYahooCandidates, discoverYahooCandidates } from "./yahoo-discovery";
 
 function responseFor(symbols: Array<Record<string, unknown>>): Response {
@@ -197,6 +199,73 @@ describe("Yahoo market discovery", () => {
     });
 
     assert.equal(result.shortlist.length, 8);
+    const countries = new Set(result.shortlist.map((item) => item.country));
+    assert.deepEqual([...countries].sort(), ["DK", "FI", "NO", "SE"]);
+  });
+
+  it("uses exactly three predefined Yahoo screener calls by default", async () => {
+    const screens: string[] = [];
+    const fetchImpl: typeof fetch = async (input) => {
+      const url = new URL(String(input));
+      screens.push(url.searchParams.get("scrIds") ?? "");
+      return responseFor([]);
+    };
+    await discoverYahooCandidates({ fetchImpl });
+    assert.deepEqual(screens, ["day_gainers", "day_losers", "most_actives"]);
+  });
+
+  it("reserves Nordic income and small/mid lanes inside the existing 14-name deep shortlist", async () => {
+    const fetchImpl: typeof fetch = async (input) => {
+      const url = new URL(String(input));
+      const symbols = (url.searchParams.get("symbols") ?? "").split(",").filter(Boolean);
+      return quoteResponse(
+        symbols.map((yahooSymbol, index) => {
+          const suffix = yahooSymbol.split(".").at(-1);
+          const isIncome = /(?:-D|-PREF|XACTHDIV|MONTDIV)\.ST$/.test(yahooSymbol);
+          return {
+            symbol: yahooSymbol,
+            shortName: yahooSymbol,
+            fullExchangeName:
+              suffix === "ST"
+                ? "Stockholm"
+                : suffix === "CO"
+                  ? "Copenhagen"
+                  : suffix === "HE"
+                    ? "Helsinki"
+                    : "Oslo",
+            currency: suffix === "HE" ? "EUR" : suffix === "CO" ? "DKK" : "SEK",
+            regularMarketPrice: 100,
+            regularMarketChangePercent: isIncome ? 0.2 : 12 - (index % 5),
+            regularMarketVolume: 1_000_000,
+            averageDailyVolume3Month: 800_000,
+            marketCap: isIncome ? 8_000_000_000 : 90_000_000_000,
+          };
+        }),
+      );
+    };
+
+    const result = await discoverNordicYahooCandidates({
+      broadLimit: NORDIC_RESEARCH_BOUNDS.broadDiscoveryCandidateCount,
+      shortlistLimit: NORDIC_RESEARCH_BOUNDS.deepHistoryTechnicalCount,
+      fetchImpl,
+      now: new Date("2026-08-13T07:20:00.000Z"),
+    });
+
+    assert.ok(result.shortlist.length <= 14);
+    const prefD = result.shortlist.filter((item) => {
+      const kind = classifyDividendInstrument(item)?.kind;
+      return kind === "d_share" || kind === "preferred_share";
+    });
+    assert.ok(prefD.length >= 2, `pref/D missing: ${result.shortlist.map((item) => item.symbol).join(",")}`);
+    assert.ok(
+      result.shortlist.some((item) => classifyNordicDiscoveryLane(item) === "high_risk_opportunity"),
+    );
+    assert.ok(result.shortlist.some((item) => classifyNordicDiscoveryLane(item) === "quality_core"));
+    assert.ok(result.shortlist.some((item) => classifyNordicDiscoveryLane(item) === "income"));
+    assert.ok(
+      result.shortlist.some((item) => classifyNordicDiscoveryLane(item) === "balanced_general"),
+      `balanced/general missing from default Nordic shortlist: ${result.shortlist.map((item) => item.symbol).join(",")}`,
+    );
     const countries = new Set(result.shortlist.map((item) => item.country));
     assert.deepEqual([...countries].sort(), ["DK", "FI", "NO", "SE"]);
   });

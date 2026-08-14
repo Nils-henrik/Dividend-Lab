@@ -48,12 +48,58 @@ describe("model portfolio decision narrative", () => {
 
     assert.match(summary, /Dagens aktiesökning/);
     assert.match(summary, /Sökt 2 bolag/);
-    assert.match(summary, /1 av dessa bedöms vara intressanta för djupare analys/);
+    assert.match(summary, /Sökt 2 bolag, 1 av dessa är intressanta för djupare analys/);
     assert.match(summary, /Investor AB ser\. B/);
     assert.doesNotMatch(summary, /Equinor ASA/);
     assert.doesNotMatch(summary, /befintligt innehav|befintliga innehav/);
     assert.doesNotMatch(summary, /uptrend|0\.72|signaler:/i);
     assert.doesNotMatch(summary, /EODHD|cache|Google|Yahoo|budget/i);
+  });
+
+  it("distinguishes a monitored holding from a fresh candidate without claiming another portfolio's ownership", () => {
+    const summary = buildInvestorFacingResearchSummary({
+      pass: "nordic_morning",
+      strategyName: "Utdelning",
+      investigated: [
+        {
+          symbol: "VOLV-B",
+          exchange: "ST",
+          name: "Volvo B",
+          attentionEligibility: "held_for_monitoring",
+          qualityScore: 0.5,
+        },
+        {
+          symbol: "SAGA-D",
+          exchange: "ST",
+          name: "Sagax D",
+          attentionEligibility: "new_entry",
+          dividendQualityScore: 0.74,
+          qualityScore: 0.68,
+        },
+      ],
+      topCandidates: [
+        {
+          symbol: "SAGA-D",
+          exchange: "ST",
+          name: "Sagax D",
+          attentionEligibility: "new_entry",
+          dividendQualityScore: 0.74,
+          qualityScore: 0.68,
+        },
+        {
+          symbol: "VOLV-B",
+          exchange: "ST",
+          name: "Volvo B",
+          attentionEligibility: "held_for_monitoring",
+          qualityScore: 0.5,
+        },
+      ],
+    });
+    assert.match(summary, /Utdelning:/);
+    assert.match(summary, /Sökt 2 bolag, 2 av dessa är intressanta för djupare analys/);
+    assert.match(summary, /Befintligt innehav under bevakning, inte en ny köpkandidat/);
+    assert.match(summary, /Sagax D/);
+    assert.doesNotMatch(summary, /Volvo B[\s\S]*intressant att analysera vidare[\s\S]*Befintligt innehav/);
   });
 
   it("frames BUY/SELL/HOLD reasons for Senaste beslut in Swedish sections", () => {

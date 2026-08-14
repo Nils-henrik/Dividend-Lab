@@ -9,6 +9,14 @@ import {
 } from "./ai";
 
 describe("model portfolio AI provider and budget", () => {
+  it("does not raise the locked daily AI spend or per-run call caps", () => {
+    assert.equal(MODEL_PORTFOLIO_AI_BUDGET.targetDailyUsdMicros, 150_000);
+    assert.equal(MODEL_PORTFOLIO_AI_BUDGET.hardDailyUsdMicros, 300_000);
+    assert.equal(MODEL_PORTFOLIO_AI_BUDGET.maxCallsPerPortfolioRun, 3);
+    assert.equal(MODEL_PORTFOLIO_AI_BUDGET.maxOutputTokensPerCall, 1_800);
+    assert.equal(MODEL_PORTFOLIO_AI_BUDGET.reserveUsdMicrosForEventRuns, 80_000);
+  });
+
   it("uses automatic Vercel OIDC auth in production without requiring another secret", () => {
     assert.deepEqual(resolveModelPortfolioAiConfig({ VERCEL_OIDC_TOKEN: "oidc" }), {
       configured: true,

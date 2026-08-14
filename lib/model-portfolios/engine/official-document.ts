@@ -380,17 +380,22 @@ export function buildOfficialReleaseEvidenceSummary(input: {
   category?: string | null;
   market?: string | null;
   documentAttempted: boolean;
+  documentSkippedDueToAttemptBudget?: boolean;
   documentFailureReason?: string | null;
 }): string {
+  const documentStatusCopy = input.documentSkippedDueToAttemptBudget
+    ? "Rapportbilaga hoppades över eftersom det begränsade dokumentförsöksbudgetet redan var förbrukat; ingen rapporttext har lästs."
+    : input.documentAttempted
+      ? `Rapportbilaga kunde inte hämtas/parsas säkert${input.documentFailureReason ? ` (${input.documentFailureReason})` : ""}; ingen rapporttext har lästs.`
+      : "Ingen rapportbilaga lästes; rubrik/metadata är enda evidensen.";
+
   const parts = [
     `Officiellt börsmeddelande från ${input.company}.`,
     input.category ? `Kategori: ${input.category}.` : null,
     input.market ? `Marknad: ${input.market}.` : null,
     `Källa: ${input.sourceUrl}`,
     "Primärkälla (börsdisclosure).",
-    input.documentAttempted
-      ? `Rapportbilaga kunde inte hämtas/parsas säkert${input.documentFailureReason ? ` (${input.documentFailureReason})` : ""}; ingen rapporttext har lästs.`
-      : "Ingen rapportbilaga lästes; rubrik/metadata är enda evidensen.",
+    documentStatusCopy,
     "Ingen nyckeltal har härletts ur rubriken.",
   ];
   return parts.filter(Boolean).join(" ").slice(0, 6000);

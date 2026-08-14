@@ -43,8 +43,9 @@ function toSourceType(
 }
 
 /**
- * Enrich CNS primary hits with at most one safely retrieved official PDF per
- * company/pass. Headlines alone never become company_report.
+ * Enrich CNS primary hits with at most one official PDF *attempt* per
+ * company/pass. The bound is consumed before fetch starts, whether or not
+ * retrieval/parsing later succeeds. Headlines alone never become company_report.
  */
 export async function enrichNordicPrimarySourceHits(input: {
   hits: readonly NordicPrimarySourceHit[];
@@ -52,7 +53,7 @@ export async function enrichNordicPrimarySourceHits(input: {
   maxDocuments?: number;
 }): Promise<EnrichedPrimarySourceHit[]> {
   const maxDocuments = input.maxDocuments ?? OFFICIAL_DOCUMENT_BOUNDS.maxDocumentsPerCompanyPass;
-  let documentsRetrieved = 0;
+  let documentsAttempted = 0;
   const enriched: EnrichedPrimarySourceHit[] = [];
 
   for (const hit of input.hits) {
@@ -62,6 +63,8 @@ export async function enrichNordicPrimarySourceHits(input: {
     }) ?? null;
 
     let documentRetrieved = false;
+    let documentAttempted = false;
+    let documentSkippedDueToAttemptBudget = false;
     let documentUrl: string | null = null;
     let excerpt: string | null = null;
     let pagesExtracted = 0;
@@ -72,9 +75,12 @@ export async function enrichNordicPrimarySourceHits(input: {
 
     const canAttemptDocument =
       Boolean(attachment)
-      && documentsRetrieved < maxDocuments;
+      && documentsAttempted < maxDocuments;
 
     if (canAttemptDocument && attachment) {
+      // Consume the hard attempt budget before any outbound PDF fetch.
+      documentsAttempted += 1;
+      documentAttempted = true;
       const fetched = await fetchOfficialHttpsDocument({
         url: attachment.url,
         fetchImpl: input.fetchImpl,
@@ -89,13 +95,14 @@ export async function enrichNordicPrimarySourceHits(input: {
           failureReason = extracted.reason;
         } else {
           documentRetrieved = true;
-          documentsRetrieved += 1;
           excerpt = extracted.text;
           pagesExtracted = extracted.pagesExtracted;
           pageCount = extracted.pageCount;
           truncated = extracted.truncated;
         }
       }
+    } else if (attachment) {
+      documentSkippedDueToAttemptBudget = true;
     }
 
     const parsed = parseReportMetadata({
@@ -145,8 +152,9 @@ export async function enrichNordicPrimarySourceHits(input: {
               sourceUrl: hit.url,
               category: hit.category,
               market: hit.market,
-              documentAttempted: Boolean(attachment),
-              documentFailureReason: failureReason,
+              documentAttempted,
+              documentSkippedDueToAttemptBudget,
+              documentFailureReason: documentAttempted ? failureReason : null,
             });
 
     enriched.push({

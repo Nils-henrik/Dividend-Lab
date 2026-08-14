@@ -8,6 +8,7 @@ export type NarrativeCandidate = {
   exchange: string;
   name: string;
   held?: boolean;
+  attentionEligibility?: "new_entry" | "held_for_monitoring";
   changePct?: number | null;
   qualityScore?: number;
   valuationScore?: number;
@@ -82,6 +83,14 @@ function capitalize(value: string): string {
 }
 
 function candidateAnalysis(candidate: NarrativeCandidate): string {
+  if (candidate.attentionEligibility === "held_for_monitoring") {
+    const monitored = candidateAnalysisBody(candidate);
+    return `Befintligt innehav under bevakning, inte en ny köpkandidat. ${monitored}`;
+  }
+  return candidateAnalysisBody(candidate);
+}
+
+function candidateAnalysisBody(candidate: NarrativeCandidate): string {
   const sentences: string[] = [];
   const trend = trendSentence(candidate.technicalRegime);
   if (trend) sentences.push(trend);
@@ -103,7 +112,11 @@ function candidateAnalysis(candidate: NarrativeCandidate): string {
 export function toNarrativeCandidate(
   candidate: ResearchCandidate,
   names: ReadonlyMap<string, string>,
-  extras?: { held?: boolean; changePct?: number | null },
+  extras?: {
+    held?: boolean;
+    changePct?: number | null;
+    attentionEligibility?: "new_entry" | "held_for_monitoring";
+  },
 ): NarrativeCandidate {
   const key = `${candidate.symbol}.${candidate.exchange}`.toUpperCase();
   return {
@@ -111,6 +124,7 @@ export function toNarrativeCandidate(
     exchange: candidate.exchange,
     name: names.get(key) ?? candidate.symbol,
     held: extras?.held,
+    attentionEligibility: extras?.attentionEligibility,
     changePct: extras?.changePct,
     qualityScore: candidate.qualityScore,
     valuationScore: candidate.valuationScore,
@@ -130,20 +144,23 @@ export function toNarrativeCandidate(
  * Keeps the detailed ranking machinery internal and presents only the shortlist
  * in short, plain-language sections for readers.
  *
- * Holding ownership is intentionally not described here because the research
- * pass is shared by several portfolios. Portfolio-specific holdings are supplied
- * separately to each decision engine and must never be inferred from this shared summary.
+ * The shared fetch pool can still be common, but each portfolio summary must
+ * describe only the mandate-specific attention set that portfolio investigated.
+ * Holding ownership is still not inferred here; holdings are supplied separately
+ * to each decision engine.
  */
 export function buildInvestorFacingResearchSummary(input: {
   pass: ModelPortfolioResearchPass;
   investigated: readonly NarrativeCandidate[];
   topCandidates: readonly NarrativeCandidate[];
+  strategyName?: string;
 }): string {
   const investigated = input.investigated;
   const top = input.topCandidates.slice(0, 4);
+  const mandatePrefix = input.strategyName ? `${input.strategyName}: ` : "";
   const intro = top.length
-    ? `Sökt ${investigated.length} bolag. ${top.length} av dessa bedöms vara intressanta för djupare analys.`
-    : `Sökt ${investigated.length} bolag. Ingen kandidat bedöms vara tillräckligt intressant för djupare analys i detta pass.`;
+    ? `${mandatePrefix}Sökt ${investigated.length} bolag, ${top.length} av dessa är intressanta för djupare analys.`
+    : `${mandatePrefix}Sökt ${investigated.length} bolag. Ingen kandidat bedöms vara tillräckligt intressant för djupare analys i detta pass.`;
 
   const companySections = top.map((item) => `${item.name}\n${candidateAnalysis(item)}`);
 

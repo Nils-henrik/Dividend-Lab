@@ -5,13 +5,13 @@ import {
   NORDIC_RESEARCH_BOUNDS,
   NORDIC_SEED_UNIVERSE,
   normalizeNordicExchange,
-  selectBoundedNordicShortlist,
   toNordicYahooSymbol,
   type NordicCapSegment,
   type NordicCountry,
   type NordicExchange,
   type NordicSeedInstrument,
 } from "./nordic-universe";
+import { selectNordicLaneShortlist } from "./research-lanes";
 
 export type YahooDiscoveryScreen = "day_gainers" | "day_losers" | "most_actives";
 
@@ -136,7 +136,7 @@ function smallMidOpportunitySizeScore(marketCap: number | null): number {
  * enough large-cap representation for the other mandates. Ranking and portfolio
  * risk gates decide whether a discovered name is actually actionable.
  */
-function discoveryScore(candidate: {
+export function scoreYahooDiscoveryCandidate(candidate: {
   changePct: number | null;
   volume: number | null;
   averageDailyVolume3Month: number | null;
@@ -241,17 +241,21 @@ export async function discoverYahooCandidates(options: YahooDiscoveryOptions = {
     if ((candidate.marketCap ?? 0) < minimumMarketCapUsd) continue;
     if ((candidate.averageDailyVolume3Month ?? 0) < minimumAverageDailyVolume) continue;
     const previous = bySymbol.get(candidate.symbol);
-    if (!previous || discoveryScore(candidate) > discoveryScore(previous)) bySymbol.set(candidate.symbol, candidate);
+    if (!previous || scoreYahooDiscoveryCandidate(candidate) > scoreYahooDiscoveryCandidate(previous)) {
+      bySymbol.set(candidate.symbol, candidate);
+    }
   }
 
   return [...bySymbol.values()]
-    .sort((a, b) => discoveryScore(b) - discoveryScore(a))
+    .sort((a, b) => scoreYahooDiscoveryCandidate(b) - scoreYahooDiscoveryCandidate(a))
     .slice(0, shortlistLimit);
 }
 
 /**
  * Cheap Nordic discovery: batch-quote the maintained universe plus a bounded
- * small/mid-cap opportunity set, then return a four-country shortlist.
+ * small/mid-cap opportunity set, then return a four-country, strategy-lane
+ * shortlist. Lane selection uses already-fetched quotes; it does not add a
+ * quote call.
  */
 export async function discoverNordicYahooCandidates(
   options: NordicYahooDiscoveryOptions = {},
@@ -353,7 +357,7 @@ export async function discoverNordicYahooCandidates(
         volume: finiteNumber(quote.regularMarketVolume),
         averageDailyVolume3Month,
         marketCap,
-        score: discoveryScore({
+        score: scoreYahooDiscoveryCandidate({
           changePct: finiteNumber(quote.regularMarketChangePercent),
           volume: finiteNumber(quote.regularMarketVolume),
           averageDailyVolume3Month,
@@ -390,7 +394,7 @@ export async function discoverNordicYahooCandidates(
         discoveredAt: now.toISOString(),
       }));
 
-  const shortlist = selectBoundedNordicShortlist(rankingBase, {
+  const shortlist = selectNordicLaneShortlist(rankingBase, {
     shortlistLimit,
     perCountryMin,
     perCountryMax,

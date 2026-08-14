@@ -159,6 +159,15 @@ export default function PortfolioDetailView({ detail }: { detail: PortfolioTrans
               Tidshorisonten styr hur AI:n tolkar risk, fundamenta, momentum och katalysatorer. Den är inte ett automatiskt sista säljdatum.
             </p>
           </div>
+          <div className="mt-7 grid gap-6 lg:grid-cols-3">
+            <MandatePanel
+              title="Det här letar AI:n efter"
+              lead={mandate.searchMission}
+              items={mandate.preferredSetups}
+            />
+            <MandatePanel title="Så investerar den" items={mandate.entryTactics} />
+            <MandatePanel title="AI:n avstår när" items={mandate.rejectionSignals} />
+          </div>
           <div className="mt-7 grid gap-7 md:grid-cols-2">
             <div>
               <h3 className="text-sm font-semibold text-divlab-text">AI:n prioriterar</h3>
@@ -355,6 +364,33 @@ function DecisionNarrative({ value }: { value: string }) {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+function MandatePanel({
+  title,
+  lead,
+  items,
+}: {
+  title: string;
+  lead?: string;
+  items: readonly string[];
+}) {
+  return (
+    <div className="border divlab-border-neutral bg-black/10 px-4 py-4">
+      <h3 className="text-sm font-semibold text-divlab-text">{title}</h3>
+      {lead ? (
+        <p className="mt-2 text-sm leading-6 text-divlab-text-secondary">{lead}</p>
+      ) : null}
+      <ul className="mt-3 space-y-2 text-sm leading-6 text-divlab-text-secondary">
+        {items.slice(0, 4).map((item) => (
+          <li key={item} className="flex gap-2">
+            <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-divlab-blue" aria-hidden="true" />
+            <span>{item}</span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

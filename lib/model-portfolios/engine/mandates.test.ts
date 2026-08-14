@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { describe, it } from "node:test";
+import { fileURLToPath } from "node:url";
 import {
   MODEL_PORTFOLIO_MANDATES,
   buildModelPortfolioSystemMandate,
@@ -49,6 +52,34 @@ describe("model portfolio investment horizons", () => {
     assert.match(mandate, /Påstå inte Russell-medlemskap/);
   });
 
+  it("encodes distinct search mission, setups, tactics and rejection signals", () => {
+    const conservative = buildModelPortfolioSystemMandate("conservative");
+    const balanced = buildModelPortfolioSystemMandate("balanced");
+    const highRisk = buildModelPortfolioSystemMandate("high_risk");
+    const dividend = buildModelPortfolioSystemMandate("dividend");
+
+    assert.match(conservative, /SÖKUPPDRAG:/);
+    assert.match(conservative, /FÖREDRAGNA SETUPS:/);
+    assert.match(conservative, /ENTRY-TAKTIK:/);
+    assert.match(conservative, /AVVISNINGSSIGNALER:/);
+    assert.match(conservative, /KORTLISTAN i detta pass är redan skräddarsydd/);
+    assert.match(conservative, /Imitera inte en annan modellportfölj/);
+    assert.match(conservative, /HOLD och kassa är giltiga utfall/);
+    assert.match(conservative, /etablerad, lönsam kvalitet/);
+    assert.match(conservative, /maxvikten 12 %/);
+
+    assert.match(balanced, /quality at a reasonable price|kvalitet till rimlig värdering/);
+    assert.match(balanced, /maxvikten 15 %/);
+    assert.match(highRisk, /annan möjlighetssamling/);
+    assert.match(highRisk, /Generisk mega-cap-kvalitet/);
+    assert.match(highRisk, /Forcera inte 20 %/);
+    assert.match(dividend, /Ingen icke-utdelande aktie får läcka in/);
+    assert.match(dividend, /Hög yield efter kurskollaps/);
+
+    assert.notEqual(MODEL_PORTFOLIO_MANDATES.conservative.searchMission, MODEL_PORTFOLIO_MANDATES.high_risk.searchMission);
+    assert.notEqual(MODEL_PORTFOLIO_MANDATES.balanced.preferredSetups[0], MODEL_PORTFOLIO_MANDATES.dividend.preferredSetups[0]);
+  });
+
   it("restricts the dividend mandate to income securities and prioritizes preference/D shares", () => {
     const mandate = buildModelPortfolioSystemMandate("dividend");
     assert.match(mandate, /Sök endast bland utdelande stamaktier, preferensaktier, D-aktier och utdelande ETF:er/);
@@ -57,5 +88,20 @@ describe("model portfolio investment horizons", () => {
     assert.match(mandate, /XACT Norden Högutdelande/);
     assert.match(mandate, /Montrose Global Monthly Dividend/);
     assert.match(mandate, /covered-call\/optionskomponent/);
+  });
+
+  it("reuses mandate copy on the public portfolio detail page", () => {
+    const page = readFileSync(
+      path.join(path.dirname(fileURLToPath(import.meta.url)), "../../../components/portfolios/PortfolioDetailView.tsx"),
+      "utf8",
+    );
+    assert.match(page, /Det här letar AI:n efter/);
+    assert.match(page, /Så investerar den/);
+    assert.match(page, /AI:n avstår när/);
+    assert.match(page, /mandate\.searchMission/);
+    assert.match(page, /mandate\.preferredSetups/);
+    assert.match(page, /mandate\.entryTactics/);
+    assert.match(page, /mandate\.rejectionSignals/);
+    assert.doesNotMatch(page, /Jagar etablerad, lönsam kvalitet med stark balansräkning och kassagenerering/);
   });
 });

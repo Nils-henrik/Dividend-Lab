@@ -105,6 +105,8 @@ describe("model portfolio research funnel", () => {
     assert.equal(classifyResearchMarketCap({ exchange: "US", marketCapSek: 20_000_000_000 }), "small_cap");
     assert.equal(classifyResearchMarketCap({ exchange: "US", marketCapSek: 80_000_000_000 }), "mid_cap");
     assert.equal(classifyResearchMarketCap({ exchange: "US", marketCapSek: 300_000_000_000 }), "large_cap");
+    assert.equal(classifyResearchMarketCap({ exchange: "ST" }), "unknown");
+    assert.equal(classifyResearchMarketCap({ exchange: "US", marketCapSek: 0 }), "unknown");
   });
 
   it("recognizes a fallen-quality setup only after fundamentals and entry are confirmed", () => {
@@ -200,6 +202,181 @@ describe("model portfolio research funnel", () => {
     assert.equal(exceptionalLarge[0]?.symbol, "EXCEPTIONAL");
   });
 
+  it("does not give high-risk a synthetic size bonus when market cap is unknown", () => {
+    const common = {
+      ...base,
+      marketCapSek: undefined,
+      qualityScore: 0.8,
+      balanceSheetScore: 0.8,
+      valuationScore: 0.75,
+      earningsRevisionScore: 0.75,
+      catalystScore: 0.75,
+      technicalAnalysis: technical({ distanceFromHigh: -0.04 }),
+    };
+
+    const rankOne = (
+      symbol: string,
+      marketCapSek?: number,
+    ) => rankResearchUniverse(
+      [marketCapSek === undefined ? { ...common, symbol } : { ...common, symbol, marketCapSek }],
+      "high_risk",
+    )[0];
+
+    const small = rankOne("SMALL", 8_000_000_000);
+    const mid = rankOne("MID", 40_000_000_000);
+    const large = rankOne("LARGE", 120_000_000_000);
+    const unknown = rankOne("UNKNOWN");
+
+    assert.ok(small && mid && large && unknown);
+    assert.equal(small.marketCapSegment, "small_cap");
+    assert.equal(mid.marketCapSegment, "mid_cap");
+    assert.equal(large.marketCapSegment, "large_cap");
+    assert.equal(unknown.marketCapSegment, "unknown");
+
+    assert.ok(small.deterministicScore > mid.deterministicScore);
+    assert.ok(mid.deterministicScore > large.deterministicScore);
+    assert.match(small.reasons.join(" "), /small\/mid-cap-preferens/);
+    assert.match(mid.reasons.join(" "), /small\/mid-cap-preferens/);
+    assert.doesNotMatch(large.reasons.join(" "), /small\/mid-cap-preferens/);
+    assert.doesNotMatch(unknown.reasons.join(" "), /small\/mid-cap-preferens/);
+
+    // Coverage-aware scoring: verified mid-cap keeps preference 0.9.
+    // Unknown cap is absent (not a synthetic 0.5). The mid→unknown gap must
+    // therefore be ~9× the small→mid step (0.9 vs 0.1), not ~4× (0.9−0.5).
+    const smallMinusMid = small.deterministicScore - mid.deterministicScore;
+    const midMinusUnknown = mid.deterministicScore - unknown.deterministicScore;
+    const largeMinusUnknown = large.deterministicScore - unknown.deterministicScore;
+    assert.ok(smallMinusMid > 0);
+    assert.ok(
+      midMinusUnknown > 6 * smallMinusMid,
+      `unknown cap must not receive a synthetic 0.5 size contribution (gap ${midMinusUnknown} vs small/mid step ${smallMinusMid})`,
+    );
+    assert.ok(midMinusUnknown > largeMinusUnknown);
+    assert.ok(unknown.deterministicScore <= large.deterministicScore);
+    assert.ok(unknown.deterministicScore <= mid.deterministicScore);
+    assert.ok(unknown.deterministicScore <= small.deterministicScore);
+
+    const eligible = rankResearchUniverse(
+      [
+        { ...common, symbol: "MIDELIGIBLE", marketCapSek: 40_000_000_000 },
+        { ...common, symbol: "UNKNOWNELIGIBLE" },
+        { ...common, symbol: "TINY", marketCapSek: 50_000_000 },
+      ],
+      "high_risk",
+    );
+    assert.deepEqual(
+      eligible.map((item) => item.symbol).sort(),
+      ["MIDELIGIBLE", "UNKNOWNELIGIBLE"],
+    );
+
+    const first = rankResearchUniverse([{ ...common, symbol: "SAME" }], "high_risk");
+    const second = rankResearchUniverse([{ ...common, symbol: "SAME" }], "high_risk");
+    assert.deepEqual(
+      first.map((item) => [item.symbol, item.deterministicScore, item.marketCapSegment]),
+      second.map((item) => [item.symbol, item.deterministicScore, item.marketCapSegment]),
+    );
+  });
+
+  it("does not treat a missing score as a synthetic 0.5 and does not let deleting data raise rank", () => {
+    const supportive = {
+      ...base,
+      technicalAnalysis: technical({ trend: 0.8, stability: 0.8, composite: 0.8 }),
+      volatility20d: 0.16,
+      priceMomentum60d: 0.12,
+    };
+    const genuineNeutralQuality = rankResearchUniverse(
+      [{ ...supportive, symbol: "NEUTRALQ", qualityScore: 0.5 }],
+      "conservative",
+    )[0];
+    const missingQuality = rankResearchUniverse(
+      [{ ...supportive, symbol: "MISSINGQ", qualityScore: undefined }],
+      "conservative",
+    )[0];
+    assert.ok(genuineNeutralQuality);
+    assert.ok(missingQuality);
+    assert.ok(
+      missingQuality.deterministicScore < genuineNeutralQuality.deterministicScore,
+      `missing quality (${missingQuality.deterministicScore}) must score below a genuine 0.5 (${genuineNeutralQuality.deterministicScore})`,
+    );
+
+    const full = rankResearchUniverse([{ ...supportive, symbol: "FULL", qualityScore: 0.2 }], "conservative")[0];
+    const afterRemoval = rankResearchUniverse(
+      [{ ...supportive, symbol: "REMOVED", qualityScore: undefined }],
+      "conservative",
+    )[0];
+    assert.ok(full);
+    assert.ok(afterRemoval);
+    assert.ok(
+      afterRemoval.deterministicScore <= full.deterministicScore,
+      `removing a known component must not increase score (${afterRemoval.deterministicScore} > ${full.deterministicScore})`,
+    );
+  });
+
+  it("applies a coverage penalty so broad verified data outranks a sparse strong print", () => {
+    const sparse = {
+      symbol: "SPARSE",
+      exchange: "ST",
+      marketCapSek: 40_000_000_000,
+      avgDailyTurnoverSek: 80_000_000,
+      qualityScore: 0.99,
+    };
+    const broad = {
+      symbol: "BROAD",
+      exchange: "ST",
+      marketCapSek: 40_000_000_000,
+      avgDailyTurnoverSek: 80_000_000,
+      qualityScore: 0.72,
+      balanceSheetScore: 0.72,
+      valuationScore: 0.72,
+      earningsRevisionScore: 0.72,
+      volatility20d: 0.16,
+      priceMomentum60d: 0.12,
+      technicalAnalysis: technical({ trend: 0.72, stability: 0.72, composite: 0.72 }),
+    };
+    const ranked = rankResearchUniverse([sparse, broad], "conservative");
+    assert.equal(ranked[0]?.symbol, "BROAD");
+    assert.ok((ranked[0]?.deterministicScore ?? 0) > (ranked[1]?.deterministicScore ?? 1));
+  });
+
+  it("does not qualify a large-drawdown technical recovery when fundamentals are missing", () => {
+    const recovery = assessRecoverySetup({
+      symbol: "TECHRECOVERY",
+      exchange: "ST",
+      marketCapSek: 9_000_000_000,
+      avgDailyTurnoverSek: 20_000_000,
+      priceMomentum20d: 0.08,
+      technicalAnalysis: technical({
+        distanceFromHigh: -0.35,
+        trend: 0.85,
+        momentum: 0.88,
+        volume: 0.9,
+        breakout: 0.86,
+        stability: 0.7,
+        composite: 0.88,
+      }),
+    });
+    assert.notEqual(recovery.state, "qualified");
+    assert.notEqual(recovery.state, "watch");
+    assert.ok(recovery.fundamentalIntegrityScore < 0.6);
+  });
+
+  it("is deterministic for identical ranking and recovery inputs", () => {
+    const universe = [
+      { ...base, symbol: "A", qualityScore: 0.91, technicalAnalysis: technical() },
+      { ...base, symbol: "B", catalystScore: 0.97, qualityScore: 0.4, technicalAnalysis: technical({ breakout: 0.9 }) },
+    ];
+    const first = rankResearchUniverse(universe, "high_risk");
+    const second = rankResearchUniverse(universe, "high_risk");
+    assert.deepEqual(
+      first.map((item) => [item.symbol, item.deterministicScore, item.recoverySetup]),
+      second.map((item) => [item.symbol, item.deterministicScore, item.recoverySetup]),
+    );
+    assert.deepEqual(
+      assessRecoverySetup(universe[0]!),
+      assessRecoverySetup({ ...universe[0]! }),
+    );
+  });
+
   it("hard caps shortlist, deep research and final proposals", () => {
     const universe = Array.from({ length: 400 }, (_, index) => ({
       ...base,
@@ -207,6 +384,11 @@ describe("model portfolio research funnel", () => {
       qualityScore: (index % 100) / 100,
     }));
     const ranked = rankResearchUniverse(universe, "balanced");
+    assert.equal(RESEARCH_BUDGET.maxUniverseSize, 300);
+    assert.equal(RESEARCH_BUDGET.maxShortlistSize, 20);
+    assert.equal(RESEARCH_BUDGET.maxDeepResearchCandidates, 6);
+    assert.equal(RESEARCH_BUDGET.maxTradeProposalsPerRun, 3);
+    assert.equal(RESEARCH_BUDGET.maxAiCallsPerPortfolioRun, 2);
     assert.equal(ranked.length, RESEARCH_BUDGET.maxShortlistSize);
     assert.equal(selectDeepResearchCandidates(ranked).length, RESEARCH_BUDGET.maxDeepResearchCandidates);
     assert.equal(capTradeProposals(Array.from({ length: 10 }, (_, i) => i)).length, RESEARCH_BUDGET.maxTradeProposalsPerRun);
