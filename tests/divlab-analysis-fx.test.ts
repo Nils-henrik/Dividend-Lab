@@ -238,8 +238,9 @@ describe("DivLab deterministic analysis FX", () => {
     });
 
     assert.equal(packet.valuationInputs.freeCashFlowPerShareTtm.value, null);
+    assert.equal(packet.valuationInputs.freeCashFlowPerShareTtm.sourceCurrency, "EUR");
     assert.equal(packet.valuation.trailing.priceToFcf, null);
-    assert.equal(packet.valuation.trailing.freeCashFlowPerShareCurrency, "EUR");
+    assert.equal(packet.valuation.trailing.freeCashFlowPerShareCurrency, null);
     assert.equal(packet.valuation.trailing.freeCashFlowCurrencyCompatible, false);
   });
 });
