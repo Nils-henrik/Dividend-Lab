@@ -11,7 +11,9 @@ import "server-only";
  * - Google remains optional supplemental discovery only (see google-research.ts).
  * - Oslo/Euronext lacks a stable public JSON news endpoint here; when CNS has
  *   no match we degrade to zero primary hits (HOLD), never fabricate evidence.
- * - Bounded: at most a few disclosures per target company per pass.
+ * - Bounded: at most a few disclosures per target company per pass by default;
+ *   callers doing dedicated deep research may request a larger but still hard-
+ *   capped window without changing the model-portfolio default.
  */
 
 export type NordicPrimaryAttachment = {
@@ -58,7 +60,10 @@ type NasdaqCnsResponse = {
 
 const NASDAQ_CNS_ENDPOINT = "https://api.news.eu.nasdaq.com/news/query.action";
 const USER_AGENT = "DivLab/1.0 nordic-primary-research";
-const MAX_HITS = 2;
+const DEFAULT_MAX_HITS = 2;
+const DEFAULT_QUERY_COUNT = 5;
+const HARD_MAX_HITS = 12;
+const HARD_MAX_QUERY_COUNT = 20;
 
 function text(value: unknown): string | null {
   return typeof value === "string" && value.trim() ? value.trim() : null;
@@ -87,6 +92,11 @@ function toIsoMaybe(value: string | null): string | null {
   if (!value) return null;
   const parsed = Date.parse(value);
   return Number.isFinite(parsed) ? new Date(parsed).toISOString() : null;
+}
+
+function boundedInteger(value: number | undefined, fallback: number, max: number): number {
+  const candidate = Number.isFinite(value) ? Math.floor(value as number) : fallback;
+  return Math.max(1, Math.min(max, candidate));
 }
 
 /**
@@ -178,6 +188,7 @@ function attachmentsFromItem(item: NasdaqCnsItem): NordicPrimaryAttachment[] {
 async function queryNasdaqCns(input: {
   company: string;
   fetchImpl: typeof fetch;
+  count: number;
 }): Promise<NasdaqCnsItem[]> {
   const url = new URL(NASDAQ_CNS_ENDPOINT);
   url.searchParams.set("type", "json");
@@ -185,7 +196,7 @@ async function queryNasdaqCns(input: {
   url.searchParams.set("showAttachments", "true");
   url.searchParams.set("countResults", "true");
   url.searchParams.set("company", input.company);
-  url.searchParams.set("count", "5");
+  url.searchParams.set("count", String(input.count));
   url.searchParams.set("start", "0");
   url.searchParams.set("dir", "DESC");
 
@@ -205,6 +216,10 @@ async function queryNasdaqCns(input: {
 /**
  * Fetch bounded official exchange disclosures for a Nordic shortlist name.
  * Returns [] when no matching primary evidence is discoverable.
+ *
+ * The model-portfolio caller keeps the conservative defaults (2 hits / 5 CNS
+ * rows per alias). Dedicated DivLab Deep Research may explicitly request a
+ * wider discovery window, hard-capped at 12 hits / 20 CNS rows per alias.
  */
 export async function fetchNordicPrimarySourceEvents(input: {
   companyName: string;
@@ -212,6 +227,8 @@ export async function fetchNordicPrimarySourceEvents(input: {
   exchange: string;
   fetchImpl?: typeof fetch;
   now?: Date;
+  maxHits?: number;
+  queryCount?: number;
 }): Promise<NordicPrimarySourceHit[]> {
   const companyName = input.companyName.trim();
   const symbol = input.symbol.trim();
@@ -219,15 +236,17 @@ export async function fetchNordicPrimarySourceEvents(input: {
 
   const fetchImpl = input.fetchImpl ?? fetch;
   const now = input.now ?? new Date();
+  const maxHits = boundedInteger(input.maxHits, DEFAULT_MAX_HITS, HARD_MAX_HITS);
+  const queryCount = boundedInteger(input.queryCount, DEFAULT_QUERY_COUNT, HARD_MAX_QUERY_COUNT);
   const aliases = nordicDisclosureCompanyAliases(companyName);
   const hits: NordicPrimarySourceHit[] = [];
   const seenUrls = new Set<string>();
 
   for (const alias of aliases) {
-    if (hits.length >= MAX_HITS) break;
-    const items = await queryNasdaqCns({ company: alias, fetchImpl });
+    if (hits.length >= maxHits) break;
+    const items = await queryNasdaqCns({ company: alias, fetchImpl, count: queryCount });
     for (const item of items) {
-      if (hits.length >= MAX_HITS) break;
+      if (hits.length >= maxHits) break;
       const issuer = text(item.company);
       const title = text(item.headline);
       const url = httpsUrl(item.messageUrl);
