@@ -16,7 +16,7 @@ export type ReconciliationMetricResult = {
   providerValue: number | null;
   reportValue: number | null;
   relativeDifference: number | null;
-  status: "confirmed" | "not_confirmed" | "provider_missing";
+  status: "confirmed" | "not_confirmirmed" | "provider_missing" | "not_confirmed";
   rawToken: string | null;
   context: string | null;
 };
@@ -125,7 +125,6 @@ function detectedAmountScale(text: string, currency: string): number | null {
       ),
     ],
   ];
-
   const matches = patterns.filter(([, pattern]) => pattern.test(text)).map(([scale]) => scale);
   const unique = [...new Set(matches)];
   return unique.length === 1 ? unique[0]! : null;
@@ -193,11 +192,15 @@ function aggregateProviderMetric(
 }
 
 function numericTokens(value: string): string[] {
-  return value.match(/\(?-?\d[\d\u00a0\u202f .,]*\d\)?|\(?-?\d\)?/g)?.slice(0, 8) ?? [];
+  // Deliberately exclude ordinary ASCII spaces from a token. In flattened PDF
+  // tables they usually separate columns and must not be guessed as thousands
+  // separators. NBSP/narrow-NBSP remain eligible because they are explicit
+  // typographic grouping characters.
+  return value.match(/\(?-?\d[\d\u00a0\u202f.,]*\d\)?|\(?-?\d\)?/g)?.slice(0, 8) ?? [];
 }
 
 function numericCandidates(rawToken: string): number[] {
-  let token = rawToken.trim().replace(/[\u00a0\u202f ]/g, "");
+  let token = rawToken.trim().replace(/[\u00a0\u202f]/g, "");
   let negative = false;
   if (token.startsWith("(") && token.endsWith(")")) {
     negative = true;
@@ -231,7 +234,6 @@ function numericCandidates(rawToken: string): number[] {
   } else {
     add(token);
   }
-
   return [...candidates];
 }
 
@@ -392,7 +394,7 @@ export function reconcilePrimaryReport(input: {
         providerValue: null,
         reportValue: null,
         relativeDifference: null,
-        status: "provider_missing",
+        status: "provider_missing" as const,
         rawToken: null,
         context: null,
       };
