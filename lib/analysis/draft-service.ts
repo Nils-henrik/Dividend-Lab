@@ -63,6 +63,7 @@ export async function createDivLabAnalysisDraft(input: {
     currentPrice: research.instrument.currentPrice,
     history: research.history,
     fundamentals: research.fundamentals,
+    fxConversion: research.fxConversion,
     valuationScenarios: input.valuationScenarios,
     sources: research.sources,
     evidence: research.evidence,
