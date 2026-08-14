@@ -261,6 +261,11 @@ describe("Yahoo market discovery", () => {
       result.shortlist.some((item) => classifyNordicDiscoveryLane(item) === "high_risk_opportunity"),
     );
     assert.ok(result.shortlist.some((item) => classifyNordicDiscoveryLane(item) === "quality_core"));
+    assert.ok(result.shortlist.some((item) => classifyNordicDiscoveryLane(item) === "income"));
+    assert.ok(
+      result.shortlist.some((item) => classifyNordicDiscoveryLane(item) === "balanced_general"),
+      `balanced/general missing from default Nordic shortlist: ${result.shortlist.map((item) => item.symbol).join(",")}`,
+    );
     const countries = new Set(result.shortlist.map((item) => item.country));
     assert.deepEqual([...countries].sort(), ["DK", "FI", "NO", "SE"]);
   });

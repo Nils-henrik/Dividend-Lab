@@ -126,6 +126,7 @@ describe("strategy research lanes", () => {
     assert.ok(lanes.has("income"));
     assert.ok(lanes.has("high_risk_opportunity"));
     assert.ok(lanes.has("quality_core"));
+    assert.ok(lanes.has("balanced_general"));
 
     const prefD = shortlist.filter((item) => {
       const kind = classifyDividendInstrument(item)?.kind;
@@ -429,7 +430,137 @@ describe("lane membership sanity", () => {
     assert.equal(classifyNordicDiscoveryLane(yubico), "high_risk_opportunity");
     const investor = NORDIC_SEED_UNIVERSE.find((item) => item.symbol === "INVE-B");
     assert.ok(investor);
+    assert.equal(investor.segment, "large_cap");
     assert.equal(classifyNordicDiscoveryLane(investor), "quality_core");
+  });
+
+  it("routes maintained NORDIC_SEED_UNIVERSE large_cap to quality_core and mid_cap to balanced_general", () => {
+    const largeCap = NORDIC_SEED_UNIVERSE.find((item) => item.symbol === "INVE-B");
+    const midCap = NORDIC_SEED_UNIVERSE.find((item) => item.symbol === "CAST");
+    assert.ok(largeCap);
+    assert.ok(midCap);
+    assert.equal(largeCap.segment, "large_cap");
+    assert.equal(midCap.segment, "mid_cap");
+    assert.equal(classifyNordicDiscoveryLane(largeCap), "quality_core");
+    assert.equal(classifyNordicDiscoveryLane(midCap), "balanced_general");
+    assert.equal(
+      classifyNordicDiscoveryLane({ symbol: "UNKNOWN-X", exchange: "ST" }),
+      "balanced_general",
+    );
+  });
+
+  it("keeps explicit opportunity-seed precedence when the same name exists in NORDIC_SEED_UNIVERSE", () => {
+    const universeSeed = NORDIC_SEED_UNIVERSE.find((item) => item.symbol === "NETC");
+    const opportunitySeed = NORDIC_SMALL_MID_OPPORTUNITY_SEEDS.find((item) => item.symbol === "NETC");
+    assert.ok(universeSeed);
+    assert.ok(opportunitySeed);
+    assert.equal(universeSeed.segment, "mid_cap");
+    assert.equal(classifyNordicDiscoveryLane(universeSeed), "high_risk_opportunity");
+    assert.equal(classifyNordicDiscoveryLane(opportunitySeed), "high_risk_opportunity");
+  });
+
+  it("keeps explicit pref/D/ETF income precedence over seed-universe cap routing", () => {
+    const saga = DIVIDEND_PRIORITY_INSTRUMENTS.find((item) => item.symbol === "SAGA-D");
+    const xact = DIVIDEND_PRIORITY_INSTRUMENTS.find((item) => item.symbol === "XACTHDIV");
+    assert.ok(saga);
+    assert.ok(xact);
+    assert.equal(classifyNordicDiscoveryLane(saga), "income");
+    assert.equal(classifyNordicDiscoveryLane(xact), "income");
+  });
+});
+
+describe("Nordic default-universe balanced/general discovery capacity", () => {
+  it("gives all four lanes real representation in a default-like 14-name mix without changing quotas or country bounds", () => {
+    assert.deepEqual(NORDIC_RESEARCH_LANE_QUOTAS, {
+      income: 3,
+      high_risk_opportunity: 4,
+      quality_core: 4,
+      balanced_general: 3,
+    });
+
+    const fromUniverse = (symbol: string, score: number): NordicCandidate => {
+      const seed = NORDIC_SEED_UNIVERSE.find((item) => item.symbol === symbol);
+      assert.ok(seed, `missing universe seed ${symbol}`);
+      return nordic(seed.symbol, seed.exchange, seed.country, score, seed.segment);
+    };
+
+    const universe: NordicCandidate[] = [
+      nordic("SAGA-D", "ST", "SE", 0.11),
+      nordic("CORE-D", "ST", "SE", 0.10),
+      nordic("FPAR-D", "ST", "SE", 0.09),
+      nordic("XACTHDIV", "ST", "SE", 0.12),
+      nordic("YUBICO", "ST", "SE", 0.40),
+      nordic("KIT", "OL", "NO", 0.39),
+      nordic("HARVIA", "HE", "FI", 0.38),
+      nordic("AMBU-B", "CO", "DK", 0.37),
+      nordic("LAGR-B", "ST", "SE", 0.36),
+      fromUniverse("NETC", 0.35),
+      fromUniverse("INVE-B", 0.95),
+      fromUniverse("EQNR", 0.94),
+      fromUniverse("NOKIA", 0.93),
+      fromUniverse("NOVO-B", 0.92),
+      fromUniverse("VOLV-B", 0.91),
+      fromUniverse("DNB", 0.90),
+      fromUniverse("SAMPO", 0.89),
+      fromUniverse("DSV", 0.88),
+      fromUniverse("CAST", 0.70),
+      fromUniverse("SALM", 0.69),
+      fromUniverse("TIETO", 0.68),
+      fromUniverse("JYSK", 0.67),
+      fromUniverse("INDT", 0.66),
+    ];
+
+    assert.ok(universe.length >= 14);
+    assert.equal(classifyNordicDiscoveryLane(fromUniverse("INVE-B", 0)), "quality_core");
+    assert.equal(classifyNordicDiscoveryLane(fromUniverse("CAST", 0)), "balanced_general");
+    assert.equal(classifyNordicDiscoveryLane(fromUniverse("NETC", 0)), "high_risk_opportunity");
+    assert.equal(classifyNordicDiscoveryLane({ symbol: "SAGA-D", exchange: "ST" }), "income");
+
+    const shortlist = selectNordicLaneShortlist(universe);
+    assert.equal(shortlist.length, NORDIC_RESEARCH_BOUNDS.deepHistoryTechnicalCount);
+
+    const lanes = shortlist.map((item) => classifyNordicDiscoveryLane(item));
+    const laneSet = new Set(lanes);
+    assert.ok(laneSet.has("income"), `income missing: ${shortlist.map((item) => item.symbol).join(",")}`);
+    assert.ok(
+      laneSet.has("high_risk_opportunity"),
+      `high-risk missing: ${shortlist.map((item) => item.symbol).join(",")}`,
+    );
+    assert.ok(laneSet.has("quality_core"), `quality/core missing: ${shortlist.map((item) => item.symbol).join(",")}`);
+    assert.ok(
+      laneSet.has("balanced_general"),
+      `balanced/general missing: ${shortlist.map((item) => item.symbol).join(",")}`,
+    );
+
+    const balanced = shortlist.filter((item) => classifyNordicDiscoveryLane(item) === "balanced_general");
+    assert.ok(balanced.length >= 3, `balanced/general crowded out: ${balanced.map((item) => item.symbol).join(",")}`);
+    for (const item of balanced) {
+      const seed = NORDIC_SEED_UNIVERSE.find(
+        (entry) => entry.symbol === item.symbol && entry.exchange === item.exchange,
+      );
+      if (seed) {
+        assert.equal(seed.segment, "mid_cap");
+      }
+    }
+
+    const byCountry = { SE: 0, NO: 0, FI: 0, DK: 0 };
+    for (const item of shortlist) byCountry[item.country] += 1;
+    for (const country of ["SE", "NO", "FI", "DK"] as const) {
+      assert.ok(
+        byCountry[country] >= NORDIC_RESEARCH_BOUNDS.perCountryMinShortlist,
+        `${country} below min: ${JSON.stringify(byCountry)}`,
+      );
+      assert.ok(
+        byCountry[country] <= NORDIC_RESEARCH_BOUNDS.perCountryMaxShortlist,
+        `${country} above max: ${JSON.stringify(byCountry)}`,
+      );
+    }
+
+    const again = selectNordicLaneShortlist(universe);
+    assert.deepEqual(
+      again.map((item) => `${item.symbol}.${item.exchange}`),
+      shortlist.map((item) => `${item.symbol}.${item.exchange}`),
+    );
   });
 });
 

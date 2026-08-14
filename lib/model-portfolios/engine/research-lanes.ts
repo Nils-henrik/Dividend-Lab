@@ -98,8 +98,17 @@ const NORDIC_HIGH_RISK_KEYS = new Set(
     .filter((key) => !NORDIC_INCOME_KEYS.has(key)),
 );
 
-const NORDIC_CORE_KEYS = new Set(
-  NORDIC_SEED_UNIVERSE.map((item) => laneInstrumentKey(item.symbol, item.exchange)),
+/**
+ * Maintained Nordic seed routing keyed by canonical `symbol.exchange`.
+ * Reuses `NORDIC_SEED_UNIVERSE` rather than duplicating a second list.
+ * `large_cap` / `mid_cap` here are discovery-lane markers only — not verified
+ * quality, GARP, or buy eligibility.
+ */
+const NORDIC_SEED_SEGMENT_BY_KEY = new Map(
+  NORDIC_SEED_UNIVERSE.map((item) => [
+    laneInstrumentKey(item.symbol, item.exchange),
+    item.segment,
+  ]),
 );
 
 const US_QUALITY_CORE_KEYS = new Set(
@@ -136,6 +145,12 @@ export function isUsLiquidSmallMidCap(marketCapUsd: number | null | undefined): 
   );
 }
 
+/**
+ * Deterministic Nordic discovery-lane routing.
+ * Precedence: explicit income → explicit opportunity seed → maintained
+ * `NORDIC_SEED_UNIVERSE` large_cap → otherwise balanced/general (including
+ * maintained mid_cap seeds and unknown/non-default names).
+ */
 export function classifyNordicDiscoveryLane(input: {
   symbol: string;
   exchange: string;
@@ -143,7 +158,7 @@ export function classifyNordicDiscoveryLane(input: {
   const key = laneInstrumentKey(input.symbol, input.exchange);
   if (NORDIC_INCOME_KEYS.has(key) || classifyDividendInstrument(input)) return "income";
   if (NORDIC_HIGH_RISK_KEYS.has(key)) return "high_risk_opportunity";
-  if (NORDIC_CORE_KEYS.has(key)) return "quality_core";
+  if (NORDIC_SEED_SEGMENT_BY_KEY.get(key) === "large_cap") return "quality_core";
   return "balanced_general";
 }
 
