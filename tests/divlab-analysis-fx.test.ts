@@ -8,6 +8,7 @@ import {
 } from "../lib/analysis/fx";
 import type { DailyBar } from "../lib/model-portfolios/engine/eodhd";
 import type { FxRateQuote } from "../lib/model-portfolios/engine/fx";
+import { operatingCompanyClassification } from "./helpers/divlab-company-classification";
 
 function quote(base: "EUR" | "USD", rate: number, asOf = "2026-08-14T16:00:00.000Z"): FxRateQuote {
   return {
@@ -34,6 +35,16 @@ function bars(): DailyBar[] {
     };
   });
 }
+
+const FUNDAMENTAL_SOURCE = {
+  id: "fundamental:test",
+  kind: "fundamental_data" as const,
+  publisher: "Fundamental provider",
+  url: "https://example.com/fundamental",
+  publishedAt: "2026-08-14T16:00:00.000Z",
+  verifiedAt: "2026-08-14T16:00:00.000Z",
+  primary: false,
+};
 
 describe("DivLab deterministic analysis FX", () => {
   it("derives direct and cross rates without inventing values", () => {
@@ -145,6 +156,7 @@ describe("DivLab deterministic analysis FX", () => {
       currentPrice: 110,
       history: bars(),
       fundamentals,
+      companyClassification: operatingCompanyClassification(FUNDAMENTAL_SOURCE.id),
       fxConversion: fx,
       valuationScenarios: [],
       sources: [
@@ -157,6 +169,7 @@ describe("DivLab deterministic analysis FX", () => {
           verifiedAt: "2026-08-14T16:00:00.000Z",
           primary: false,
         },
+        FUNDAMENTAL_SOURCE,
         {
           id: fxSourceId,
           kind: "fx_data",
@@ -207,6 +220,7 @@ describe("DivLab deterministic analysis FX", () => {
       currentPrice: 100,
       history: bars(),
       fundamentals,
+      companyClassification: operatingCompanyClassification(FUNDAMENTAL_SOURCE.id),
       valuationScenarios: [],
       sources: [
         {
@@ -218,6 +232,7 @@ describe("DivLab deterministic analysis FX", () => {
           verifiedAt: "2026-08-14T16:00:00.000Z",
           primary: false,
         },
+        FUNDAMENTAL_SOURCE,
       ],
       now: new Date("2026-08-14T17:00:00.000Z"),
     });
