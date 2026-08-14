@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 const EXPECTED_BRANCH = "agent/divlab-deep-research-v1";
-const SMOKE_HEADER = "divlab-analyst-oidc-v1";
+const SMOKE_MARKER = "divlab-analyst-oidc-v1";
 
 const CASES = {
   evolution: { symbol: "EVO", exchange: "ST", name: "Evolution" },
@@ -23,9 +23,16 @@ function allowedPreviewRuntime(): boolean {
   );
 }
 
-function smokeCase(request: Request): SmokeCase | null {
-  const value = new URL(request.url).searchParams.get("case")?.trim().toLowerCase() ?? "";
-  return value in CASES ? (value as SmokeCase) : null;
+function requestParameters(request: Request): {
+  selectedCase: SmokeCase | null;
+  markerValid: boolean;
+} {
+  const params = new URL(request.url).searchParams;
+  const value = params.get("case")?.trim().toLowerCase() ?? "";
+  return {
+    selectedCase: value in CASES ? (value as SmokeCase) : null,
+    markerValid: params.get("smoke") === SMOKE_MARKER,
+  };
 }
 
 function sourceSummary(sources: readonly { id: string; kind: string; publisher: string; primary: boolean }[]) {
@@ -38,11 +45,10 @@ function sourceSummary(sources: readonly { id: string; kind: string; publisher: 
 }
 
 export async function GET(request: Request) {
-  if (!allowedPreviewRuntime() || request.headers.get("x-divlab-analysis-smoke") !== SMOKE_HEADER) {
+  const { selectedCase, markerValid } = requestParameters(request);
+  if (!allowedPreviewRuntime() || !markerValid) {
     return new NextResponse(null, { status: 404 });
   }
-
-  const selectedCase = smokeCase(request);
   if (!selectedCase) {
     return NextResponse.json({ status: "invalid_case" }, { status: 400 });
   }
