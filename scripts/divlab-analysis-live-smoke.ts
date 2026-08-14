@@ -4,6 +4,7 @@ import { fetchNordicDivLabAnalysisSources } from "../lib/analysis/nordic-primary
 import { loadDivLabResearchInputs } from "../lib/analysis/research-loader";
 import { analyzeSupportResistance } from "../lib/analysis/support-resistance";
 import { fetchNordicPrimarySourceEvents } from "../lib/model-portfolios/engine/nordic-primary-sources";
+import { fetchOfficialHttpsDocument } from "../lib/model-portfolios/engine/official-document";
 import { parseReportMetadata } from "../lib/model-portfolios/engine/report-metadata";
 
 const CASES = [
@@ -32,6 +33,52 @@ function summarizeDiscovery(hit: Awaited<ReturnType<typeof fetchNordicPrimarySou
   };
 }
 
+async function diagnoseFirstReportDocument(
+  hits: Awaited<ReturnType<typeof fetchNordicPrimarySourceEvents>>,
+) {
+  const candidate = hits.find((hit) => {
+    const attachment = hit.attachments.find((item) => {
+      const mime = item.mimeType?.toLowerCase() ?? "";
+      return mime.includes("pdf") || (item.fileName ?? "").toLowerCase().endsWith(".pdf");
+    });
+    if (!attachment) return false;
+    const metadata = parseReportMetadata({
+      title: hit.title,
+      category: hit.category,
+      fileName: attachment.fileName,
+    });
+    return metadata.looksLikeReportDocument;
+  });
+  if (!candidate) return null;
+
+  const attachment = candidate.attachments.find((item) => {
+    const mime = item.mimeType?.toLowerCase() ?? "";
+    return mime.includes("pdf") || (item.fileName ?? "").toLowerCase().endsWith(".pdf");
+  });
+  if (!attachment) return null;
+
+  const fetched = await fetchOfficialHttpsDocument({ url: attachment.url });
+  if (!fetched.ok) {
+    return {
+      title: candidate.title,
+      fileName: attachment.fileName,
+      url: attachment.url,
+      fetch: fetched,
+    };
+  }
+  return {
+    title: candidate.title,
+    fileName: attachment.fileName,
+    url: attachment.url,
+    fetch: {
+      ok: true as const,
+      bytes: fetched.bytes,
+      contentType: fetched.contentType,
+      finalUrl: fetched.finalUrl,
+    },
+  };
+}
+
 async function main() {
   const now = new Date();
   const cases = [];
@@ -51,10 +98,14 @@ async function main() {
       exchange: item.exchange,
       now,
     });
+    const directReportFetch = item.symbol === "EMBRAC-B"
+      ? await diagnoseFirstReportDocument(rawDiscovery)
+      : null;
 
     const sourceDiagnostics = {
       enrichedCount: enrichedSources.length,
       primaryCount: enrichedSources.filter((source) => source.primary).length,
+      directReportFetch,
       enrichedSources: enrichedSources.map((source) => ({
         kind: source.kind,
         publisher: source.publisher,
