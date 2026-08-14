@@ -245,7 +245,7 @@ An earlier real analyst call in Vercel Preview stopped at `gateway_auth_missing`
 
 After the fallback was implemented and the full repository gate passed, a new Preview-only, branch-bound, read-only analyst smoke route was prepared to test Evolution without persistence. Vercel did **not** create a deployment for that commit: the GitHub Vercel status failed at deployment creation with `upgradeToPro=build-rate-limit`.
 
-The same Vercel `build-rate-limit` status is still present on the latest green runtime head after the reconciliation/enterprise/provenance work. Therefore the updated request-context OIDC path has not yet executed in a fresh Preview runtime. The smoke route was removed again immediately rather than left on the branch. No secret was copied, exposed or weakened.
+The same Vercel `build-rate-limit` status is still present on the final green branch head. Therefore the updated request-context OIDC path has not yet executed in a fresh Preview runtime. The smoke route was removed again immediately rather than left on the branch. No secret was copied, exposed or weakened.
 
 Genuine real-company analyst-output review remains pending until a new authenticated Preview/runtime can actually be created.
 
@@ -349,7 +349,7 @@ The timestamp alignment was filename-only; the already-reviewed SQL blobs were n
 - normalized quarterly provider periods: unit tested;
 - primary-report reconciliation v1: unit tested for same-basis H1/FY confirmation and conservative ambiguity handling;
 - Vercel request-context OIDC policy: unit tested, live Preview execution pending because Vercel rejected the new deployment at build-rate-limit;
-- full repository lint, typecheck, core tests, SEO/news tests, DivBrain tests, Cursor bridge tests and production build passed on runtime branch head `8bb9cb3c5567f69ebbec1594364c280543686878` before this documentation-only update;
+- full repository lint, typecheck, core tests, SEO/news tests, DivBrain tests, Cursor bridge tests and production build passed on branch head `d2831e7b8a35e2660620d7eec00f390776d4e492` before this documentation-only head annotation;
 - real analyst narrative generation on the current analyst implementation: not yet live verified.
 
 ## Still deliberately not included
