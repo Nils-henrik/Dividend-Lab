@@ -1,6 +1,6 @@
 # DivLab Deep Research Engine v1
 
-Status: backend foundation, no public analysis UI yet.
+Status: internal backend foundation / ACTIVE_PR. No public analysis UI yet.
 
 ## Objective
 
@@ -9,11 +9,15 @@ DivLab Analys must be a structured, auditable equity-research product rather tha
 ## v1 pipeline
 
 ```text
-Verified company / market inputs
+Yahoo market history + financial statements
+        +
+Official Nordic issuer disclosures / report provenance
         ↓
-Fundamental analysis
+Normalized FundamentalSnapshot (TTM + multi-year periods)
         ↓
-Transparent valuation scenarios
+Deterministic fundamental analysis
+        ↓
+Explicit Bear/Base/Bull valuation assumptions
         ↓
 Existing deterministic technical toolkit
         +
@@ -22,11 +26,30 @@ Adaptive support / resistance zones
 Source + freshness quality gate
         ↓
 Versioned DivLabResearchPacket
+        ↓
+Atomic service-role persistence
 ```
 
-## Fundamental core
+`lib/analysis/research-loader.ts` is the current server-side fact loader. `lib/analysis/draft-service.ts` is the one-call orchestration entrypoint that can build a packet and optionally persist it.
 
-`lib/analysis/fundamental-analysis.ts` accepts normalized accounting inputs and derives, without fabricating missing values:
+## Fundamental data collection
+
+The foundation now has a real financial-statement path rather than only a score contract.
+
+- `lib/analysis/yahoo-financials.ts` owns the authenticated/server-only Yahoo request.
+- `lib/analysis/financial-statement-normalizer.ts` is a pure deterministic parser that can be unit-tested independently of Next/server runtime.
+- income statement, balance sheet and cash-flow history are normalized into `FundamentalSnapshot`.
+- TTM revenue, operating income, net income, operating cash flow, capex and free cash flow are derived from provider TTM fields or four complete quarters.
+- latest cash, debt, equity, shares and other available balance-sheet fields are retained.
+- normalized annual periods are retained for future 3–5 year trend interpretation.
+- provider sign conventions for capex are handled explicitly when deriving FCF.
+- unknown or incomplete accounting fields remain unknown; four-quarter TTM calculations fail closed when fewer than four known quarters exist.
+
+The normalized `FundamentalSnapshot` itself is retained inside every `DivLabResearchPacket`, not just the derived scorecard. This provides an auditable numerical base for future AI narrative and version comparisons.
+
+## Fundamental analysis
+
+`lib/analysis/fundamental-analysis.ts` derives, without fabricating missing values:
 
 - revenue growth
 - operating and profit margins
@@ -52,6 +75,8 @@ Unknown values stay unknown and are surfaced in `unknowns`.
 
 Each scenario stores its assumptions and methods. The engine calculates value per share and upside/downside versus the observed current price.
 
+Important invariant: v1 does **not** manufacture valuation assumptions merely to complete the report. `draft-service.ts` requires explicit scenario inputs. A future analysis-AI layer may propose those assumptions only after reading the verified research packet.
+
 ## Technical analysis and price zones
 
 The existing model-portfolio toolkit remains the source of MA50/MA200, RSI, ADX, ATR, MACD, momentum, volatility, volume, breakout and other deterministic technical measures.
@@ -68,16 +93,27 @@ The existing model-portfolio toolkit remains the source of MA50/MA200, RSI, ADX,
 - weak / medium / strong zone classification
 - nearest meaningful support and resistance zones versus current price
 
+## Primary-source provenance
+
+`lib/analysis/nordic-primary-sources.ts` deliberately reuses the model-portfolio Nasdaq Nordic/CNS research path instead of creating a second crawler.
+
+- official report/disclosure URLs are retained as version sources
+- only a successfully retrieved official report document may count as `primary: true`
+- real quarterly/annual report candidates are ranked ahead of generic attachment-bearing releases before the shared one-document PDF attempt budget is consumed
+- Oslo currently degrades safely when no supported official source is available
+
+The current primary-source layer verifies provenance and report freshness. It does **not yet** normalize all accounting numbers directly from the report PDF; that remains a later hardening layer.
+
 ## Publication quality gate
 
-A packet is not publishable merely because it was generated. `lib/analysis/quality-gate.ts` currently requires:
+A packet is not publishable merely because it was generated. `lib/analysis/quality-gate.ts` requires:
 
 - sufficient fundamental coverage
 - at least two fully traceable sources
 - a sufficiently fresh primary source
 - complete Bear/Base/Bull scenario coverage with explicit base-case assumptions
-- at least 120 technical sessions
-- both a robust support zone and a robust resistance zone
+- sufficient technical history
+- meaningful technical level coverage
 
 Failures are blockers, not silently neutral scores.
 
@@ -86,25 +122,46 @@ Failures are blockers, not silently neutral scores.
 The Supabase model is append-versioned:
 
 - `divlab_analyses` — stable instrument identity / slug
-- `divlab_analysis_versions` — immutable research snapshots
+- `divlab_analysis_versions` — versioned research snapshots
 - `divlab_analysis_sources` — source provenance per version
 
-`persist_divlab_analysis_version(...)` stores an analysis version and its sources atomically. Direct client access is currently disabled; the write path is service-role only. Public read policies should be introduced together with the eventual `/analyses` product surface and only for explicitly published versions.
+`persist_divlab_analysis_version(...)` stores an analysis version and its sources atomically. Direct client access is disabled; the write path is service-role only. Public read policies should be introduced together with the eventual `/analyses` product surface and only for explicitly published versions.
 
-Old versions are never rewritten when new information arrives.
+The persistence layer additionally verifies consistency between:
 
-## Deliberately not included in this foundation
+- packet engine version and stored engine version
+- packet instrument identity and RPC identity
+- packet `qualityGate` and stored `quality_gate`
+- quality-gate `publishable` and stored `publishable`
+- packet source array and separately persisted source rows
 
-The following are the next increments and are not claimed as complete in v1 foundation:
+An inconsistent packet is rejected before an analysis version is inserted.
 
-1. full live financial-statement collector (income statement, balance sheet and cash flow history)
-2. report / IR document normalization into `FundamentalSnapshot`
-3. deterministic historical-growth and margin-trend calculations across 3–5 years
+## Verification completed in this branch
+
+- unit tests cover support/resistance zones
+- unit tests cover publishable and fail-closed research packets
+- unit tests cover full financial-statement normalization and four-quarter TTM fallback
+- unit test verifies normalized multi-year facts are cloned and retained in the packet
+- Supabase transactional persistence smoke test created analysis/version/source rows and rolled them back cleanly
+- deliberate quality-gate/publishable mismatch was rejected and left zero verification rows
+- anon/authenticated table access and write-RPC access are disabled; service role is the write principal
+- Supabase security/performance advisors were checked after DDL
+- GitHub Quality Gate passed lint, TypeScript, core tests, SEO/news tests, DivBrain tests, Cursor bridge tests and production build before this documentation sync
+
+## Deliberately not included yet
+
+The following remain later increments and are not claimed as complete:
+
+1. live real-company evaluation of the new loader across several accounting profiles
+2. direct accounting-number normalization from official report/IR PDFs as a verification layer
+3. deterministic multi-year CAGR, margin-trend and per-share trend interpretation across 3–5 years
 4. richer valuation methods such as EV/EBIT and EV/EBITDA where verified inputs are available
-5. AI-authored investor-facing narrative based only on the structured packet
-6. integration trigger from the model-portfolio shortlist into Deep Research
+5. analysis-AI reasoning for thesis, risks, catalysts, contradictions and explicit valuation assumptions
+6. automatic trigger from the model-portfolio shortlist into Deep Research
 7. public `/analyses` and `/analyses/[slug]` UI
 8. DivBrain retrieval of published analysis versions
+9. broader primary-source coverage for Oslo and US issuers
 
 ## Product invariant
 
