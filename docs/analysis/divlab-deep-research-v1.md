@@ -15,7 +15,7 @@ Official Nordic issuer disclosures / report provenance
         ↓
 Normalized FundamentalSnapshot (TTM + multi-year periods)
         ↓
-Deterministic fundamental analysis
+Deterministic fundamental analysis + per-share trends
         ↓
 Explicit Bear/Base/Bull valuation assumptions
         ↓
@@ -34,14 +34,14 @@ Atomic service-role persistence
 
 ## Fundamental data collection
 
-The foundation now has a real financial-statement path rather than only a score contract.
+The foundation has a real financial-statement path rather than only a score contract.
 
 - `lib/analysis/yahoo-financials.ts` owns the authenticated/server-only Yahoo request.
 - `lib/analysis/financial-statement-normalizer.ts` is a pure deterministic parser that can be unit-tested independently of Next/server runtime.
 - income statement, balance sheet and cash-flow history are normalized into `FundamentalSnapshot`.
 - TTM revenue, operating income, net income, operating cash flow, capex and free cash flow are derived from provider TTM fields or four complete quarters.
 - latest cash, debt, equity, shares and other available balance-sheet fields are retained.
-- normalized annual periods are retained for future 3–5 year trend interpretation.
+- up to five normalized annual periods are retained for multi-year interpretation.
 - provider sign conventions for capex are handled explicitly when deriving FCF.
 - unknown or incomplete accounting fields remain unknown; four-quarter TTM calculations fail closed when fewer than four known quarters exist.
 
@@ -51,7 +51,7 @@ The normalized `FundamentalSnapshot` itself is retained inside every `DivLabRese
 
 `lib/analysis/fundamental-analysis.ts` derives, without fabricating missing values:
 
-- revenue growth
+- current revenue growth
 - operating and profit margins
 - operating cash flow and free cash flow
 - free-cash-flow margin and cash conversion
@@ -61,7 +61,14 @@ The normalized `FundamentalSnapshot` itself is retained inside every `DivLabRese
 - ROE / ROA / ROIC when available
 - share-count growth / dilution
 - payout ratio
+- multi-year revenue CAGR
+- multi-year EPS CAGR
+- multi-year free-cash-flow-per-share CAGR
+- multi-year share-count CAGR
+- operating-margin change across the analyzed period
 - a coverage-aware scorecard for growth, profitability, cash flow, balance sheet and capital allocation
+
+The trend layer is deliberately shareholder-aware: company revenue growth and per-share value creation are measured separately. CAGR is left unknown when the mathematical base is invalid, for example a negative starting EPS or FCF/share.
 
 Unknown values stay unknown and are surfaced in `unknowns`.
 
@@ -142,12 +149,13 @@ An inconsistent packet is rejected before an analysis version is inserted.
 - unit tests cover support/resistance zones
 - unit tests cover publishable and fail-closed research packets
 - unit tests cover full financial-statement normalization and four-quarter TTM fallback
+- unit tests cover multi-year revenue/EPS/FCF-per-share/share-count trends and invalid CAGR bases
 - unit test verifies normalized multi-year facts are cloned and retained in the packet
-- Supabase transactional persistence smoke test created analysis/version/source rows and rolled them back cleanly
-- deliberate quality-gate/publishable mismatch was rejected and left zero verification rows
+- Supabase transactional persistence smoke tests create analysis/version/source rows and roll them back cleanly
+- deliberate quality-gate/publishable mismatch is rejected and leaves zero verification rows
 - anon/authenticated table access and write-RPC access are disabled; service role is the write principal
-- Supabase security/performance advisors were checked after DDL
-- GitHub Quality Gate passed lint, TypeScript, core tests, SEO/news tests, DivBrain tests, Cursor bridge tests and production build before this documentation sync
+- Supabase security/performance advisors have been checked after DDL
+- GitHub Quality Gate is required before this PR can leave draft status
 
 ## Deliberately not included yet
 
@@ -155,13 +163,12 @@ The following remain later increments and are not claimed as complete:
 
 1. live real-company evaluation of the new loader across several accounting profiles
 2. direct accounting-number normalization from official report/IR PDFs as a verification layer
-3. deterministic multi-year CAGR, margin-trend and per-share trend interpretation across 3–5 years
-4. richer valuation methods such as EV/EBIT and EV/EBITDA where verified inputs are available
-5. analysis-AI reasoning for thesis, risks, catalysts, contradictions and explicit valuation assumptions
-6. automatic trigger from the model-portfolio shortlist into Deep Research
-7. public `/analyses` and `/analyses/[slug]` UI
-8. DivBrain retrieval of published analysis versions
-9. broader primary-source coverage for Oslo and US issuers
+3. richer valuation methods such as EV/EBIT and EV/EBITDA where verified inputs are available
+4. analysis-AI reasoning for thesis, risks, catalysts, contradictions and explicit valuation assumptions
+5. automatic trigger from the model-portfolio shortlist into Deep Research
+6. public `/analyses` and `/analyses/[slug]` UI
+7. DivBrain retrieval of published analysis versions
+8. broader primary-source coverage for Oslo and US issuers
 
 ## Product invariant
 
