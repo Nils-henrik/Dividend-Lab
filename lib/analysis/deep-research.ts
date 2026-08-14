@@ -41,7 +41,7 @@ import {
   type DivLabValuationProvenance,
 } from "./valuation-provenance";
 
-export const DIVLAB_DEEP_RESEARCH_VERSION = "deep-research-v1" as const;
+export const DIVLAB_DEEP_RESEARCH_VERSION = "deep-research-v2" as const;
 
 export type DivLabValuationInputs = {
   epsTtm: NormalizedValuationInput;
