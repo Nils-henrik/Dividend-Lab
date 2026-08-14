@@ -25,6 +25,10 @@ export type ValuationAnalysis = {
     pe: number | null;
     priceToFcf: number | null;
     fcfYield: number | null;
+    epsCurrency: string | null;
+    freeCashFlowPerShareCurrency: string | null;
+    epsCurrencyCompatible: boolean;
+    freeCashFlowCurrencyCompatible: boolean;
   };
   scenarios: ValuationScenario[];
   baseCaseValue: number | null;
@@ -33,6 +37,11 @@ export type ValuationAnalysis = {
 
 function finitePositive(value: number | null | undefined): value is number {
   return typeof value === "number" && Number.isFinite(value) && value > 0;
+}
+
+function normalizedCurrency(value: string | null | undefined): string | null {
+  const normalized = value?.trim().toUpperCase() ?? "";
+  return /^[A-Z]{3}$/.test(normalized) ? normalized : null;
 }
 
 function average(values: readonly number[]): number | null {
@@ -73,22 +82,44 @@ export function buildValuationAnalysis(input: {
   currentPrice: number;
   currency: string;
   epsTtm?: number | null;
+  epsCurrency?: string | null;
   freeCashFlowPerShareTtm?: number | null;
+  freeCashFlowPerShareCurrency?: string | null;
   scenarios: ValuationScenarioInput[];
 }): ValuationAnalysis {
   if (!finitePositive(input.currentPrice)) {
     throw new Error("valuation_current_price_required");
   }
 
-  const pe = finitePositive(input.epsTtm)
+  const priceCurrency = normalizedCurrency(input.currency);
+  const epsCurrency =
+    input.epsCurrency === undefined
+      ? priceCurrency
+      : normalizedCurrency(input.epsCurrency);
+  const freeCashFlowPerShareCurrency =
+    input.freeCashFlowPerShareCurrency === undefined
+      ? priceCurrency
+      : normalizedCurrency(input.freeCashFlowPerShareCurrency);
+  const epsCurrencyCompatible = Boolean(
+    priceCurrency && epsCurrency && priceCurrency === epsCurrency,
+  );
+  const freeCashFlowCurrencyCompatible = Boolean(
+    priceCurrency &&
+      freeCashFlowPerShareCurrency &&
+      priceCurrency === freeCashFlowPerShareCurrency,
+  );
+
+  const pe = epsCurrencyCompatible && finitePositive(input.epsTtm)
     ? input.currentPrice / input.epsTtm
     : null;
-  const priceToFcf = finitePositive(input.freeCashFlowPerShareTtm)
-    ? input.currentPrice / input.freeCashFlowPerShareTtm
-    : null;
-  const fcfYield = finitePositive(input.freeCashFlowPerShareTtm)
-    ? input.freeCashFlowPerShareTtm / input.currentPrice
-    : null;
+  const priceToFcf =
+    freeCashFlowCurrencyCompatible && finitePositive(input.freeCashFlowPerShareTtm)
+      ? input.currentPrice / input.freeCashFlowPerShareTtm
+      : null;
+  const fcfYield =
+    freeCashFlowCurrencyCompatible && finitePositive(input.freeCashFlowPerShareTtm)
+      ? input.freeCashFlowPerShareTtm / input.currentPrice
+      : null;
 
   const scenarios = input.scenarios.map((scenario): ValuationScenario => {
     const calculated = calculateScenarioValue(scenario);
@@ -109,11 +140,15 @@ export function buildValuationAnalysis(input: {
 
   return {
     currentPrice: round(input.currentPrice, 4)!,
-    currency: input.currency,
+    currency: priceCurrency ?? input.currency,
     trailing: {
       pe: round(pe, 3),
       priceToFcf: round(priceToFcf, 3),
       fcfYield: round(fcfYield, 6),
+      epsCurrency,
+      freeCashFlowPerShareCurrency,
+      epsCurrencyCompatible,
+      freeCashFlowCurrencyCompatible,
     },
     scenarios,
     baseCaseValue: base?.valuePerShare ?? null,
