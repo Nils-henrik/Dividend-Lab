@@ -11,6 +11,7 @@ export type AnalysisSource = {
     | "company_release"
     | "market_data"
     | "fundamental_data"
+    | "fx_data"
     | "news"
     | "other";
   publisher: string;
