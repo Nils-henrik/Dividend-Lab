@@ -10,6 +10,7 @@ import {
 } from "./daily-case-preflight";
 import {
   selectDailyAnalysisCases,
+  type DailyCaseSelectionCandidate,
   type DailyCaseSelectionConfig,
   type DailyCaseSelectionResult,
 } from "./daily-case-selection";
@@ -100,7 +101,7 @@ export async function runDailyCaseDeskSelection(input: {
     maxConcurrency: input.config?.preflightConcurrency,
   });
 
-  const selectionCandidates = [];
+  const selectionCandidates: DailyCaseSelectionCandidate[] = [];
   const missingPreflights: DailyCaseDeskMissingPreflight[] = [];
 
   for (const result of preflightResults) {
@@ -121,13 +122,12 @@ export async function runDailyCaseDeskSelection(input: {
     selectionCandidates.push(
       buildDailyCaseSelectionCandidate({
         candidate: sourceInput.candidate,
-        yahooSymbol: undefined,
         name: sourceInput.name,
         preflight: result.preflight,
         sources: sourceInput.sources,
         dayChangePct: sourceInput.dayChangePct,
         readerInterestScore: sourceInput.readerInterestScore,
-      } as Parameters<typeof buildDailyCaseSelectionCandidate>[0]),
+      }),
     );
   }
 
