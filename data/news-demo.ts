@@ -34,8 +34,22 @@ import { applyNewsSearchSeo } from "@/lib/seo/editorial-content";
  * Image assets currently live under /public/news-demo/ for historical path stability.
  */
 const PUBLISHED_NEWS_ARTICLES: NewsArticle[] = [
-  BORSSVERIGE_14_AUGUSTI_2026_ARTICLE,
-  NORDEN_I_CENTRUM_14_AUGUSTI_2026_ARTICLE,
+  {
+    ...BORSSVERIGE_14_AUGUSTI_2026_ARTICLE,
+    imageUrl: "/news-demo/file_00000000a0f48246ac69ef1f82c8430f.png",
+    thumbnailObjectPosition: "center 50%",
+    mobileThumbnailObjectPosition: "center 50%",
+    imageAlt: "BörsSverige 14 augusti 2026 – dagens viktigaste svenska börsnyheter.",
+    imageCaption: "Illustration: DivLab.",
+  },
+  {
+    ...NORDEN_I_CENTRUM_14_AUGUSTI_2026_ARTICLE,
+    imageUrl: "/news-demo/file_00000000948c8243afd5896acc7c8754.png",
+    thumbnailObjectPosition: "center 50%",
+    mobileThumbnailObjectPosition: "center 50%",
+    imageAlt: "Norden i centrum 14 augusti 2026 med Veidekke, Skanska, Posti, DFDS och Boozt i fokus.",
+    imageCaption: "Illustration: DivLab.",
+  },
   WALL_STREET_REKORDNIVA_SVALARE_INFLATION_TECHAKTIERNA_ARTICLE,
   BORSSVERIGE_LUNCH_13_AUGUSTI_2026_ARTICLE,
   MILJARDBUD_PA_EVOLUTION_ARTICLE,
