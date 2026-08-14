@@ -111,6 +111,7 @@ function buildSystemMandate(): string {
     "Använd endast valuationInputs som per-aktie-bas för värdering. Gör aldrig egen valutaomräkning från fundamentalSnapshot.",
     "enterpriseValuationInputs är de enda absoluta belopp som får användas för enterprise-värdering. EV/EBIT och EV/EBITDA i trailingValuation är redan deterministiskt beräknade; räkna inte om EV eller valuta själv.",
     "valuationProvenance anger exakt vilka sourceIds som hör till varje trailing-värderingsmått. När du gör ett konkret påstående om P/E, P/FCF, FCF-yield, EV, EV/EBIT eller EV/EBITDA ska du använda sourceIds från motsvarande measure och bara använda måttet när available=true och traceable=true.",
+    "valuationInterpretation är det enda strukturerade avsnittet för konkreta trailing-värderingspåståenden. Varje post ska välja exakt ett measure och bära alla sourceIds som valuationProvenance kräver för just det måttet. Lägg inte en värderingssiffra i investmentCase eller fundamentalInterpretation som ett sätt att kringgå detta kontrakt.",
     "Om ett valuationInput har converted=true måste scenariots sourceIds även innehålla samtliga fxSourceIds för den värderingsmetoden.",
     "Ange bara EPS/P-E när valuationInputs.epsTtm.value finns. Ange bara FCF/aktie och P/FCF när valuationInputs.freeCashFlowPerShareTtm.value finns. Lämna annars de fälten null.",
     "Ange bara EV/EBIT eller EV/EBITDA när motsvarande värde i trailingValuation finns. Ett null-värde får inte ersättas med egen uppskattning.",
@@ -153,21 +154,21 @@ export async function generateDivLabAnalystDraft(input: {
         schema: divLabAnalystDraftSchema,
         name: "divlab_analyst_draft",
         description:
-          "A source-grounded DivLab equity-analysis draft with explicit Bear/Base/Bull assumptions.",
+          "A source-grounded DivLab equity-analysis v2 draft with provenance-bound valuation interpretation and explicit Bear/Base/Bull assumptions.",
       }),
       system: buildSystemMandate(),
       prompt: [
         "VERIFIERAT RESEARCH-PACKET:",
         buildAnalystFacts(input.packet),
         "UPPGIFT:",
-        "Analysera bolaget och aktien enligt schemat. Föreslå transparenta Bear/Base/Bull-antaganden men räkna inte ut slutvärden; DivLabs deterministiska värderingsmotor gör matematiken efter ditt svar.",
+        "Analysera bolaget och aktien enligt schemat. Fyll valuationInterpretation med minst ett tillgängligt och fullt traceable värderingsmått från valuationProvenance. Föreslå därefter transparenta Bear/Base/Bull-antaganden men räkna inte ut slutvärden; DivLabs deterministiska värderingsmotor gör matematiken efter ditt svar.",
         `Samtliga valuationScenarios.currency ska vara ${input.packet.instrument.currency}.`,
       ].join("\n\n"),
       maxOutputTokens: DIVLAB_ANALYST_AI_BUDGET.maxOutputTokens,
       temperature: 0.1,
       providerOptions: {
         gateway: {
-          tags: ["divlab", "analysis", "deep-research", "analyst-v1"],
+          tags: ["divlab", "analysis", "deep-research", "analyst-v2"],
         },
       },
     });
