@@ -1,5 +1,6 @@
+import type { DivLabCompanyClassification } from "./company-classification";
 import type { AnalysisEvidence } from "./evidence";
-import type { FundamentalAnalysis } from "./fundamental-analysis";
+import type { DivLabFundamentalAnalysis } from "./fundamental-methodology";
 import type { SupportResistanceAnalysis } from "./support-resistance";
 import type { ValuationAnalysis } from "./valuation";
 import type { DivLabValuationProvenance } from "./valuation-provenance";
@@ -28,6 +29,8 @@ export type AnalysisQualityGate = {
   blockers: string[];
   warnings: string[];
   checks: {
+    companyClassificationCoverage: boolean;
+    fundamentalMethodologyCoverage: boolean;
     fundamentalCoverage: boolean;
     multiYearFundamentalCoverage: boolean;
     freshPrimarySource: boolean;
@@ -51,7 +54,8 @@ function daysBetween(later: Date, earlier: Date): number {
 
 export function evaluateAnalysisQuality(input: {
   now: Date;
-  fundamental: FundamentalAnalysis;
+  companyClassification: DivLabCompanyClassification;
+  fundamental: DivLabFundamentalAnalysis;
   valuation: ValuationAnalysis;
   valuationProvenance: DivLabValuationProvenance;
   technicalSessions: number;
@@ -61,8 +65,34 @@ export function evaluateAnalysisQuality(input: {
 }): AnalysisQualityGate {
   const blockers: string[] = [];
   const warnings: string[] = [];
+  const knownSourceIds = new Set(input.sources.map((source) => source.id));
+
+  const companyClassificationCoverage =
+    input.companyClassification.type !== "unknown" &&
+    input.companyClassification.confidence !== "low" &&
+    input.companyClassification.sourceIds.length > 0 &&
+    input.companyClassification.sourceIds.every((sourceId) => knownSourceIds.has(sourceId));
+  if (!companyClassificationCoverage) {
+    blockers.push(
+      "Bolagstypen saknar tillräckligt verifierad och källspårbar klassificering för att välja rätt fundamental metodik.",
+    );
+  }
+
+  const fundamentalMethodologyCoverage =
+    input.fundamental.methodology.status === "supported";
+  if (!fundamentalMethodologyCoverage) {
+    const required = input.fundamental.methodology.requiredSpecializedMetrics;
+    blockers.push(
+      input.fundamental.methodology.status === "specialized_required"
+        ? `Bolagstypen ${input.fundamental.methodology.companyType} kräver specialiserad fundamental metodik innan DivLab Analys får publiceras${required.length ? `: ${required.join(", ")}` : "."}`
+        : input.fundamental.methodology.status === "unsupported_instrument"
+          ? "Instrumenttypen stöds inte av DivLabs nuvarande bolagsanalysmetodik."
+          : "Verifierad bolagstyp krävs innan fundamental metodik kan väljas.",
+    );
+  }
 
   const fundamentalCoverage =
+    fundamentalMethodologyCoverage &&
     input.fundamental.scorecard.coverage >= 0.6 &&
     input.fundamental.unknowns.filter((item) => !item.startsWith("flerårig fundamental trend")).length <= 4;
   if (!fundamentalCoverage) {
@@ -70,6 +100,7 @@ export function evaluateAnalysisQuality(input: {
   }
 
   const multiYearFundamentalCoverage =
+    fundamentalMethodologyCoverage &&
     input.fundamental.trends.periodsAnalyzed >= 3 &&
     (input.fundamental.trends.yearsCovered ?? 0) >= 1.5 &&
     input.fundamental.trends.revenueCagr !== null;
@@ -183,7 +214,7 @@ export function evaluateAnalysisQuality(input: {
   }
   if (!input.valuation.trailing.freeCashFlowCurrencyCompatible) {
     warnings.push(
-      "Trailing P/FCF och FCF-yield har utelämnats eftersom kassaflödesvalutan inte är verifierat kompatibel med börskursens valuta.",
+      "Trailing P/FCF och FCF-yield har utelämnats eftersom kassaflödesvalutan eller bolagstypens metodik inte medger detta värderingsunderlag.",
     );
   }
   if (input.levels.resistanceState === "no_validated_resistance_above") {
@@ -193,6 +224,8 @@ export function evaluateAnalysisQuality(input: {
   }
 
   const checks = {
+    companyClassificationCoverage,
+    fundamentalMethodologyCoverage,
     fundamentalCoverage,
     multiYearFundamentalCoverage,
     freshPrimarySource,
