@@ -178,6 +178,36 @@ describe("public AI portfolio SEO routes", () => {
     assert.match(processContentSource, /inte EODHD/);
     assert.match(processContentSource, /8 procent/);
   });
+
+  it("describes four distinct managers on shared infrastructure, not four risk labels", () => {
+    assert.match(
+      processContentSource,
+      /Fyra förvaltare, gemensam infrastruktur/,
+    );
+    assert.match(
+      processContentSource,
+      /eget relevant kandidat- och bevakningsurval/,
+    );
+    assert.match(
+      processContentSource,
+      /varken analysera samma bolag eller komma fram till samma beslut/,
+    );
+    assert.match(
+      processContentSource,
+      /inte som köpsignaler/,
+    );
+    assert.match(
+      processContentSource,
+      /gäller kommande körningar och skriver\s+inte om redan bokförda portföljbeslut/,
+    );
+    assert.doesNotMatch(processContentSource, /Fyra mandat, samma process/);
+    assert.doesNotMatch(
+      processContentSource,
+      /Skillnaden mellan portföljerna ligger i riskmandat, omsättningsdisciplin/,
+    );
+    assert.doesNotMatch(processContentSource, /large\/mid-cap-univers/);
+    assert.doesNotMatch(processContentSource, /kvalitets\u00adkärna|kvalitetskärna/);
+  });
 });
 
 describe("private route HTML noindex policy", () => {
