@@ -10,6 +10,7 @@ import {
 } from "../lib/analysis/analyst-schema";
 import { buildDivLabResearchPacket } from "../lib/analysis/deep-research";
 import type { DailyBar } from "../lib/model-portfolios/engine/eodhd";
+import { operatingCompanyClassification } from "./helpers/divlab-company-classification";
 
 const REPORT_SOURCE = "report:q2";
 const MARKET_SOURCE = "market:test";
@@ -63,6 +64,7 @@ function factsPacket() {
         { period: "2025-12-31", revenue: 11_000, operatingIncome: 1_650, netIncome: 1_050, freeCashFlow: 1_300, eps: 6.8, sharesOutstanding: 179 },
       ],
     },
+    companyClassification: operatingCompanyClassification(FUNDAMENTAL_SOURCE),
     valuationScenarios: [],
     sources: [
       {
