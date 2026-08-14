@@ -7,6 +7,7 @@ import type { DailyBar } from "../lib/model-portfolios/engine/eodhd";
 
 const REPORT_ID = "report:q2";
 const MARKET_ID = "market:test";
+const FUNDAMENTAL_ID = "fundamental:test";
 
 function bars(): DailyBar[] {
   return Array.from({ length: 260 }, (_, index) => {
@@ -95,6 +96,15 @@ function packet(values = { bear: 80, base: 120, bull: 160 }) {
         verifiedAt: "2026-08-14T16:00:00.000Z",
         primary: false,
       },
+      {
+        id: FUNDAMENTAL_ID,
+        kind: "fundamental_data",
+        publisher: "Fundamental provider",
+        url: "https://example.com/fundamentals",
+        publishedAt: "2026-08-14T16:00:00.000Z",
+        verifiedAt: "2026-08-14T16:00:00.000Z",
+        primary: false,
+      },
     ],
     evidence: [
       {
@@ -142,6 +152,13 @@ function draft() {
     fundamentalInterpretation: [
       claim("Omsättningen visar en stabil flerårig utveckling."),
       claim("Kassaflödet ger stöd åt den redovisade vinsten."),
+    ],
+    valuationInterpretation: [
+      {
+        measure: "pe",
+        text: "Trailing P/E används som ett spårbart värderingsmått.",
+        sourceIds: [MARKET_ID, FUNDAMENTAL_ID],
+      },
     ],
     qualityFactors: {
       competitiveAdvantage: known("strong"),
@@ -211,7 +228,7 @@ describe("DivLab analyst content quality gate", () => {
     assert.equal(result.publishable, true);
     assert.equal(result.score, 100);
     assert.equal(result.metrics.knownQualityFactors, 7);
-    assert.equal(result.metrics.uniqueSourceIds, 2);
+    assert.equal(result.metrics.uniqueSourceIds, 3);
   });
 
   it("rejects thin qualitative coverage and overconfident unknowns", () => {
