@@ -4,172 +4,253 @@ Status: internal backend foundation / ACTIVE_PR. No public analysis UI yet.
 
 ## Objective
 
-DivLab Analys must be a structured, auditable equity-research product rather than a longer version of a model-portfolio rationale. The research packet is intentionally separate from portfolio-manager decisions so the four model portfolios can interpret the same company research through different mandates.
+DivLab Analys is being built as a structured, auditable equity-research product rather than a longer version of a model-portfolio rationale. Research facts and analyst interpretation are deliberately separated so the same verified company research can later be used by DivBrain and interpreted differently by the four model-portfolio managers.
 
-## v1 pipeline
+## Current pipeline
 
 ```text
-Yahoo market history + financial statements
+Market history + financial statements
         +
-Official Nordic issuer disclosures / report provenance
+Official issuer disclosures / report PDFs
         ↓
 Normalized FundamentalSnapshot (TTM + multi-year periods)
+        +
+Bounded, source-linked report evidence
         ↓
 Deterministic fundamental analysis + per-share trends
         ↓
-Explicit Bear/Base/Bull valuation assumptions
+Deterministic technical analysis + support/resistance zones
         ↓
-Existing deterministic technical toolkit
-        +
-Adaptive support / resistance zones
+Facts-only DivLabResearchPacket
         ↓
-Source + freshness quality gate
+Source-grounded analyst AI
+  - thesis / report interpretation
+  - risks / contradictions / catalysts
+  - qualitative quality factors
+  - explicit Bear/Base/Bull assumptions
         ↓
-Versioned DivLabResearchPacket
+Deterministic valuation math
         ↓
-Atomic service-role persistence
+Full publication quality gate
+        ↓
+Atomic persistence
+  - immutable research version
+  - source provenance
+  - separate immutable analyst content
 ```
 
-`lib/analysis/research-loader.ts` is the current server-side fact loader. `lib/analysis/draft-service.ts` is the one-call orchestration entrypoint that can build a packet and optionally persist it.
+The public `/analyses` product is intentionally not part of this PR.
 
 ## Fundamental data collection
 
-The foundation has a real financial-statement path rather than only a score contract.
-
-- `lib/analysis/yahoo-financials.ts` owns the authenticated/server-only Yahoo request.
-- `lib/analysis/financial-statement-normalizer.ts` is a pure deterministic parser that can be unit-tested independently of Next/server runtime.
+- `lib/analysis/yahoo-financials.ts` owns the current server-side Yahoo request.
+- `lib/analysis/financial-statement-normalizer.ts` is a pure deterministic parser.
 - income statement, balance sheet and cash-flow history are normalized into `FundamentalSnapshot`.
-- TTM revenue, operating income, net income, operating cash flow, capex and free cash flow are derived from provider TTM fields or four complete quarters.
-- latest cash, debt, equity, shares and other available balance-sheet fields are retained.
-- up to five normalized annual periods are retained for multi-year interpretation.
-- provider sign conventions for capex are handled explicitly when deriving FCF.
-- unknown or incomplete accounting fields remain unknown; four-quarter TTM calculations fail closed when fewer than four known quarters exist.
+- TTM values use verified provider fields or four complete quarters; incomplete four-quarter calculations fail closed.
+- up to five normalized annual periods are retained.
+- annual per-share analysis prefers period-average diluted/basic shares rather than silently using a current share count.
+- capex sign conventions are handled explicitly when FCF is derived.
+- unknown accounting fields remain unknown.
 
-The normalized `FundamentalSnapshot` itself is retained inside every `DivLabResearchPacket`, not just the derived scorecard. This provides an auditable numerical base for future AI narrative and version comparisons.
+### Currency invariant
+
+Market currency and reporting currency are tracked separately. This matters for companies that trade in SEK but report accounting data in another currency.
+
+- trailing P/E is only calculated when EPS currency is compatible with the share-price currency;
+- trailing P/FCF and FCF yield are omitted when FCF/share currency is not verified compatible;
+- every Bear/Base/Bull scenario must explicitly name the market currency;
+- incompatible scenario currencies are rejected rather than converted implicitly.
+
+No FX conversion is fabricated by the engine.
 
 ## Fundamental analysis
 
-`lib/analysis/fundamental-analysis.ts` derives, without fabricating missing values:
+`lib/analysis/fundamental-analysis.ts` deterministically derives, where data exists:
 
-- current revenue growth
-- operating and profit margins
-- operating cash flow and free cash flow
-- free-cash-flow margin and cash conversion
-- free cash flow per share
-- net debt / EBITDA
-- net debt / free cash flow
-- ROE / ROA / ROIC when available
-- share-count growth / dilution
-- payout ratio
-- multi-year revenue CAGR
-- multi-year EPS CAGR
-- multi-year free-cash-flow-per-share CAGR
-- multi-year share-count CAGR
-- operating-margin change across the analyzed period
-- a coverage-aware scorecard for growth, profitability, cash flow, balance sheet and capital allocation
+- current revenue growth;
+- operating/profit margin;
+- OCF and FCF quality;
+- FCF margin and cash conversion;
+- FCF/share;
+- net debt / EBITDA and net debt / FCF;
+- ROE / ROA / ROIC;
+- payout ratio and dilution;
+- multi-year revenue CAGR;
+- multi-year EPS CAGR;
+- multi-year FCF/share CAGR;
+- multi-year share-count CAGR;
+- operating-margin change;
+- coverage-aware scorecard for growth, profitability, cash flow, balance sheet and capital allocation.
 
-The trend layer is deliberately shareholder-aware: company revenue growth and per-share value creation are measured separately. CAGR is left unknown when the mathematical base is invalid, for example a negative starting EPS or FCF/share.
-
-Unknown values stay unknown and are surfaced in `unknowns`.
-
-## Valuation
-
-`lib/analysis/valuation.ts` keeps valuation math deterministic. Bear/Base/Bull scenarios can use:
-
-- EPS × P/E
-- FCF/share × P/FCF
-- an explicitly supplied scenario value when another verified valuation method is used upstream
-
-Each scenario stores its assumptions and methods. The engine calculates value per share and upside/downside versus the observed current price.
-
-Important invariant: v1 does **not** manufacture valuation assumptions merely to complete the report. `draft-service.ts` requires explicit scenario inputs. A future analysis-AI layer may propose those assumptions only after reading the verified research packet.
+Company growth and shareholder per-share value creation are intentionally measured separately. Invalid CAGR bases such as negative starting EPS remain unknown.
 
 ## Technical analysis and price zones
 
-The existing model-portfolio toolkit remains the source of MA50/MA200, RSI, ADX, ATR, MACD, momentum, volatility, volume, breakout and other deterministic technical measures.
+The existing model-portfolio technical toolkit remains the deterministic source for MA50/MA200, RSI, ADX, ATR, MACD, momentum, volatility, volume and breakout state.
 
-`lib/analysis/support-resistance.ts` adds the publication-grade level model requested for DivLab Analys:
+`lib/analysis/support-resistance.ts` adds:
 
-- local historical pivot detection
-- adaptive clustering into zones rather than false-precision lines
-- ATR / daily-range-aware zone width
-- repeated-touch counting
-- recency weighting
-- relative-volume confirmation
-- support ↔ resistance role-reversal detection
-- weak / medium / strong zone classification
-- nearest meaningful support and resistance zones versus current price
+- local pivot detection;
+- adaptive zones instead of false-precision lines;
+- ATR/range-aware width;
+- repeated-touch and recency weighting;
+- relative-volume confirmation;
+- support ↔ resistance role reversal;
+- weak / medium / strong classification;
+- nearest meaningful support and resistance.
 
-## Primary-source provenance
+A stock at/above a prior high may correctly return `no_validated_resistance_above`. The engine does not invent a resistance level merely to fill the report. `unresolved` remains a blocker.
 
-`lib/analysis/nordic-primary-sources.ts` deliberately reuses the model-portfolio Nasdaq Nordic/CNS research path instead of creating a second crawler.
+## Official report provenance and evidence
 
-- official report/disclosure URLs are retained as version sources
-- only a successfully retrieved official report document may count as `primary: true`
-- real quarterly/annual report candidates are ranked ahead of generic attachment-bearing releases before the shared one-document PDF attempt budget is consumed
-- Oslo currently degrades safely when no supported official source is available
+Dedicated Nordic Deep Research reuses the existing Nasdaq Nordic/CNS source path but uses a wider, still bounded discovery window than a normal portfolio pass.
 
-The current primary-source layer verifies provenance and report freshness. It does **not yet** normalize all accounting numbers directly from the report PDF; that remains a later hardening layer.
+Portfolio defaults remain unchanged:
+
+- max 2 primary hits;
+- 5 CNS rows per alias;
+- default official-document byte ceiling 5 MB.
+
+Dedicated Deep Research may use:
+
+- max 12 relevant hits;
+- max 20 CNS rows per alias;
+- one report PDF attempt;
+- hard report-PDF ceiling 24 MB;
+- the same HTTPS, hostname allowlist, redirect, timeout, content-type and PDF-signature protections;
+- bounded text extraction (not full-document ingestion).
+
+The 24 MB Deep Research limit was chosen after measuring a real official Embracer Q1 2026 PDF at 20,171,492 bytes. The ordinary model-portfolio 5 MB limit was not changed.
+
+`lib/analysis/evidence.ts` stores bounded material actually read from a source. An official report URL alone is not enough for publication. A public-quality packet must contain a source-ID-linked `official_report_excerpt` whose underlying primary document was successfully retrieved.
+
+Evidence is always treated as untrusted external content, never instructions.
+
+## Real-company validation completed
+
+The research/source pipeline has been exercised against three deliberately different Stockholm-listed profiles:
+
+1. **Atlas Copco A (`ATCO-A.ST`)** — established large-cap quality case.
+2. **Evolution (`EVO.ST`)** — high-margin growth case.
+3. **Embracer B (`EMBRAC-B.ST`)** — volatile turnaround/event case.
+
+Verified findings from those smoke tests:
+
+- real market/fundamental loading worked in the Vercel server environment;
+- dedicated CNS discovery found the relevant official report path for all three companies;
+- Atlas Copco and Evolution official report PDFs passed the safe document path;
+- Embracer's fresh Q1 report was initially discovered correctly but rejected because its 20.17 MB PDF exceeded the old 5/12 MB research bounds;
+- after introducing the dedicated 24 MB Deep Research ceiling, the same official Embracer PDF passed HTTPS/host/content-type/PDF-signature checks and became `primary=true`;
+- live testing exposed the need for explicit market-vs-reporting-currency separation;
+- live testing also exposed the valid technical state where no historical resistance can be verified above a price-discovery zone.
+
+GitHub-hosted runners are not representative for the current Yahoo financial-statement session and return `financial_statements_unavailable`, while the Vercel environment has successfully loaded the data. Therefore the latest currency-normalization changes are unit/CI verified but are not yet claimed as a fresh end-to-end Yahoo live verification.
+
+## Source-grounded analyst layer
+
+`lib/analysis/analyst-schema.ts`, `analyst-contract.ts`, `analyst.ts` and `ai-analysis-service.ts` define the internal AI analyst.
+
+The analyst may interpret:
+
+- investment thesis;
+- latest report;
+- fundamental trends;
+- competitive advantage / pricing power / market position;
+- management and capital allocation;
+- reinvestment runway;
+- cyclicality, customer concentration, regulation, FX, M&A and disruption risk;
+- catalysts;
+- risks and contradictions;
+- thesis breakers;
+- the already-calculated technical picture;
+- explicit Bear/Base/Bull assumptions.
+
+The analyst may **not**:
+
+- change deterministic facts;
+- invent missing numbers;
+- create its own RSI/MA/support/resistance levels;
+- invent source IDs;
+- silently mix currencies;
+- fabricate an explicit DCF/fair value;
+- turn a missing source into neutral evidence.
+
+Every structured claim references existing source IDs. `latestReport` must reference a primary source. Analyst output is schema-validated and then checked against the packet before it can proceed.
+
+### Two-stage valuation
+
+The AI does not own the final valuation math.
+
+1. A facts-only packet is built with no manufactured scenarios.
+2. The analyst proposes explicit Bear/Base/Bull assumptions.
+3. Those assumptions are converted to `ValuationScenarioInput`.
+4. `lib/analysis/valuation.ts` calculates scenario values deterministically.
+5. The full quality gate runs again.
 
 ## Publication quality gate
 
-A packet is not publishable merely because it was generated. `lib/analysis/quality-gate.ts` requires:
+A packet is not publishable just because it was generated. The current gate requires:
 
-- sufficient fundamental coverage
-- at least two fully traceable sources
-- a sufficiently fresh primary source
-- complete Bear/Base/Bull scenario coverage with explicit base-case assumptions
-- sufficient technical history
-- meaningful technical level coverage
+- sufficient fundamental coverage;
+- at least three comparable annual periods and multi-year trend coverage;
+- fully traceable sources;
+- sufficiently fresh primary source;
+- verified source-linked primary report evidence;
+- complete explicit Bear/Base/Bull scenarios in a compatible currency;
+- sufficient technical history;
+- meaningful support plus either verified resistance or a verified `no_validated_resistance_above` state.
 
 Failures are blockers, not silently neutral scores.
 
-## Persistence and history
+## Persistence and immutability
 
-The Supabase model is append-versioned:
+The Supabase model now separates facts from interpretation:
 
-- `divlab_analyses` — stable instrument identity / slug
-- `divlab_analysis_versions` — versioned research snapshots
-- `divlab_analysis_sources` — source provenance per version
+- `divlab_analyses` — stable instrument identity / slug;
+- `divlab_analysis_versions` — immutable research snapshots;
+- `divlab_analysis_sources` — source provenance per research version;
+- `divlab_analysis_contents` — one immutable analyst-content row per research version.
 
-`persist_divlab_analysis_version(...)` stores an analysis version and its sources atomically. Direct client access is disabled; the write path is service-role only. Public read policies should be introduced together with the eventual `/analyses` product surface and only for explicitly published versions.
+`persist_divlab_analysis_bundle(...)` atomically persists the final research version, source rows and analyst content. If analyst-content validation fails, the newly created research version is rolled back too.
 
-The persistence layer additionally verifies consistency between:
+Database-side checks include:
 
-- packet engine version and stored engine version
-- packet instrument identity and RPC identity
-- packet `qualityGate` and stored `quality_gate`
-- quality-gate `publishable` and stored `publishable`
-- packet source array and separately persisted source rows
+- packet identity / engine / currency / quality-gate consistency;
+- exact packet-source vs persisted-source consistency;
+- every evidence `sourceId` must exist;
+- publishable primary evidence must point to a genuinely primary retrieved report;
+- analyst scenarios must be unique Bear/Base/Bull and use the parent version currency;
+- every nested analyst `sourceIds` reference must exist for that exact version;
+- `latestReport` must reference a primary source;
+- AI usage must be non-negative.
 
-An inconsistent packet is rejected before an analysis version is inserted.
+On the internal analyst-content table, the normal service-role path has SELECT + INSERT but no UPDATE/DELETE. Anon/authenticated users have no table access and cannot execute the bundle RPC.
 
-## Verification completed in this branch
+## Database verification completed on `dividend-lab-dev`
 
-- unit tests cover support/resistance zones
-- unit tests cover publishable and fail-closed research packets
-- unit tests cover full financial-statement normalization and four-quarter TTM fallback
-- unit tests cover multi-year revenue/EPS/FCF-per-share/share-count trends and invalid CAGR bases
-- unit test verifies normalized multi-year facts are cloned and retained in the packet
-- Supabase transactional persistence smoke tests create analysis/version/source rows and roll them back cleanly
-- deliberate quality-gate/publishable mismatch is rejected and leaves zero verification rows
-- anon/authenticated table access and write-RPC access are disabled; service role is the write principal
-- Supabase security/performance advisors have been checked after DDL
-- GitHub Quality Gate is required before this PR can leave draft status
+- correct evidence packet creates analysis + version + source atomically and can be rolled back cleanly;
+- false primary evidence is rejected before insert and leaves zero rows;
+- correct research+analyst bundle creates 1 analysis + 1 version + 1 source + 1 content row atomically;
+- a bundle with an EUR analyst scenario against a SEK version is rejected with `invalid_divlab_analysis_content_scenario`;
+- after that rejection there are 0 analysis/version/source/content rows for the test identity;
+- anon/authenticated cannot read analyst-content rows or execute the bundle RPC;
+- service role can SELECT/INSERT content but cannot UPDATE/DELETE through normal grants;
+- Supabase security/performance advisors have been run after the DDL.
 
-## Deliberately not included yet
+The analysis tables intentionally have RLS enabled with no client policies while the feature remains internal. Public read policies belong to the future public analysis surface, not this foundation PR.
+
+## Still deliberately not included
 
 The following remain later increments and are not claimed as complete:
 
-1. live real-company evaluation of the new loader across several accounting profiles
-2. direct accounting-number normalization from official report/IR PDFs as a verification layer
-3. richer valuation methods such as EV/EBIT and EV/EBITDA where verified inputs are available
-4. analysis-AI reasoning for thesis, risks, catalysts, contradictions and explicit valuation assumptions
-5. automatic trigger from the model-portfolio shortlist into Deep Research
-6. public `/analyses` and `/analyses/[slug]` UI
-7. DivBrain retrieval of published analysis versions
-8. broader primary-source coverage for Oslo and US issuers
+1. fresh end-to-end live execution of the **new AI analyst** on real companies in a representative Yahoo-capable preview/server environment;
+2. direct accounting-number reconciliation from official report/IR PDFs against normalized provider statement values;
+3. richer valuation inputs such as historical valuation ranges, EV/EBIT, EV/EBITDA and peer sets where verified data is available;
+4. automatic model-portfolio shortlist → Deep Research trigger;
+5. public `/analyses` and `/analyses/[slug]` UI;
+6. DivBrain retrieval of published analysis versions;
+7. broader first-party source coverage for Oslo and US issuers.
 
 ## Product invariant
 
-A good company is not automatically a good stock at the current price, and a good stock is not automatically a suitable position for every portfolio. DivLab Analys owns the company/stock research. Each portfolio manager owns its own portfolio decision.
+A good company is not automatically a good stock at today's price, and a good stock is not automatically suitable for every portfolio. DivLab Analys owns the company/stock research. Each portfolio manager owns its own portfolio decision.
