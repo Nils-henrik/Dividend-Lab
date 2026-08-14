@@ -140,7 +140,18 @@ function aligned(value: number | null, threshold = 0.55): boolean {
 }
 
 /**
- * Modest Medelrisk new-entry floor. Stays well below Försiktig (0.72 / 0.62)
+ * Försiktig calibration 2026-08-14: roughly 10% less restrictive on ordinary
+ * quality/balance/volatility entry gates. Hard safety guards for falling knives,
+ * speculative small caps and de-risked recoveries stay unchanged.
+ */
+const CONSERVATIVE_NEW_ENTRY_QUALITY_FLOOR = 0.65;
+const CONSERVATIVE_NEW_ENTRY_BALANCE_SHEET_FLOOR = 0.56;
+const CONSERVATIVE_NEW_ENTRY_VOLATILITY_CEILING = 0.44;
+const CONSERVATIVE_MOMENTUM_QUALITY_FLOOR = 0.72;
+const CONSERVATIVE_MOMENTUM_BALANCE_SHEET_FLOOR = 0.63;
+
+/**
+ * Modest Medelrisk new-entry floor. Stays well below Försiktig (0.65 / 0.56)
  * and below the GARP alignment threshold (0.55), so ordinary mid-quality
  * revision/catalyst cases still pass. Both known scores must be clearly weak
  * before a new entry is rejected for fundamental weakness.
@@ -194,13 +205,13 @@ function conservativeNewEntry(candidate: ResearchCandidate): NewEntryAttentionDe
   if (balanceSheet === null) {
     return { eligible: false, reasons: ["rejected_missing_balance_sheet"] };
   }
-  if (quality < 0.72) {
+  if (quality < CONSERVATIVE_NEW_ENTRY_QUALITY_FLOOR) {
     return { eligible: false, reasons: ["rejected_weak_quality"] };
   }
-  if (balanceSheet < 0.62) {
+  if (balanceSheet < CONSERVATIVE_NEW_ENTRY_BALANCE_SHEET_FLOOR) {
     return { eligible: false, reasons: ["rejected_weak_balance_sheet"] };
   }
-  if (volatility !== null && volatility >= 0.4) {
+  if (volatility !== null && volatility >= CONSERVATIVE_NEW_ENTRY_VOLATILITY_CEILING) {
     return { eligible: false, reasons: ["rejected_high_volatility"] };
   }
   if (segment === "small_cap" && (quality < 0.88 || balanceSheet < 0.85 || volatility === null || volatility > 0.22)) {
@@ -215,7 +226,11 @@ function conservativeNewEntry(candidate: ResearchCandidate): NewEntryAttentionDe
   if (regime === "strong_downtrend" && !isDeriskedQualityRecovery(candidate)) {
     return { eligible: false, reasons: ["rejected_strong_downtrend"] };
   }
-  if ((aligned(catalyst, 0.75) || highRsi) && (quality < 0.8 || balanceSheet < 0.7)) {
+  if (
+    (aligned(catalyst, 0.75) || highRsi) &&
+    (quality < CONSERVATIVE_MOMENTUM_QUALITY_FLOOR ||
+      balanceSheet < CONSERVATIVE_MOMENTUM_BALANCE_SHEET_FLOOR)
+  ) {
     return { eligible: false, reasons: ["rejected_momentum_only"] };
   }
 

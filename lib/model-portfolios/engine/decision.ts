@@ -69,7 +69,7 @@ export function buildDecisionFramework(strategyKey: ModelPortfolioStrategyKey): 
     "1. Börja alltid med frågan: finns det tillräckligt stark evidens för att INTE välja HOLD?",
     "2. Skilj fakta från tolkning. Använd endast evidens som finns i det givna underlaget.",
     "3. En enskild rubrik, kursrörelse eller social signal får aldrig ensam motivera en affär.",
-    "4. Sök aktivt efter information som motsäger huvudtesen innan conviction sätts.",
+    "4. Sök aktivt efter information som motsäger huvudtesen innan conviction sätts. Om ingen separat motbeviskälla finns i underlaget ska du inte hitta på en eller återanvända en stödkälla bara för att fylla disconfirmingEvidenceIds.",
     "5. Bedöm bolaget, men också portföljkonsekvensen. Ett bra bolag kan vara ett dåligt köp om koncentration eller pris är fel.",
     "6. Köp kräver positiv tes, rimlig värderingsbild, identifierad katalysator eller uthållig compounding-tes samt tydlig nedsidesanalys.",
     "7. Sälj kräver i första hand tesbrott, kraftigt försämrad risk/reward, bättre kapitalallokering eller regelstyrd riskreduktion. Kursfall i sig är inte ett säljargument.",
@@ -83,6 +83,7 @@ export function buildDecisionFramework(strategyKey: ModelPortfolioStrategyKey): 
     "- convictionScore är styrkan i beslutet, inte säkerheten i framtida avkastning.",
     "- materialThesisBreak får endast vara true när verifierad ny information faktiskt bryter en central del av tidigare tes.",
     "- evidenceIds måste peka på givna evidensposter. Hitta aldrig på källor, priser, rapporttal eller händelser.",
+    "- disconfirmingEvidenceIds får endast innehålla verkliga givna evidensposter som faktiskt motsäger eller försvagar tesen. Lämna listan tom om den aktiva motbeviskontrollen inte hittar en separat sådan post.",
     "- proposedPortfolioPct är önskad målviktsförändring före deterministisk riskvalidering och är aldrig ett exekveringskommando.",
   ].join("\n");
 }
@@ -90,14 +91,11 @@ export function buildDecisionFramework(strategyKey: ModelPortfolioStrategyKey): 
 export function validateEvidenceReferences(
   decision: ModelPortfolioDecision,
   evidence: readonly ModelPortfolioEvidence[],
-): { ok: true } | { ok: false; reason: "unknown_evidence" | "missing_disconfirming_check" } {
+): { ok: true } | { ok: false; reason: "unknown_evidence" } {
   const ids = new Set(evidence.map((item) => item.id));
   const allReferenced = [...decision.evidenceIds, ...decision.disconfirmingEvidenceIds];
   if (allReferenced.some((id) => !ids.has(id))) {
     return { ok: false, reason: "unknown_evidence" };
-  }
-  if (decision.action !== "hold" && decision.disconfirmingEvidenceIds.length === 0) {
-    return { ok: false, reason: "missing_disconfirming_check" };
   }
   return { ok: true };
 }
