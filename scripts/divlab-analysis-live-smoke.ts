@@ -5,6 +5,7 @@ import { loadDivLabResearchInputs } from "../lib/analysis/research-loader";
 import { analyzeSupportResistance } from "../lib/analysis/support-resistance";
 import { fetchNordicPrimarySourceEvents } from "../lib/model-portfolios/engine/nordic-primary-sources";
 import { fetchOfficialHttpsDocument } from "../lib/model-portfolios/engine/official-document";
+import { PRIMARY_SOURCE_ENRICHMENT_BOUNDS } from "../lib/model-portfolios/engine/primary-source-enrichment";
 import { parseReportMetadata } from "../lib/model-portfolios/engine/report-metadata";
 
 const CASES = [
@@ -57,12 +58,16 @@ async function diagnoseFirstReportDocument(
   });
   if (!attachment) return null;
 
-  const fetched = await fetchOfficialHttpsDocument({ url: attachment.url });
+  const fetched = await fetchOfficialHttpsDocument({
+    url: attachment.url,
+    maxBytes: PRIMARY_SOURCE_ENRICHMENT_BOUNDS.maxDocumentBytes,
+  });
   if (!fetched.ok) {
     return {
       title: candidate.title,
       fileName: attachment.fileName,
       url: attachment.url,
+      maxBytes: PRIMARY_SOURCE_ENRICHMENT_BOUNDS.maxDocumentBytes,
       fetch: fetched,
     };
   }
@@ -70,6 +75,7 @@ async function diagnoseFirstReportDocument(
     title: candidate.title,
     fileName: attachment.fileName,
     url: attachment.url,
+    maxBytes: PRIMARY_SOURCE_ENRICHMENT_BOUNDS.maxDocumentBytes,
     fetch: {
       ok: true as const,
       bytes: fetched.bytes,
