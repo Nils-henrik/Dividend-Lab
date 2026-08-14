@@ -1,6 +1,10 @@
 import type { DailyBar } from "@/lib/model-portfolios/engine/eodhd";
 
 export type TechnicalZoneStrength = "weak" | "medium" | "strong";
+export type ResistanceState =
+  | "zones"
+  | "no_validated_resistance_above"
+  | "unresolved";
 
 export type TechnicalPriceZone = {
   kind: "support" | "resistance";
@@ -27,6 +31,8 @@ export type SupportResistanceAnalysis = {
   zoneTolerancePct: number | null;
   supports: TechnicalPriceZone[];
   resistances: TechnicalPriceZone[];
+  resistanceState: ResistanceState;
+  priorHigh: number | null;
 };
 
 type Pivot = {
@@ -266,6 +272,10 @@ export function analyzeSupportResistance(
     .slice(-420);
   const current = bars.at(-1);
   const currentPrice = current ? closeOf(current) : null;
+  const priorBars = bars.slice(0, -1);
+  const priorHigh = priorBars.length
+    ? Math.max(...priorBars.map((bar) => bar.high))
+    : null;
 
   if (!current || !currentPrice || bars.length < 30) {
     return {
@@ -275,6 +285,8 @@ export function analyzeSupportResistance(
       zoneTolerancePct: null,
       supports: [],
       resistances: [],
+      resistanceState: "unresolved",
+      priorHigh: priorHigh === null ? null : round(priorHigh, 4),
     };
   }
 
@@ -310,6 +322,16 @@ export function analyzeSupportResistance(
     })
     .slice(0, maxZones);
 
+  const noValidatedResistanceAbove =
+    resistances.length === 0 &&
+    priorHigh !== null &&
+    currentPrice >= priorHigh - absoluteTolerance;
+  const resistanceState: ResistanceState = resistances.length > 0
+    ? "zones"
+    : noValidatedResistanceAbove
+      ? "no_validated_resistance_above"
+      : "unresolved";
+
   return {
     asOf: current.date,
     currentPrice: round(currentPrice, 4),
@@ -317,5 +339,7 @@ export function analyzeSupportResistance(
     zoneTolerancePct: round(absoluteTolerance / currentPrice, 6),
     supports,
     resistances,
+    resistanceState,
+    priorHigh: priorHigh === null ? null : round(priorHigh, 4),
   };
 }
