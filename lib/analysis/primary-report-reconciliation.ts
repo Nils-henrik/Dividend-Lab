@@ -16,7 +16,7 @@ export type ReconciliationMetricResult = {
   providerValue: number | null;
   reportValue: number | null;
   relativeDifference: number | null;
-  status: "confirmed" | "not_confirmirmed" | "provider_missing" | "not_confirmed";
+  status: "confirmed" | "not_confirmed" | "provider_missing";
   rawToken: string | null;
   context: string | null;
 };
