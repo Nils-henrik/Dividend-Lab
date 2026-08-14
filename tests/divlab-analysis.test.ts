@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 import { buildDivLabResearchPacket } from "../lib/analysis/deep-research";
 import { analyzeSupportResistance } from "../lib/analysis/support-resistance";
 import type { DailyBar } from "../lib/model-portfolios/engine/eodhd";
+import { operatingCompanyClassification } from "./helpers/divlab-company-classification";
 
 function oscillatingBars(count = 260): DailyBar[] {
   return Array.from({ length: count }, (_, index) => {
@@ -101,6 +102,9 @@ describe("DivLab deep research packet", () => {
           },
         ],
       },
+      companyClassification: operatingCompanyClassification(
+        "fundamental:test-20260814",
+      ),
       valuationScenarios: [
         {
           name: "bear",
@@ -182,12 +186,16 @@ describe("DivLab deep research packet", () => {
     });
 
     assert.equal(packet.version, "deep-research-v1");
+    assert.equal(packet.companyClassification.type, "operating_company");
+    assert.equal(packet.fundamental.methodology.status, "supported");
     assert.ok((packet.fundamental.scorecard.overall ?? 0) > 0);
     assert.ok((packet.fundamental.trends.revenueCagr ?? 0) > 0);
     assert.equal(packet.valuation.scenarios.length, 3);
     assert.ok(packet.valuation.scenarios.every((scenario) => !scenario.currencyAssumed));
     assert.ok(packet.technical.levels.supports.length >= 1);
     assert.ok(packet.technical.levels.resistances.length >= 1);
+    assert.equal(packet.qualityGate.checks.companyClassificationCoverage, true);
+    assert.equal(packet.qualityGate.checks.fundamentalMethodologyCoverage, true);
     assert.equal(packet.qualityGate.checks.multiYearFundamentalCoverage, true);
     assert.equal(packet.qualityGate.checks.primaryEvidenceCoverage, true);
     assert.equal(packet.qualityGate.checks.valuationTraceability, true);
@@ -224,7 +232,11 @@ describe("DivLab deep research packet", () => {
       now: new Date("2026-08-14T16:00:00.000Z"),
     });
 
+    assert.equal(packet.companyClassification.type, "unknown");
+    assert.equal(packet.fundamental.methodology.status, "classification_required");
     assert.equal(packet.qualityGate.publishable, false);
+    assert.equal(packet.qualityGate.checks.companyClassificationCoverage, false);
+    assert.equal(packet.qualityGate.checks.fundamentalMethodologyCoverage, false);
     assert.equal(packet.qualityGate.checks.multiYearFundamentalCoverage, false);
     assert.equal(packet.qualityGate.checks.primaryEvidenceCoverage, false);
     assert.equal(packet.qualityGate.checks.valuationTraceability, false);
