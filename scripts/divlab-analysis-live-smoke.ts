@@ -58,6 +58,23 @@ async function diagnoseFirstReportDocument(
   });
   if (!attachment) return null;
 
+  let head: Record<string, unknown> | null = null;
+  try {
+    const response = await fetch(attachment.url, {
+      method: "HEAD",
+      redirect: "manual",
+      headers: { "User-Agent": "DivLab/1.0 analysis-smoke" },
+    });
+    head = {
+      status: response.status,
+      contentLength: response.headers.get("content-length"),
+      contentType: response.headers.get("content-type"),
+      location: response.headers.get("location"),
+    };
+  } catch (error) {
+    head = { error: error instanceof Error ? error.message : "head_failed" };
+  }
+
   const fetched = await fetchOfficialHttpsDocument({
     url: attachment.url,
     maxBytes: PRIMARY_SOURCE_ENRICHMENT_BOUNDS.maxDocumentBytes,
@@ -68,6 +85,7 @@ async function diagnoseFirstReportDocument(
       fileName: attachment.fileName,
       url: attachment.url,
       maxBytes: PRIMARY_SOURCE_ENRICHMENT_BOUNDS.maxDocumentBytes,
+      head,
       fetch: fetched,
     };
   }
@@ -76,6 +94,7 @@ async function diagnoseFirstReportDocument(
     fileName: attachment.fileName,
     url: attachment.url,
     maxBytes: PRIMARY_SOURCE_ENRICHMENT_BOUNDS.maxDocumentBytes,
+    head,
     fetch: {
       ok: true as const,
       bytes: fetched.bytes,
