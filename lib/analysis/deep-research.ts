@@ -13,6 +13,10 @@ import {
   type FundamentalSnapshot,
 } from "./fundamental-analysis";
 import {
+  reconcilePrimaryReport,
+  type PrimaryReportReconciliation,
+} from "./primary-report-reconciliation";
+import {
   evaluateAnalysisQuality,
   type AnalysisQualityGate,
   type AnalysisSource,
@@ -60,6 +64,8 @@ export type DivLabResearchPacket = {
   fundamentalSnapshot: FundamentalSnapshot;
   /** Deterministic interpretation/scorecard derived from fundamentalSnapshot. */
   fundamental: FundamentalAnalysis;
+  /** Confirmation-only cross-check against clean bounded official-report text. */
+  primaryReportReconciliation: PrimaryReportReconciliation;
   /** Optional reporting->market conversion. Raw accounting facts remain untouched. */
   fxConversion: AnalysisFxConversion | null;
   /** Per-share values actually eligible for valuation in the market currency. */
@@ -88,6 +94,7 @@ function cloneFundamentalSnapshot(
   currency: string,
   currentPrice: number,
 ): FundamentalSnapshot {
+  const currencyAware = snapshot as CurrencyAwareFundamentalSnapshot;
   return {
     ...snapshot,
     // `currency` is retained as the legacy quote-currency field for backward
@@ -96,7 +103,10 @@ function cloneFundamentalSnapshot(
     currency: currency.trim().toUpperCase(),
     price: currentPrice,
     historicalPeriods: snapshot.historicalPeriods?.map((period) => ({ ...period })),
-  };
+    ...(currencyAware.quarterlyPeriods
+      ? { quarterlyPeriods: currencyAware.quarterlyPeriods.map((period) => ({ ...period })) }
+      : {}),
+  } as CurrencyAwareFundamentalSnapshot;
 }
 
 function cloneFxConversion(
@@ -189,6 +199,10 @@ export function buildDivLabResearchPacket(input: {
     // listed share quote. Keep that semantic explicit for UI/DivBrain consumers.
     currency: currencies.reportingCurrency ?? rawFundamental.currency,
   };
+  const primaryReportReconciliation = reconcilePrimaryReport({
+    fundamentals: fundamentalSnapshot,
+    evidence,
+  });
   const technicalSnapshot = analyzeTechnicalSignals(input.history);
   const levels = analyzeSupportResistance(input.history);
   const currencyContext: DivLabCurrencyContext = {
@@ -258,6 +272,7 @@ export function buildDivLabResearchPacket(input: {
     currencyContext,
     fundamentalSnapshot,
     fundamental,
+    primaryReportReconciliation,
     fxConversion,
     valuationInputs,
     valuation,
