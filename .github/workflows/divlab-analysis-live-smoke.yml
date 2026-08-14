@@ -6,6 +6,10 @@ on:
     paths:
       - ".github/workflows/divlab-analysis-live-smoke.yml"
       - "scripts/divlab-analysis-live-smoke.ts"
+      - "lib/analysis/nordic-primary-sources.ts"
+      - "lib/model-portfolios/engine/nordic-primary-sources.ts"
+      - "lib/model-portfolios/engine/primary-source-enrichment.ts"
+      - "lib/model-portfolios/engine/official-document.ts"
 
 permissions:
   contents: read
