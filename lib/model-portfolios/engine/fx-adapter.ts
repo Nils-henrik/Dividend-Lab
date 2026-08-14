@@ -39,7 +39,9 @@ export function clearFxAdapterCache(): void {
  * Server-only FX adapter backed by Frankfurter (ECB reference rates).
  * Fail-closed: never invents a 1.0 rate for foreign currencies.
  * An injected fetch implementation keeps higher-level research tests fully
- * deterministic without changing existing portfolio callers.
+ * deterministic without changing existing portfolio callers. Injected fetches
+ * deliberately bypass the shared runtime cache so test fixtures can never
+ * poison or consume real server FX cache entries.
  */
 export async function fetchFxRateToSek(
   base: SupportedFxCurrency,
@@ -60,10 +62,13 @@ export async function fetchFxRateToSek(
     };
   }
 
+  const useSharedCache = fetchImpl === fetch;
   const key = cacheKey(base);
-  const cached = cache.get(key);
-  if (cached && cached.expiresAt > Date.now()) {
-    return { ok: true, quote: cached.quote };
+  if (useSharedCache) {
+    const cached = cache.get(key);
+    if (cached && cached.expiresAt > Date.now()) {
+      return { ok: true, quote: cached.quote };
+    }
   }
 
   try {
@@ -91,15 +96,15 @@ export async function fetchFxRateToSek(
     const date = typeof body.date === "string" && body.date.trim() ? body.date.trim() : null;
     const asOf = date ? `${date}T16:00:00.000Z` : now.toISOString();
 
-    const quote = remember(key, {
+    const quote: FxRateQuote = {
       base,
       quote: "SEK",
       rate,
       asOf,
       sourcePublisher: "European Central Bank via Frankfurter",
       provider: "frankfurter",
-    });
-    return { ok: true, quote };
+    };
+    return { ok: true, quote: useSharedCache ? remember(key, quote) : quote };
   } catch {
     return { ok: false, reason: "fx_unavailable" };
   }
