@@ -100,29 +100,15 @@ describe("model portfolio manager policy", () => {
     );
   });
 
-  it("uses a 10% minimum trade for conservative start phase while other strategies remain at 8%", () => {
-    assert.equal(MODEL_PORTFOLIO_TURNOVER_POLICY.conservative.minTradePctOfPortfolio, 10);
-    assert.deepEqual(
-      shouldAllowPortfolioChange({
-        strategyKey: "conservative",
-        action: "buy",
-        convictionScore: 0.95,
-        tradeValueMinor: 99_999,
-        portfolioValueMinor: 1_000_000,
-        hoursSinceLastTradeInInstrument: null,
-        materialThesisBreak: false,
-      }),
-      { allowed: false, reason: "trade_too_small" },
-    );
-
-    for (const strategyKey of ["balanced", "high_risk", "dividend"] as const) {
-      assert.equal(MODEL_PORTFOLIO_TURNOVER_POLICY[strategyKey].minTradePctOfPortfolio, 8);
+  it("enforces a 10% minimum meaningful trade across every strategy and preserves conservative 120-hour cooldown", () => {
+    for (const strategyKey of ["conservative", "balanced", "high_risk", "dividend"] as const) {
+      assert.equal(MODEL_PORTFOLIO_TURNOVER_POLICY[strategyKey].minTradePctOfPortfolio, 10);
       assert.deepEqual(
         shouldAllowPortfolioChange({
           strategyKey,
           action: "buy",
           convictionScore: 0.95,
-          tradeValueMinor: 79_999,
+          tradeValueMinor: 99_999,
           portfolioValueMinor: 1_000_000,
           hoursSinceLastTradeInInstrument: null,
           materialThesisBreak: false,
