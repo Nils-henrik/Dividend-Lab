@@ -42,7 +42,23 @@ function boundedEvidence(packet: DivLabResearchPacket) {
     if (remaining <= 0) break;
     const content = item.content.slice(0, Math.min(remaining, 5_500));
     if (!content.trim()) continue;
-    output.push({ ...item, content });
+    // Deliberately do not spread documentExcerpt into the model prompt. The
+    // bounded content already contains the relevant report excerpt; the clean
+    // copy exists only for deterministic reconciliation and would duplicate
+    // tokens/evidence weight here.
+    output.push({
+      id: item.id,
+      sourceId: item.sourceId,
+      kind: item.kind,
+      title: item.title,
+      content,
+      publishedAt: item.publishedAt,
+      primary: item.primary,
+      documentRetrieved: item.documentRetrieved,
+      reportPeriod: item.reportPeriod,
+      reportYear: item.reportYear,
+      documentType: item.documentType,
+    });
     remaining -= content.length;
   }
   return output;
@@ -60,6 +76,7 @@ function buildAnalystFacts(packet: DivLabResearchPacket): string {
       epsTtmCurrency: snapshot.epsTtmCurrency ?? null,
     },
     fundamental: packet.fundamental,
+    primaryReportReconciliation: packet.primaryReportReconciliation,
     fxConversion: packet.fxConversion,
     valuationInputs: packet.valuationInputs,
     trailingValuation: packet.valuation.trailing,
@@ -84,6 +101,7 @@ function buildSystemMandate(): string {
     "Okänt ska förbli okänt. Sänk confidence och använd assessment=unknown när underlaget inte räcker.",
     "Varje konkret påstående i strukturerade claim-fält måste använda sourceIds som finns exakt i den tillhandahållna källistan. Uppfinn aldrig ett sourceId.",
     "latestReport måste bygga på den verifierade primärrapporten, inte bara en rubrik eller sekundärkälla.",
+    "primaryReportReconciliation är confirmation-only: använd endast metric status=confirmed som extra stöd. not_confirmed, provider_missing och not_applicable betyder inte att bolagets rapport motsäger providerdata.",
     "Teknisk analys ska endast tolka givna deterministiska data. Skapa aldrig egna stöd, motstånd, RSI-, MA-, trend- eller volymnivåer.",
     "Om resistanceState är no_validated_resistance_above ska du uttryckligen säga att inget verifierat historiskt motstånd finns ovanför kurszonen; hitta inte på ett pristak.",
     "Bear/Base/Bull är antaganden, inte fakta. Alla tre scenarier måste använda exakt aktiens marknadsvaluta.",
