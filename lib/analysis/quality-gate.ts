@@ -2,6 +2,7 @@ import type { AnalysisEvidence } from "./evidence";
 import type { FundamentalAnalysis } from "./fundamental-analysis";
 import type { SupportResistanceAnalysis } from "./support-resistance";
 import type { ValuationAnalysis } from "./valuation";
+import type { DivLabValuationProvenance } from "./valuation-provenance";
 
 export type AnalysisSource = {
   id: string;
@@ -32,6 +33,7 @@ export type AnalysisQualityGate = {
     freshPrimarySource: boolean;
     sourceTraceability: boolean;
     primaryEvidenceCoverage: boolean;
+    valuationTraceability: boolean;
     valuationScenarioCoverage: boolean;
     technicalHistoryCoverage: boolean;
     technicalLevelCoverage: boolean;
@@ -51,6 +53,7 @@ export function evaluateAnalysisQuality(input: {
   now: Date;
   fundamental: FundamentalAnalysis;
   valuation: ValuationAnalysis;
+  valuationProvenance: DivLabValuationProvenance;
   technicalSessions: number;
   levels: SupportResistanceAnalysis;
   sources: readonly AnalysisSource[];
@@ -112,6 +115,18 @@ export function evaluateAnalysisQuality(input: {
   if (!primaryEvidenceCoverage) {
     blockers.push(
       "Analysen saknar ett verifierat rapportutdrag som kan härledas direkt till en primärkälla.",
+    );
+  }
+
+  const availableValuationMeasures = Object.values(input.valuationProvenance.measures).filter(
+    (measure) => measure.available,
+  );
+  const valuationTraceability =
+    availableValuationMeasures.length > 0 &&
+    availableValuationMeasures.every((measure) => measure.traceable);
+  if (!valuationTraceability) {
+    blockers.push(
+      "En eller flera tillgängliga värderingsmultiplar saknar full marknads-, fundamental- eller FX-proveniens.",
     );
   }
 
@@ -183,6 +198,7 @@ export function evaluateAnalysisQuality(input: {
     freshPrimarySource,
     sourceTraceability,
     primaryEvidenceCoverage,
+    valuationTraceability,
     valuationScenarioCoverage,
     technicalHistoryCoverage,
     technicalLevelCoverage,
