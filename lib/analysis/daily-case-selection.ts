@@ -11,6 +11,7 @@ export const DAILY_CASE_SELECTION_BUDGET = {
   whyNowThreshold: 0.35,
   maxSameExchange: 3,
   maxSamePrimaryDriver: 2,
+  maxFutureClockSkewMinutes: 5,
 } as const;
 
 export const DAILY_CASE_SIGNAL_WEIGHTS = {
@@ -27,6 +28,23 @@ export const DAILY_CASE_SIGNAL_WEIGHTS = {
 } as const;
 
 export type DailyCaseSignalKey = keyof typeof DAILY_CASE_SIGNAL_WEIGHTS;
+
+/**
+ * Maximum age before a signal stops contributing to today's selection.
+ * Stale inputs are treated as missing; their weights are never renormalized away.
+ */
+export const DAILY_CASE_SIGNAL_MAX_AGE_HOURS: Record<DailyCaseSignalKey, number> = {
+  freshReport: 24 * 7,
+  catalyst: 24 * 7,
+  valuationDislocation: 24 * 4,
+  estimateRevisions: 24 * 7,
+  technicalSetup: 24 * 4,
+  abnormalVolume: 24 * 4,
+  priceMove: 24 * 4,
+  fundamentalOpportunity: 24 * 14,
+  readerInterest: 24 * 7,
+  dataReadiness: 24 * 7,
+};
 
 export const DAILY_CASE_WHY_NOW_SIGNALS: readonly DailyCaseSignalKey[] = [
   "freshReport",
@@ -72,6 +90,7 @@ export type RankedDailyCase = {
   name: string | null;
   score: number;
   signalCoverage: number;
+  staleSignals: DailyCaseSignalKey[];
   primaryDriver: DailyCaseSignalKey;
   primaryDriverScore: number;
   contributingSignals: Array<{
@@ -89,6 +108,7 @@ export type BlockedDailyCase = {
   name: string | null;
   score: number;
   signalCoverage: number;
+  staleSignals: DailyCaseSignalKey[];
   blockers: DailyCaseBlocker[];
 };
 
@@ -112,6 +132,15 @@ export type DailyCaseSelectionConfig = {
   minSelectionScore?: number;
   maxSameExchange?: number;
   maxSamePrimaryDriver?: number;
+  now?: Date;
+};
+
+type ResolvedDailyCaseSelectionConfig = {
+  maxSelections: number;
+  minSelectionScore: number;
+  maxSameExchange: number;
+  maxSamePrimaryDriver: number;
+  now: Date;
 };
 
 const SIGNAL_KEYS = Object.keys(DAILY_CASE_SIGNAL_WEIGHTS) as DailyCaseSignalKey[];
@@ -139,7 +168,7 @@ function assertPositiveIntegerWithin(
   return value;
 }
 
-function validateConfig(config: DailyCaseSelectionConfig): Required<DailyCaseSelectionConfig> {
+function validateConfig(config: DailyCaseSelectionConfig): ResolvedDailyCaseSelectionConfig {
   const maxSelections = assertPositiveIntegerWithin(
     config.maxSelections ?? DAILY_CASE_SELECTION_BUDGET.defaultMaxSelections,
     DAILY_CASE_SELECTION_BUDGET.maxSelectionsPerDay,
@@ -159,11 +188,14 @@ function validateConfig(config: DailyCaseSelectionConfig): Required<DailyCaseSel
     config.minSelectionScore ?? DAILY_CASE_SELECTION_BUDGET.defaultMinSelectionScore,
     "minSelectionScore",
   );
+  const now = config.now ?? new Date();
+  if (!Number.isFinite(now.getTime())) throw new Error("daily_case_config_invalid:now");
   return {
     maxSelections,
     maxSameExchange,
     maxSamePrimaryDriver,
     minSelectionScore,
+    now,
   };
 }
 
@@ -220,15 +252,33 @@ function normalizeCandidate(candidate: DailyCaseSelectionCandidate): {
 
 function rankCandidate(
   candidate: ReturnType<typeof normalizeCandidate>,
-  minSelectionScore: number,
+  config: ResolvedDailyCaseSelectionConfig,
 ): { ranked: RankedDailyCase; blockers: DailyCaseBlocker[] } {
   let score = 0;
   let signalCoverage = 0;
   const contributions: RankedDailyCase["contributingSignals"] = [];
+  const staleSignals: DailyCaseSignalKey[] = [];
+  const freshSignals: Partial<Record<DailyCaseSignalKey, DailyCaseSelectionSignal>> = {};
+  const nowMs = config.now.getTime();
+  const futureLimitMs =
+    nowMs + DAILY_CASE_SELECTION_BUDGET.maxFutureClockSkewMinutes * 60_000;
 
   for (const key of SIGNAL_KEYS) {
     const signal = candidate.signals[key];
     if (!signal) continue;
+    const asOfMs = new Date(signal.asOf).getTime();
+    if (asOfMs > futureLimitMs) {
+      throw new Error(
+        `daily_case_signal_from_future:${identity(candidate.symbol, candidate.exchange)}:${key}`,
+      );
+    }
+    const ageHours = Math.max(0, (nowMs - asOfMs) / 3_600_000);
+    if (ageHours > DAILY_CASE_SIGNAL_MAX_AGE_HOURS[key]) {
+      staleSignals.push(key);
+      continue;
+    }
+
+    freshSignals[key] = signal;
     const weight = DAILY_CASE_SIGNAL_WEIGHTS[key];
     const weightedContribution = signal.value * weight;
     score += weightedContribution;
@@ -246,6 +296,7 @@ function rankCandidate(
     (a, b) =>
       b.weightedContribution - a.weightedContribution || a.signal.localeCompare(b.signal),
   );
+  staleSignals.sort();
 
   const whyNow = contributions
     .filter((item) => WHY_NOW_SET.has(item.signal))
@@ -268,11 +319,11 @@ function rankCandidate(
   if (!whyNow.some((item) => item.value >= DAILY_CASE_SELECTION_BUDGET.whyNowThreshold)) {
     blockers.push("missing_why_now_signal");
   }
-  const dataReadiness = candidate.signals.dataReadiness?.value ?? 0;
+  const dataReadiness = freshSignals.dataReadiness?.value ?? 0;
   if (dataReadiness < DAILY_CASE_SELECTION_BUDGET.minDataReadiness) {
     blockers.push("data_readiness_insufficient");
   }
-  if (score < minSelectionScore) blockers.push("selection_score_below_threshold");
+  if (score < config.minSelectionScore) blockers.push("selection_score_below_threshold");
 
   return {
     ranked: {
@@ -281,6 +332,7 @@ function rankCandidate(
       name: candidate.name,
       score,
       signalCoverage,
+      staleSignals,
       primaryDriver: primary.signal,
       primaryDriverScore: primary.weightedContribution,
       contributingSignals: contributions,
@@ -291,7 +343,7 @@ function rankCandidate(
 
 /**
  * Ranks editorial/research priority, never expected return or a trade recommendation.
- * Missing inputs reduce the score because intended signal weights are not renormalized.
+ * Missing or stale inputs reduce the score because intended signal weights are not renormalized.
  */
 export function selectDailyAnalysisCases(
   candidates: readonly DailyCaseSelectionCandidate[],
@@ -311,7 +363,7 @@ export function selectDailyAnalysisCases(
     if (seen.has(key)) throw new Error(`daily_case_duplicate_identity:${key}`);
     seen.add(key);
 
-    const { ranked, blockers } = rankCandidate(candidate, resolvedConfig.minSelectionScore);
+    const { ranked, blockers } = rankCandidate(candidate, resolvedConfig);
     if (blockers.length > 0) {
       blocked.push({
         symbol: ranked.symbol,
@@ -319,6 +371,7 @@ export function selectDailyAnalysisCases(
         name: ranked.name,
         score: ranked.score,
         signalCoverage: ranked.signalCoverage,
+        staleSignals: ranked.staleSignals,
         blockers,
       });
     } else {
