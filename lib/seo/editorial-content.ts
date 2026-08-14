@@ -36,6 +36,11 @@ export const NEWS_SEO_OVERRIDES: Record<string, NewsSeoOverride> = {
     seoDescription:
       "Embracer överraskar, Morrow Bank växer och RaySearch får nya USA-order. Här är de viktigaste svenska börsnyheterna den 13 augusti 2026.",
   },
+  "borssverige-14-augusti-2026": {
+    seoTitle: "Svenska börsen idag: Skanskaorder och BTS-prognos",
+    seoDescription:
+      "Skanska tar en order värd cirka 8,9 miljarder kronor och BTS höjer prognosen. Boozt och Björn Borg hör också till morgonens rapportbolag.",
+  },
   "borssverige-lunch-13-augusti-2026": {
     seoTitle: "BörsSverige Lunch 13 augusti: Embracer rusar efter rapporten",
     seoDescription:
@@ -104,6 +109,11 @@ export const NEWS_SEO_OVERRIDES: Record<string, NewsSeoOverride> = {
       "Norden i centrum 13 augusti 2026 – Maersk, Ørsted och Norges Bank i fokus",
     seoDescription:
       "De nordiska börserna går in i en rapporttung torsdag. Maersk, Ørsted, DNO och Kojamo står i fokus samtidigt som Norges Bank lämnar räntebesked.",
+  },
+  "norden-i-centrum-14-augusti-2026": {
+    seoTitle: "Nordenbörsen idag: Veidekke och DFDS i fokus",
+    seoDescription:
+      "Veidekke slår förväntningarna, DFDS höjer utsikterna och Posti växer igen. Här är de viktigaste nordiska börsnyheterna den 14 augusti 2026.",
   },
   "onsdagens-rapporter-tesla-ibm": {
     seoTitle: "Tesla och IBM rapporterar: det här bevakar marknaden",
