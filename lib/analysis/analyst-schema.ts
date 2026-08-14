@@ -10,11 +10,21 @@ export const divLabAnalystClaimSchema = z.object({
   sourceIds,
 });
 
-export const divLabAnalystFactorSchema = z.object({
-  assessment: z.enum(["strong", "neutral", "weak", "unknown"]),
-  rationale: shortText,
-  sourceIds: z.array(z.string().trim().min(1).max(240)).max(6),
-});
+export const divLabAnalystFactorSchema = z
+  .object({
+    assessment: z.enum(["strong", "neutral", "weak", "unknown"]),
+    rationale: shortText,
+    sourceIds: z.array(z.string().trim().min(1).max(240)).max(6),
+  })
+  .superRefine((factor, ctx) => {
+    if (factor.assessment !== "unknown" && factor.sourceIds.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["sourceIds"],
+        message: "non_unknown_factor_requires_source",
+      });
+    }
+  });
 
 export const divLabAnalystScenarioSchema = z
   .object({
