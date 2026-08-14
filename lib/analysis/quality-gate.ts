@@ -40,7 +40,7 @@ function validDate(value: string): Date | null {
 }
 
 function daysBetween(later: Date, earlier: Date): number {
-  return Math.max(0, (later.getTime() - earlier.getTime()) / 86_400_000);
+  return (later.getTime() - earlier.getTime()) / 86_400_000;
 }
 
 export function evaluateAnalysisQuality(input: {
@@ -78,7 +78,9 @@ export function evaluateAnalysisQuality(input: {
   const primarySources = traceableSources.filter((source) => source.primary);
   const freshPrimarySource = primarySources.some((source) => {
     const publishedAt = validDate(source.publishedAt);
-    return publishedAt ? daysBetween(input.now, publishedAt) <= 160 : false;
+    if (!publishedAt) return false;
+    const ageDays = daysBetween(input.now, publishedAt);
+    return ageDays >= -1 && ageDays <= 160;
   });
   if (!freshPrimarySource) {
     blockers.push("Ingen tillräckligt färsk primärkälla finns i analysunderlaget.");
@@ -98,13 +100,13 @@ export function evaluateAnalysisQuality(input: {
 
   const technicalHistoryCoverage = input.technicalSessions >= 120;
   if (!technicalHistoryCoverage) {
-    warnings.push("Teknisk historik är kortare än 120 handelsdagar.");
+    blockers.push("Teknisk historik är för kort för en publicerbar analys av trend, stöd och motstånd.");
   }
 
   const technicalLevelCoverage =
-    input.levels.supports.length > 0 || input.levels.resistances.length > 0;
+    input.levels.supports.length > 0 && input.levels.resistances.length > 0;
   if (!technicalLevelCoverage) {
-    warnings.push("Inga tillräckligt robusta stöd- eller motståndszoner kunde identifieras.");
+    blockers.push("Både ett robust stödområde och ett robust motståndsområde krävs för publicering.");
   }
 
   if (input.fundamental.unknowns.length > 0) {
