@@ -118,10 +118,15 @@ export function evaluateAnalysisQuality(input: {
     blockers.push("Teknisk historik är för kort för en publicerbar analys av trend, stöd och motstånd.");
   }
 
+  const resolvedResistance =
+    input.levels.resistances.length > 0 ||
+    input.levels.resistanceState === "no_validated_resistance_above";
   const technicalLevelCoverage =
-    input.levels.supports.length > 0 && input.levels.resistances.length > 0;
+    input.levels.supports.length > 0 && resolvedResistance;
   if (!technicalLevelCoverage) {
-    blockers.push("Både ett robust stödområde och ett robust motståndsområde krävs för publicering.");
+    blockers.push(
+      "Ett robust stödområde och antingen verifierat motstånd eller verifierat avsaknad av historiskt motstånd ovanför kurszonen krävs för publicering.",
+    );
   }
 
   if (input.fundamental.unknowns.length > 0) {
@@ -132,6 +137,11 @@ export function evaluateAnalysisQuality(input: {
   if (!input.valuation.trailing.freeCashFlowCurrencyCompatible) {
     warnings.push(
       "Trailing P/FCF och FCF-yield har utelämnats eftersom kassaflödesvalutan inte är verifierat kompatibel med börskursens valuta.",
+    );
+  }
+  if (input.levels.resistanceState === "no_validated_resistance_above") {
+    warnings.push(
+      "Inget verifierat historiskt motstånd finns ovanför aktuell kurszon i det analyserade prisfönstret; någon syntetisk motståndsnivå har inte skapats.",
     );
   }
 
