@@ -311,6 +311,7 @@ export function buildDivLabResearchPacket(input: {
     now,
     fundamental,
     valuation,
+    valuationProvenance,
     technicalSessions: technicalSnapshot.sessions,
     levels,
     sources,
