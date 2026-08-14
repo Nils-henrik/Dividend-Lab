@@ -71,6 +71,35 @@ describe("DivLab deep research packet", () => {
         returnOnInvestedCapital: 0.15,
         payoutRatio: 0.55,
         dividendPerShareTtm: 4.5,
+        historicalPeriods: [
+          {
+            period: "2023-12-31",
+            revenue: 9_200_000_000,
+            operatingIncome: 1_380_000_000,
+            netIncome: 980_000_000,
+            freeCashFlow: 1_100_000_000,
+            eps: 5.7,
+            sharesOutstanding: 172_000_000,
+          },
+          {
+            period: "2024-12-31",
+            revenue: 10_200_000_000,
+            operatingIncome: 1_600_000_000,
+            netIncome: 1_130_000_000,
+            freeCashFlow: 1_300_000_000,
+            eps: 6.5,
+            sharesOutstanding: 173_000_000,
+          },
+          {
+            period: "2025-12-31",
+            revenue: 11_100_000_000,
+            operatingIncome: 1_830_000_000,
+            netIncome: 1_300_000_000,
+            freeCashFlow: 1_500_000_000,
+            eps: 7.5,
+            sharesOutstanding: 174_000_000,
+          },
+        ],
       },
       valuationScenarios: [
         {
@@ -126,9 +155,11 @@ describe("DivLab deep research packet", () => {
 
     assert.equal(packet.version, "deep-research-v1");
     assert.ok((packet.fundamental.scorecard.overall ?? 0) > 0);
+    assert.ok((packet.fundamental.trends.revenueCagr ?? 0) > 0);
     assert.equal(packet.valuation.scenarios.length, 3);
     assert.ok(packet.technical.levels.supports.length >= 1);
     assert.ok(packet.technical.levels.resistances.length >= 1);
+    assert.equal(packet.qualityGate.checks.multiYearFundamentalCoverage, true);
     assert.equal(packet.qualityGate.publishable, true);
     assert.equal(packet.qualityGate.blockers.length, 0);
   });
@@ -155,6 +186,7 @@ describe("DivLab deep research packet", () => {
     });
 
     assert.equal(packet.qualityGate.publishable, false);
-    assert.ok(packet.qualityGate.blockers.length >= 2);
+    assert.equal(packet.qualityGate.checks.multiYearFundamentalCoverage, false);
+    assert.ok(packet.qualityGate.blockers.length >= 3);
   });
 });
