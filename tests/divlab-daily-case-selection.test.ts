@@ -67,7 +67,7 @@ describe("DivLab daily case selection", () => {
       },
     ];
 
-    const result = selectDailyAnalysisCases(candidates);
+    const result = selectDailyAnalysisCases(candidates, { maxSameExchange: 4 });
     assert.equal(result.version, "daily-case-selection-v1");
     assert.equal(result.selected.length, 4);
     assert.equal(result.blocked.length, 1);
