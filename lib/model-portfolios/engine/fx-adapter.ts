@@ -38,10 +38,13 @@ export function clearFxAdapterCache(): void {
 /**
  * Server-only FX adapter backed by Frankfurter (ECB reference rates).
  * Fail-closed: never invents a 1.0 rate for foreign currencies.
+ * An injected fetch implementation keeps higher-level research tests fully
+ * deterministic without changing existing portfolio callers.
  */
 export async function fetchFxRateToSek(
   base: SupportedFxCurrency,
   now = new Date(),
+  fetchImpl: typeof fetch = fetch,
 ): Promise<FxAdapterResult> {
   if (base === "SEK") {
     return {
@@ -64,7 +67,7 @@ export async function fetchFxRateToSek(
   }
 
   try {
-    const response = await fetch(`${FRANKFURTER_URL}?from=${encodeURIComponent(base)}&to=SEK`, {
+    const response = await fetchImpl(`${FRANKFURTER_URL}?from=${encodeURIComponent(base)}&to=SEK`, {
       method: "GET",
       headers: { Accept: "application/json" },
       next: { revalidate: 900 },
