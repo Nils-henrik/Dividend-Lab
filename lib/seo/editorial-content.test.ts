@@ -6,7 +6,6 @@ import { getNewsArticlesWithSlug } from "@/lib/news/get-articles";
 import {
   DIVLAB_EDITORIAL_AUTHOR,
   LEARNING_SEO_OVERRIDES,
-  NEWS_SEO_OVERRIDES,
 } from "@/lib/seo/editorial-content";
 
 describe("editorial search SEO", () => {
@@ -14,8 +13,9 @@ describe("editorial search SEO", () => {
     const articles = getNewsArticlesWithSlug();
     const titles = new Set<string>();
 
-    assert.equal(Object.keys(NEWS_SEO_OVERRIDES).length, articles.length);
-
+    // News articles may carry approved article-native SEO metadata or receive a
+    // legacy search override. The effective published output is the contract;
+    // requiring one override row per article rejects valid native metadata.
     for (const article of articles) {
       assert.ok(article.slug);
       assert.ok(article.seoTitle?.trim(), `missing seoTitle: ${article.slug}`);
