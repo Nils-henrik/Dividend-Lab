@@ -3,6 +3,7 @@ import type { CurrencyAwareFundamentalSnapshot } from "../lib/analysis/financial
 import { loadDivLabResearchInputs } from "../lib/analysis/research-loader";
 import { analyzeSupportResistance } from "../lib/analysis/support-resistance";
 import { fetchNordicPrimarySourceEvents } from "../lib/model-portfolios/engine/nordic-primary-sources";
+import { parseReportMetadata } from "../lib/model-portfolios/engine/report-metadata";
 
 const CASES = [
   { profile: "quality-large-cap", symbol: "ATCO-A", exchange: "ST", name: "Atlas Copco AB" },
@@ -10,14 +11,52 @@ const CASES = [
   { profile: "volatile-turnaround-event", symbol: "EMBRAC-B", exchange: "ST", name: "Embracer Group AB" },
 ] as const;
 
+function summarizeDiscovery(hit: Awaited<ReturnType<typeof fetchNordicPrimarySourceEvents>>[number]) {
+  const firstAttachment = hit.attachments[0] ?? null;
+  const metadata = parseReportMetadata({
+    title: hit.title,
+    category: hit.category,
+    fileName: firstAttachment?.fileName ?? null,
+  });
+  return {
+    title: hit.title,
+    category: hit.category,
+    publishedAt: hit.publishedAt,
+    reportMetadata: metadata,
+    attachments: hit.attachments.map((attachment) => ({
+      mimeType: attachment.mimeType,
+      fileName: attachment.fileName,
+      url: attachment.url,
+    })),
+  };
+}
+
 async function main() {
   const now = new Date();
   const cases = [];
 
   for (const item of CASES) {
+    // Primary-source discovery is intentionally independent from Yahoo. This lets
+    // us diagnose issuer-report coverage even on runners where Yahoo blocks the
+    // financial-statements session.
+    const rawDiscovery = await fetchNordicPrimarySourceEvents({
+      companyName: item.name,
+      symbol: item.symbol,
+      exchange: item.exchange,
+      now,
+      maxHits: 12,
+      queryCount: 20,
+    });
+
     const loaded = await loadDivLabResearchInputs({ ...item, now });
     if (!loaded.ok) {
-      cases.push({ profile: item.profile, symbol: item.symbol, ok: false, reason: loaded.reason });
+      cases.push({
+        profile: item.profile,
+        symbol: item.symbol,
+        ok: false,
+        reason: loaded.reason,
+        rawPrimaryDiscovery: rawDiscovery.map(summarizeDiscovery),
+      });
       continue;
     }
 
@@ -25,16 +64,6 @@ async function main() {
     const fundamental = analyzeFundamentals(snapshot);
     const levels = analyzeSupportResistance(loaded.value.history);
     const primarySources = loaded.value.sources.filter((source) => source.primary);
-    const rawDiscovery = item.symbol === "EMBRAC-B"
-      ? await fetchNordicPrimarySourceEvents({
-          companyName: item.name,
-          symbol: item.symbol,
-          exchange: item.exchange,
-          now,
-          maxHits: 12,
-          queryCount: 20,
-        })
-      : [];
 
     cases.push({
       profile: item.profile,
@@ -72,16 +101,7 @@ async function main() {
       nearestResistance: levels.resistances[0]
         ? { lower: levels.resistances[0].lower, upper: levels.resistances[0].upper, strength: levels.resistances[0].strength }
         : null,
-      rawPrimaryDiscovery: rawDiscovery.map((hit) => ({
-        title: hit.title,
-        category: hit.category,
-        publishedAt: hit.publishedAt,
-        attachments: hit.attachments.map((attachment) => ({
-          mimeType: attachment.mimeType,
-          fileName: attachment.fileName,
-          url: attachment.url,
-        })),
-      })),
+      rawPrimaryDiscovery: rawDiscovery.map(summarizeDiscovery),
     });
   }
 
