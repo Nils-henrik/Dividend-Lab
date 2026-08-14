@@ -1,11 +1,24 @@
 import { z } from "zod";
 
-export const DIVLAB_ANALYST_SCHEMA_VERSION = "analyst-v1" as const;
+export const DIVLAB_ANALYST_SCHEMA_VERSION = "analyst-v2" as const;
 
 const shortText = z.string().trim().min(1).max(900);
 const sourceIds = z.array(z.string().trim().min(1).max(240)).min(1).max(6);
 
 export const divLabAnalystClaimSchema = z.object({
+  text: shortText,
+  sourceIds,
+});
+
+export const divLabAnalystValuationClaimSchema = z.object({
+  measure: z.enum([
+    "pe",
+    "priceToFcf",
+    "fcfYield",
+    "enterpriseValue",
+    "evToEbit",
+    "evToEbitda",
+  ]),
   text: shortText,
   sourceIds,
 });
@@ -80,6 +93,7 @@ export const divLabAnalystDraftSchema = z
     investmentCase: z.array(divLabAnalystClaimSchema).min(2).max(6),
     latestReport: z.array(divLabAnalystClaimSchema).min(1).max(6),
     fundamentalInterpretation: z.array(divLabAnalystClaimSchema).min(2).max(8),
+    valuationInterpretation: z.array(divLabAnalystValuationClaimSchema).min(1).max(6),
     qualityFactors: z.object({
       competitiveAdvantage: divLabAnalystFactorSchema,
       pricingPower: divLabAnalystFactorSchema,
@@ -116,7 +130,16 @@ export const divLabAnalystDraftSchema = z
         message: "valuation_scenarios_must_include_unique_bear_base_bull",
       });
     }
+    const valuationMeasures = draft.valuationInterpretation.map((claim) => claim.measure);
+    if (new Set(valuationMeasures).size !== valuationMeasures.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["valuationInterpretation"],
+        message: "valuation_interpretation_measure_must_be_unique",
+      });
+    }
   });
 
 export type DivLabAnalystClaim = z.infer<typeof divLabAnalystClaimSchema>;
+export type DivLabAnalystValuationClaim = z.infer<typeof divLabAnalystValuationClaimSchema>;
 export type DivLabAnalystDraft = z.infer<typeof divLabAnalystDraftSchema>;
