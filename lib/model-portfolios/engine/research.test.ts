@@ -203,9 +203,9 @@ describe("model portfolio research funnel", () => {
   });
 
   it("does not give high-risk a synthetic size bonus when market cap is unknown", () => {
-    const { marketCapSek: _ignoredCap, ...baseWithoutCap } = base;
     const common = {
-      ...baseWithoutCap,
+      ...base,
+      marketCapSek: undefined,
       qualityScore: 0.8,
       balanceSheetScore: 0.8,
       valuationScore: 0.75,
