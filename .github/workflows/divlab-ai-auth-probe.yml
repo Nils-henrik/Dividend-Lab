@@ -1,0 +1,27 @@
+name: DivLab AI Auth Probe
+
+on:
+  push:
+    branches: [agent/divlab-deep-research-v1]
+    paths:
+      - ".github/workflows/divlab-ai-auth-probe.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    name: Report AI Gateway secret presence only
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    env:
+      AI_GATEWAY_API_KEY: ${{ secrets.AI_GATEWAY_API_KEY }}
+    steps:
+      - name: Presence check without secret output
+        shell: bash
+        run: |
+          if [ -n "${AI_GATEWAY_API_KEY:-}" ]; then
+            echo "AI_GATEWAY_API_KEY=PRESENT"
+          else
+            echo "AI_GATEWAY_API_KEY=ABSENT"
+          fi
