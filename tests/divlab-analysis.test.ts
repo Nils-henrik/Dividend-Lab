@@ -105,6 +105,7 @@ describe("DivLab deep research packet", () => {
         {
           name: "bear",
           label: "Negativt scenario",
+          currency: "SEK",
           eps: 7.2,
           peMultiple: 12,
           freeCashFlowPerShare: 7.5,
@@ -114,6 +115,7 @@ describe("DivLab deep research packet", () => {
         {
           name: "base",
           label: "Basscenario",
+          currency: "SEK",
           eps: 8.8,
           peMultiple: 16,
           freeCashFlowPerShare: 9.6,
@@ -123,6 +125,7 @@ describe("DivLab deep research packet", () => {
         {
           name: "bull",
           label: "Positivt scenario",
+          currency: "SEK",
           eps: 10.2,
           peMultiple: 19,
           freeCashFlowPerShare: 11.2,
@@ -157,6 +160,7 @@ describe("DivLab deep research packet", () => {
     assert.ok((packet.fundamental.scorecard.overall ?? 0) > 0);
     assert.ok((packet.fundamental.trends.revenueCagr ?? 0) > 0);
     assert.equal(packet.valuation.scenarios.length, 3);
+    assert.ok(packet.valuation.scenarios.every((scenario) => !scenario.currencyAssumed));
     assert.ok(packet.technical.levels.supports.length >= 1);
     assert.ok(packet.technical.levels.resistances.length >= 1);
     assert.equal(packet.qualityGate.checks.multiYearFundamentalCoverage, true);
@@ -179,7 +183,14 @@ describe("DivLab deep research packet", () => {
         epsTtm: 8.2,
       },
       valuationScenarios: [
-        { name: "base", label: "Basscenario", eps: 8.2, peMultiple: 15, assumptions: ["Ofullständigt underlag"] },
+        {
+          name: "base",
+          label: "Basscenario",
+          currency: "SEK",
+          eps: 8.2,
+          peMultiple: 15,
+          assumptions: ["Ofullständigt underlag"],
+        },
       ],
       sources: [],
       now: new Date("2026-08-14T16:00:00.000Z"),
