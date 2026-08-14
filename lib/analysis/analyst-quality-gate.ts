@@ -34,6 +34,7 @@ function allSourceIds(draft: DivLabAnalystDraft): string[] {
   collect(draft.investmentCase);
   collect(draft.latestReport);
   collect(draft.fundamentalInterpretation);
+  collect(draft.valuationInterpretation);
   collect(draft.catalysts);
   collect(draft.risks);
   collect(draft.contradictions);
