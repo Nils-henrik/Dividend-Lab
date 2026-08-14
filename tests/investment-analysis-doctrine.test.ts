@@ -10,8 +10,8 @@ import { DIVBRAIN_FINANCIAL_SAFETY_POLICY_TEXT_SV } from "../lib/divbrain/server
 import { buildModelPortfolioSystemMandate } from "../lib/model-portfolios/engine/mandates";
 
 describe("shared DivLab investment-analysis doctrine", () => {
-  it("is version 3 and keeps the original safety core", () => {
-    assert.equal(DIVLAB_INVESTMENT_ANALYSIS_DOCTRINE_VERSION, 3);
+  it("keeps doctrine v2 compatibility and the original safety core", () => {
+    assert.equal(DIVLAB_INVESTMENT_ANALYSIS_DOCTRINE_VERSION, 2);
     assert.match(DIVLAB_INVESTMENT_ANALYSIS_CORE_SV, /Okänd data är okänd/);
     assert.match(DIVLAB_INVESTMENT_ANALYSIS_CORE_SV, /inte ett neutralt 0,5-betyg/);
     assert.match(DIVLAB_INVESTMENT_ANALYSIS_CORE_SV, /Klassificera caset innan värderingen/);
@@ -39,7 +39,7 @@ describe("shared DivLab investment-analysis doctrine", () => {
     assert.match(DIVLAB_INVESTMENT_ANALYSIS_DOCTRINE_SV, /refinansieringsbehov/);
     assert.match(DIVLAB_INVESTMENT_ANALYSIS_DOCTRINE_SV, /Förväntningar/);
     assert.match(DIVLAB_INVESTMENT_ANALYSIS_DOCTRINE_SV, /Efteranalys/);
-    assert.match(DIVLAB_INVESTMENT_ANALYSIS_DOCTRINE_SV, /ANALYSDISCIPLIN V3/);
+    assert.match(DIVLAB_INVESTMENT_ANALYSIS_DOCTRINE_SV, /ANALYSDISCIPLIN V2/);
     assert.match(DIVLAB_INVESTMENT_ANALYSIS_DOCTRINE_SV, /Casetyp före värdering/);
     assert.match(DIVLAB_INVESTMENT_ANALYSIS_DOCTRINE_SV, /Scenario och falsifierbarhet/);
     assert.match(DIVLAB_INVESTMENT_ANALYSIS_DOCTRINE_SV, /Per-aktie-ekonomi och utspädning/);
