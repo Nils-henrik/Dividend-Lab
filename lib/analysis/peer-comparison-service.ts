@@ -23,12 +23,14 @@ export type LatestRegistryPeerComparisonResult =
  * Server-side bridge from the immutable registry to deterministic peer
  * comparison. It deliberately accepts an injected research loader so this layer
  * does not decide cache policy, external-call budget or whether a peer needs a
- * fresh Deep Research run.
+ * fresh Deep Research run. Hydration concurrency is bounded by the underlying
+ * contract (default 3, hard maximum 5).
  */
 export async function createLatestRegistryPeerComparison(input: {
   supabase: SupabaseClient;
   targetPacket: DivLabResearchPacket;
   loadPeerResearch: RegistryPeerResearchLoader;
+  maxConcurrency?: number;
 }): Promise<LatestRegistryPeerComparisonResult> {
   const registry = await loadLatestDivLabPeerSet({
     supabase: input.supabase,
@@ -47,6 +49,7 @@ export async function createLatestRegistryPeerComparison(input: {
     targetPacket: input.targetPacket,
     registry,
     loadPeerResearch: input.loadPeerResearch,
+    maxConcurrency: input.maxConcurrency,
   });
 
   return {
