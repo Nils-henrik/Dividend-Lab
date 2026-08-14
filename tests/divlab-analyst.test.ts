@@ -13,6 +13,7 @@ import type { DailyBar } from "../lib/model-portfolios/engine/eodhd";
 
 const REPORT_SOURCE = "report:q2";
 const MARKET_SOURCE = "market:test";
+const FUNDAMENTAL_SOURCE = "fundamental:test";
 
 function bars(): DailyBar[] {
   return Array.from({ length: 260 }, (_, index) => {
@@ -46,6 +47,7 @@ function factsPacket() {
       revenueGrowthYoy: 0.08,
       operatingMarginTtm: 0.16,
       profitMarginTtm: 0.1,
+      ebitTtm: 1_920,
       ebitdaTtm: 2_200,
       netIncomeTtm: 1_200,
       epsTtm: 8,
@@ -77,6 +79,15 @@ function factsPacket() {
         kind: "market_data",
         publisher: "Market provider",
         url: "https://example.com/market",
+        publishedAt: "2026-08-14T12:00:00.000Z",
+        verifiedAt: "2026-08-14T12:00:00.000Z",
+        primary: false,
+      },
+      {
+        id: FUNDAMENTAL_SOURCE,
+        kind: "fundamental_data",
+        publisher: "Fundamental provider",
+        url: "https://example.com/fundamentals",
         publishedAt: "2026-08-14T12:00:00.000Z",
         verifiedAt: "2026-08-14T12:00:00.000Z",
         primary: false,
@@ -120,6 +131,13 @@ function validDraft(): DivLabAnalystDraft {
     investmentCase: [claim("Lönsamheten är stabil."), claim("Kassaflödet stödjer investeringscaset.")],
     latestReport: [claim("Senaste rapporten visar fortsatt stabil utveckling.")],
     fundamentalInterpretation: [claim("Omsättningen växer över fler år."), claim("Per-aktie-utvecklingen är positiv.")],
+    valuationInterpretation: [
+      {
+        measure: "pe",
+        text: "Trailing P/E används endast som en verifierad del av värderingsbilden.",
+        sourceIds: [MARKET_SOURCE, FUNDAMENTAL_SOURCE],
+      },
+    ],
     qualityFactors: {
       competitiveAdvantage: factor("strong"),
       pricingPower: factor(),
@@ -179,7 +197,7 @@ function validDraft(): DivLabAnalystDraft {
   });
 }
 
-describe("DivLab analyst contract", () => {
+describe("DivLab analyst v2 contract", () => {
   it("accepts a source-grounded draft and converts assumptions for deterministic valuation", () => {
     const packet = factsPacket();
     const draft = validDraft();
@@ -197,6 +215,26 @@ describe("DivLab analyst contract", () => {
     assert.throws(
       () => validateAnalystDraftAgainstPacket({ packet, draft }),
       /divlab_analyst_unknown_source_id/,
+    );
+  });
+
+  it("rejects a valuation claim that omits a required provenance source", () => {
+    const packet = factsPacket();
+    const draft = validDraft();
+    draft.valuationInterpretation[0]!.sourceIds = [MARKET_SOURCE];
+    assert.throws(
+      () => validateAnalystDraftAgainstPacket({ packet, draft }),
+      new RegExp(`divlab_analyst_valuation_source_missing:pe:${FUNDAMENTAL_SOURCE}`),
+    );
+  });
+
+  it("rejects a valuation claim for a measure that is unavailable", () => {
+    const packet = factsPacket();
+    const draft = validDraft();
+    draft.valuationInterpretation[0]!.measure = "evToEbitda";
+    assert.throws(
+      () => validateAnalystDraftAgainstPacket({ packet, draft }),
+      /divlab_analyst_valuation_measure_unavailable:evToEbitda/,
     );
   });
 
@@ -219,6 +257,18 @@ describe("DivLab analyst contract", () => {
         draft.valuationScenarios[0],
         draft.valuationScenarios[0],
         draft.valuationScenarios[2],
+      ],
+    };
+    assert.equal(divLabAnalystDraftSchema.safeParse(raw).success, false);
+  });
+
+  it("rejects duplicate structured valuation measures at schema level", () => {
+    const draft = validDraft();
+    const raw = {
+      ...draft,
+      valuationInterpretation: [
+        draft.valuationInterpretation[0],
+        draft.valuationInterpretation[0],
       ],
     };
     assert.equal(divLabAnalystDraftSchema.safeParse(raw).success, false);
