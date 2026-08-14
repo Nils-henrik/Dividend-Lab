@@ -6,6 +6,7 @@ import { buildDivLabResearchPacket } from "../lib/analysis/deep-research";
 import type { CurrencyAwareFundamentalSnapshot } from "../lib/analysis/financial-statement-normalizer";
 import { deriveAnalysisFxConversion } from "../lib/analysis/fx";
 import type { DailyBar } from "../lib/model-portfolios/engine/eodhd";
+import { operatingCompanyClassification } from "./helpers/divlab-company-classification";
 
 const REPORT_ID = "report:q2";
 const MARKET_ID = "market:test";
@@ -77,6 +78,7 @@ function packet() {
     currentPrice: 110,
     history: bars(),
     fundamentals,
+    companyClassification: operatingCompanyClassification(FUNDAMENTAL_ID),
     fxConversion: fx,
     valuationScenarios: [],
     sources: [
