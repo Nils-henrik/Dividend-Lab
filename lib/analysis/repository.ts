@@ -21,9 +21,7 @@ function slugify(value: string): string {
 }
 
 export function defaultAnalysisSlug(packet: DivLabResearchPacket): string {
-  const instrument = slugify(packet.instrument.name) || slugify(packet.instrument.symbol);
-  const date = packet.createdAt.slice(0, 10);
-  return `${instrument}-${date}`;
+  return slugify(packet.instrument.name) || slugify(packet.instrument.symbol);
 }
 
 function readPersistResult(value: unknown): PersistedDivLabAnalysisVersion {
