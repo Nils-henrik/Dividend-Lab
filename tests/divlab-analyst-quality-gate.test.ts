@@ -4,6 +4,7 @@ import { evaluateAnalystContentQuality } from "../lib/analysis/analyst-quality-g
 import { divLabAnalystDraftSchema } from "../lib/analysis/analyst-schema";
 import { buildDivLabResearchPacket } from "../lib/analysis/deep-research";
 import type { DailyBar } from "../lib/model-portfolios/engine/eodhd";
+import { operatingCompanyClassification } from "./helpers/divlab-company-classification";
 
 const REPORT_ID = "report:q2";
 const MARKET_ID = "market:test";
@@ -54,6 +55,7 @@ function packet(values = { bear: 80, base: 120, bull: 160 }) {
         { period: "2025-12-31", revenue: 1_100 },
       ],
     },
+    companyClassification: operatingCompanyClassification(FUNDAMENTAL_ID),
     valuationScenarios: [
       {
         name: "bear",
