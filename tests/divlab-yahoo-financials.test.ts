@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { parseYahooFinancialStatements } from "../lib/analysis/yahoo-financials";
+import { parseYahooFinancialStatements } from "../lib/analysis/financial-statement-normalizer";
 
 const raw = (value: number) => ({ raw: value });
 const date = (value: string) => ({
@@ -142,6 +142,7 @@ describe("DivLab Yahoo financial statement normalization", () => {
     assert.equal(snapshot.epsTtm, 4.55);
     assert.equal(snapshot.operatingMarginTtm, 0.155);
     assert.equal(snapshot.payoutRatio, 0.42);
+    assert.ok(Math.abs((snapshot.sharesOutstandingGrowthYoy ?? 0) - (100 / 98 - 1)) < 1e-9);
     assert.equal(snapshot.historicalPeriods?.length, 2);
     assert.equal(snapshot.historicalPeriods?.[0]?.freeCashFlow, 40);
     assert.equal(snapshot.historicalPeriods?.[0]?.revenue, 400);
