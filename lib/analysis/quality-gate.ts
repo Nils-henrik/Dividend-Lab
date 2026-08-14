@@ -26,6 +26,7 @@ export type AnalysisQualityGate = {
   warnings: string[];
   checks: {
     fundamentalCoverage: boolean;
+    multiYearFundamentalCoverage: boolean;
     freshPrimarySource: boolean;
     sourceTraceability: boolean;
     valuationScenarioCoverage: boolean;
@@ -56,9 +57,17 @@ export function evaluateAnalysisQuality(input: {
 
   const fundamentalCoverage =
     input.fundamental.scorecard.coverage >= 0.6 &&
-    input.fundamental.unknowns.length <= 4;
+    input.fundamental.unknowns.filter((item) => !item.startsWith("flerårig fundamental trend")).length <= 4;
   if (!fundamentalCoverage) {
     blockers.push("Fundamental täckning är för låg för en publicerbar DivLab Analys.");
+  }
+
+  const multiYearFundamentalCoverage =
+    input.fundamental.trends.periodsAnalyzed >= 3 &&
+    (input.fundamental.trends.yearsCovered ?? 0) >= 1.5 &&
+    input.fundamental.trends.revenueCagr !== null;
+  if (!multiYearFundamentalCoverage) {
+    blockers.push("Minst tre jämförbara årsperioder krävs för publicerbar flerårig fundamental trendanalys.");
   }
 
   const traceableSources = input.sources.filter(
@@ -117,6 +126,7 @@ export function evaluateAnalysisQuality(input: {
 
   const checks = {
     fundamentalCoverage,
+    multiYearFundamentalCoverage,
     freshPrimarySource,
     sourceTraceability,
     valuationScenarioCoverage,
