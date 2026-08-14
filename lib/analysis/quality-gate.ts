@@ -119,7 +119,7 @@ export function evaluateAnalysisQuality(input: {
   const requiredScenarios = requiredScenarioNames.map((name) =>
     input.valuation.scenarios.find((scenario) => scenario.name === name),
   );
-  const valuationScenarioCoverage = requiredScenarios.every(
+  const valuationScenarioCompleteness = requiredScenarios.every(
     (scenario) =>
       Boolean(scenario) &&
       scenario!.valuePerShare !== null &&
@@ -127,9 +127,21 @@ export function evaluateAnalysisQuality(input: {
       scenario!.currencyCompatible &&
       !scenario!.currencyAssumed,
   );
-  if (!valuationScenarioCoverage) {
+  const [bearScenario, baseScenario, bullScenario] = requiredScenarios;
+  const valuationScenarioOrdering =
+    valuationScenarioCompleteness &&
+    bearScenario!.valuePerShare! <= baseScenario!.valuePerShare! &&
+    baseScenario!.valuePerShare! <= bullScenario!.valuePerShare!;
+  const valuationScenarioCoverage =
+    valuationScenarioCompleteness && valuationScenarioOrdering;
+
+  if (!valuationScenarioCompleteness) {
     blockers.push(
       "Bear/Base/Bull-värderingen måste vara komplett med explicita antaganden och verifierad valuta som matchar börskursen.",
+    );
+  } else if (!valuationScenarioOrdering) {
+    blockers.push(
+      "Bear/Base/Bull-värderingen är logiskt inverterad: Bear får inte överstiga Base och Base får inte överstiga Bull.",
     );
   }
 
