@@ -8,6 +8,7 @@ import {
 import { buildDailyCaseMarketShortlistCandidate } from "./daily-case-market-candidate-builder";
 import {
   shortlistDailyCasePreflights,
+  type DailyCaseMarketShortlistCandidate,
   type DailyCaseMarketShortlistConfig,
   type DailyCaseMarketShortlistResult,
 } from "./daily-case-market-shortlist";
@@ -16,6 +17,8 @@ export const DIVLAB_DAILY_CASE_FUNNEL_VERSION = "daily-case-funnel-v1" as const;
 
 export type DailyCaseFunnelResult = {
   version: typeof DIVLAB_DAILY_CASE_FUNNEL_VERSION;
+  /** Exact source-backed candidates passed into the cheap 300 -> 20 selector. */
+  marketCandidateAudit: DailyCaseMarketShortlistCandidate[];
   marketShortlist: DailyCaseMarketShortlistResult;
   desk: DailyCaseDeskResult;
   stats: {
@@ -85,6 +88,7 @@ export async function runDailyCaseSelectionFunnel(input: {
 
   return {
     version: DIVLAB_DAILY_CASE_FUNNEL_VERSION,
+    marketCandidateAudit: marketCandidates,
     marketShortlist,
     desk,
     stats: {
