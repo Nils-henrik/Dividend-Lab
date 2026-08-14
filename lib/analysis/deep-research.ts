@@ -1,21 +1,26 @@
 import { analyzeTechnicalSignals, type TechnicalAnalysisSnapshot } from "@/lib/model-portfolios/engine/technical-analysis";
 import type { DailyBar } from "@/lib/model-portfolios/engine/eodhd";
 import type { AnalysisEvidence } from "./evidence";
+import type { CurrencyAwareFundamentalSnapshot } from "./financial-statement-normalizer";
+import {
+  normalizeValuationInput,
+  type AnalysisFxConversion,
+  type NormalizedValuationInput,
+} from "./fx";
 import {
   analyzeFundamentals,
   type FundamentalAnalysis,
   type FundamentalSnapshot,
 } from "./fundamental-analysis";
-import type { CurrencyAwareFundamentalSnapshot } from "./financial-statement-normalizer";
-import {
-  analyzeSupportResistance,
-  type SupportResistanceAnalysis,
-} from "./support-resistance";
 import {
   evaluateAnalysisQuality,
   type AnalysisQualityGate,
   type AnalysisSource,
 } from "./quality-gate";
+import {
+  analyzeSupportResistance,
+  type SupportResistanceAnalysis,
+} from "./support-resistance";
 import {
   buildValuationAnalysis,
   type ValuationAnalysis,
@@ -23,6 +28,11 @@ import {
 } from "./valuation";
 
 export const DIVLAB_DEEP_RESEARCH_VERSION = "deep-research-v1" as const;
+
+export type DivLabValuationInputs = {
+  epsTtm: NormalizedValuationInput;
+  freeCashFlowPerShareTtm: NormalizedValuationInput;
+};
 
 export type DivLabResearchPacket = {
   version: typeof DIVLAB_DEEP_RESEARCH_VERSION;
@@ -39,6 +49,10 @@ export type DivLabResearchPacket = {
   fundamentalSnapshot: FundamentalSnapshot;
   /** Deterministic interpretation/scorecard derived from fundamentalSnapshot. */
   fundamental: FundamentalAnalysis;
+  /** Optional reporting->market conversion. Raw accounting facts remain untouched. */
+  fxConversion: AnalysisFxConversion | null;
+  /** Per-share values actually eligible for valuation in the market currency. */
+  valuationInputs: DivLabValuationInputs;
   valuation: ValuationAnalysis;
   technical: {
     snapshot: TechnicalAnalysisSnapshot;
@@ -71,6 +85,16 @@ function cloneFundamentalSnapshot(
   };
 }
 
+function cloneFxConversion(
+  conversion: AnalysisFxConversion | null | undefined,
+): AnalysisFxConversion | null {
+  if (!conversion) return null;
+  return {
+    ...conversion,
+    sourceIds: [...conversion.sourceIds],
+  };
+}
+
 function currencyMetadata(snapshot: FundamentalSnapshot): {
   reportingCurrency: string | null;
   epsTtmCurrency: string | null;
@@ -97,6 +121,19 @@ function currencyMetadata(snapshot: FundamentalSnapshot): {
   };
 }
 
+function validateFxSources(
+  conversion: AnalysisFxConversion | null,
+  sources: readonly AnalysisSource[],
+): void {
+  if (!conversion) return;
+  const knownSourceIds = new Set(sources.map((source) => source.id));
+  for (const sourceId of conversion.sourceIds) {
+    if (!knownSourceIds.has(sourceId)) {
+      throw new Error(`analysis_fx_source_missing:${sourceId}`);
+    }
+  }
+}
+
 export function buildDivLabResearchPacket(input: {
   symbol: string;
   exchange: string;
@@ -105,6 +142,7 @@ export function buildDivLabResearchPacket(input: {
   currentPrice: number;
   history: readonly DailyBar[];
   fundamentals: FundamentalSnapshot;
+  fxConversion?: AnalysisFxConversion | null;
   valuationScenarios: ValuationScenarioInput[];
   sources: readonly AnalysisSource[];
   evidence?: readonly AnalysisEvidence[];
@@ -118,26 +156,52 @@ export function buildDivLabResearchPacket(input: {
   }
 
   const now = input.now ?? new Date();
+  const marketCurrency = input.currency.trim().toUpperCase();
+  const sources = input.sources.map((source) => ({ ...source }));
+  const evidence = (input.evidence ?? []).map((item) => ({ ...item }));
+  const fxConversion = cloneFxConversion(input.fxConversion);
+  validateFxSources(fxConversion, sources);
+
   const fundamentalSnapshot = cloneFundamentalSnapshot(
     input.fundamentals,
-    input.currency,
+    marketCurrency,
     input.currentPrice,
   );
   const fundamental = analyzeFundamentals(fundamentalSnapshot);
   const technicalSnapshot = analyzeTechnicalSignals(input.history);
   const levels = analyzeSupportResistance(input.history);
   const currencies = currencyMetadata(fundamentalSnapshot);
+
+  const valuationInputs: DivLabValuationInputs = {
+    epsTtm: normalizeValuationInput({
+      value: fundamental.metrics.epsTtm,
+      sourceCurrency: currencies.epsTtmCurrency,
+      marketCurrency,
+      fxConversion,
+    }),
+    freeCashFlowPerShareTtm: normalizeValuationInput({
+      value: fundamental.metrics.freeCashFlowPerShare,
+      sourceCurrency: currencies.reportingCurrency,
+      marketCurrency,
+      fxConversion,
+    }),
+  };
+
+  // Preserve the raw source currency in trailing metadata when no verified FX
+  // conversion exists, while using converted values only when they are audited.
   const valuation = buildValuationAnalysis({
     currentPrice: input.currentPrice,
-    currency: input.currency,
-    epsTtm: fundamental.metrics.epsTtm,
-    epsCurrency: currencies.epsTtmCurrency,
-    freeCashFlowPerShareTtm: fundamental.metrics.freeCashFlowPerShare,
-    freeCashFlowPerShareCurrency: currencies.reportingCurrency,
+    currency: marketCurrency,
+    epsTtm: valuationInputs.epsTtm.value ?? fundamental.metrics.epsTtm,
+    epsCurrency: valuationInputs.epsTtm.currency ?? currencies.epsTtmCurrency,
+    freeCashFlowPerShareTtm:
+      valuationInputs.freeCashFlowPerShareTtm.value ??
+      fundamental.metrics.freeCashFlowPerShare,
+    freeCashFlowPerShareCurrency:
+      valuationInputs.freeCashFlowPerShareTtm.currency ?? currencies.reportingCurrency,
     scenarios: input.valuationScenarios,
   });
-  const sources = input.sources.map((source) => ({ ...source }));
-  const evidence = (input.evidence ?? []).map((item) => ({ ...item }));
+
   const qualityGate = evaluateAnalysisQuality({
     now,
     fundamental,
@@ -154,7 +218,7 @@ export function buildDivLabResearchPacket(input: {
       symbol: input.symbol.trim().toUpperCase(),
       exchange: input.exchange.trim().toUpperCase(),
       name: input.name.trim(),
-      currency: input.currency.trim().toUpperCase(),
+      currency: marketCurrency,
       currentPrice: input.currentPrice,
     },
     createdAt: now.toISOString(),
@@ -168,6 +232,8 @@ export function buildDivLabResearchPacket(input: {
     ),
     fundamentalSnapshot,
     fundamental,
+    fxConversion,
+    valuationInputs,
     valuation,
     technical: {
       snapshot: technicalSnapshot,
