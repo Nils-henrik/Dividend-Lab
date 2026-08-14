@@ -33,10 +33,22 @@ export type DailyCaseDeskMissingPreflight = {
   reason: "company_profile_preflight_missing";
 };
 
+export type DailyCaseDeskPreflightAudit = {
+  symbol: string;
+  exchange: string;
+  yahooSymbol: string;
+  status: "ready" | "missing";
+  preflight: CompanyProfilePreflight | null;
+};
+
 export type DailyCaseDeskResult = {
   version: typeof DIVLAB_DAILY_CASE_DESK_VERSION;
   selection: DailyCaseSelectionResult;
   missingPreflights: DailyCaseDeskMissingPreflight[];
+  /** Exact methodology-preflight outputs used by this run. */
+  preflightAudit: DailyCaseDeskPreflightAudit[];
+  /** Exact source-backed candidates passed into the deterministic 20 -> 4 selector. */
+  selectionCandidateAudit: DailyCaseSelectionCandidate[];
   stats: {
     shortlisted: number;
     preflightReady: number;
@@ -103,11 +115,20 @@ export async function runDailyCaseDeskSelection(input: {
 
   const selectionCandidates: DailyCaseSelectionCandidate[] = [];
   const missingPreflights: DailyCaseDeskMissingPreflight[] = [];
+  const preflightAudit: DailyCaseDeskPreflightAudit[] = [];
 
   for (const result of preflightResults) {
     const key = `${result.symbol}@${result.exchange}`;
     const sourceInput = inputIndex.get(key);
     if (!sourceInput) throw new Error(`daily_case_desk_internal_identity_missing:${key}`);
+
+    preflightAudit.push({
+      symbol: result.symbol,
+      exchange: result.exchange,
+      yahooSymbol: result.yahooSymbol,
+      status: result.status,
+      preflight: result.preflight,
+    });
 
     if (!result.preflight) {
       missingPreflights.push({
@@ -131,10 +152,7 @@ export async function runDailyCaseDeskSelection(input: {
     );
   }
 
-  const selection = selectDailyAnalysisCases(
-    selectionCandidates,
-    input.config?.selection,
-  );
+  const selection = selectDailyAnalysisCases(selectionCandidates, input.config?.selection);
   missingPreflights.sort(
     (a, b) => a.symbol.localeCompare(b.symbol) || a.exchange.localeCompare(b.exchange),
   );
@@ -143,6 +161,8 @@ export async function runDailyCaseDeskSelection(input: {
     version: DIVLAB_DAILY_CASE_DESK_VERSION,
     selection,
     missingPreflights,
+    preflightAudit,
+    selectionCandidateAudit: selectionCandidates,
     stats: {
       shortlisted: input.candidates.length,
       preflightReady: selectionCandidates.length,
