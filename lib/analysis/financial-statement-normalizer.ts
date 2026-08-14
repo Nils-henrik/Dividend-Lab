@@ -2,6 +2,13 @@ import type { FundamentalPeriod, FundamentalSnapshot } from "./fundamental-analy
 
 type UnknownRecord = Record<string, unknown>;
 
+export type CurrencyAwareFundamentalSnapshot = FundamentalSnapshot & {
+  /** Currency used by the provider's accounting statement values, when known. */
+  reportingCurrency?: string | null;
+  /** Currency of epsTtm. Yahoo trailing EPS is quote-currency; derived EPS follows reporting currency. */
+  epsTtmCurrency?: string | null;
+};
+
 function record(value: unknown): UnknownRecord | null {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as UnknownRecord)
@@ -23,6 +30,20 @@ function finiteNumber(value: unknown): number | null {
   const wrapped = record(value);
   if (wrapped) return finiteNumber(wrapped.raw);
   return null;
+}
+
+function textValue(value: unknown): string | null {
+  if (typeof value === "string" && value.trim()) return value.trim();
+  const wrapped = record(value);
+  if (!wrapped) return null;
+  if (typeof wrapped.raw === "string" && wrapped.raw.trim()) return wrapped.raw.trim();
+  if (typeof wrapped.fmt === "string" && wrapped.fmt.trim()) return wrapped.fmt.trim();
+  return null;
+}
+
+function currencyCode(value: unknown): string | null {
+  const normalized = textValue(value)?.toUpperCase() ?? "";
+  return /^[A-Z]{3}$/.test(normalized) ? normalized : null;
 }
 
 function positive(value: unknown): number | null {
@@ -120,11 +141,20 @@ function buildAnnualPeriods(input: {
       ]);
       const capex = capexSigned(cashRow);
       const providedFcf = firstNumber(cashRow, ["freeCashFlow"]);
-      const shares = firstNumber(balanceRow, [
-        "ordinarySharesNumber",
-        "shareIssued",
-        "commonStockSharesOutstanding",
-      ]);
+      // Average diluted/basic shares belong to the period and are preferred for
+      // per-share trend work. Closing balance-sheet shares are a safe fallback.
+      const shares =
+        firstNumber(incomeRow, [
+          "dilutedAverageShares",
+          "basicAverageShares",
+          "weightedAverageShsOutDil",
+          "weightedAverageShsOut",
+        ]) ??
+        firstNumber(balanceRow, [
+          "ordinarySharesNumber",
+          "shareIssued",
+          "commonStockSharesOutstanding",
+        ]);
       const netIncome = firstNumber(incomeRow, [
         "netIncome",
         "netIncomeCommonStockholders",
@@ -172,6 +202,12 @@ export function parseYahooFinancialStatements(input: {
   const keyStats = moduleRecord(result, "defaultKeyStatistics");
   const price = moduleRecord(result, "price");
   const summary = moduleRecord(result, "summaryDetail");
+
+  const marketCurrency = input.currency.trim().toUpperCase();
+  const reportingCurrency =
+    currencyCode(financialData?.financialCurrency) ??
+    currencyCode(result.financialCurrency) ??
+    null;
 
   const historicalPeriods = buildAnnualPeriods({
     income: incomeAnnual,
@@ -225,7 +261,9 @@ export function parseYahooFinancialStatements(input: {
   const operatingMarginTtm = firstNumber(financialData, ["operatingMargins"]) ?? (revenueTtm && operatingIncomeTtm !== null ? operatingIncomeTtm / revenueTtm : null);
   const profitMarginTtm = firstNumber(financialData, ["profitMargins"]) ?? (revenueTtm && netIncomeTtm !== null ? netIncomeTtm / revenueTtm : null);
   const ebitdaTtm = firstNumber(financialData, ["ebitda"]);
-  const epsTtm = firstNumber(keyStats, ["trailingEps"]) ?? (netIncomeTtm !== null && sharesOutstanding ? netIncomeTtm / sharesOutstanding : null);
+  const yahooTrailingEps = firstNumber(keyStats, ["trailingEps"]);
+  const epsTtm = yahooTrailingEps ?? (netIncomeTtm !== null && sharesOutstanding ? netIncomeTtm / sharesOutstanding : null);
+  const epsTtmCurrency = yahooTrailingEps !== null ? marketCurrency : reportingCurrency;
 
   const marketCap = positive(price?.marketCap) ?? positive(summary?.marketCap);
   const payoutRatio = firstNumber(summary, ["payoutRatio"]);
@@ -245,7 +283,9 @@ export function parseYahooFinancialStatements(input: {
 
   return {
     asOf,
-    currency: input.currency.trim().toUpperCase(),
+    currency: marketCurrency,
+    reportingCurrency,
+    epsTtmCurrency,
     price: input.currentPrice,
     marketCap,
     revenueTtm,
@@ -271,5 +311,5 @@ export function parseYahooFinancialStatements(input: {
     payoutRatio,
     dividendPerShareTtm: dividendRate,
     historicalPeriods,
-  };
+  } as CurrencyAwareFundamentalSnapshot;
 }
