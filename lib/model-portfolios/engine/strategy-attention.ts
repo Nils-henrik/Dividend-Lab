@@ -42,6 +42,7 @@ export type AttentionReasonTag =
   | "rejected_momentum_only"
   | "rejected_insufficient_alignment"
   | "rejected_volatility_only"
+  | "rejected_technical_only"
   | "rejected_generic_large_cap"
   | "rejected_non_income"
   | "rejected_yield_trap_risk";
@@ -277,6 +278,16 @@ function balancedNewEntry(candidate: ResearchCandidate): NewEntryAttentionDecisi
   return { eligible: true, reasons: ["new_entry_eligible", "garp_alignment"] };
 }
 
+function hasKnownNonTechnicalCompanyEvidence(candidate: ResearchCandidate): boolean {
+  return (
+    knownUnitInterval(candidate.qualityScore) !== null ||
+    knownUnitInterval(candidate.valuationScore) !== null ||
+    knownUnitInterval(candidate.earningsRevisionScore) !== null ||
+    knownUnitInterval(candidate.catalystScore) !== null ||
+    knownUnitInterval(candidate.balanceSheetScore) !== null
+  );
+}
+
 function highRiskNewEntry(candidate: ResearchCandidate): NewEntryAttentionDecision {
   const catalyst = knownUnitInterval(candidate.catalystScore);
   const revisions = knownUnitInterval(candidate.earningsRevisionScore);
@@ -290,12 +301,22 @@ function highRiskNewEntry(candidate: ResearchCandidate): NewEntryAttentionDecisi
     return { eligible: false, reasons: ["rejected_falling_knife"] };
   }
 
+  const hasCompanyEvidence = hasKnownNonTechnicalCompanyEvidence(candidate);
+  const technicalPackage =
+    aligned(breakout, 0.6) ||
+    (aligned(volume, 0.6) && aligned(breakout, 0.52));
+
+  // Unknown company/fundamental evidence is not weak evidence. A new entry with
+  // no verified non-technical case must not pass on breakout/volume/momentum alone.
+  if (!hasCompanyEvidence && recovery.state !== "qualified") {
+    return { eligible: false, reasons: ["rejected_technical_only"] };
+  }
+
   const hasAsymmetricEvidence =
     aligned(catalyst, 0.58) ||
     aligned(revisions, 0.58) ||
-    aligned(breakout, 0.6) ||
-    (aligned(volume, 0.6) && aligned(breakout, 0.52)) ||
-    recovery.state === "qualified";
+    recovery.state === "qualified" ||
+    (hasCompanyEvidence && technicalPackage);
 
   if (volatility !== null && volatility >= 0.4 && !hasAsymmetricEvidence) {
     return { eligible: false, reasons: ["rejected_volatility_only"] };

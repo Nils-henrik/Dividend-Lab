@@ -245,6 +245,25 @@ const MISSING_FUNDAMENTALS: ResearchCandidate = {
   technicalAnalysis: technical({ trend: 0.84, breakout: 0.86, distanceFromHigh: -0.04 }),
 };
 
+const TECHNICAL_ONLY: ResearchCandidate = {
+  symbol: "TECHONLY",
+  exchange: "ST",
+  marketCapSek: 8_000_000_000,
+  avgDailyTurnoverSek: 20_000_000,
+  volatility20d: 0.45,
+  priceMomentum20d: 0.22,
+  priceMomentum60d: 0.18,
+  technicalAnalysis: technical({
+    rsi14: 72,
+    breakout: 0.92,
+    momentum: 0.9,
+    volume: 0.88,
+    trend: 0.86,
+    distanceFromHigh: -0.03,
+    composite: 0.84,
+  }),
+};
+
 function newEntrySymbols(candidates: readonly AttentionCandidate[]): string[] {
   return candidates
     .filter((item) => item.attentionEligibility === "new_entry")
@@ -503,6 +522,35 @@ describe("model portfolio strategy attention", () => {
 
     const highRiskDecision = evaluateNewEntryAttention(MISSING_FUNDAMENTALS, "high_risk");
     assert.equal(highRiskDecision.eligible, true);
+  });
+
+  it("21. rejects a technical-only Högrisk new entry and keeps Conservative/Medelrisk fail-conservative", () => {
+    const highRiskDecision = evaluateNewEntryAttention(TECHNICAL_ONLY, "high_risk");
+    const conservativeDecision = evaluateNewEntryAttention(TECHNICAL_ONLY, "conservative");
+    const balancedDecision = evaluateNewEntryAttention(TECHNICAL_ONLY, "balanced");
+    const dividendDecision = evaluateNewEntryAttention(TECHNICAL_ONLY, "dividend");
+
+    assert.equal(highRiskDecision.eligible, false);
+    assert.ok(highRiskDecision.reasons.includes("rejected_technical_only"));
+    assert.equal(conservativeDecision.eligible, false);
+    assert.ok(conservativeDecision.reasons.includes("rejected_missing_quality"));
+    assert.equal(balancedDecision.eligible, false);
+    assert.ok(
+      balancedDecision.reasons.includes("rejected_missing_quality") ||
+        balancedDecision.reasons.includes("rejected_insufficient_alignment"),
+    );
+    assert.equal(dividendDecision.eligible, false);
+    assert.ok(dividendDecision.reasons.includes("rejected_non_income"));
+  });
+
+  it("22. still lets Högrisk take known-weak quality with known-strong catalyst/revisions while Medelrisk rejects the dual-weak floor", () => {
+    const highRiskDecision = evaluateNewEntryAttention(WEAK_FUNDAMENTALS, "high_risk");
+    const balancedDecision = evaluateNewEntryAttention(WEAK_FUNDAMENTALS, "balanced");
+    assert.equal(highRiskDecision.eligible, true);
+    assert.ok(highRiskDecision.reasons.includes("catalyst_revision_fit"));
+    assert.ok(!highRiskDecision.reasons.includes("rejected_technical_only"));
+    assert.equal(balancedDecision.eligible, false);
+    assert.ok(balancedDecision.reasons.includes("rejected_weak_fundamentals"));
   });
 
   it("15. does not raise current AI, research or external-call budget constants", () => {

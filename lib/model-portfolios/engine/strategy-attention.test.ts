@@ -153,6 +153,46 @@ describe("strategy attention policies", () => {
     assert.ok(fresh.rejectedNewEntries.some((item) => item.symbol === "QUALITY" && item.reasons.includes("rejected_non_income")));
   });
 
+  it("rejects a technical-only Högrisk new entry when all company evidence is unknown", () => {
+    const decision = evaluateNewEntryAttention(
+      {
+        symbol: "TECHONLY",
+        exchange: "ST",
+        marketCapSek: 8_000_000_000,
+        avgDailyTurnoverSek: 20_000_000,
+        volatility20d: 0.45,
+        priceMomentum20d: 0.22,
+        priceMomentum60d: 0.18,
+        technicalAnalysis: {
+          version: "ta-v1",
+          asOf: "2026-08-14",
+          sessions: 252,
+          toolsUsed: [],
+          trend: { regime: "strong_uptrend" },
+          momentum: { rsi14: 72 },
+          volatility: {},
+          volume: {},
+          levels: { distanceFrom52WeekHighPct: -0.03 },
+          meanReversion: {},
+          patterns: { doji: false, hammer: false, bullishEngulfing: false, bearishEngulfing: false },
+          scores: {
+            trend: 0.86,
+            momentum: 0.9,
+            volume: 0.88,
+            breakout: 0.92,
+            meanReversion: 0.4,
+            stability: 0.35,
+            composite: 0.84,
+          },
+          signals: [],
+        },
+      },
+      "high_risk",
+    );
+    assert.equal(decision.eligible, false);
+    assert.ok(decision.reasons.includes("rejected_technical_only"));
+  });
+
   it("produces four different new-entry sets from the same universe in a non-settling shadow comparison", () => {
     const universe = [
       {

@@ -200,6 +200,106 @@ describe("model portfolio research funnel", () => {
     assert.equal(exceptionalLarge[0]?.symbol, "EXCEPTIONAL");
   });
 
+  it("does not treat a missing score as a synthetic 0.5 and does not let deleting data raise rank", () => {
+    const supportive = {
+      ...base,
+      technicalAnalysis: technical({ trend: 0.8, stability: 0.8, composite: 0.8 }),
+      volatility20d: 0.16,
+      priceMomentum60d: 0.12,
+    };
+    const genuineNeutralQuality = rankResearchUniverse(
+      [{ ...supportive, symbol: "NEUTRALQ", qualityScore: 0.5 }],
+      "conservative",
+    )[0];
+    const missingQuality = rankResearchUniverse(
+      [{ ...supportive, symbol: "MISSINGQ", qualityScore: undefined }],
+      "conservative",
+    )[0];
+    assert.ok(genuineNeutralQuality);
+    assert.ok(missingQuality);
+    assert.ok(
+      missingQuality.deterministicScore < genuineNeutralQuality.deterministicScore,
+      `missing quality (${missingQuality.deterministicScore}) must score below a genuine 0.5 (${genuineNeutralQuality.deterministicScore})`,
+    );
+
+    const full = rankResearchUniverse([{ ...supportive, symbol: "FULL", qualityScore: 0.2 }], "conservative")[0];
+    const afterRemoval = rankResearchUniverse(
+      [{ ...supportive, symbol: "REMOVED", qualityScore: undefined }],
+      "conservative",
+    )[0];
+    assert.ok(full);
+    assert.ok(afterRemoval);
+    assert.ok(
+      afterRemoval.deterministicScore <= full.deterministicScore,
+      `removing a known component must not increase score (${afterRemoval.deterministicScore} > ${full.deterministicScore})`,
+    );
+  });
+
+  it("applies a coverage penalty so broad verified data outranks a sparse strong print", () => {
+    const sparse = {
+      symbol: "SPARSE",
+      exchange: "ST",
+      marketCapSek: 40_000_000_000,
+      avgDailyTurnoverSek: 80_000_000,
+      qualityScore: 0.99,
+    };
+    const broad = {
+      symbol: "BROAD",
+      exchange: "ST",
+      marketCapSek: 40_000_000_000,
+      avgDailyTurnoverSek: 80_000_000,
+      qualityScore: 0.72,
+      balanceSheetScore: 0.72,
+      valuationScore: 0.72,
+      earningsRevisionScore: 0.72,
+      volatility20d: 0.16,
+      priceMomentum60d: 0.12,
+      technicalAnalysis: technical({ trend: 0.72, stability: 0.72, composite: 0.72 }),
+    };
+    const ranked = rankResearchUniverse([sparse, broad], "conservative");
+    assert.equal(ranked[0]?.symbol, "BROAD");
+    assert.ok((ranked[0]?.deterministicScore ?? 0) > (ranked[1]?.deterministicScore ?? 1));
+  });
+
+  it("does not qualify a large-drawdown technical recovery when fundamentals are missing", () => {
+    const recovery = assessRecoverySetup({
+      symbol: "TECHRECOVERY",
+      exchange: "ST",
+      marketCapSek: 9_000_000_000,
+      avgDailyTurnoverSek: 20_000_000,
+      priceMomentum20d: 0.08,
+      technicalAnalysis: technical({
+        distanceFromHigh: -0.35,
+        trend: 0.85,
+        momentum: 0.88,
+        volume: 0.9,
+        breakout: 0.86,
+        stability: 0.7,
+        composite: 0.88,
+      }),
+    });
+    assert.notEqual(recovery.state, "qualified");
+    assert.notEqual(recovery.state, "watch");
+    assert.ok(recovery.fundamentalIntegrityScore < 0.6);
+  });
+
+  it("is deterministic for identical ranking and recovery inputs", () => {
+    const universe = [
+      { ...base, symbol: "A", qualityScore: 0.91, technicalAnalysis: technical() },
+      { ...base, symbol: "B", catalystScore: 0.97, qualityScore: 0.4, technicalAnalysis: technical({ breakout: 0.9 }) },
+    ];
+    const first = rankResearchUniverse(universe, "high_risk");
+    const second = rankResearchUniverse(universe, "high_risk");
+    assert.deepEqual(
+      first.map((item) => [item.symbol, item.deterministicScore, item.recoverySetup]),
+      second.map((item) => [item.symbol, item.deterministicScore, item.recoverySetup]),
+    );
+    assert.deepEqual(
+      assessRecoverySetup(universe[0]!),
+      assessRecoverySetup({ ...universe[0]! }),
+    );
+  });
+
   it("hard caps shortlist, deep research and final proposals", () => {
     const universe = Array.from({ length: 400 }, (_, index) => ({
       ...base,
