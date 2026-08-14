@@ -21,7 +21,11 @@ function slugify(value: string): string {
 }
 
 export function defaultAnalysisSlug(packet: DivLabResearchPacket): string {
-  return slugify(packet.instrument.name) || slugify(packet.instrument.symbol);
+  const company = slugify(packet.instrument.name);
+  const symbol = slugify(packet.instrument.symbol);
+  const exchange = slugify(packet.instrument.exchange);
+  const identity = [company || symbol, symbol, exchange].filter(Boolean).join("-");
+  return identity.slice(0, 100);
 }
 
 function readPersistResult(value: unknown): PersistedDivLabAnalysisVersion {
