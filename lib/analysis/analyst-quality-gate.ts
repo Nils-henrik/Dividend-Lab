@@ -123,7 +123,7 @@ export function evaluateAnalystContentQuality(input: {
 
   const baseUpside = input.packet.valuation.scenarios.find(
     (scenario) => scenario.name === "base",
-  )?.upsidePct ?? null;
+  )?.upsideDownsidePct ?? null;
   const viewValuationConsistency =
     baseUpside !== null &&
     (input.draft.view === "neutral" ||
