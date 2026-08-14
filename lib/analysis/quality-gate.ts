@@ -1,3 +1,4 @@
+import type { AnalysisEvidence } from "./evidence";
 import type { FundamentalAnalysis } from "./fundamental-analysis";
 import type { SupportResistanceAnalysis } from "./support-resistance";
 import type { ValuationAnalysis } from "./valuation";
@@ -29,6 +30,7 @@ export type AnalysisQualityGate = {
     multiYearFundamentalCoverage: boolean;
     freshPrimarySource: boolean;
     sourceTraceability: boolean;
+    primaryEvidenceCoverage: boolean;
     valuationScenarioCoverage: boolean;
     technicalHistoryCoverage: boolean;
     technicalLevelCoverage: boolean;
@@ -51,6 +53,7 @@ export function evaluateAnalysisQuality(input: {
   technicalSessions: number;
   levels: SupportResistanceAnalysis;
   sources: readonly AnalysisSource[];
+  evidence: readonly AnalysisEvidence[];
 }): AnalysisQualityGate {
   const blockers: string[] = [];
   const warnings: string[] = [];
@@ -93,6 +96,22 @@ export function evaluateAnalysisQuality(input: {
   });
   if (!freshPrimarySource) {
     blockers.push("Ingen tillräckligt färsk primärkälla finns i analysunderlaget.");
+  }
+
+  const primarySourceIds = new Set(primarySources.map((source) => source.id));
+  const primaryEvidenceCoverage = input.evidence.some(
+    (item) =>
+      item.kind === "official_report_excerpt" &&
+      item.primary &&
+      item.documentRetrieved &&
+      primarySourceIds.has(item.sourceId) &&
+      item.content.trim().length >= 200 &&
+      Boolean(validDate(item.publishedAt)),
+  );
+  if (!primaryEvidenceCoverage) {
+    blockers.push(
+      "Analysen saknar ett verifierat rapportutdrag som kan härledas direkt till en primärkälla.",
+    );
   }
 
   const requiredScenarioNames = ["bear", "base", "bull"] as const;
@@ -150,6 +169,7 @@ export function evaluateAnalysisQuality(input: {
     multiYearFundamentalCoverage,
     freshPrimarySource,
     sourceTraceability,
+    primaryEvidenceCoverage,
     valuationScenarioCoverage,
     technicalHistoryCoverage,
     technicalLevelCoverage,
