@@ -165,8 +165,8 @@ function validRows() {
         version: "analyst-quality-v1",
         publishable: true,
         score: 100,
-        blockers: [],
-        warnings: [],
+        blockers: [] as string[],
+        warnings: [] as string[],
         metrics: {
           knownQualityFactors: 7,
           totalQualityFactors: 11,
@@ -207,11 +207,10 @@ function validRows() {
 }
 
 function approvedRecord() {
-  const rows = validRows();
   const record = buildApprovedDivLabAnalysisRecord({
     expectedSymbol: "TEST",
     expectedExchange: "ST",
-    ...rows,
+    ...validRows(),
   });
   assert.ok(record);
   return record;
@@ -233,31 +232,19 @@ describe("DivBrain approved DivLab Analysis provider", () => {
     const archived = validRows();
     archived.analysisRow.status = "archived";
     assert.equal(
-      buildApprovedDivLabAnalysisRecord({
-        expectedSymbol: "TEST",
-        expectedExchange: "ST",
-        ...archived,
-      }),
+      buildApprovedDivLabAnalysisRecord({ expectedSymbol: "TEST", expectedExchange: "ST", ...archived }),
       null,
     );
 
     const unpublishable = validRows();
     unpublishable.versionRow.publishable = false;
     assert.equal(
-      buildApprovedDivLabAnalysisRecord({
-        expectedSymbol: "TEST",
-        expectedExchange: "ST",
-        ...unpublishable,
-      }),
+      buildApprovedDivLabAnalysisRecord({ expectedSymbol: "TEST", expectedExchange: "ST", ...unpublishable }),
       null,
     );
 
     assert.equal(
-      buildApprovedDivLabAnalysisRecord({
-        expectedSymbol: "OTHER",
-        expectedExchange: "ST",
-        ...validRows(),
-      }),
+      buildApprovedDivLabAnalysisRecord({ expectedSymbol: "OTHER", expectedExchange: "ST", ...validRows() }),
       null,
     );
   });
@@ -267,11 +254,7 @@ describe("DivBrain approved DivLab Analysis provider", () => {
     failedGate.contentRow.analyst_quality_gate.publishable = false;
     failedGate.contentRow.analyst_quality_gate.blockers = ["quality failed"];
     assert.equal(
-      buildApprovedDivLabAnalysisRecord({
-        expectedSymbol: "TEST",
-        expectedExchange: "ST",
-        ...failedGate,
-      }),
+      buildApprovedDivLabAnalysisRecord({ expectedSymbol: "TEST", expectedExchange: "ST", ...failedGate }),
       null,
     );
 
@@ -281,11 +264,7 @@ describe("DivBrain approved DivLab Analysis provider", () => {
       executiveSummary: "",
     } as DivLabAnalystDraft;
     assert.equal(
-      buildApprovedDivLabAnalysisRecord({
-        expectedSymbol: "TEST",
-        expectedExchange: "ST",
-        ...malformedDraft,
-      }),
+      buildApprovedDivLabAnalysisRecord({ expectedSymbol: "TEST", expectedExchange: "ST", ...malformedDraft }),
       null,
     );
   });
@@ -294,22 +273,14 @@ describe("DivBrain approved DivLab Analysis provider", () => {
     const malformedSource = validRows();
     malformedSource.sourceRows[0]!.url = "";
     assert.equal(
-      buildApprovedDivLabAnalysisRecord({
-        expectedSymbol: "TEST",
-        expectedExchange: "ST",
-        ...malformedSource,
-      }),
+      buildApprovedDivLabAnalysisRecord({ expectedSymbol: "TEST", expectedExchange: "ST", ...malformedSource }),
       null,
     );
 
     const noSources = validRows();
     noSources.sourceRows = [];
     assert.equal(
-      buildApprovedDivLabAnalysisRecord({
-        expectedSymbol: "TEST",
-        expectedExchange: "ST",
-        ...noSources,
-      }),
+      buildApprovedDivLabAnalysisRecord({ expectedSymbol: "TEST", expectedExchange: "ST", ...noSources }),
       null,
     );
   });
