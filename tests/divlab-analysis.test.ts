@@ -185,7 +185,7 @@ describe("DivLab deep research packet", () => {
       now: new Date("2026-08-14T16:00:00.000Z"),
     });
 
-    assert.equal(packet.version, "deep-research-v1");
+    assert.equal(packet.version, "deep-research-v2");
     assert.equal(packet.companyClassification.type, "operating_company");
     assert.equal(packet.fundamental.methodology.status, "supported");
     assert.ok((packet.fundamental.scorecard.overall ?? 0) > 0);
