@@ -132,6 +132,18 @@ export const NEWS_SEO_OVERRIDES: Record<string, NewsSeoOverride> = {
  * These are deliberately factual and evergreen; article bodies remain unchanged.
  */
 export const LEARNING_SEO_OVERRIDES: Record<string, LearningSeoOverride> = {
+  "leva-pa-utdelningar-kapital": {
+    seoTitle: "Leva på utdelningar – så mycket kapital krävs",
+    description:
+      "Hur mycket kapital krävs för att leva på utdelningar? Se vad som behövs för 10 000, 20 000 och 30 000 kronor i månaden vid olika direktavkastning.",
+    relatedArticleSlugs: [
+      "direktavkastning-och-utdelningssakerhet",
+      "fire-ekonomisk-frihet",
+      "ranta-pa-ranta",
+      "isk-eller-kapitalforsakring",
+      "tid-till-ekonomisk-frihet",
+    ],
+  },
   "hur-mycket-bor-man-ha-sparat-vid-25-35-45-65": {
     seoTitle: "Hur mycket bör man ha sparat vid 25, 35, 45 och 65?",
     description:
