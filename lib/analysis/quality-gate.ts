@@ -95,16 +95,22 @@ export function evaluateAnalysisQuality(input: {
     blockers.push("Ingen tillräckligt färsk primärkälla finns i analysunderlaget.");
   }
 
-  const scenarioNames = new Set(input.valuation.scenarios.map((scenario) => scenario.name));
-  const base = input.valuation.scenarios.find((scenario) => scenario.name === "base");
-  const valuationScenarioCoverage =
-    scenarioNames.has("bear") &&
-    scenarioNames.has("base") &&
-    scenarioNames.has("bull") &&
-    base?.valuePerShare !== null &&
-    Boolean(base?.assumptions.length);
+  const requiredScenarioNames = ["bear", "base", "bull"] as const;
+  const requiredScenarios = requiredScenarioNames.map((name) =>
+    input.valuation.scenarios.find((scenario) => scenario.name === name),
+  );
+  const valuationScenarioCoverage = requiredScenarios.every(
+    (scenario) =>
+      Boolean(scenario) &&
+      scenario!.valuePerShare !== null &&
+      scenario!.assumptions.length > 0 &&
+      scenario!.currencyCompatible &&
+      !scenario!.currencyAssumed,
+  );
   if (!valuationScenarioCoverage) {
-    blockers.push("Bear/Base/Bull-värderingen är inte komplett eller saknar explicita antaganden.");
+    blockers.push(
+      "Bear/Base/Bull-värderingen måste vara komplett med explicita antaganden och verifierad valuta som matchar börskursen.",
+    );
   }
 
   const technicalHistoryCoverage = input.technicalSessions >= 120;
@@ -121,6 +127,11 @@ export function evaluateAnalysisQuality(input: {
   if (input.fundamental.unknowns.length > 0) {
     warnings.push(
       `${input.fundamental.unknowns.length} fundamentala datapunkter är uttryckligen markerade som okända.`,
+    );
+  }
+  if (!input.valuation.trailing.freeCashFlowCurrencyCompatible) {
+    warnings.push(
+      "Trailing P/FCF och FCF-yield har utelämnats eftersom kassaflödesvalutan inte är verifierat kompatibel med börskursens valuta.",
     );
   }
 
