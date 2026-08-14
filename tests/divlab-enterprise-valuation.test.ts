@@ -9,6 +9,17 @@ import {
 import { buildValuationAnalysis } from "../lib/analysis/valuation";
 import type { DailyBar } from "../lib/model-portfolios/engine/eodhd";
 import type { FxRateQuote } from "../lib/model-portfolios/engine/fx";
+import { operatingCompanyClassification } from "./helpers/divlab-company-classification";
+
+const FUNDAMENTAL_SOURCE = {
+  id: "fundamental:test",
+  kind: "fundamental_data" as const,
+  publisher: "Fundamental provider",
+  url: "https://example.com/fundamental",
+  publishedAt: "2026-08-14T16:00:00.000Z",
+  verifiedAt: "2026-08-14T16:00:00.000Z",
+  primary: false,
+};
 
 function quote(rate = 11): FxRateQuote {
   return {
@@ -117,6 +128,7 @@ describe("DivLab enterprise valuation", () => {
       currentPrice: 110,
       history: bars(),
       fundamentals,
+      companyClassification: operatingCompanyClassification(FUNDAMENTAL_SOURCE.id),
       fxConversion: fx,
       valuationScenarios: [],
       sources: [
@@ -129,6 +141,7 @@ describe("DivLab enterprise valuation", () => {
           verifiedAt: "2026-08-14T16:00:00.000Z",
           primary: false,
         },
+        FUNDAMENTAL_SOURCE,
         {
           id: fxSourceId,
           kind: "fx_data",
@@ -185,8 +198,9 @@ describe("DivLab enterprise valuation", () => {
       currentPrice: 100,
       history: bars(),
       fundamentals,
+      companyClassification: operatingCompanyClassification(FUNDAMENTAL_SOURCE.id),
       valuationScenarios: [],
-      sources: [],
+      sources: [FUNDAMENTAL_SOURCE],
     });
 
     assert.equal(packet.enterpriseValuationInputs.marketCap.value, 20_000);
