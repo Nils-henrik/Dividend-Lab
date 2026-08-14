@@ -160,12 +160,22 @@ describe("model portfolio manager policy", () => {
     );
   });
 
-  it("builds mandates that explicitly accept hold and prohibit validator bypass", () => {
+  it("builds mandates with active start-phase caps while explicitly favoring diversification", () => {
     const conservative = buildModelPortfolioSystemMandate("conservative");
+    const balanced = buildModelPortfolioSystemMandate("balanced");
     const highRisk = buildModelPortfolioSystemMandate("high_risk");
+    const dividend = buildModelPortfolioSystemMandate("dividend");
+
     assert.match(conservative, /inte göra någon affär/i);
     assert.match(conservative, /aldrig kringgå den deterministiska riskvalidatorn/i);
     assert.match(conservative, /10,00 SEK/i);
+    assert.match(conservative, /maxvikt.*40 %/i);
+    assert.match(balanced, /maxvikt.*50 %/i);
+    assert.match(highRisk, /maxvikt.*100 %/i);
+    assert.match(dividend, /maxvikt.*100 %/i);
+    assert.match(conservative, /riskspridning.*eftersträvas/i);
+    assert.match(highRisk, /inte en målposition/i);
+    assert.match(dividend, /lägg inte alla ägg i samma korg/i);
     assert.match(conservative, /Onödig omsättning/i);
     assert.match(highRisk, /högre omsättning/i);
     assert.match(highRisk, /okontrollerad daytrading/i);
