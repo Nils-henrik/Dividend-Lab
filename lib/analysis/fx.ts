@@ -23,13 +23,31 @@ export type NormalizedValuationInput = {
   fxSourceIds: string[];
 };
 
+export type NormalizedValuationAmount = NormalizedValuationInput;
+
 function currency(value: string | null | undefined): string | null {
   const normalized = value?.trim().toUpperCase() ?? "";
   return /^[A-Z]{3}$/.test(normalized) ? normalized : null;
 }
 
+function finiteNumber(value: number | null | undefined): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
 function finitePositive(value: number | null | undefined): value is number {
-  return typeof value === "number" && Number.isFinite(value) && value > 0;
+  return finiteNumber(value) && value > 0;
+}
+
+function emptyNormalized(sourceCurrency: string | null): NormalizedValuationAmount {
+  return {
+    value: null,
+    currency: null,
+    sourceCurrency,
+    converted: false,
+    fxRate: null,
+    fxAsOf: null,
+    fxSourceIds: [],
+  };
 }
 
 function earlierAsOf(a: string, b: string): string {
@@ -135,25 +153,22 @@ export function deriveAnalysisFxConversion(input: {
   };
 }
 
-/** Normalize one per-share value into the market currency without mutating raw facts. */
-export function normalizeValuationInput(input: {
+/**
+ * Normalize an absolute accounting/market amount into the market currency.
+ * Unlike per-share valuation inputs, zero and negative finite values are kept so
+ * the caller can preserve legitimate net-cash / loss semantics and decide
+ * whether a resulting multiple is meaningful.
+ */
+export function normalizeValuationAmount(input: {
   value: number | null | undefined;
   sourceCurrency: string | null | undefined;
   marketCurrency: string;
   fxConversion?: AnalysisFxConversion | null;
-}): NormalizedValuationInput {
+}): NormalizedValuationAmount {
   const sourceCurrency = currency(input.sourceCurrency);
   const marketCurrency = currency(input.marketCurrency);
-  if (!finitePositive(input.value) || !sourceCurrency || !marketCurrency) {
-    return {
-      value: null,
-      currency: null,
-      sourceCurrency,
-      converted: false,
-      fxRate: null,
-      fxAsOf: null,
-      fxSourceIds: [],
-    };
+  if (!finiteNumber(input.value) || !sourceCurrency || !marketCurrency) {
+    return emptyNormalized(sourceCurrency);
   }
 
   if (sourceCurrency === marketCurrency) {
@@ -175,15 +190,7 @@ export function normalizeValuationInput(input: {
     fx.toCurrency !== marketCurrency ||
     !finitePositive(fx.rate)
   ) {
-    return {
-      value: null,
-      currency: null,
-      sourceCurrency,
-      converted: false,
-      fxRate: null,
-      fxAsOf: null,
-      fxSourceIds: [],
-    };
+    return emptyNormalized(sourceCurrency);
   }
 
   return {
@@ -195,4 +202,16 @@ export function normalizeValuationInput(input: {
     fxAsOf: fx.asOf,
     fxSourceIds: [...fx.sourceIds],
   };
+}
+
+/** Normalize one positive per-share value into the market currency without mutating raw facts. */
+export function normalizeValuationInput(input: {
+  value: number | null | undefined;
+  sourceCurrency: string | null | undefined;
+  marketCurrency: string;
+  fxConversion?: AnalysisFxConversion | null;
+}): NormalizedValuationInput {
+  const sourceCurrency = currency(input.sourceCurrency);
+  if (!finitePositive(input.value)) return emptyNormalized(sourceCurrency);
+  return normalizeValuationAmount(input);
 }
