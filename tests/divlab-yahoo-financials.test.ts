@@ -33,10 +33,10 @@ function fixture() {
           },
           incomeStatementHistoryQuarterly: {
             incomeStatementHistory: [
-              { endDate: date("2026-06-30"), totalRevenue: raw(120), operatingIncome: raw(20), netIncome: raw(13) },
-              { endDate: date("2026-03-31"), totalRevenue: raw(115), operatingIncome: raw(18), netIncome: raw(12) },
-              { endDate: date("2025-12-31"), totalRevenue: raw(110), operatingIncome: raw(17), netIncome: raw(11) },
-              { endDate: date("2025-09-30"), totalRevenue: raw(105), operatingIncome: raw(15), netIncome: raw(10) },
+              { endDate: date("2026-06-30"), totalRevenue: raw(120), operatingIncome: raw(20), netIncome: raw(13), dilutedEPS: raw(1.3) },
+              { endDate: date("2026-03-31"), totalRevenue: raw(115), operatingIncome: raw(18), netIncome: raw(12), dilutedEPS: raw(1.2) },
+              { endDate: date("2025-12-31"), totalRevenue: raw(110), operatingIncome: raw(17), netIncome: raw(11), dilutedEPS: raw(1.1) },
+              { endDate: date("2025-09-30"), totalRevenue: raw(105), operatingIncome: raw(15), netIncome: raw(10), dilutedEPS: raw(1) },
             ],
           },
           cashflowStatementHistory: {
@@ -146,6 +146,11 @@ describe("DivLab Yahoo financial statement normalization", () => {
     assert.equal(snapshot.historicalPeriods?.length, 2);
     assert.equal(snapshot.historicalPeriods?.[0]?.freeCashFlow, 40);
     assert.equal(snapshot.historicalPeriods?.[0]?.revenue, 400);
+    assert.equal(snapshot.quarterlyPeriods?.length, 4);
+    assert.equal(snapshot.quarterlyPeriods?.[0]?.period, "2026-06-30");
+    assert.equal(snapshot.quarterlyPeriods?.[0]?.revenue, 120);
+    assert.equal(snapshot.quarterlyPeriods?.[0]?.freeCashFlow, 13);
+    assert.equal(snapshot.quarterlyPeriods?.[0]?.eps, 1.3);
   });
 
   it("derives TTM cash flow from four quarters when summary values are absent", () => {
@@ -166,6 +171,7 @@ describe("DivLab Yahoo financial statement normalization", () => {
     assert.equal(snapshot.capexTtm, -18);
     assert.equal(snapshot.freeCashFlowTtm, 48);
     assert.equal(snapshot.netDebt, 18);
+    assert.equal(snapshot.quarterlyPeriods?.[1]?.period, "2026-03-31");
   });
 
   it("fails closed when no useful financial values are present", () => {
