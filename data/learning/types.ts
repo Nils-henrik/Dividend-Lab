@@ -24,6 +24,11 @@ export type LearningArticleSection = {
     title: string;
     lines: string[];
   };
+  inlineImage?: {
+    src: string;
+    alt: string;
+    caption?: string;
+  };
   table?: LearningArticleTable;
   relatedLinks?: {
     slug: string;

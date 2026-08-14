@@ -284,6 +284,20 @@ export default function LearningArticleView({
                 </div>
               )}
 
+              {section.inlineImage && (
+                <figure className="space-y-2">
+                  <LearningArticleEditorialCover
+                    src={section.inlineImage.src}
+                    alt={section.inlineImage.alt}
+                  />
+                  {section.inlineImage.caption && (
+                    <figcaption className="text-sm leading-6 text-divlab-text-muted">
+                      {section.inlineImage.caption}
+                    </figcaption>
+                  )}
+                </figure>
+              )}
+
               {section.table && (
                 <div className="overflow-x-auto rounded-xl border divlab-border-neutral divlab-inset">
                   <table className="w-full border-collapse text-left text-sm">

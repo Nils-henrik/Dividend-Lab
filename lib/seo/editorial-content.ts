@@ -36,6 +36,11 @@ export const NEWS_SEO_OVERRIDES: Record<string, NewsSeoOverride> = {
     seoDescription:
       "Embracer överraskar, Morrow Bank växer och RaySearch får nya USA-order. Här är de viktigaste svenska börsnyheterna den 13 augusti 2026.",
   },
+  "borssverige-14-augusti-2026": {
+    seoTitle: "Svenska börsen idag: Skanskaorder och BTS-prognos",
+    seoDescription:
+      "Skanska tar en order värd cirka 8,9 miljarder kronor och BTS höjer prognosen. Boozt och Björn Borg hör också till morgonens rapportbolag.",
+  },
   "borssverige-lunch-13-augusti-2026": {
     seoTitle: "BörsSverige Lunch 13 augusti: Embracer rusar efter rapporten",
     seoDescription:
@@ -105,6 +110,11 @@ export const NEWS_SEO_OVERRIDES: Record<string, NewsSeoOverride> = {
     seoDescription:
       "De nordiska börserna går in i en rapporttung torsdag. Maersk, Ørsted, DNO och Kojamo står i fokus samtidigt som Norges Bank lämnar räntebesked.",
   },
+  "norden-i-centrum-14-augusti-2026": {
+    seoTitle: "Nordenbörsen idag: Veidekke och DFDS i fokus",
+    seoDescription:
+      "Veidekke slår förväntningarna, DFDS höjer utsikterna och Posti växer igen. Här är de viktigaste nordiska börsnyheterna den 14 augusti 2026.",
+  },
   "onsdagens-rapporter-tesla-ibm": {
     seoTitle: "Tesla och IBM rapporterar: det här bevakar marknaden",
   },
@@ -132,6 +142,18 @@ export const NEWS_SEO_OVERRIDES: Record<string, NewsSeoOverride> = {
  * These are deliberately factual and evergreen; article bodies remain unchanged.
  */
 export const LEARNING_SEO_OVERRIDES: Record<string, LearningSeoOverride> = {
+  "leva-pa-utdelningar-kapital": {
+    seoTitle: "Leva på utdelningar – så mycket kapital krävs",
+    description:
+      "Hur mycket kapital krävs för att leva på utdelningar? Se vad som behövs för 10 000, 20 000 och 30 000 kronor i månaden vid olika direktavkastning.",
+    relatedArticleSlugs: [
+      "direktavkastning-och-utdelningssakerhet",
+      "fire-ekonomisk-frihet",
+      "ranta-pa-ranta",
+      "isk-eller-kapitalforsakring",
+      "tid-till-ekonomisk-frihet",
+    ],
+  },
   "hur-mycket-bor-man-ha-sparat-vid-25-35-45-65": {
     seoTitle: "Hur mycket bör man ha sparat vid 25, 35, 45 och 65?",
     description:
