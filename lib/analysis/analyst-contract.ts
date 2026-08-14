@@ -4,6 +4,7 @@ import type {
   DivLabValuationInputs,
 } from "./deep-research";
 import type { NormalizedValuationInput } from "./fx";
+import type { ValuationMeasureKey } from "./valuation-provenance";
 import type { ValuationScenarioInput } from "./valuation";
 
 function allDraftSourceIds(draft: DivLabAnalystDraft): string[] {
@@ -14,6 +15,7 @@ function allDraftSourceIds(draft: DivLabAnalystDraft): string[] {
   addClaims(draft.investmentCase);
   addClaims(draft.latestReport);
   addClaims(draft.fundamentalInterpretation);
+  addClaims(draft.valuationInterpretation);
   addClaims(draft.catalysts);
   addClaims(draft.risks);
   addClaims(draft.contradictions);
@@ -78,6 +80,34 @@ function validateScenarioValuationBasis(input: {
   }
 }
 
+function validateValuationInterpretation(input: {
+  packet: DivLabResearchPacket;
+  draft: DivLabAnalystDraft;
+}): void {
+  for (const claim of input.draft.valuationInterpretation) {
+    const measure = input.packet.valuationProvenance.measures[
+      claim.measure as ValuationMeasureKey
+    ];
+    if (!measure.available) {
+      throw new Error(
+        `divlab_analyst_valuation_measure_unavailable:${claim.measure}`,
+      );
+    }
+    if (!measure.traceable) {
+      throw new Error(
+        `divlab_analyst_valuation_measure_untraceable:${claim.measure}`,
+      );
+    }
+    for (const requiredSourceId of measure.sourceIds) {
+      if (!claim.sourceIds.includes(requiredSourceId)) {
+        throw new Error(
+          `divlab_analyst_valuation_source_missing:${claim.measure}:${requiredSourceId}`,
+        );
+      }
+    }
+  }
+}
+
 export function validateAnalystDraftAgainstPacket(input: {
   packet: DivLabResearchPacket;
   draft: DivLabAnalystDraft;
@@ -88,6 +118,8 @@ export function validateAnalystDraftAgainstPacket(input: {
       throw new Error(`divlab_analyst_unknown_source_id:${sourceId}`);
     }
   }
+
+  validateValuationInterpretation(input);
 
   const marketCurrency = input.packet.instrument.currency.toUpperCase();
   for (const scenario of input.draft.valuationScenarios) {
