@@ -12,6 +12,7 @@ import {
   type DivLabAnalystQualityGate,
 } from "./analyst-quality-gate";
 import type { DivLabAnalystDraft } from "./analyst-schema";
+import type { DivLabCompanyType } from "./company-classification";
 import {
   persistDivLabAnalysisBundle,
   type PersistedDivLabAnalysisBundle,
@@ -20,6 +21,7 @@ import {
   buildDivLabResearchPacket,
   type DivLabResearchPacket,
 } from "./deep-research";
+import type { FundamentalMethodologyStatus } from "./fundamental-methodology";
 import {
   loadDivLabResearchInputs,
   type DivLabResearchLoadResult,
@@ -46,6 +48,15 @@ export type CreateDivLabAiAnalysisResult =
     }
   | {
       ok: false;
+      stage: "methodology";
+      reason: "fundamental_methodology_not_supported";
+      methodologyStatus: Exclude<FundamentalMethodologyStatus, "supported">;
+      companyType: DivLabCompanyType;
+      /** Facts are retained for QA and for future specialized-methodology work. */
+      factsPacket: DivLabResearchPacket;
+    }
+  | {
+      ok: false;
       stage: "analyst";
       reason: "gateway_auth_missing";
       /** Verified research is retained in-memory so the job can be inspected or retried. */
@@ -67,15 +78,17 @@ export type CreateDivLabAiAnalysisResult =
 /**
  * Internal two-stage DivLab analysis flow.
  *
- * 1. Load and normalize facts/evidence.
- * 2. Build a facts packet with no manufactured valuation scenarios.
- * 3. Ask the analyst model for qualitative interpretation + explicit scenario
- *    assumptions only.
- * 4. Re-run deterministic valuation math with those assumptions.
- * 5. Re-run the full research publication quality gate.
- * 6. Run a separate deterministic quality gate over the analyst content.
- * 7. Only a content-quality-passing draft may reach persistence.
- * 8. When a service-role Supabase client is supplied, atomically persist the
+ * 1. Load and normalize facts/evidence + source-grounded company classification.
+ * 2. Build a company-type-aware facts packet with no manufactured valuation scenarios.
+ * 3. Fail before any model call if the company type requires a specialized
+ *    fundamental methodology that DivLab has not implemented yet.
+ * 4. Ask the analyst model for qualitative interpretation + explicit scenario
+ *    assumptions only when the deterministic methodology is supported.
+ * 5. Re-run deterministic valuation math with those assumptions.
+ * 6. Re-run the full research publication quality gate.
+ * 7. Run a separate deterministic quality gate over the analyst content.
+ * 8. Only a content-quality-passing draft may reach persistence.
+ * 9. When a service-role Supabase client is supplied, atomically persist the
  *    final research version, analyst content and its quality certification.
  *
  * The transient facts packet is never persisted as an additional version.
@@ -120,6 +133,7 @@ export async function createDivLabAiAnalysis(input: {
     currentPrice: research.instrument.currentPrice,
     history: research.history,
     fundamentals: research.fundamentals,
+    companyClassification: research.companyClassification,
     fxConversion: research.fxConversion,
     sources: research.sources,
     evidence: research.evidence,
@@ -130,6 +144,17 @@ export async function createDivLabAiAnalysis(input: {
     ...common,
     valuationScenarios: [],
   });
+
+  if (factsPacket.fundamental.methodology.status !== "supported") {
+    return {
+      ok: false,
+      stage: "methodology",
+      reason: "fundamental_methodology_not_supported",
+      methodologyStatus: factsPacket.fundamental.methodology.status,
+      companyType: factsPacket.companyClassification.type,
+      factsPacket,
+    };
+  }
 
   let analyst: Awaited<ReturnType<typeof generateDivLabAnalystDraft>>;
   try {
