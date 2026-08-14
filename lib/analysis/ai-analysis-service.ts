@@ -99,6 +99,7 @@ export async function createDivLabAiAnalysis(input: {
     currentPrice: research.instrument.currentPrice,
     history: research.history,
     fundamentals: research.fundamentals,
+    fxConversion: research.fxConversion,
     sources: research.sources,
     evidence: research.evidence,
     now,
