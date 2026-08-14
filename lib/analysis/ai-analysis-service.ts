@@ -76,7 +76,7 @@ export type CreateDivLabAiAnalysisResult =
  * 6. Run a separate deterministic quality gate over the analyst content.
  * 7. Only a content-quality-passing draft may reach persistence.
  * 8. When a service-role Supabase client is supplied, atomically persist the
- *    final research version and analyst content as separate immutable records.
+ *    final research version, analyst content and its quality certification.
  *
  * The transient facts packet is never persisted as an additional version.
  * If Gateway authentication is unavailable, the function fails closed at the
@@ -177,6 +177,7 @@ export async function createDivLabAiAnalysis(input: {
         supabase: input.supabase,
         packet: finalPacket,
         analystDraft: analyst.draft,
+        analystQualityGate,
         analystModel: analyst.model,
         usage: analyst.usage,
         generatedAt: now.toISOString(),
