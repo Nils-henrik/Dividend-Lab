@@ -6,9 +6,10 @@ import {
   toYahooTransportSymbol,
 } from "@/lib/model-portfolios/engine/instrument-symbol";
 import { fetchYahooHistoryResearch } from "@/lib/model-portfolios/engine/yahoo-research";
+import type { AnalysisEvidence } from "./evidence";
 import type { FundamentalSnapshot } from "./fundamental-analysis";
 import type { AnalysisSource } from "./quality-gate";
-import { fetchNordicDivLabAnalysisSources } from "./nordic-primary-sources";
+import { fetchNordicDivLabAnalysisResearch } from "./nordic-primary-sources";
 import { fetchYahooFinancialStatements } from "./yahoo-financials";
 
 export type DivLabResearchInputs = {
@@ -23,6 +24,7 @@ export type DivLabResearchInputs = {
   history: DailyBar[];
   fundamentals: FundamentalSnapshot;
   sources: AnalysisSource[];
+  evidence: AnalysisEvidence[];
   loadedAt: string;
 };
 
@@ -107,16 +109,18 @@ export async function loadDivLabResearchInputs(input: {
       primary: false,
     },
   ];
+  const evidence: AnalysisEvidence[] = [];
 
   if (isNordicExchange(canonical.exchange)) {
-    const primarySources = await fetchNordicDivLabAnalysisSources({
+    const primaryResearch = await fetchNordicDivLabAnalysisResearch({
       companyName: name,
       symbol: canonical.baseSymbol,
       exchange: canonical.exchange,
       fetchImpl: input.fetchImpl,
       now,
     });
-    sources.push(...primarySources);
+    sources.push(...primaryResearch.sources);
+    evidence.push(...primaryResearch.evidence);
   }
 
   return {
@@ -133,6 +137,7 @@ export async function loadDivLabResearchInputs(input: {
       history: [...market.history],
       fundamentals: financials.snapshot,
       sources,
+      evidence,
       loadedAt: now.toISOString(),
     },
   };
