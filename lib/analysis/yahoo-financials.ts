@@ -1,6 +1,11 @@
 import "server-only";
 
 import { getYahooCrumbSession } from "@/lib/model-portfolios/engine/yahoo-research";
+import {
+  classifyCompanyMetadata,
+  extractYahooCompanyMetadata,
+  type DivLabCompanyClassification,
+} from "./company-classification";
 import type { FundamentalSnapshot } from "./fundamental-analysis";
 import { parseYahooFinancialStatements } from "./financial-statement-normalizer";
 
@@ -10,6 +15,8 @@ const USER_AGENT =
 
 export type YahooFinancialStatementResearch = {
   snapshot: FundamentalSnapshot;
+  /** Provider-metadata classification; source IDs are attached by the packet loader. */
+  companyClassification: DivLabCompanyClassification;
   sourceUrl: string;
   fetchedAt: string;
 };
@@ -43,6 +50,7 @@ export async function fetchYahooFinancialStatements(input: {
       "financialData",
       "price",
       "summaryDetail",
+      "assetProfile",
     ].join(","),
   );
   url.searchParams.set("formatted", "false");
@@ -67,8 +75,12 @@ export async function fetchYahooFinancialStatements(input: {
       now,
     });
     if (!snapshot) return null;
+    const companyClassification = classifyCompanyMetadata({
+      metadata: extractYahooCompanyMetadata(payload),
+    });
     return {
       snapshot,
+      companyClassification,
       sourceUrl: `https://finance.yahoo.com/quote/${encodeURIComponent(symbol)}/financials/`,
       fetchedAt: now.toISOString(),
     };
