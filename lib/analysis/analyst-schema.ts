@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+export const DIVLAB_ANALYST_SCHEMA_VERSION = "analyst-v1" as const;
+
 const shortText = z.string().trim().min(1).max(900);
 const sourceIds = z.array(z.string().trim().min(1).max(240)).min(1).max(6);
 
