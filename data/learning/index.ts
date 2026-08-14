@@ -4,6 +4,7 @@ import etf from "./articles/vad-ar-en-etf";
 import fireEkonomiskFrihet from "./articles/fire-ekonomisk-frihet";
 import hurMycketSparatEfterAlder from "./articles/hur-mycket-bor-man-ha-sparat-vid-25-35-45-65";
 import iskEllerKapitalforsakring from "./articles/isk-eller-kapitalforsakring";
+import levaPaUtdelningar from "./articles/leva-pa-utdelningar-kapital";
 import peTal from "./articles/pe-tal-vad-betyder-det";
 import premiepension from "./articles/ta-kontroll-over-premiepensionen";
 import rantaPaRanta from "./articles/ranta-pa-ranta";
@@ -30,6 +31,7 @@ export {
 } from "./reading-time";
 
 const rawArticles: LearningArticle[] = [
+  levaPaUtdelningar,
   {
     ...hurMycketSparatEfterAlder,
     coverImage: "/learning/sparande_genom_livet_med_divlab.png",
