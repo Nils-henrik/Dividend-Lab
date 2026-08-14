@@ -38,6 +38,10 @@ function officialReportPriority(hit: NordicPrimarySourceHit): number {
  * Reuses the model-portfolio primary-source path rather than creating a second
  * issuer-disclosure crawler. Only successfully retrieved official reports are
  * marked primary for the DivLab publication quality gate.
+ *
+ * Dedicated Deep Research deliberately searches a wider bounded CNS window
+ * than a normal portfolio pass so recent buybacks/releases cannot crowd the
+ * latest quarterly or annual report out of the two-hit portfolio budget.
  */
 export async function fetchNordicDivLabAnalysisSources(input: {
   companyName: string;
@@ -53,6 +57,8 @@ export async function fetchNordicDivLabAnalysisSources(input: {
     exchange: input.exchange,
     fetchImpl: input.fetchImpl,
     now,
+    maxHits: 12,
+    queryCount: 20,
   });
   if (!hits.length) return [];
 
