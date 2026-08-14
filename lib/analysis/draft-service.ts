@@ -31,9 +31,9 @@ export type CreateDivLabAnalysisDraftResult =
  *
  * Valuation assumptions remain explicit caller input by design: v1 must not
  * manufacture a fair value merely to complete the report. The research loader
- * supplies deterministic market/fundamental facts and verified source-linked
- * evidence; scenario assumptions can later come from the analysis AI after it
- * has read that immutable packet.
+ * supplies deterministic market/fundamental facts, source-grounded company
+ * classification and verified source-linked evidence; scenario assumptions can
+ * later come from the analysis AI after it has read that immutable packet.
  */
 export async function createDivLabAnalysisDraft(input: {
   symbol: string;
@@ -63,6 +63,7 @@ export async function createDivLabAnalysisDraft(input: {
     currentPrice: research.instrument.currentPrice,
     history: research.history,
     fundamentals: research.fundamentals,
+    companyClassification: research.companyClassification,
     fxConversion: research.fxConversion,
     valuationScenarios: input.valuationScenarios,
     sources: research.sources,
