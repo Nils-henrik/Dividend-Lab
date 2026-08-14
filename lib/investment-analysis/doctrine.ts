@@ -1,4 +1,4 @@
-export const DIVLAB_INVESTMENT_ANALYSIS_DOCTRINE_VERSION = 3 as const;
+export const DIVLAB_INVESTMENT_ANALYSIS_DOCTRINE_VERSION = 2 as const;
 
 /**
  * Shared, timeless analysis discipline for DivBrain and the model-portfolio AIs.
@@ -45,7 +45,7 @@ export const DIVLAB_INVESTMENT_ANALYSIS_DOCTRINE_SV = [
   "- Portföljmognad: när kapitalet växer ska koncentrationsbehovet normalt minska och riskspridningen kunna förbättras. Riskgränser bör därför kalibreras mot portföljstorlek och faktisk exekverbarhet, inte hållas statiska av gammal vana.",
   "- Exit/omprövning: definiera i förväg vilka fakta som bryter tesen. Ett kursfall utan tesbrott och en kursuppgång utan värderings-/riskförändring är inte automatiska säljskäl.",
   "- Efteranalys: skilj ett bra beslut med dåligt utfall från ett dåligt beslut med bra utfall. Förbättra processen utifrån evidens och kalibrering, inte kortsiktig P/L ensam.",
-  "ANALYSDISCIPLIN V3:",
+  "ANALYSDISCIPLIN V2:",
   "- Casetyp före värdering: compounder, mogen kvalitet, cykliskt, turnaround/recovery, event/katalysator eller inkomstvärdepapper. En compounder bedöms primärt på återinvestering och per-aktie-värde; ett inkomstvärdepapper på utdelningssäkerhet, emittent och villkor; en recovery på om tesen är intakt och entryn bekräftad.",
   "- Förväntningar mot fundamenta: skilj ett bra bolag från en bra aktie till dagens pris. Identifiera vad som redan är inprisat och om det finns ett förväntat värdegap. Extrapolera inte rubriker till evig tillväxt.",
   "- Scenario och falsifierbarhet: ramverk bas/nedsida/uppsida när datan tillåter. Definiera tesbrottsvillkor innan conviction höjs. Skilj tillfällig drawdown från strukturell försämring.",
