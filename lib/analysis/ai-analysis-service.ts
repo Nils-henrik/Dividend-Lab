@@ -7,6 +7,10 @@ import {
   generateDivLabAnalystDraft,
   type DivLabAnalystUsage,
 } from "./analyst";
+import {
+  evaluateAnalystContentQuality,
+  type DivLabAnalystQualityGate,
+} from "./analyst-quality-gate";
 import type { DivLabAnalystDraft } from "./analyst-schema";
 import {
   persistDivLabAnalysisBundle,
@@ -27,8 +31,10 @@ export type CreateDivLabAiAnalysisResult =
       /** Facts-only packet before analyst scenario assumptions are applied. */
       factsPacket: DivLabResearchPacket;
       analystDraft: DivLabAnalystDraft;
-      /** Rebuilt packet after deterministic valuation math and final quality gate. */
+      /** Rebuilt packet after deterministic valuation math and final research quality gate. */
       finalPacket: DivLabResearchPacket;
+      /** Separate deterministic quality gate for the AI interpretation itself. */
+      analystQualityGate: DivLabAnalystQualityGate;
       model: ModelPortfolioAiModel;
       usage: DivLabAnalystUsage;
       persistence: PersistedDivLabAnalysisBundle | null;
@@ -44,6 +50,18 @@ export type CreateDivLabAiAnalysisResult =
       reason: "gateway_auth_missing";
       /** Verified research is retained in-memory so the job can be inspected or retried. */
       factsPacket: DivLabResearchPacket;
+    }
+  | {
+      ok: false;
+      stage: "analyst_quality";
+      reason: "analyst_quality_gate_failed";
+      /** The rejected draft remains available for internal QA but is never persisted. */
+      factsPacket: DivLabResearchPacket;
+      analystDraft: DivLabAnalystDraft;
+      finalPacket: DivLabResearchPacket;
+      analystQualityGate: DivLabAnalystQualityGate;
+      model: ModelPortfolioAiModel;
+      usage: DivLabAnalystUsage;
     };
 
 /**
@@ -54,15 +72,18 @@ export type CreateDivLabAiAnalysisResult =
  * 3. Ask the analyst model for qualitative interpretation + explicit scenario
  *    assumptions only.
  * 4. Re-run deterministic valuation math with those assumptions.
- * 5. Re-run the full publication quality gate.
- * 6. When a service-role Supabase client is supplied, atomically persist the
+ * 5. Re-run the full research publication quality gate.
+ * 6. Run a separate deterministic quality gate over the analyst content.
+ * 7. Only a content-quality-passing draft may reach persistence.
+ * 8. When a service-role Supabase client is supplied, atomically persist the
  *    final research version and analyst content as separate immutable records.
  *
  * The transient facts packet is never persisted as an additional version.
  * If Gateway authentication is unavailable, the function fails closed at the
  * analyst stage but returns the already verified facts packet for observability
- * and a later retry. Other analyst failures still throw so code/schema defects
- * cannot be silently downgraded to an operational retry state.
+ * and a later retry. A thin/self-contradictory analyst result returns an
+ * analyst_quality failure and is not persisted. Other analyst/schema failures
+ * still throw so code defects cannot be silently downgraded.
  */
 export async function createDivLabAiAnalysis(input: {
   symbol: string;
@@ -132,6 +153,24 @@ export async function createDivLabAiAnalysis(input: {
     ...common,
     valuationScenarios: analystDraftToValuationScenarios(analyst.draft),
   });
+  const analystQualityGate = evaluateAnalystContentQuality({
+    packet: finalPacket,
+    draft: analyst.draft,
+  });
+
+  if (!analystQualityGate.publishable) {
+    return {
+      ok: false,
+      stage: "analyst_quality",
+      reason: "analyst_quality_gate_failed",
+      factsPacket,
+      analystDraft: analyst.draft,
+      finalPacket,
+      analystQualityGate,
+      model: analyst.model,
+      usage: analyst.usage,
+    };
+  }
 
   const persistence = input.supabase
     ? await persistDivLabAnalysisBundle({
@@ -150,6 +189,7 @@ export async function createDivLabAiAnalysis(input: {
     factsPacket,
     analystDraft: analyst.draft,
     finalPacket,
+    analystQualityGate,
     model: analyst.model,
     usage: analyst.usage,
     persistence,
