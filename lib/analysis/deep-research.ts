@@ -34,6 +34,15 @@ export type DivLabValuationInputs = {
   freeCashFlowPerShareTtm: NormalizedValuationInput;
 };
 
+export type DivLabCurrencyContext = {
+  /** Currency of the listed share price and final per-share valuation. */
+  marketCurrency: string;
+  /** Currency used by accounting statement values, when verified. */
+  reportingCurrency: string | null;
+  /** Currency of the trailing EPS input, tracked separately from statement values. */
+  epsTtmCurrency: string | null;
+};
+
 export type DivLabResearchPacket = {
   version: typeof DIVLAB_DEEP_RESEARCH_VERSION;
   instrument: {
@@ -45,6 +54,8 @@ export type DivLabResearchPacket = {
   };
   createdAt: string;
   dataAsOf: string;
+  /** Explicit currency semantics so consumers never infer accounting currency from the quote currency. */
+  currencyContext: DivLabCurrencyContext;
   /** Normalized verified facts retained for auditability and future revisions. */
   fundamentalSnapshot: FundamentalSnapshot;
   /** Deterministic interpretation/scorecard derived from fundamentalSnapshot. */
@@ -79,6 +90,9 @@ function cloneFundamentalSnapshot(
 ): FundamentalSnapshot {
   return {
     ...snapshot,
+    // `currency` is retained as the legacy quote-currency field for backward
+    // compatibility. Consumers must use currencyContext/reportingCurrency for
+    // accounting-value labels.
     currency: currency.trim().toUpperCase(),
     price: currentPrice,
     historicalPeriods: snapshot.historicalPeriods?.map((period) => ({ ...period })),
@@ -167,10 +181,21 @@ export function buildDivLabResearchPacket(input: {
     marketCurrency,
     input.currentPrice,
   );
-  const fundamental = analyzeFundamentals(fundamentalSnapshot);
+  const currencies = currencyMetadata(fundamentalSnapshot);
+  const rawFundamental = analyzeFundamentals(fundamentalSnapshot);
+  const fundamental: FundamentalAnalysis = {
+    ...rawFundamental,
+    // Fundamental monetary values describe the accounting statements, not the
+    // listed share quote. Keep that semantic explicit for UI/DivBrain consumers.
+    currency: currencies.reportingCurrency ?? rawFundamental.currency,
+  };
   const technicalSnapshot = analyzeTechnicalSignals(input.history);
   const levels = analyzeSupportResistance(input.history);
-  const currencies = currencyMetadata(fundamentalSnapshot);
+  const currencyContext: DivLabCurrencyContext = {
+    marketCurrency,
+    reportingCurrency: currencies.reportingCurrency,
+    epsTtmCurrency: currencies.epsTtmCurrency,
+  };
 
   const valuationInputs: DivLabValuationInputs = {
     epsTtm: normalizeValuationInput({
@@ -230,6 +255,7 @@ export function buildDivLabResearchPacket(input: {
       ],
       now.toISOString(),
     ),
+    currencyContext,
     fundamentalSnapshot,
     fundamental,
     fxConversion,
