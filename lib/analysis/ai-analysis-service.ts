@@ -35,7 +35,15 @@ export type CreateDivLabAiAnalysisResult =
     }
   | {
       ok: false;
+      stage: "research";
       reason: Extract<DivLabResearchLoadResult, { ok: false }>["reason"];
+    }
+  | {
+      ok: false;
+      stage: "analyst";
+      reason: "gateway_auth_missing";
+      /** Verified research is retained in-memory so the job can be inspected or retried. */
+      factsPacket: DivLabResearchPacket;
     };
 
 /**
@@ -51,6 +59,10 @@ export type CreateDivLabAiAnalysisResult =
  *    final research version and analyst content as separate immutable records.
  *
  * The transient facts packet is never persisted as an additional version.
+ * If Gateway authentication is unavailable, the function fails closed at the
+ * analyst stage but returns the already verified facts packet for observability
+ * and a later retry. Other analyst failures still throw so code/schema defects
+ * cannot be silently downgraded to an operational retry state.
  */
 export async function createDivLabAiAnalysis(input: {
   symbol: string;
@@ -70,7 +82,13 @@ export async function createDivLabAiAnalysis(input: {
     fetchImpl: input.fetchImpl,
     now,
   });
-  if (!loaded.ok) return loaded;
+  if (!loaded.ok) {
+    return {
+      ok: false,
+      stage: "research",
+      reason: loaded.reason,
+    };
+  }
 
   const research = loaded.value;
   const common = {
@@ -91,10 +109,23 @@ export async function createDivLabAiAnalysis(input: {
     valuationScenarios: [],
   });
 
-  const analyst = await generateDivLabAnalystDraft({
-    packet: factsPacket,
-    useEscalationModel: input.useEscalationModel,
-  });
+  let analyst: Awaited<ReturnType<typeof generateDivLabAnalystDraft>>;
+  try {
+    analyst = await generateDivLabAnalystDraft({
+      packet: factsPacket,
+      useEscalationModel: input.useEscalationModel,
+    });
+  } catch (error) {
+    if (error instanceof Error && error.message === "gateway_auth_missing") {
+      return {
+        ok: false,
+        stage: "analyst",
+        reason: "gateway_auth_missing",
+        factsPacket,
+      };
+    }
+    throw error;
+  }
 
   const finalPacket = buildDivLabResearchPacket({
     ...common,
