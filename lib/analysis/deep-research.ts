@@ -1,7 +1,15 @@
 import { analyzeTechnicalSignals, type TechnicalAnalysisSnapshot } from "@/lib/model-portfolios/engine/technical-analysis";
 import type { DailyBar } from "@/lib/model-portfolios/engine/eodhd";
+import {
+  DIVLAB_COMPANY_CLASSIFICATION_VERSION,
+  type DivLabCompanyClassification,
+} from "./company-classification";
 import type { AnalysisEvidence } from "./evidence";
 import type { CurrencyAwareFundamentalSnapshot } from "./financial-statement-normalizer";
+import {
+  analyzeFundamentalsForCompany,
+  type DivLabFundamentalAnalysis,
+} from "./fundamental-methodology";
 import {
   normalizeValuationAmount,
   normalizeValuationInput,
@@ -9,11 +17,7 @@ import {
   type NormalizedValuationAmount,
   type NormalizedValuationInput,
 } from "./fx";
-import {
-  analyzeFundamentals,
-  type FundamentalAnalysis,
-  type FundamentalSnapshot,
-} from "./fundamental-analysis";
+import type { FundamentalSnapshot } from "./fundamental-analysis";
 import {
   reconcilePrimaryReport,
   type PrimaryReportReconciliation,
@@ -74,19 +78,21 @@ export type DivLabResearchPacket = {
   };
   createdAt: string;
   dataAsOf: string;
+  /** Source-grounded company/instrument classification driving fundamental methodology. */
+  companyClassification: DivLabCompanyClassification;
   /** Explicit currency semantics so consumers never infer accounting currency from the quote currency. */
   currencyContext: DivLabCurrencyContext;
   /** Normalized verified facts retained for auditability and future revisions. */
   fundamentalSnapshot: FundamentalSnapshot;
-  /** Deterministic interpretation/scorecard derived from fundamentalSnapshot. */
-  fundamental: FundamentalAnalysis;
+  /** Deterministic company-type-aware interpretation derived from fundamentalSnapshot. */
+  fundamental: DivLabFundamentalAnalysis;
   /** Confirmation-only cross-check against clean bounded official-report text. */
   primaryReportReconciliation: PrimaryReportReconciliation;
   /** Optional reporting->market conversion. Raw accounting facts remain untouched. */
   fxConversion: AnalysisFxConversion | null;
   /** Positive per-share values actually eligible for valuation in the market currency. */
   valuationInputs: DivLabValuationInputs;
-  /** Auditable absolute amounts used for EV/EBIT and EV/EBITDA. */
+  /** Auditable absolute amounts used for EV/EBIT and EV/EBITDA when methodology permits them. */
   enterpriseValuationInputs: DivLabEnterpriseValuationInputs;
   valuation: ValuationAnalysis;
   /** Source map for every available deterministic trailing valuation measure. */
@@ -139,6 +145,31 @@ function cloneFxConversion(
   };
 }
 
+function cloneCompanyClassification(
+  classification: DivLabCompanyClassification | null | undefined,
+): DivLabCompanyClassification {
+  if (!classification) {
+    return {
+      version: DIVLAB_COMPANY_CLASSIFICATION_VERSION,
+      type: "unknown",
+      confidence: "low",
+      sector: null,
+      industry: null,
+      quoteType: null,
+      basis: ["classification_not_supplied"],
+      sourceIds: [],
+    };
+  }
+  if (classification.version !== DIVLAB_COMPANY_CLASSIFICATION_VERSION) {
+    throw new Error("analysis_company_classification_version_invalid");
+  }
+  return {
+    ...classification,
+    basis: [...classification.basis],
+    sourceIds: [...new Set(classification.sourceIds)].sort(),
+  };
+}
+
 function currencyMetadata(snapshot: FundamentalSnapshot): {
   reportingCurrency: string | null;
   epsTtmCurrency: string | null;
@@ -165,17 +196,25 @@ function currencyMetadata(snapshot: FundamentalSnapshot): {
   };
 }
 
+function validateSourceIds(
+  prefix: string,
+  sourceIds: readonly string[],
+  sources: readonly AnalysisSource[],
+): void {
+  const knownSourceIds = new Set(sources.map((source) => source.id));
+  for (const sourceId of sourceIds) {
+    if (!knownSourceIds.has(sourceId)) {
+      throw new Error(`${prefix}:${sourceId}`);
+    }
+  }
+}
+
 function validateFxSources(
   conversion: AnalysisFxConversion | null,
   sources: readonly AnalysisSource[],
 ): void {
   if (!conversion) return;
-  const knownSourceIds = new Set(sources.map((source) => source.id));
-  for (const sourceId of conversion.sourceIds) {
-    if (!knownSourceIds.has(sourceId)) {
-      throw new Error(`analysis_fx_source_missing:${sourceId}`);
-    }
-  }
+  validateSourceIds("analysis_fx_source_missing", conversion.sourceIds, sources);
 }
 
 export function buildDivLabResearchPacket(input: {
@@ -186,6 +225,7 @@ export function buildDivLabResearchPacket(input: {
   currentPrice: number;
   history: readonly DailyBar[];
   fundamentals: FundamentalSnapshot;
+  companyClassification?: DivLabCompanyClassification | null;
   fxConversion?: AnalysisFxConversion | null;
   valuationScenarios: ValuationScenarioInput[];
   sources: readonly AnalysisSource[];
@@ -204,7 +244,13 @@ export function buildDivLabResearchPacket(input: {
   const sources = input.sources.map((source) => ({ ...source }));
   const evidence = (input.evidence ?? []).map((item) => ({ ...item }));
   const fxConversion = cloneFxConversion(input.fxConversion);
+  const companyClassification = cloneCompanyClassification(input.companyClassification);
   validateFxSources(fxConversion, sources);
+  validateSourceIds(
+    "analysis_company_classification_source_missing",
+    companyClassification.sourceIds,
+    sources,
+  );
 
   const fundamentalSnapshot = cloneFundamentalSnapshot(
     input.fundamentals,
@@ -212,8 +258,11 @@ export function buildDivLabResearchPacket(input: {
     input.currentPrice,
   );
   const currencies = currencyMetadata(fundamentalSnapshot);
-  const rawFundamental = analyzeFundamentals(fundamentalSnapshot);
-  const fundamental: FundamentalAnalysis = {
+  const rawFundamental = analyzeFundamentalsForCompany({
+    snapshot: fundamentalSnapshot,
+    classification: companyClassification,
+  });
+  const fundamental: DivLabFundamentalAnalysis = {
     ...rawFundamental,
     // Fundamental monetary values describe the accounting statements, not the
     // listed share quote. Keep that semantic explicit for UI/DivBrain consumers.
@@ -233,64 +282,68 @@ export function buildDivLabResearchPacket(input: {
 
   const valuationInputs: DivLabValuationInputs = {
     epsTtm: normalizeValuationInput({
-      value: fundamental.metrics.epsTtm,
+      value: fundamental.methodology.valuationSupport.pe
+        ? fundamental.metrics.epsTtm
+        : null,
       sourceCurrency: currencies.epsTtmCurrency,
       marketCurrency,
       fxConversion,
     }),
     freeCashFlowPerShareTtm: normalizeValuationInput({
-      value: fundamental.metrics.freeCashFlowPerShare,
+      value: fundamental.methodology.valuationSupport.priceToFcf
+        ? fundamental.metrics.freeCashFlowPerShare
+        : null,
       sourceCurrency: currencies.reportingCurrency,
       marketCurrency,
       fxConversion,
     }),
   };
 
+  const enterpriseAllowed =
+    fundamental.methodology.valuationSupport.enterpriseMultiples;
   const enterpriseValuationInputs: DivLabEnterpriseValuationInputs = {
     marketCap: normalizeValuationAmount({
-      value: fundamentalSnapshot.marketCap,
+      value: enterpriseAllowed ? fundamentalSnapshot.marketCap : null,
       sourceCurrency: marketCurrency,
       marketCurrency,
       fxConversion,
     }),
     cash: normalizeValuationAmount({
-      value: fundamentalSnapshot.cash,
+      value: enterpriseAllowed ? fundamentalSnapshot.cash : null,
       sourceCurrency: currencies.reportingCurrency,
       marketCurrency,
       fxConversion,
     }),
     totalDebt: normalizeValuationAmount({
-      value: fundamentalSnapshot.totalDebt,
+      value: enterpriseAllowed ? fundamentalSnapshot.totalDebt : null,
       sourceCurrency: currencies.reportingCurrency,
       marketCurrency,
       fxConversion,
     }),
     ebitTtm: normalizeValuationAmount({
-      value: fundamentalSnapshot.ebitTtm,
+      value: enterpriseAllowed ? fundamentalSnapshot.ebitTtm : null,
       sourceCurrency: currencies.reportingCurrency,
       marketCurrency,
       fxConversion,
     }),
     ebitdaTtm: normalizeValuationAmount({
-      value: fundamentalSnapshot.ebitdaTtm,
+      value: enterpriseAllowed ? fundamentalSnapshot.ebitdaTtm : null,
       sourceCurrency: currencies.reportingCurrency,
       marketCurrency,
       fxConversion,
     }),
   };
 
-  // Preserve the raw source currency in trailing metadata when no verified FX
-  // conversion exists, while using converted values only when they are audited.
+  // Only methodology-approved, normalized valuation inputs may reach the
+  // deterministic valuation engine. Raw snapshot fallbacks would reintroduce
+  // cross-currency or company-type-incompatible metrics after they were blocked.
   const valuation = buildValuationAnalysis({
     currentPrice: input.currentPrice,
     currency: marketCurrency,
-    epsTtm: valuationInputs.epsTtm.value ?? fundamental.metrics.epsTtm,
-    epsCurrency: valuationInputs.epsTtm.currency ?? currencies.epsTtmCurrency,
-    freeCashFlowPerShareTtm:
-      valuationInputs.freeCashFlowPerShareTtm.value ??
-      fundamental.metrics.freeCashFlowPerShare,
-    freeCashFlowPerShareCurrency:
-      valuationInputs.freeCashFlowPerShareTtm.currency ?? currencies.reportingCurrency,
+    epsTtm: valuationInputs.epsTtm.value,
+    epsCurrency: valuationInputs.epsTtm.currency,
+    freeCashFlowPerShareTtm: valuationInputs.freeCashFlowPerShareTtm.value,
+    freeCashFlowPerShareCurrency: valuationInputs.freeCashFlowPerShareTtm.currency,
     marketCap: enterpriseValuationInputs.marketCap.value,
     cash: enterpriseValuationInputs.cash.value,
     totalDebt: enterpriseValuationInputs.totalDebt.value,
@@ -309,6 +362,7 @@ export function buildDivLabResearchPacket(input: {
 
   const qualityGate = evaluateAnalysisQuality({
     now,
+    companyClassification,
     fundamental,
     valuation,
     valuationProvenance,
@@ -336,6 +390,7 @@ export function buildDivLabResearchPacket(input: {
       ],
       now.toISOString(),
     ),
+    companyClassification,
     currencyContext,
     fundamentalSnapshot,
     fundamental,
