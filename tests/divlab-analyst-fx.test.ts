@@ -9,6 +9,7 @@ import type { DailyBar } from "../lib/model-portfolios/engine/eodhd";
 
 const REPORT_ID = "report:q2";
 const MARKET_ID = "market:test";
+const FUNDAMENTAL_ID = "fundamental:test";
 const FX_ID = "fx:EUR:SEK:2026-08-14";
 
 function bars(): DailyBar[] {
@@ -98,6 +99,15 @@ function packet() {
         primary: false,
       },
       {
+        id: FUNDAMENTAL_ID,
+        kind: "fundamental_data",
+        publisher: "Fundamental provider",
+        url: "https://example.com/fundamental",
+        publishedAt: "2026-08-14T16:00:00.000Z",
+        verifiedAt: "2026-08-14T16:00:00.000Z",
+        primary: false,
+      },
+      {
         id: FX_ID,
         kind: "fx_data",
         publisher: "European Central Bank via Frankfurter",
@@ -165,6 +175,13 @@ function draft() {
       claim("Omsättningshistoriken är tillräcklig för flerårig jämförelse."),
       claim("Fritt kassaflöde används endast efter deterministisk valutaomräkning."),
     ],
+    valuationInterpretation: [
+      {
+        measure: "priceToFcf",
+        text: "P/FCF används först efter deterministisk EUR till SEK-normalisering.",
+        sourceIds: [MARKET_ID, FUNDAMENTAL_ID, FX_ID],
+      },
+    ],
     qualityFactors: {
       competitiveAdvantage: unknown,
       pricingPower: unknown,
@@ -195,7 +212,7 @@ function draft() {
 }
 
 describe("DivLab analyst FX provenance", () => {
-  it("accepts an FCF scenario only when converted valuation inputs cite the FX source", () => {
+  it("accepts FCF scenarios and valuation interpretation only with required FX provenance", () => {
     const researchPacket = packet();
     const analystDraft = draft();
     assert.equal(researchPacket.valuationInputs.freeCashFlowPerShareTtm.converted, true);
@@ -218,6 +235,16 @@ describe("DivLab analyst FX provenance", () => {
           draft: analystDraft,
         }),
       /divlab_analyst_fx_source_missing:base:fcf/,
+    );
+  });
+
+  it("rejects a P\/FCF valuation interpretation that omits the FX source", () => {
+    const researchPacket = packet();
+    const analystDraft = draft();
+    analystDraft.valuationInterpretation[0]!.sourceIds = [MARKET_ID, FUNDAMENTAL_ID];
+    assert.throws(
+      () => validateAnalystDraftAgainstPacket({ packet: researchPacket, draft: analystDraft }),
+      new RegExp(`divlab_analyst_valuation_source_missing:priceToFcf:${FX_ID}`),
     );
   });
 });
