@@ -6,7 +6,7 @@ import { analyzeSupportResistance } from "@/lib/analysis/support-resistance";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const SMOKE_HEADER = "three-company-v1";
+const SMOKE_KEY = "three-company-v1";
 
 const CASES = [
   {
@@ -44,11 +44,9 @@ function zoneSummary(zone: ReturnType<typeof analyzeSupportResistance>["supports
   };
 }
 
-export async function POST(request: Request) {
-  if (
-    process.env.VERCEL_ENV !== "preview" ||
-    request.headers.get("x-divlab-analysis-smoke") !== SMOKE_HEADER
-  ) {
+export async function GET(request: Request) {
+  const key = new URL(request.url).searchParams.get("key");
+  if (process.env.VERCEL_ENV !== "preview" || key !== SMOKE_KEY) {
     return new NextResponse(null, { status: 404 });
   }
 
