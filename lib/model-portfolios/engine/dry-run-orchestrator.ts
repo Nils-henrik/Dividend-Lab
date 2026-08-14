@@ -16,8 +16,14 @@ import { fetchFxRateToSek } from "./fx-adapter";
 import { convertNativeMinorToSek, currencyForExchange, type FxRateQuote, type SupportedFxCurrency } from "./fx";
 import type { ModelPortfolioStrategyKey } from "./policy";
 import { buildFollowerTradePayload } from "./pricing";
-import { rankResearchUniverse, type ResearchCandidate } from "./research";
+import { MODEL_PORTFOLIO_MANDATES } from "./mandates";
+import type { ResearchCandidate } from "./research";
 import { runModelPortfolioResearchPipeline, type ResearchCandidateDiagnostic } from "./research-pipeline";
+import {
+  attentionCandidatesAsResearch,
+  selectDryRunAttentionSnapshot,
+  type AttentionCandidate,
+} from "./strategy-attention";
 import { settleModelPortfolioDecision } from "./settle-service";
 import { planSimulatedSettlement } from "./settlement";
 import {
@@ -246,30 +252,35 @@ async function filterPortfolioDecisionInputs(input: {
 function buildPortfolioResearchSummary(input: {
   pass: ModelPortfolioResearchPass;
   strategyKey: ModelPortfolioStrategyKey;
-  candidates: readonly ResearchCandidate[];
+  snapshot: readonly AttentionCandidate[];
   holdings: readonly HoldingRow[];
   names: ReadonlyMap<string, string>;
   quotes: ReadonlyMap<string, DelayedQuote>;
 }): string {
-  const ranked = rankResearchUniverse(input.candidates, input.strategyKey);
   const heldKeys = new Set(
     input.holdings.map((holding) => instrumentKey(holding.instrument_symbol, holding.exchange)),
   );
-  const narrative = ranked.map((candidate) => {
+  const narrative = input.snapshot.map((candidate) => {
     const candidateKey = instrumentKey(candidate.symbol, candidate.exchange);
     const quote = input.quotes.get(candidateKey);
     return {
       ...toNarrativeCandidate(candidate, input.names, {
-        held: heldKeys.has(candidateKey),
+        held: heldKeys.has(candidateKey) || candidate.attentionEligibility === "held_for_monitoring",
         changePct: quote?.changePct ?? null,
+        attentionEligibility: candidate.attentionEligibility,
       }),
       reasons: candidate.reasons,
     };
   });
+  const topCandidates = [
+    ...narrative.filter((item) => item.attentionEligibility === "new_entry"),
+    ...narrative.filter((item) => item.attentionEligibility === "held_for_monitoring"),
+  ].slice(0, 4);
   return buildInvestorFacingResearchSummary({
     pass: input.pass,
+    strategyName: MODEL_PORTFOLIO_MANDATES[input.strategyKey].name,
     investigated: narrative,
-    topCandidates: narrative.slice(0, 4),
+    topCandidates: topCandidates.length ? topCandidates : narrative.slice(0, 4),
   });
 }
 
@@ -453,19 +464,38 @@ export async function runAllModelPortfoliosDryRun(
     const portfolioHoldings = holdings.filter((holding) => holding.portfolio_id === portfolio.id);
     const cashMinor = cashByPortfolio.get(portfolio.id) ?? 0;
     const portfolioSnapshot = buildPortfolioSnapshot({ portfolio, cashMinor, holdings: portfolioHoldings });
+    const heldInstruments = portfolioHoldings.map((holding) => ({
+      symbol: holding.instrument_symbol,
+      exchange: holding.exchange,
+    }));
+    const assembled = selectDryRunAttentionSnapshot({
+      universe: research.candidates,
+      strategyKey: portfolio.strategy_key,
+      heldInstruments,
+    });
+    const attentionCandidates = attentionCandidatesAsResearch({
+      ...assembled.attention,
+      candidates: assembled.snapshot,
+    });
     const decisionInputs = await filterPortfolioDecisionInputs({
       portfolio,
       holdings: portfolioHoldings,
       cashMinor,
       now,
-      candidates: research.candidates,
+      candidates: attentionCandidates,
       evidence: research.evidence,
       quotes: research.quotes,
     });
+    const snapshotKeys = new Set(
+      decisionInputs.candidates.map((candidate) => instrumentKey(candidate.symbol, candidate.exchange)),
+    );
+    const summarySnapshot = assembled.snapshot.filter((candidate) =>
+      snapshotKeys.has(instrumentKey(candidate.symbol, candidate.exchange)),
+    );
     const portfolioResearchSummary = buildPortfolioResearchSummary({
       pass: researchPass,
       strategyKey: portfolio.strategy_key,
-      candidates: decisionInputs.candidates,
+      snapshot: summarySnapshot,
       holdings: portfolioHoldings,
       names: research.names,
       quotes: research.quotes,
@@ -479,6 +509,7 @@ export async function runAllModelPortfoliosDryRun(
       evidence: decisionInputs.evidence,
       spentTodayUsdMicros,
       runId: audit?.runId ?? null,
+      heldInstruments,
     });
 
     if (!result.ok) {

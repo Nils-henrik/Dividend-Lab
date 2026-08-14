@@ -34,6 +34,14 @@ import {
 import { enrichNordicPrimarySourceHits } from "./primary-source-enrichment";
 import { rankResearchUniverse, type ResearchCandidate } from "./research";
 import {
+  classifyNordicDiscoveryLane,
+  classifyUsDiscoveryLane,
+  selectCrossLaneEventTargets,
+  selectLaneAwareFundamentalTargets,
+  selectUsSharedSeedUnion,
+  type ResearchLane,
+} from "./research-lanes";
+import {
   mergeFundamentalScores,
   parseEodhdFundamentalsPayload,
   scoreEodhdFundamentals,
@@ -47,21 +55,15 @@ import {
   storedBundleToEvidence,
   type ResearchFundamentalsSource,
 } from "./research-store";
-import { discoverNordicYahooCandidates, discoverYahooCandidates } from "./yahoo-discovery";
+import {
+  discoverNordicYahooCandidates,
+  discoverYahooCandidates,
+  scoreYahooDiscoveryCandidate,
+} from "./yahoo-discovery";
 import {
   fetchYahooFundamentals,
   fetchYahooHistoryResearch,
 } from "./yahoo-research";
-
-const US_QUALITY_CORE = [
-  { symbol: "MSFT", exchange: "US", name: "Microsoft" },
-  { symbol: "AAPL", exchange: "US", name: "Apple" },
-  { symbol: "GOOGL", exchange: "US", name: "Alphabet" },
-  { symbol: "AMZN", exchange: "US", name: "Amazon" },
-  { symbol: "META", exchange: "US", name: "Meta Platforms" },
-  { symbol: "JPM", exchange: "US", name: "JPMorgan Chase" },
-  { symbol: "NVDA", exchange: "US", name: "NVIDIA" },
-] as const;
 
 // Must refresh between the 15:50, 18:30 and 21:30 decision windows while
 // still suppressing accidental retries and duplicate fetches around one slot.
@@ -70,6 +72,8 @@ const US_MAX_SEEDS = 18;
 const US_MAX_FUNDAMENTAL_TARGETS = 8;
 const US_MAX_GOOGLE_TARGETS = 2;
 const MAX_EODHD_FUNDAMENTAL_CALLS_PER_PASS = 2;
+/** Already-fetched Yahoo mover pool used for lane selection. Not a fourth screener call. */
+const US_MOVER_DISCOVERY_POOL_LIMIT = 30;
 
 type HoldingSeed = {
   instrument_symbol: string;
@@ -86,6 +90,7 @@ type Seed = {
   discoveryPrice?: number | null;
   discoveryChangePct?: number | null;
   held: boolean;
+  researchLane?: ResearchLane;
 };
 
 type NewResearchRow = {
@@ -220,6 +225,7 @@ function combineSeeds(seeds: Seed[], maxSeeds: number): Seed[] {
       ...seed,
       name: previous.name.length >= seed.name.length ? previous.name : seed.name,
       held: previous.held || seed.held,
+      researchLane: previous.researchLane ?? seed.researchLane,
     });
   }
   return [...map.values()].slice(0, maxSeeds);
@@ -235,12 +241,18 @@ function holdingSeedsForPass(
     const belongs = isUsPass(pass) ? exchange === "US" : exchange !== "US";
     if (!belongs) return [];
     const canonical = canonicalizeInstrumentSymbol(holding.instrument_symbol, exchange);
-    return [{
+    const seedBase = {
       symbol: canonical.baseSymbol,
       exchange: canonical.exchange,
       name: holding.instrument_name,
       yahooSymbol: toYahooTransportSymbol(canonical.baseSymbol, canonical.exchange),
-      held: true,
+      held: true as const,
+    };
+    return [{
+      ...seedBase,
+      researchLane: isUsPass(pass)
+        ? classifyUsDiscoveryLane(seedBase)
+        : classifyNordicDiscoveryLane(seedBase),
     }];
   });
 }
@@ -267,6 +279,7 @@ async function buildNordicDeepSeeds(
     discoveryPrice: item.price,
     discoveryChangePct: item.changePct,
     held: false,
+    researchLane: classifyNordicDiscoveryLane(item),
   }));
 
   const merged = mergeNordicDeepResearchTargets(shortlistSeeds, holdingSeeds);
@@ -287,49 +300,29 @@ async function buildUsSeeds(
 ): Promise<{ seeds: Seed[]; screenedCount: number }> {
   const holdingSeeds = holdingSeedsForPass("us_1550", holdings);
   const discovered = await discoverYahooCandidates({
-    shortlistLimit: 12,
+    shortlistLimit: US_MOVER_DISCOVERY_POOL_LIMIT,
     perScreen: 20,
     now,
   });
-  const moverSeeds: Seed[] = discovered.map((item) => ({
+  const moverSeeds = discovered.map((item) => ({
     symbol: item.symbol,
-    exchange: "US",
+    exchange: "US" as const,
     name: item.name,
     yahooSymbol: item.symbol,
     discoveryMarketCapUsd: item.marketCap,
     discoveryPrice: item.price,
     discoveryChangePct: item.changePct,
-    held: false,
+    discoveryScore: scoreYahooDiscoveryCandidate(item),
   }));
-  const qualitySeeds: Seed[] = US_QUALITY_CORE.map((item) => ({
-    ...item,
-    yahooSymbol: item.symbol,
-    held: false,
-  }));
+  const seeds = selectUsSharedSeedUnion({
+    holdings: holdingSeeds,
+    movers: moverSeeds,
+    maxSeeds: US_MAX_SEEDS,
+  });
   return {
-    seeds: combineSeeds([...holdingSeeds, ...moverSeeds, ...qualitySeeds], US_MAX_SEEDS),
+    seeds,
     screenedCount: discovered.length,
   };
-}
-
-function selectFundamentalTargets(
-  candidates: ResearchCandidate[],
-  seeds: Seed[],
-  maxTargets: number,
-): Set<string> {
-  const selected = new Set<string>();
-  const strategies = ["conservative", "balanced", "high_risk", "dividend"] as const;
-  for (const strategy of strategies) {
-    for (const candidate of rankResearchUniverse(candidates, strategy).slice(0, 3)) {
-      selected.add(key(candidate.symbol, candidate.exchange));
-      if (selected.size >= maxTargets) return selected;
-    }
-  }
-  for (const seed of seeds) {
-    if (seed.held) selected.add(key(seed.symbol, seed.exchange));
-    if (selected.size >= maxTargets) break;
-  }
-  return selected;
 }
 
 function hasUsefulFundamentals(candidate: ResearchCandidate): boolean {
@@ -454,7 +447,11 @@ export async function runModelPortfolioResearchPipeline(input: {
     });
   }
 
-  const targets = selectFundamentalTargets(candidates, seeds, fundamentalTargetLimit);
+  const targets = selectLaneAwareFundamentalTargets({
+    candidates,
+    seeds,
+    maxTargets: fundamentalTargetLimit,
+  });
   let yahooFundamentalCount = 0;
   for (const candidateKey of targets) {
     const row = newResearch.get(candidateKey);
@@ -533,7 +530,12 @@ export async function runModelPortfolioResearchPipeline(input: {
   const googleHitsByCandidate = new Map<string, number>();
   const primaryHitsByCandidate = new Map<string, number>();
   // Primary-source exchange disclosures first; Google is optional supplemental only.
-  const eventTargets = [...targets].slice(0, googleTargetLimit);
+  // Cross-lane selection keeps the numeric cap at 2 without letting one lane monopolize both slots.
+  const eventTargets = selectCrossLaneEventTargets({
+    orderedFundamentalKeys: [...targets],
+    seeds,
+    limit: googleTargetLimit,
+  });
   for (const candidateKey of eventTargets) {
     const row = newResearch.get(candidateKey);
     if (!row) continue;

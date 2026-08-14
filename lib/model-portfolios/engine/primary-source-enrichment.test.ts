@@ -105,4 +105,119 @@ describe("primary source enrichment", () => {
     assert.equal(enriched[0]?.reportPeriod, "Q2");
     assert.equal(enriched[0]?.reportYear, 2026);
   });
+
+  it("consumes the document attempt budget before fetch, even when the first fetch fails", async () => {
+    let fetchCalls = 0;
+    const enriched = await enrichNordicPrimarySourceHits({
+      hits: [
+        baseHit({ url: "https://view.news.eu.nasdaq.com/view?id=first" }),
+        baseHit({
+          url: "https://view.news.eu.nasdaq.com/view?id=second",
+          attachments: [
+            {
+              url: "https://attachment.news.eu.nasdaq.com/second-doc",
+              mimeType: "application/pdf",
+              fileName: "q2-second.pdf",
+            },
+          ],
+        }),
+      ],
+      maxDocuments: 1,
+      fetchImpl: async () => {
+        fetchCalls += 1;
+        return new Response("missing", { status: 404 });
+      },
+    });
+
+    assert.equal(fetchCalls, 1);
+    assert.equal(enriched[0]?.kind, "company_release");
+    assert.equal(enriched[0]?.documentRetrieved, false);
+    assert.match(enriched[0]?.summary ?? "", /kunde inte hämtas\/parsas säkert/i);
+    assert.match(enriched[0]?.summary ?? "", /http_error/i);
+
+    assert.equal(enriched[1]?.kind, "company_release");
+    assert.equal(enriched[1]?.documentRetrieved, false);
+    assert.match(enriched[1]?.summary ?? "", /hoppades över/i);
+    assert.match(enriched[1]?.summary ?? "", /dokumentförsöksbudgetet redan var förbrukat/i);
+    assert.doesNotMatch(enriched[1]?.summary ?? "", /kunde inte hämtas\/parsas/i);
+    assert.doesNotMatch(enriched[1]?.summary ?? "", /http_error/i);
+  });
+
+  it("still allows only one document attempt when the first fetch succeeds", async () => {
+    const pdf = buildFixturePdf("Investor AB Interim report January-June 2026 Adjusted NAV SEK 100");
+    let fetchCalls = 0;
+    const enriched = await enrichNordicPrimarySourceHits({
+      hits: [
+        baseHit({ url: "https://view.news.eu.nasdaq.com/view?id=first" }),
+        baseHit({
+          url: "https://view.news.eu.nasdaq.com/view?id=second",
+          attachments: [
+            {
+              url: "https://attachment.news.eu.nasdaq.com/second-doc",
+              mimeType: "application/pdf",
+              fileName: "q2-second.pdf",
+            },
+          ],
+        }),
+      ],
+      maxDocuments: 1,
+      fetchImpl: async () => {
+        fetchCalls += 1;
+        return new Response(Buffer.from(pdf), {
+          status: 200,
+          headers: { "content-type": "application/pdf" },
+        });
+      },
+    });
+
+    assert.equal(fetchCalls, 1);
+    assert.equal(enriched[0]?.kind, "company_report");
+    assert.equal(enriched[0]?.documentRetrieved, true);
+    assert.match(enriched[0]?.summary ?? "", /Adjusted NAV SEK 100/i);
+
+    assert.equal(enriched[1]?.kind, "company_release");
+    assert.equal(enriched[1]?.documentRetrieved, false);
+    assert.match(enriched[1]?.summary ?? "", /hoppades över/i);
+    assert.match(enriched[1]?.summary ?? "", /dokumentförsöksbudgetet redan var förbrukat/i);
+    assert.doesNotMatch(enriched[1]?.summary ?? "", /kunde inte hämtas\/parsas/i);
+  });
+
+  it("makes zero fetch calls when maxDocuments is 0 and describes the attachment as skipped", async () => {
+    let fetchCalls = 0;
+    const enriched = await enrichNordicPrimarySourceHits({
+      hits: [baseHit()],
+      maxDocuments: 0,
+      fetchImpl: async () => {
+        fetchCalls += 1;
+        return new Response("should-not-run", { status: 500 });
+      },
+    });
+
+    assert.equal(fetchCalls, 0);
+    assert.equal(enriched[0]?.kind, "company_release");
+    assert.equal(enriched[0]?.documentRetrieved, false);
+    assert.match(enriched[0]?.summary ?? "", /hoppades över/i);
+    assert.match(enriched[0]?.summary ?? "", /dokumentförsöksbudgetet redan var förbrukat/i);
+    assert.doesNotMatch(enriched[0]?.summary ?? "", /kunde inte hämtas\/parsas/i);
+    assert.doesNotMatch(enriched[0]?.summary ?? "", /http_error|fetch_failed/i);
+  });
+
+  it("describes a hit with no report attachment as unread, not skipped or failed", async () => {
+    let fetchCalls = 0;
+    const enriched = await enrichNordicPrimarySourceHits({
+      hits: [baseHit({ attachments: [] })],
+      maxDocuments: 1,
+      fetchImpl: async () => {
+        fetchCalls += 1;
+        return new Response("should-not-run", { status: 500 });
+      },
+    });
+
+    assert.equal(fetchCalls, 0);
+    assert.equal(enriched[0]?.kind, "company_release");
+    assert.equal(enriched[0]?.documentRetrieved, false);
+    assert.match(enriched[0]?.summary ?? "", /Ingen rapportbilaga lästes/i);
+    assert.doesNotMatch(enriched[0]?.summary ?? "", /hoppades över/i);
+    assert.doesNotMatch(enriched[0]?.summary ?? "", /kunde inte hämtas\/parsas/i);
+  });
 });

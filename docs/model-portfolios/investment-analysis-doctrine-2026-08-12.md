@@ -1,6 +1,6 @@
 # DivLab Investment Analysis Doctrine — 2026-08-12
 
-Status: runtime-integrerad utbildnings-/analysstandard för DivBrain och modellportfölj-AI.
+Status: runtime-integrerad utbildnings-/analysstandard v2 för DivBrain och modellportfölj-AI.
 
 ## Syfte
 
@@ -53,6 +53,20 @@ AI:n ska aktivt söka motbevis och motverka confirmation bias, recency bias, ank
 ### 10. HOLD och alternativkostnad
 
 HOLD är ett fullvärdigt beslut. Ett nytt köp ska förbättra förväntad riskjusterad portföljkvalitet relativt befintliga innehav och kassa och ha tillräcklig marginal för courtage/friktion. Aktivitet för aktivitetens skull är ett fel.
+
+### 11. Doctrine v2 — casetyp, förväntningar och kalibrering
+
+Version 2 behåller alla säkerhets- och källprinciper ovan och lägger till:
+
+- casetyp före värdering (compounder, mogen kvalitet, cykliskt, turnaround/recovery, event/katalysator, inkomstvärdepapper)
+- skillnad mellan bra bolag och bra aktie till dagens pris
+- bas/nedsida/uppsida och tesbrottsvillkor
+- per-aktie-ekonomi och utspädning
+- kapitalintensitet kontra lönsam återinvestering
+- evidenskalibrering: saknad data är inte neutral säkerhet
+- portföljpassning kontra fristående kvalitet
+- inkomstvärdepapper (pref/D, utdelande ETF:er)
+- processkvalitet före utfallsbias, utan omskrivning av historiska beslut
 
 ## Primära forsknings-/myndighetsreferenser bakom utbildningspasset
 

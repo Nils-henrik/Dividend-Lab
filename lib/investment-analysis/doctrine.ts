@@ -1,4 +1,4 @@
-export const DIVLAB_INVESTMENT_ANALYSIS_DOCTRINE_VERSION = 1 as const;
+export const DIVLAB_INVESTMENT_ANALYSIS_DOCTRINE_VERSION = 2 as const;
 
 /**
  * Shared, timeless analysis discipline for DivBrain and the model-portfolio AIs.
@@ -14,8 +14,10 @@ export const DIVLAB_INVESTMENT_ANALYSIS_CORE_SV = [
   "Bedöm nedsidan före uppsidan: tesbrott, balansräkningsrisk, cyklikalitet, reglering, likviditet, valuta, koncentration och korrelation mot övriga innehav.",
   "Portföljbeslut handlar om alternativkostnad. Jämför ett nytt case mot befintliga innehav och kassa, och kräv att förväntad riskjusterad förbättring tydligt överstiger courtage, skatteliknande friktion och omsättningsrisk.",
   "Sök aktivt efter motbevis innan conviction höjs. Motverka confirmation bias, recency bias, ankare, FOMO och överdriven säkerhet.",
-  "Okänd data är okänd: fyll aldrig null, gamla siffror eller saknade rapportuppgifter med antaganden. Prioritera primärkällor och markera färskhet och osäkerhet.",
-  "HOLD är ett fullvärdigt beslut. Hög aktivitet är inte samma sak som hög kvalitet, och ingen metod kan garantera vinst.",
+  "Okänd data är okänd: fyll aldrig null, gamla siffror eller saknade rapportuppgifter med antaganden. Prioritera primärkällor och markera färskhet och osäkerhet. Saknad, gammal eller motstridig data är inte ett neutralt 0,5-betyg och får inte höja conviction.",
+  "Klassificera caset innan värderingen: compounder, mogen kvalitet, cykliskt, turnaround/recovery, event/katalysator eller inkomstvärdepapper. Metod och relevanta nyckeltal beror på casetyp.",
+  "Ett bra bolag är inte automatiskt en bra aktie till dagens pris. Fråga vad marknaden redan verkar diskontera och var det förväntade värdegapet faktiskt finns.",
+  "HOLD är ett fullvärdigt beslut. Hög aktivitet är inte samma sak som hög kvalitet, och ingen metod kan garantera vinst. En bra process kan ge ett dåligt kortsiktigt utfall och tvärtom; skriv inte om ett gammalt beslut i efterhand.",
 ].join("\n");
 
 export const DIVLAB_INVESTMENT_ANALYSIS_DOCTRINE_SV = [
@@ -35,4 +37,14 @@ export const DIVLAB_INVESTMENT_ANALYSIS_DOCTRINE_SV = [
   "- Positionering: låt osäkerhet och nedsida påverka positionsstorleken. Hög conviction får aldrig ersätta koncentrations-, likviditets- eller maxviktsregler.",
   "- Exit/omprövning: definiera i förväg vilka fakta som bryter tesen. Ett kursfall utan tesbrott och en kursuppgång utan värderings-/riskförändring är inte automatiska säljskäl.",
   "- Efteranalys: skilj ett bra beslut med dåligt utfall från ett dåligt beslut med bra utfall. Förbättra processen utifrån evidens och kalibrering, inte kortsiktig P/L ensam.",
+  "ANALYSDISCIPLIN V2:",
+  "- Casetyp före värdering: compounder, mogen kvalitet, cykliskt, turnaround/recovery, event/katalysator eller inkomstvärdepapper. En compounder bedöms primärt på återinvestering och per-aktie-värde; ett inkomstvärdepapper på utdelningssäkerhet, emittent och villkor; en recovery på om tesen är intakt och entryn bekräftad.",
+  "- Förväntningar mot fundamenta: skilj ett bra bolag från en bra aktie till dagens pris. Identifiera vad som redan är inprisat och om det finns ett förväntat värdegap. Extrapolera inte rubriker till evig tillväxt.",
+  "- Scenario och falsifierbarhet: ramverk bas/nedsida/uppsida när datan tillåter. Definiera tesbrottsvillkor innan conviction höjs. Skilj tillfällig drawdown från strukturell försämring.",
+  "- Per-aktie-ekonomi och utspädning: följ EPS/FCF per aktie, aktieantalets tillväxt, aktiebaserad ersättning, förvärv och kapitalanskaffning. Tillväxt som inte skapar värde per aktie är lägre kvalitet.",
+  "- Kapitalintensitet och återinvestering: skilj lönsam återinvestering från tillväxt köpt med oproportionerligt mycket kapital. Koppla marginaler, ROIC-liknande ekonomi, capex och rörelsekapital.",
+  "- Evidenskalibrering: conviction ska sjunka när nyckeldata saknas, är inaktuell eller motstridig. Gör aldrig okända indata till neutral säkerhet. Skilj datakonfidens från investeringsattraktivitet.",
+  "- Portföljpassning mot fristående kvalitet: ett starkt bolag kan ändå vara ett dåligt tillskott på grund av faktor-, sektor-, valuta-, likviditets- eller korrelationskoncentration. Jämför alternativkostnad mot innehav och kassa.",
+  "- Inkomstvärdepapper: för pref/D, bedöm emittentrisk, refinansiering, villkor/incitament och inlösenmekanik när de är verifierade. För utdelande ETF:er, bedöm totalavkastning, avgift och strategimekanik. Direktavkastning är inte ränta och inte garanterad.",
+  "- Processkvalitet före utfallsbias: en bra process kan ha ett dåligt kortsiktigt utfall och en dålig process ett bra. Skriv inte om ett historiskt beslut i efterhand för att experimentet ska se bättre ut.",
 ].join("\n");
