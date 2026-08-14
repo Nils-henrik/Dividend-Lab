@@ -1,11 +1,11 @@
 import "server-only";
 
-import { generateText, Output } from "ai";
+import { APICallError, generateText, Output } from "ai";
 import {
   estimateAiCostUsdMicros,
-  resolveModelPortfolioAiConfig,
   type ModelPortfolioAiModel,
 } from "@/lib/model-portfolios/engine/ai";
+import { resolveDivLabAnalystAiConfig } from "./analyst-auth";
 import { validateAnalystDraftAgainstPacket } from "./analyst-contract";
 import {
   divLabAnalystDraftSchema,
@@ -113,34 +113,42 @@ export async function generateDivLabAnalystDraft(input: {
   );
   if (!primaryEvidence) throw new Error("divlab_analyst_primary_evidence_missing");
 
-  const config = resolveModelPortfolioAiConfig();
+  const config = resolveDivLabAnalystAiConfig();
   if (!config.configured) throw new Error(config.reason);
   const model = input.useEscalationModel ? config.escalationModel : config.primaryModel;
 
-  const result = await generateText({
-    model,
-    output: Output.object({
-      schema: divLabAnalystDraftSchema,
-      name: "divlab_analyst_draft",
-      description:
-        "A source-grounded DivLab equity-analysis draft with explicit Bear/Base/Bull assumptions.",
-    }),
-    system: buildSystemMandate(),
-    prompt: [
-      "VERIFIERAT RESEARCH-PACKET:",
-      buildAnalystFacts(input.packet),
-      "UPPGIFT:",
-      "Analysera bolaget och aktien enligt schemat. Föreslå transparenta Bear/Base/Bull-antaganden men räkna inte ut slutvärden; DivLabs deterministiska värderingsmotor gör matematiken efter ditt svar.",
-      `Samtliga valuationScenarios.currency ska vara ${input.packet.instrument.currency}.`,
-    ].join("\n\n"),
-    maxOutputTokens: DIVLAB_ANALYST_AI_BUDGET.maxOutputTokens,
-    temperature: 0.1,
-    providerOptions: {
-      gateway: {
-        tags: ["divlab", "analysis", "deep-research", "analyst-v1"],
+  let result: Awaited<ReturnType<typeof generateText>>;
+  try {
+    result = await generateText({
+      model,
+      output: Output.object({
+        schema: divLabAnalystDraftSchema,
+        name: "divlab_analyst_draft",
+        description:
+          "A source-grounded DivLab equity-analysis draft with explicit Bear/Base/Bull assumptions.",
+      }),
+      system: buildSystemMandate(),
+      prompt: [
+        "VERIFIERAT RESEARCH-PACKET:",
+        buildAnalystFacts(input.packet),
+        "UPPGIFT:",
+        "Analysera bolaget och aktien enligt schemat. Föreslå transparenta Bear/Base/Bull-antaganden men räkna inte ut slutvärden; DivLabs deterministiska värderingsmotor gör matematiken efter ditt svar.",
+        `Samtliga valuationScenarios.currency ska vara ${input.packet.instrument.currency}.`,
+      ].join("\n\n"),
+      maxOutputTokens: DIVLAB_ANALYST_AI_BUDGET.maxOutputTokens,
+      temperature: 0.1,
+      providerOptions: {
+        gateway: {
+          tags: ["divlab", "analysis", "deep-research", "analyst-v1"],
+        },
       },
-    },
-  });
+    });
+  } catch (error) {
+    if (APICallError.isInstance(error) && error.statusCode === 401) {
+      throw new Error("gateway_auth_missing");
+    }
+    throw error;
+  }
 
   if (!result.output) throw new Error("divlab_analyst_output_missing");
   validateAnalystDraftAgainstPacket({ packet: input.packet, draft: result.output });
