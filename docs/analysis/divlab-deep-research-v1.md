@@ -12,12 +12,16 @@ DivLab Analys is being built as a structured, auditable equity-research product 
 Market history + financial statements
         +
 Official issuer disclosures / report PDFs
+        +
+Verified reference FX when reporting currency differs from market currency
         ↓
 Normalized FundamentalSnapshot (TTM + multi-year periods)
         +
 Bounded, source-linked report evidence
         ↓
 Deterministic fundamental analysis + per-share trends
+        ↓
+Audited valuationInputs in market currency
         ↓
 Deterministic technical analysis + support/resistance zones
         ↓
@@ -52,16 +56,30 @@ The public `/analyses` product is intentionally not part of this PR.
 - capex sign conventions are handled explicitly when FCF is derived.
 - unknown accounting fields remain unknown.
 
-### Currency invariant
+### Currency invariant and deterministic FX
 
 Market currency and reporting currency are tracked separately. This matters for companies that trade in SEK but report accounting data in another currency.
 
-- trailing P/E is only calculated when EPS currency is compatible with the share-price currency;
-- trailing P/FCF and FCF yield are omitted when FCF/share currency is not verified compatible;
-- every Bear/Base/Bull scenario must explicitly name the market currency;
-- incompatible scenario currencies are rejected rather than converted implicitly.
+Raw accounting facts are never rewritten into the market currency. When a per-share valuation input needs conversion, Deep Research creates a separate auditable `valuationInputs` layer containing:
 
-No FX conversion is fabricated by the engine.
+- original/source currency;
+- normalized market-currency value;
+- whether a conversion occurred;
+- FX rate and as-of timestamp;
+- exact FX source IDs used.
+
+`lib/analysis/fx.ts` derives direct or cross rates deterministically from the existing ECB/Frankfurter base-to-SEK reference-rate adapter. Missing, unsupported or invalid FX fails closed: the incompatible valuation measure stays unavailable rather than using an invented rate.
+
+The ordinary portfolio FX path is reused rather than duplicated. Injected test fetches bypass the shared runtime FX cache so fixtures cannot poison real server cache entries.
+
+Valuation rules:
+
+- trailing P/E is calculated only from a verified market-currency EPS basis;
+- trailing P/FCF and FCF yield use a verified market-currency FCF/share basis, including deterministic FX when required;
+- every Bear/Base/Bull scenario explicitly names the market currency;
+- the analyst may not perform its own FX arithmetic;
+- if a scenario uses a converted valuation input, its `sourceIds` must include every required FX source ID;
+- if verified FX is unavailable, cross-currency valuation remains unknown.
 
 ## Fundamental analysis
 
@@ -131,7 +149,7 @@ Evidence is always treated as untrusted external content, never instructions.
 The research/source pipeline has been exercised against three deliberately different Stockholm-listed profiles:
 
 1. **Atlas Copco A (`ATCO-A.ST`)** — established large-cap quality case.
-2. **Evolution (`EVO.ST`)** — high-margin growth case.
+2. **Evolution (`EVO.ST`)** — high-margin growth case and cross-currency valuation case.
 3. **Embracer B (`EMBRAC-B.ST`)** — volatile turnaround/event case.
 
 Verified findings from those smoke tests:
@@ -139,12 +157,29 @@ Verified findings from those smoke tests:
 - real market/fundamental loading worked in the Vercel server environment;
 - dedicated CNS discovery found the relevant official report path for all three companies;
 - Atlas Copco and Evolution official report PDFs passed the safe document path;
-- Embracer's fresh Q1 report was initially discovered correctly but rejected because its 20.17 MB PDF exceeded the old 5/12 MB research bounds;
+- Embracer's fresh Q1 report was initially discovered correctly but rejected because its 20.17 MB PDF exceeded the old research bounds;
 - after introducing the dedicated 24 MB Deep Research ceiling, the same official Embracer PDF passed HTTPS/host/content-type/PDF-signature checks and became `primary=true`;
-- live testing exposed the need for explicit market-vs-reporting-currency separation;
-- live testing also exposed the valid technical state where no historical resistance can be verified above a price-discovery zone.
+- live testing exposed the valid technical state where no historical resistance can be verified above a price-discovery zone.
 
-GitHub-hosted runners are not representative for the current Yahoo financial-statement session and return `financial_statements_unavailable`, while the Vercel environment has successfully loaded the data. Therefore the latest currency-normalization changes are unit/CI verified but are not yet claimed as a fresh end-to-end Yahoo live verification.
+### Evolution live FX verification — 14 August 2026
+
+The current FX-enabled research path was run end-to-end in a Vercel preview on `EVO.ST`.
+
+Observed facts:
+
+- market currency: SEK;
+- reporting currency: EUR;
+- Yahoo trailing EPS basis: 58.66 SEK;
+- raw FCF/share basis: 4.858454 EUR;
+- ECB/Frankfurter EUR→SEK reference rate: 10.999;
+- deterministic normalized FCF/share: 53.438135546 SEK;
+- trailing P/E: 12.83;
+- trailing P/FCF: 14.084;
+- FCF yield: 7.1005%;
+- verified Evolution H1 2026 report was retrieved from the Nasdaq disclosure attachment and retained as primary report evidence;
+- facts-only quality gate scored 88/100, with the only blocker being the intentionally absent Bear/Base/Bull analyst scenarios.
+
+This verifies that the engine no longer mixes EUR accounting cash flow with a SEK share price and no longer has to discard the FCF valuation method when a verified cross-currency rate is available.
 
 ## Source-grounded analyst layer
 
@@ -171,18 +206,30 @@ The analyst may **not**:
 - invent missing numbers;
 - create its own RSI/MA/support/resistance levels;
 - invent source IDs;
-- silently mix currencies;
+- silently mix currencies or calculate FX itself;
+- use EPS/FCF scenario methods without an available normalized valuation basis;
+- omit FX provenance when a converted valuation input is used;
 - fabricate an explicit DCF/fair value;
 - turn a missing source into neutral evidence.
 
 Every structured claim references existing source IDs. `latestReport` must reference a primary source. Analyst output is schema-validated and then checked against the packet before it can proceed.
+
+If AI Gateway authentication is operationally unavailable, `createDivLabAiAnalysis()` now fails closed at `stage: "analyst"` while retaining the already verified facts packet in-memory for inspection/retry. Other analyst/schema errors still throw and cannot be silently downgraded to an auth retry.
+
+### AI Gateway validation boundary
+
+A real analyst call was attempted in Vercel Preview after the research stage had completed. It stopped at `gateway_auth_missing`.
+
+This is consistent with the existing deployment policy: `AI_GATEWAY_API_KEY` is configured for Production, not Preview. A bounded GitHub Actions presence probe also confirmed that no repository-level `AI_GATEWAY_API_KEY` secret exists there. The probe and preview-only analyst endpoint were removed immediately after verification.
+
+No secret was copied, exposed or weakened merely to make the smoke test pass. A genuine real-company analyst-output review remains pending until the analyst can run in an approved authenticated server context.
 
 ### Two-stage valuation
 
 The AI does not own the final valuation math.
 
 1. A facts-only packet is built with no manufactured scenarios.
-2. The analyst proposes explicit Bear/Base/Bull assumptions.
+2. The analyst proposes explicit Bear/Base/Bull assumptions using only verified `valuationInputs`.
 3. Those assumptions are converted to `ValuationScenarioInput`.
 4. `lib/analysis/valuation.ts` calculates scenario values deterministically.
 5. The full quality gate runs again.
@@ -197,6 +244,7 @@ A packet is not publishable just because it was generated. The current gate requ
 - sufficiently fresh primary source;
 - verified source-linked primary report evidence;
 - complete explicit Bear/Base/Bull scenarios in a compatible currency;
+- logical scenario ordering: Bear ≤ Base ≤ Bull;
 - sufficient technical history;
 - meaningful support plus either verified resistance or a verified `no_validated_resistance_above` state.
 
@@ -204,7 +252,7 @@ Failures are blockers, not silently neutral scores.
 
 ## Persistence and immutability
 
-The Supabase model now separates facts from interpretation:
+The Supabase model separates facts from interpretation:
 
 - `divlab_analyses` — stable instrument identity / slug;
 - `divlab_analysis_versions` — immutable research snapshots;
@@ -239,11 +287,22 @@ On the internal analyst-content table, the normal service-role path has SELECT +
 
 The analysis tables intentionally have RLS enabled with no client policies while the feature remains internal. Public read policies belong to the future public analysis surface, not this foundation PR.
 
+## Verification status
+
+- deterministic FX direct/cross-rate derivation: unit tested;
+- cross-currency FCF valuation while retaining raw reporting facts: unit tested;
+- missing FX remains fail-closed: unit tested;
+- converted scenario without required FX source ID: rejected by analyst contract test;
+- inverted Bear/Base/Bull valuation: rejected by quality-gate test;
+- full repository lint, typecheck, core tests, SEO/news tests, DivBrain tests, Cursor bridge tests and production build passed on the FX/provenance implementation before final documentation cleanup;
+- Evolution cross-currency research/valuation: live verified in Vercel Preview;
+- real analyst narrative generation: not yet live verified because approved non-production AI Gateway authentication is unavailable.
+
 ## Still deliberately not included
 
 The following remain later increments and are not claimed as complete:
 
-1. fresh end-to-end live execution of the **new AI analyst** on real companies in a representative Yahoo-capable preview/server environment;
+1. authenticated end-to-end live execution and qualitative review of the **new AI analyst** on Atlas Copco, Evolution and Embracer;
 2. direct accounting-number reconciliation from official report/IR PDFs against normalized provider statement values;
 3. richer valuation inputs such as historical valuation ranges, EV/EBIT, EV/EBITDA and peer sets where verified data is available;
 4. automatic model-portfolio shortlist → Deep Research trigger;
