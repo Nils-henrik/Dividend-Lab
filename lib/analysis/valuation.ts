@@ -1,6 +1,8 @@
 export type ValuationScenarioInput = {
   name: "bear" | "base" | "bull";
   label: string;
+  /** Currency of all per-share values in this scenario. Defaults to market currency only for explicit trusted callers. */
+  currency?: string | null;
   eps?: number | null;
   peMultiple?: number | null;
   freeCashFlowPerShare?: number | null;
@@ -12,6 +14,8 @@ export type ValuationScenarioInput = {
 export type ValuationScenario = {
   name: "bear" | "base" | "bull";
   label: string;
+  currency: string | null;
+  currencyCompatible: boolean;
   valuePerShare: number | null;
   upsideDownsidePct: number | null;
   methodsUsed: string[];
@@ -122,11 +126,22 @@ export function buildValuationAnalysis(input: {
       : null;
 
   const scenarios = input.scenarios.map((scenario): ValuationScenario => {
-    const calculated = calculateScenarioValue(scenario);
+    const scenarioCurrency =
+      scenario.currency === undefined
+        ? priceCurrency
+        : normalizedCurrency(scenario.currency);
+    const currencyCompatible = Boolean(
+      priceCurrency && scenarioCurrency && priceCurrency === scenarioCurrency,
+    );
+    const calculated = currencyCompatible
+      ? calculateScenarioValue(scenario)
+      : { value: null, methods: [] as string[] };
     const valuePerShare = round(calculated.value, 4);
     return {
       name: scenario.name,
       label: scenario.label,
+      currency: scenarioCurrency,
+      currencyCompatible,
       valuePerShare,
       upsideDownsidePct:
         valuePerShare === null
