@@ -3,8 +3,10 @@ import type { DailyBar } from "@/lib/model-portfolios/engine/eodhd";
 import type { AnalysisEvidence } from "./evidence";
 import type { CurrencyAwareFundamentalSnapshot } from "./financial-statement-normalizer";
 import {
+  normalizeValuationAmount,
   normalizeValuationInput,
   type AnalysisFxConversion,
+  type NormalizedValuationAmount,
   type NormalizedValuationInput,
 } from "./fx";
 import {
@@ -38,6 +40,16 @@ export type DivLabValuationInputs = {
   freeCashFlowPerShareTtm: NormalizedValuationInput;
 };
 
+export type DivLabEnterpriseValuationInputs = {
+  /** Quote-derived market cap is already denominated in the listed share currency. */
+  marketCap: NormalizedValuationAmount;
+  /** Statement-derived amounts are normalized from reporting currency when required. */
+  cash: NormalizedValuationAmount;
+  totalDebt: NormalizedValuationAmount;
+  ebitTtm: NormalizedValuationAmount;
+  ebitdaTtm: NormalizedValuationAmount;
+};
+
 export type DivLabCurrencyContext = {
   /** Currency of the listed share price and final per-share valuation. */
   marketCurrency: string;
@@ -68,8 +80,10 @@ export type DivLabResearchPacket = {
   primaryReportReconciliation: PrimaryReportReconciliation;
   /** Optional reporting->market conversion. Raw accounting facts remain untouched. */
   fxConversion: AnalysisFxConversion | null;
-  /** Per-share values actually eligible for valuation in the market currency. */
+  /** Positive per-share values actually eligible for valuation in the market currency. */
   valuationInputs: DivLabValuationInputs;
+  /** Auditable absolute amounts used for EV/EBIT and EV/EBITDA. */
+  enterpriseValuationInputs: DivLabEnterpriseValuationInputs;
   valuation: ValuationAnalysis;
   technical: {
     snapshot: TechnicalAnalysisSnapshot;
@@ -226,6 +240,39 @@ export function buildDivLabResearchPacket(input: {
     }),
   };
 
+  const enterpriseValuationInputs: DivLabEnterpriseValuationInputs = {
+    marketCap: normalizeValuationAmount({
+      value: fundamentalSnapshot.marketCap,
+      sourceCurrency: marketCurrency,
+      marketCurrency,
+      fxConversion,
+    }),
+    cash: normalizeValuationAmount({
+      value: fundamentalSnapshot.cash,
+      sourceCurrency: currencies.reportingCurrency,
+      marketCurrency,
+      fxConversion,
+    }),
+    totalDebt: normalizeValuationAmount({
+      value: fundamentalSnapshot.totalDebt,
+      sourceCurrency: currencies.reportingCurrency,
+      marketCurrency,
+      fxConversion,
+    }),
+    ebitTtm: normalizeValuationAmount({
+      value: fundamentalSnapshot.ebitTtm,
+      sourceCurrency: currencies.reportingCurrency,
+      marketCurrency,
+      fxConversion,
+    }),
+    ebitdaTtm: normalizeValuationAmount({
+      value: fundamentalSnapshot.ebitdaTtm,
+      sourceCurrency: currencies.reportingCurrency,
+      marketCurrency,
+      fxConversion,
+    }),
+  };
+
   // Preserve the raw source currency in trailing metadata when no verified FX
   // conversion exists, while using converted values only when they are audited.
   const valuation = buildValuationAnalysis({
@@ -238,6 +285,11 @@ export function buildDivLabResearchPacket(input: {
       fundamental.metrics.freeCashFlowPerShare,
     freeCashFlowPerShareCurrency:
       valuationInputs.freeCashFlowPerShareTtm.currency ?? currencies.reportingCurrency,
+    marketCap: enterpriseValuationInputs.marketCap.value,
+    cash: enterpriseValuationInputs.cash.value,
+    totalDebt: enterpriseValuationInputs.totalDebt.value,
+    ebitTtm: enterpriseValuationInputs.ebitTtm.value,
+    ebitdaTtm: enterpriseValuationInputs.ebitdaTtm.value,
     scenarios: input.valuationScenarios,
   });
 
@@ -275,6 +327,7 @@ export function buildDivLabResearchPacket(input: {
     primaryReportReconciliation,
     fxConversion,
     valuationInputs,
+    enterpriseValuationInputs,
     valuation,
     technical: {
       snapshot: technicalSnapshot,
