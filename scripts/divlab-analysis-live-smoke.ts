@@ -1,5 +1,6 @@
 import { analyzeFundamentals } from "../lib/analysis/fundamental-analysis";
 import type { CurrencyAwareFundamentalSnapshot } from "../lib/analysis/financial-statement-normalizer";
+import { fetchNordicDivLabAnalysisSources } from "../lib/analysis/nordic-primary-sources";
 import { loadDivLabResearchInputs } from "../lib/analysis/research-loader";
 import { analyzeSupportResistance } from "../lib/analysis/support-resistance";
 import { fetchNordicPrimarySourceEvents } from "../lib/model-portfolios/engine/nordic-primary-sources";
@@ -36,9 +37,6 @@ async function main() {
   const cases = [];
 
   for (const item of CASES) {
-    // Primary-source discovery is intentionally independent from Yahoo. This lets
-    // us diagnose issuer-report coverage even on runners where Yahoo blocks the
-    // financial-statements session.
     const rawDiscovery = await fetchNordicPrimarySourceEvents({
       companyName: item.name,
       symbol: item.symbol,
@@ -47,6 +45,25 @@ async function main() {
       maxHits: 12,
       queryCount: 20,
     });
+    const enrichedSources = await fetchNordicDivLabAnalysisSources({
+      companyName: item.name,
+      symbol: item.symbol,
+      exchange: item.exchange,
+      now,
+    });
+
+    const sourceDiagnostics = {
+      enrichedCount: enrichedSources.length,
+      primaryCount: enrichedSources.filter((source) => source.primary).length,
+      enrichedSources: enrichedSources.map((source) => ({
+        kind: source.kind,
+        publisher: source.publisher,
+        publishedAt: source.publishedAt,
+        primary: source.primary,
+        url: source.url,
+      })),
+      rawPrimaryDiscovery: rawDiscovery.map(summarizeDiscovery),
+    };
 
     const loaded = await loadDivLabResearchInputs({ ...item, now });
     if (!loaded.ok) {
@@ -55,7 +72,7 @@ async function main() {
         symbol: item.symbol,
         ok: false,
         reason: loaded.reason,
-        rawPrimaryDiscovery: rawDiscovery.map(summarizeDiscovery),
+        sourceDiagnostics,
       });
       continue;
     }
@@ -101,7 +118,7 @@ async function main() {
       nearestResistance: levels.resistances[0]
         ? { lower: levels.resistances[0].lower, upper: levels.resistances[0].upper, strength: levels.resistances[0].strength }
         : null,
-      rawPrimaryDiscovery: rawDiscovery.map(summarizeDiscovery),
+      sourceDiagnostics,
     });
   }
 
