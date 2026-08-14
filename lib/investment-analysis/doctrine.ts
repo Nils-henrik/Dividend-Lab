@@ -20,8 +20,20 @@ export const DIVLAB_INVESTMENT_ANALYSIS_CORE_SV = [
   "HOLD är ett fullvärdigt beslut. Hög aktivitet är inte samma sak som hög kvalitet, och ingen metod kan garantera vinst. En bra process kan ge ett dåligt kortsiktigt utfall och tvärtom; skriv inte om ett gammalt beslut i efterhand.",
 ].join("\n");
 
+/**
+ * Shared portfolio-risk discipline. Kept separate from the original analysis core
+ * so DivBrain can receive diversification guidance without displacing established
+ * safety instructions under provider prompt budgets.
+ */
+export const DIVLAB_PORTFOLIO_DIVERSIFICATION_CORE_SV = [
+  "Riskspridning är normalläget: maxvikt är ett absolut säkerhetstak, inte en målviktsrekommendation. Bedöm även dold koncentration via sektor, geografi, valuta, faktor och korrelation.",
+  "Positionsstorlek ska styras av nedsida, osäkerhet, likviditet och befintlig exponering. I små helaktieportföljer kan högre vikt vara startfasfriktion, inte önskad koncentration; förbättra riskspridningen när kapitalet växer.",
+].join("\n");
+
 export const DIVLAB_INVESTMENT_ANALYSIS_DOCTRINE_SV = [
   DIVLAB_INVESTMENT_ANALYSIS_CORE_SV,
+  "PORTFÖLJRISK OCH RISKSPRIDNING:",
+  DIVLAB_PORTFOLIO_DIVERSIFICATION_CORE_SV,
   "FÖRDJUPAD CHECKLISTA:",
   "- Affärsmodell: identifiera intäktsmotorer, konkurrensfördelar, prissättningskraft, kund-/leverantörskoncentration och cyklikalitet.",
   "- Resultatkvalitet: jämför redovisad vinst med operativt kassaflöde och fritt kassaflöde; granska rörelsekapital, engångsposter, aktiebaserad ersättning, förvärv och justerade mått.",
@@ -35,6 +47,9 @@ export const DIVLAB_INVESTMENT_ANALYSIS_DOCTRINE_SV = [
   "- Teknisk struktur: bedöm primär trend, stöd/motstånd, momentum, volym, volatilitet och drawdown tillsammans. Undvik köp enbart för att något är översålt eller sälj enbart för att något är överköpt.",
   "- Utdelningar: bedöm utdelningens täckning av fritt kassaflöde, payout, skuld, capexbehov, stabilitet och tillväxt. Hög direktavkastning efter kursfall är inte i sig attraktiv.",
   "- Positionering: låt osäkerhet och nedsida påverka positionsstorleken. Hög conviction får aldrig ersätta koncentrations-, likviditets- eller maxviktsregler.",
+  "- Riskspridning: bedöm koncentration före varje ny position. Räkna både synlig koncentration i enskilda innehav och dold koncentration genom sektor, faktor, valuta, geografi, finansieringsrisk och hög korrelation.",
+  "- Startfas med litet kapital: hela aktier kan skapa grova viktsteg. Välj minsta rimliga exekverbara position som fortfarande uppfyller strategin när det förbättrar riskspridningen; behandla hög tillåten maxvikt som ett nödtak, inte som normal sizing.",
+  "- Portföljmognad: när kapitalet växer ska koncentrationsbehovet normalt minska och riskspridningen kunna förbättras. Riskgränser bör därför kalibreras mot portföljstorlek och faktisk exekverbarhet, inte hållas statiska av gammal vana.",
   "- Exit/omprövning: definiera i förväg vilka fakta som bryter tesen. Ett kursfall utan tesbrott och en kursuppgång utan värderings-/riskförändring är inte automatiska säljskäl.",
   "- Efteranalys: skilj ett bra beslut med dåligt utfall från ett dåligt beslut med bra utfall. Förbättra processen utifrån evidens och kalibrering, inte kortsiktig P/L ensam.",
   "ANALYSDISCIPLIN V2:",
@@ -45,6 +60,8 @@ export const DIVLAB_INVESTMENT_ANALYSIS_DOCTRINE_SV = [
   "- Kapitalintensitet och återinvestering: skilj lönsam återinvestering från tillväxt köpt med oproportionerligt mycket kapital. Koppla marginaler, ROIC-liknande ekonomi, capex och rörelsekapital.",
   "- Evidenskalibrering: conviction ska sjunka när nyckeldata saknas, är inaktuell eller motstridig. Gör aldrig okända indata till neutral säkerhet. Skilj datakonfidens från investeringsattraktivitet.",
   "- Portföljpassning mot fristående kvalitet: ett starkt bolag kan ändå vara ett dåligt tillskott på grund av faktor-, sektor-, valuta-, likviditets- eller korrelationskoncentration. Jämför alternativkostnad mot innehav och kassa.",
+  "- Riskspridning före tickerantal: flera aktier är inte automatiskt diversifiering. Bedöm gemensamma resultatrisker och stresscenarier; två olika bolag kan vara samma portföljrisk om de drivs av samma faktor.",
+  "- Maxvikt mot målposition: skilj alltid absolut maxvikt från önskad normal vikt. Använd inte max bara för att den finns; positionera lägre när nedsida, datakvalitet, korrelation eller tillgängliga alternativ motiverar det.",
   "- Inkomstvärdepapper: för pref/D, bedöm emittentrisk, refinansiering, villkor/incitament och inlösenmekanik när de är verifierade. För utdelande ETF:er, bedöm totalavkastning, avgift och strategimekanik. Direktavkastning är inte ränta och inte garanterad.",
   "- Processkvalitet före utfallsbias: en bra process kan ha ett dåligt kortsiktigt utfall och en dålig process ett bra. Skriv inte om ett historiskt beslut i efterhand för att experimentet ska se bättre ut.",
 ].join("\n");
