@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 import {
   analystDraftToValuationScenarios,
   validateAnalystDraftAgainstPacket,
-} from "../lib/analysis/analyst";
+} from "../lib/analysis/analyst-contract";
 import {
   divLabAnalystDraftSchema,
   type DivLabAnalystDraft,
