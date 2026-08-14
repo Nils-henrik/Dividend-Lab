@@ -30,6 +30,9 @@ export type ValuationAnalysis = {
     pe: number | null;
     priceToFcf: number | null;
     fcfYield: number | null;
+    enterpriseValue: number | null;
+    evToEbit: number | null;
+    evToEbitda: number | null;
     epsCurrency: string | null;
     freeCashFlowPerShareCurrency: string | null;
     epsCurrencyCompatible: boolean;
@@ -40,8 +43,16 @@ export type ValuationAnalysis = {
   baseCaseUpsideDownsidePct: number | null;
 };
 
+function finiteNumber(value: number | null | undefined): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
 function finitePositive(value: number | null | undefined): value is number {
-  return typeof value === "number" && Number.isFinite(value) && value > 0;
+  return finiteNumber(value) && value > 0;
+}
+
+function finiteNonNegative(value: number | null | undefined): value is number {
+  return finiteNumber(value) && value >= 0;
 }
 
 function normalizedCurrency(value: string | null | undefined): string | null {
@@ -90,6 +101,12 @@ export function buildValuationAnalysis(input: {
   epsCurrency?: string | null;
   freeCashFlowPerShareTtm?: number | null;
   freeCashFlowPerShareCurrency?: string | null;
+  /** All enterprise-value components must already be normalized into `currency`. */
+  marketCap?: number | null;
+  cash?: number | null;
+  totalDebt?: number | null;
+  ebitTtm?: number | null;
+  ebitdaTtm?: number | null;
   scenarios: ValuationScenarioInput[];
 }): ValuationAnalysis {
   if (!finitePositive(input.currentPrice)) {
@@ -124,6 +141,21 @@ export function buildValuationAnalysis(input: {
   const fcfYield =
     freeCashFlowCurrencyCompatible && finitePositive(input.freeCashFlowPerShareTtm)
       ? input.freeCashFlowPerShareTtm / input.currentPrice
+      : null;
+
+  const enterpriseValue =
+    finitePositive(input.marketCap) &&
+    finiteNonNegative(input.totalDebt) &&
+    finiteNonNegative(input.cash)
+      ? input.marketCap + input.totalDebt - input.cash
+      : null;
+  const evToEbit =
+    enterpriseValue !== null && enterpriseValue > 0 && finitePositive(input.ebitTtm)
+      ? enterpriseValue / input.ebitTtm
+      : null;
+  const evToEbitda =
+    enterpriseValue !== null && enterpriseValue > 0 && finitePositive(input.ebitdaTtm)
+      ? enterpriseValue / input.ebitdaTtm
       : null;
 
   const scenarios = input.scenarios.map((scenario): ValuationScenario => {
@@ -162,6 +194,9 @@ export function buildValuationAnalysis(input: {
       pe: round(pe, 3),
       priceToFcf: round(priceToFcf, 3),
       fcfYield: round(fcfYield, 6),
+      enterpriseValue: round(enterpriseValue, 2),
+      evToEbit: round(evToEbit, 3),
+      evToEbitda: round(evToEbitda, 3),
       epsCurrency,
       freeCashFlowPerShareCurrency,
       epsCurrencyCompatible,
