@@ -1,7 +1,7 @@
 export type ValuationScenarioInput = {
   name: "bear" | "base" | "bull";
   label: string;
-  /** Currency of all per-share values in this scenario. Defaults to market currency only for explicit trusted callers. */
+  /** Currency of all per-share values in this scenario. Publication requires this explicitly. */
   currency?: string | null;
   eps?: number | null;
   peMultiple?: number | null;
@@ -16,6 +16,7 @@ export type ValuationScenario = {
   label: string;
   currency: string | null;
   currencyCompatible: boolean;
+  currencyAssumed: boolean;
   valuePerShare: number | null;
   upsideDownsidePct: number | null;
   methodsUsed: string[];
@@ -126,10 +127,10 @@ export function buildValuationAnalysis(input: {
       : null;
 
   const scenarios = input.scenarios.map((scenario): ValuationScenario => {
-    const scenarioCurrency =
-      scenario.currency === undefined
-        ? priceCurrency
-        : normalizedCurrency(scenario.currency);
+    const currencyAssumed = scenario.currency === undefined;
+    const scenarioCurrency = currencyAssumed
+      ? priceCurrency
+      : normalizedCurrency(scenario.currency);
     const currencyCompatible = Boolean(
       priceCurrency && scenarioCurrency && priceCurrency === scenarioCurrency,
     );
@@ -142,6 +143,7 @@ export function buildValuationAnalysis(input: {
       label: scenario.label,
       currency: scenarioCurrency,
       currencyCompatible,
+      currencyAssumed,
       valuePerShare,
       upsideDownsidePct:
         valuePerShare === null
