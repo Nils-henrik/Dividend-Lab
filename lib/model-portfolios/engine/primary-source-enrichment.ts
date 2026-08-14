@@ -30,6 +30,8 @@ export type EnrichedPrimarySourceHit = {
   hit: NordicPrimarySourceHit;
   kind: PrimaryEvidenceKind;
   summary: string;
+  /** Clean bounded text extracted from the fetched document before summary wrapping. */
+  documentExcerpt: string | null;
   documentRetrieved: boolean;
   documentUrl: string | null;
   reportPeriod: ReportPeriod | null;
@@ -189,6 +191,7 @@ export async function enrichNordicPrimarySourceHits(input: {
       hit,
       kind,
       summary,
+      documentExcerpt: excerpt,
       documentRetrieved,
       documentUrl,
       reportPeriod: parsed.reportPeriod,
