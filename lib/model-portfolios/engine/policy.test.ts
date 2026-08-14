@@ -100,15 +100,15 @@ describe("model portfolio manager policy", () => {
     );
   });
 
-  it("enforces an 8% minimum meaningful trade across every strategy and preserves conservative 120-hour cooldown", () => {
+  it("enforces a 10% minimum meaningful trade across every strategy and preserves conservative 120-hour cooldown", () => {
     for (const strategyKey of ["conservative", "balanced", "high_risk", "dividend"] as const) {
-      assert.equal(MODEL_PORTFOLIO_TURNOVER_POLICY[strategyKey].minTradePctOfPortfolio, 8);
+      assert.equal(MODEL_PORTFOLIO_TURNOVER_POLICY[strategyKey].minTradePctOfPortfolio, 10);
       assert.deepEqual(
         shouldAllowPortfolioChange({
           strategyKey,
           action: "buy",
           convictionScore: 0.95,
-          tradeValueMinor: 79_999,
+          tradeValueMinor: 99_999,
           portfolioValueMinor: 1_000_000,
           hoursSinceLastTradeInInstrument: null,
           materialThesisBreak: false,
@@ -123,7 +123,7 @@ describe("model portfolio manager policy", () => {
         strategyKey: "conservative",
         action: "buy",
         convictionScore: 0.9,
-        tradeValueMinor: 80_000,
+        tradeValueMinor: 100_000,
         portfolioValueMinor: 1_000_000,
         hoursSinceLastTradeInInstrument: 119,
         materialThesisBreak: false,
@@ -136,7 +136,7 @@ describe("model portfolio manager policy", () => {
         strategyKey: "conservative",
         action: "buy",
         convictionScore: 0.9,
-        tradeValueMinor: 80_000,
+        tradeValueMinor: 100_000,
         portfolioValueMinor: 1_000_000,
         hoursSinceLastTradeInInstrument: 120,
         materialThesisBreak: false,
@@ -160,12 +160,22 @@ describe("model portfolio manager policy", () => {
     );
   });
 
-  it("builds mandates that explicitly accept hold and prohibit validator bypass", () => {
+  it("builds mandates with active start-phase caps while explicitly favoring diversification", () => {
     const conservative = buildModelPortfolioSystemMandate("conservative");
+    const balanced = buildModelPortfolioSystemMandate("balanced");
     const highRisk = buildModelPortfolioSystemMandate("high_risk");
+    const dividend = buildModelPortfolioSystemMandate("dividend");
+
     assert.match(conservative, /inte göra någon affär/i);
     assert.match(conservative, /aldrig kringgå den deterministiska riskvalidatorn/i);
     assert.match(conservative, /10,00 SEK/i);
+    assert.match(conservative, /maxvikt.*40 %/i);
+    assert.match(balanced, /maxvikt.*50 %/i);
+    assert.match(highRisk, /maxvikt.*100 %/i);
+    assert.match(dividend, /maxvikt.*100 %/i);
+    assert.match(conservative, /riskspridning.*eftersträvas/i);
+    assert.match(highRisk, /inte en målposition/i);
+    assert.match(dividend, /lägg inte alla ägg i samma korg/i);
     assert.match(conservative, /Onödig omsättning/i);
     assert.match(highRisk, /högre omsättning/i);
     assert.match(highRisk, /okontrollerad daytrading/i);

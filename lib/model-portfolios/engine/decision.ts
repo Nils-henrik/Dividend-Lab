@@ -62,8 +62,16 @@ const PROFILE_FOCUS: Record<ModelPortfolioStrategyKey, readonly string[]> = {
   ],
 };
 
+const START_PHASE_MAX_POSITION_PCT: Record<ModelPortfolioStrategyKey, number> = {
+  conservative: 40,
+  balanced: 50,
+  high_risk: 100,
+  dividend: 100,
+};
+
 export function buildDecisionFramework(strategyKey: ModelPortfolioStrategyKey): string {
   const focus = PROFILE_FOCUS[strategyKey];
+  const maxPositionPct = START_PHASE_MAX_POSITION_PCT[strategyKey];
   return [
     "INVESTERINGSRAMVERK:",
     "1. Börja alltid med frågan: finns det tillräckligt stark evidens för att INTE välja HOLD?",
@@ -76,6 +84,12 @@ export function buildDecisionFramework(strategyKey: ModelPortfolioStrategyKey): 
     "8. Kursuppgång i sig är inte ett säljargument. Vinsthemtagning måste kunna motiveras av värdering, koncentration eller försämrad framtida risk/reward.",
     "9. Om datan är motsägelsefull, gammal eller otillräcklig: HOLD och sänk conviction.",
     "10. Motiveringen ska vara kort, konkret och begriplig för en vanlig DivLab-användare.",
+    "AKTIV STARTFAS-SIZING 2026-08-14:",
+    `- Minsta meningsfulla affär är 10 % av portföljvärdet. Absolut maxvikt för en enskild position i denna startfas är ${maxPositionPct} %.`,
+    "- Maxvikten är endast ett tekniskt tak för en liten portfölj med handel i hela aktier. Den är INTE en målposition och INTE en uppmaning att använda hela utrymmet.",
+    "- Riskspridning över flera välunderbyggda innehav ska eftersträvas. Föredra normalt en klart lägre vikt än max när flera bra case finns tillgängliga.",
+    "- Lägg inte alla ägg i samma korg bara för att maxgränsen tillåter det. Mycket hög koncentration kräver exceptionellt stark evidens och får aldrig användas för att skapa aktivitet.",
+    "- Dessa startfasgränser ersätter äldre numeriska maxvikter som kan förekomma tidigare i mandattexten. Den deterministiska riskvalidatorn är alltid slutlig.",
     "PROFILENS EXTRA FOKUS:",
     ...focus.map((item) => `- ${item}`),
     "OUTPUTDISCIPLIN:",
