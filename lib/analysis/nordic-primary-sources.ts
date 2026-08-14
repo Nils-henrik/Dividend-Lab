@@ -1,7 +1,10 @@
 import "server-only";
 
 import { fetchNordicPrimarySourceEvents, type NordicPrimarySourceHit } from "@/lib/model-portfolios/engine/nordic-primary-sources";
-import { enrichNordicPrimarySourceHits } from "@/lib/model-portfolios/engine/primary-source-enrichment";
+import {
+  enrichNordicPrimarySourceHits,
+  PRIMARY_SOURCE_ENRICHMENT_BOUNDS,
+} from "@/lib/model-portfolios/engine/primary-source-enrichment";
 import { parseReportMetadata } from "@/lib/model-portfolios/engine/report-metadata";
 import type { AnalysisSource } from "./quality-gate";
 
@@ -42,6 +45,8 @@ function officialReportPriority(hit: NordicPrimarySourceHit): number {
  * Dedicated Deep Research deliberately searches a wider bounded CNS window
  * than a normal portfolio pass so recent buybacks/releases cannot crowd the
  * latest quarterly or annual report out of the two-hit portfolio budget.
+ * It may also accept a larger official-report PDF than the portfolio engine,
+ * but still only one document and never above the shared hard deep-research cap.
  */
 export async function fetchNordicDivLabAnalysisSources(input: {
   companyName: string;
@@ -74,6 +79,7 @@ export async function fetchNordicDivLabAnalysisSources(input: {
     hits: reportFirst,
     fetchImpl: input.fetchImpl,
     maxDocuments: 1,
+    maxDocumentBytes: PRIMARY_SOURCE_ENRICHMENT_BOUNDS.maxDocumentBytes,
   });
 
   return enriched.map((item, index): AnalysisSource => {
