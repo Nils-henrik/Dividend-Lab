@@ -1,7 +1,8 @@
 import "server-only";
 
-import { fetchNordicPrimarySourceEvents } from "@/lib/model-portfolios/engine/nordic-primary-sources";
+import { fetchNordicPrimarySourceEvents, type NordicPrimarySourceHit } from "@/lib/model-portfolios/engine/nordic-primary-sources";
 import { enrichNordicPrimarySourceHits } from "@/lib/model-portfolios/engine/primary-source-enrichment";
+import { parseReportMetadata } from "@/lib/model-portfolios/engine/report-metadata";
 import type { AnalysisSource } from "./quality-gate";
 
 function analysisKind(input: {
@@ -15,6 +16,22 @@ function analysisKind(input: {
     return "annual_report";
   }
   return "quarterly_report";
+}
+
+function officialReportPriority(hit: NordicPrimarySourceHit): number {
+  const attachment = hit.attachments.find((item) => {
+    const mime = item.mimeType?.toLowerCase() ?? "";
+    return !mime || mime.includes("pdf") || (item.fileName ?? "").toLowerCase().endsWith(".pdf");
+  });
+  const parsed = parseReportMetadata({
+    title: hit.title,
+    category: hit.category,
+    fileName: attachment?.fileName ?? null,
+  });
+  if (!attachment) return 0;
+  if (parsed.looksLikeReportDocument && parsed.reportPeriod) return 3;
+  if (parsed.looksLikeReportDocument) return 2;
+  return 1;
 }
 
 /**
@@ -39,8 +56,16 @@ export async function fetchNordicDivLabAnalysisSources(input: {
   });
   if (!hits.length) return [];
 
+  // The shared document reader has a one-PDF hard attempt budget. Rank a real
+  // quarterly/annual report ahead of generic attachment-bearing releases so a
+  // lower-value PDF cannot consume the only deep-research document attempt.
+  const reportFirst = hits
+    .map((hit, index) => ({ hit, index, priority: officialReportPriority(hit) }))
+    .sort((a, b) => b.priority - a.priority || a.index - b.index)
+    .map(({ hit }) => hit);
+
   const enriched = await enrichNordicPrimarySourceHits({
-    hits,
+    hits: reportFirst,
     fetchImpl: input.fetchImpl,
     maxDocuments: 1,
   });
