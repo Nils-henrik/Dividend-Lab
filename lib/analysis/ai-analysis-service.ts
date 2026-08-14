@@ -1,11 +1,17 @@
 import "server-only";
 
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { ModelPortfolioAiModel } from "@/lib/model-portfolios/engine/ai";
 import {
   analystDraftToValuationScenarios,
   generateDivLabAnalystDraft,
   type DivLabAnalystUsage,
 } from "./analyst";
 import type { DivLabAnalystDraft } from "./analyst-schema";
+import {
+  persistDivLabAnalysisBundle,
+  type PersistedDivLabAnalysisBundle,
+} from "./content-repository";
 import {
   buildDivLabResearchPacket,
   type DivLabResearchPacket,
@@ -14,7 +20,6 @@ import {
   loadDivLabResearchInputs,
   type DivLabResearchLoadResult,
 } from "./research-loader";
-import type { ModelPortfolioAiModel } from "@/lib/model-portfolios/engine/ai";
 
 export type CreateDivLabAiAnalysisResult =
   | {
@@ -26,6 +31,7 @@ export type CreateDivLabAiAnalysisResult =
       finalPacket: DivLabResearchPacket;
       model: ModelPortfolioAiModel;
       usage: DivLabAnalystUsage;
+      persistence: PersistedDivLabAnalysisBundle | null;
     }
   | {
       ok: false;
@@ -41,10 +47,10 @@ export type CreateDivLabAiAnalysisResult =
  *    assumptions only.
  * 4. Re-run deterministic valuation math with those assumptions.
  * 5. Re-run the full publication quality gate.
+ * 6. When a service-role Supabase client is supplied, atomically persist the
+ *    final research version and analyst content as separate immutable records.
  *
- * This service deliberately does not persist the analyst narrative yet. That
- * should be added with an explicit versioned analysis-content persistence
- * contract rather than hiding narrative inside the research facts blob.
+ * The transient facts packet is never persisted as an additional version.
  */
 export async function createDivLabAiAnalysis(input: {
   symbol: string;
@@ -53,13 +59,16 @@ export async function createDivLabAiAnalysis(input: {
   fetchImpl?: typeof fetch;
   now?: Date;
   useEscalationModel?: boolean;
+  supabase?: SupabaseClient;
+  slug?: string;
 }): Promise<CreateDivLabAiAnalysisResult> {
+  const now = input.now ?? new Date();
   const loaded = await loadDivLabResearchInputs({
     symbol: input.symbol,
     exchange: input.exchange,
     name: input.name,
     fetchImpl: input.fetchImpl,
-    now: input.now,
+    now,
   });
   if (!loaded.ok) return loaded;
 
@@ -74,7 +83,7 @@ export async function createDivLabAiAnalysis(input: {
     fundamentals: research.fundamentals,
     sources: research.sources,
     evidence: research.evidence,
-    now: input.now,
+    now,
   };
 
   const factsPacket = buildDivLabResearchPacket({
@@ -92,6 +101,18 @@ export async function createDivLabAiAnalysis(input: {
     valuationScenarios: analystDraftToValuationScenarios(analyst.draft),
   });
 
+  const persistence = input.supabase
+    ? await persistDivLabAnalysisBundle({
+        supabase: input.supabase,
+        packet: finalPacket,
+        analystDraft: analyst.draft,
+        analystModel: analyst.model,
+        usage: analyst.usage,
+        generatedAt: now.toISOString(),
+        slug: input.slug,
+      })
+    : null;
+
   return {
     ok: true,
     factsPacket,
@@ -99,5 +120,6 @@ export async function createDivLabAiAnalysis(input: {
     finalPacket,
     model: analyst.model,
     usage: analyst.usage,
+    persistence,
   };
 }
