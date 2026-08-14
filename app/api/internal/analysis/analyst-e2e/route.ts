@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createDivLabAiAnalysis } from "@/lib/analysis/ai-analysis-service";
+import { buildDivLabResearchPacket } from "@/lib/analysis/deep-research";
+import { loadDivLabResearchInputs } from "@/lib/analysis/research-loader";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,6 +16,16 @@ const CASES = {
 } as const;
 
 type CaseKey = keyof typeof CASES;
+
+function authPresence() {
+  return {
+    aiGatewayApiKey: Boolean(process.env.AI_GATEWAY_API_KEY?.trim()),
+    vercelOidcToken: Boolean(process.env.VERCEL_OIDC_TOKEN?.trim()),
+    openAiApiKey: Boolean(process.env.OPENAI_API_KEY?.trim()),
+    vercel: process.env.VERCEL === "1",
+    vercelEnv: process.env.VERCEL_ENV ?? null,
+  };
+}
 
 function summarizeResult(result: Awaited<ReturnType<typeof createDivLabAiAnalysis>>) {
   if (!result.ok) return result;
@@ -54,6 +66,42 @@ function summarizeResult(result: Awaited<ReturnType<typeof createDivLabAiAnalysi
   };
 }
 
+async function buildFacts(selected: CaseKey, now: Date) {
+  const loaded = await loadDivLabResearchInputs({
+    ...CASES[selected],
+    now,
+  });
+  if (!loaded.ok) return loaded;
+
+  const research = loaded.value;
+  const packet = buildDivLabResearchPacket({
+    symbol: research.instrument.symbol,
+    exchange: research.instrument.exchange,
+    name: research.instrument.name,
+    currency: research.instrument.currency,
+    currentPrice: research.instrument.currentPrice,
+    history: research.history,
+    fundamentals: research.fundamentals,
+    valuationScenarios: [],
+    sources: research.sources,
+    evidence: research.evidence,
+    now,
+  });
+
+  return {
+    ok: true as const,
+    instrument: packet.instrument,
+    dataAsOf: packet.dataAsOf,
+    qualityGateBeforeAnalyst: packet.qualityGate,
+    fundamentalSnapshot: packet.fundamentalSnapshot,
+    fundamental: packet.fundamental,
+    trailingValuation: packet.valuation.trailing,
+    technical: packet.technical,
+    sources: packet.sources,
+    evidence: packet.evidence,
+  };
+}
+
 export async function GET(request: Request) {
   if (process.env.VERCEL_ENV !== "preview") {
     return new NextResponse(null, { status: 404 });
@@ -72,29 +120,38 @@ export async function GET(request: Request) {
     );
   }
 
+  const mode = url.searchParams.get("mode") === "facts" ? "facts" : "ai";
   const startedAt = new Date();
   try {
-    const result = await createDivLabAiAnalysis({
-      ...CASES[selected],
-      now: startedAt,
-    });
+    const result = mode === "facts"
+      ? await buildFacts(selected, startedAt)
+      : summarizeResult(
+          await createDivLabAiAnalysis({
+            ...CASES[selected],
+            now: startedAt,
+          }),
+        );
 
     return NextResponse.json({
       case: selected,
+      mode,
       startedAt: startedAt.toISOString(),
       completedAt: new Date().toISOString(),
       readOnly: true,
       persistence: false,
-      result: summarizeResult(result),
+      authPresence: authPresence(),
+      result,
     });
   } catch (error) {
     return NextResponse.json(
       {
         case: selected,
+        mode,
         startedAt: startedAt.toISOString(),
         completedAt: new Date().toISOString(),
         readOnly: true,
         persistence: false,
+        authPresence: authPresence(),
         error: error instanceof Error ? error.message : "unknown_error",
       },
       { status: 500 },
