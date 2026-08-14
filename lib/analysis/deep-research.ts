@@ -33,6 +33,9 @@ export type DivLabResearchPacket = {
   };
   createdAt: string;
   dataAsOf: string;
+  /** Normalized verified facts retained for auditability and future revisions. */
+  fundamentalSnapshot: FundamentalSnapshot;
+  /** Deterministic interpretation/scorecard derived from fundamentalSnapshot. */
   fundamental: FundamentalAnalysis;
   valuation: ValuationAnalysis;
   technical: {
@@ -49,6 +52,19 @@ function latestDate(values: readonly string[], fallback: string): string {
     .filter((date) => Number.isFinite(date.getTime()))
     .sort((a, b) => b.getTime() - a.getTime());
   return valid[0]?.toISOString() ?? fallback;
+}
+
+function cloneFundamentalSnapshot(
+  snapshot: FundamentalSnapshot,
+  currency: string,
+  currentPrice: number,
+): FundamentalSnapshot {
+  return {
+    ...snapshot,
+    currency: currency.trim().toUpperCase(),
+    price: currentPrice,
+    historicalPeriods: snapshot.historicalPeriods?.map((period) => ({ ...period })),
+  };
 }
 
 export function buildDivLabResearchPacket(input: {
@@ -71,11 +87,12 @@ export function buildDivLabResearchPacket(input: {
   }
 
   const now = input.now ?? new Date();
-  const fundamental = analyzeFundamentals({
-    ...input.fundamentals,
-    currency: input.currency,
-    price: input.currentPrice,
-  });
+  const fundamentalSnapshot = cloneFundamentalSnapshot(
+    input.fundamentals,
+    input.currency,
+    input.currentPrice,
+  );
+  const fundamental = analyzeFundamentals(fundamentalSnapshot);
   const technicalSnapshot = analyzeTechnicalSignals(input.history);
   const levels = analyzeSupportResistance(input.history);
   const valuation = buildValuationAnalysis({
@@ -107,12 +124,13 @@ export function buildDivLabResearchPacket(input: {
     createdAt: now.toISOString(),
     dataAsOf: latestDate(
       [
-        input.fundamentals.asOf,
+        fundamentalSnapshot.asOf,
         technicalSnapshot.asOf ?? "",
         ...sources.map((source) => source.verifiedAt),
       ],
       now.toISOString(),
     ),
+    fundamentalSnapshot,
     fundamental,
     valuation,
     technical: {
