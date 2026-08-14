@@ -116,6 +116,7 @@ async function fetchEnrichedNordicResearch(input: {
       kind: evidenceKind({ sourceType: item.sourceType }),
       title: item.hit.title,
       content,
+      documentExcerpt: item.documentExcerpt,
       publishedAt,
       primary,
       documentRetrieved: item.documentRetrieved,
