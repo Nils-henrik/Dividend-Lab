@@ -7,6 +7,8 @@ export type CurrencyAwareFundamentalSnapshot = FundamentalSnapshot & {
   reportingCurrency?: string | null;
   /** Currency of epsTtm. Yahoo trailing EPS is quote-currency; derived EPS follows reporting currency. */
   epsTtmCurrency?: string | null;
+  /** Provider-normalized quarter periods kept separate from annual trend history. */
+  quarterlyPeriods?: FundamentalPeriod[];
 };
 
 function record(value: unknown): UnknownRecord | null {
@@ -120,17 +122,18 @@ function byDate(rows: readonly UnknownRecord[]): Map<string, UnknownRecord> {
   return map;
 }
 
-function buildAnnualPeriods(input: {
+function buildStatementPeriods(input: {
   income: readonly UnknownRecord[];
   cashflow: readonly UnknownRecord[];
   balance: readonly UnknownRecord[];
+  limit: number;
 }): FundamentalPeriod[] {
   const cashByDate = byDate(input.cashflow);
   const balanceByDate = byDate(input.balance);
   return [...input.income]
     .filter((row) => endDate(row))
     .sort((a, b) => (endDate(b) ?? "").localeCompare(endDate(a) ?? ""))
-    .slice(0, 5)
+    .slice(0, input.limit)
     .map((incomeRow) => {
       const date = endDate(incomeRow)!;
       const cashRow = cashByDate.get(date) ?? null;
@@ -186,7 +189,7 @@ export function parseYahooFinancialStatements(input: {
   currency: string;
   currentPrice: number;
   now?: Date;
-}): FundamentalSnapshot | null {
+}): CurrencyAwareFundamentalSnapshot | null {
   const root = record(input.payload);
   const quoteSummary = record(root?.quoteSummary);
   const result = records(quoteSummary?.result)[0] ?? null;
@@ -209,10 +212,17 @@ export function parseYahooFinancialStatements(input: {
     currencyCode(result.financialCurrency) ??
     null;
 
-  const historicalPeriods = buildAnnualPeriods({
+  const historicalPeriods = buildStatementPeriods({
     income: incomeAnnual,
     cashflow: cashAnnual,
     balance: balanceAnnual,
+    limit: 5,
+  });
+  const quarterlyPeriods = buildStatementPeriods({
+    income: incomeQuarterly,
+    cashflow: cashQuarterly,
+    balance: balanceQuarterly,
+    limit: 8,
   });
 
   const revenueTtm = firstNumber(financialData, ["totalRevenue"]) ?? lastFourSum(incomeQuarterly, ["totalRevenue", "operatingRevenue"]);
@@ -311,5 +321,6 @@ export function parseYahooFinancialStatements(input: {
     payoutRatio,
     dividendPerShareTtm: dividendRate,
     historicalPeriods,
-  } as CurrencyAwareFundamentalSnapshot;
+    quarterlyPeriods,
+  };
 }
