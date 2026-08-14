@@ -51,6 +51,7 @@ function buildAnalystFacts(packet: DivLabResearchPacket): string {
   const facts = {
     instrument: packet.instrument,
     dataAsOf: packet.dataAsOf,
+    currencyContext: packet.currencyContext,
     fundamentalSnapshot: {
       ...packet.fundamentalSnapshot,
       reportingCurrency: snapshot.reportingCurrency ?? null,
@@ -84,6 +85,7 @@ function buildSystemMandate(): string {
     "Teknisk analys ska endast tolka givna deterministiska data. Skapa aldrig egna stöd, motstånd, RSI-, MA-, trend- eller volymnivåer.",
     "Om resistanceState är no_validated_resistance_above ska du uttryckligen säga att inget verifierat historiskt motstånd finns ovanför kurszonen; hitta inte på ett pristak.",
     "Bear/Base/Bull är antaganden, inte fakta. Alla tre scenarier måste använda exakt aktiens marknadsvaluta.",
+    "currencyContext är auktoritativt för valutaetiketter: redovisningsvärden använder reportingCurrency, aktiekurs/slutvärdering använder marketCurrency och trailing EPS följer epsTtmCurrency.",
     "Använd endast valuationInputs som per-aktie-bas för värdering. Gör aldrig egen valutaomräkning från fundamentalSnapshot.",
     "Om ett valuationInput har converted=true måste scenariots sourceIds även innehålla samtliga fxSourceIds för den värderingsmetoden.",
     "Ange bara EPS/P-E när valuationInputs.epsTtm.value finns. Ange bara FCF/aktie och P/FCF när valuationInputs.freeCashFlowPerShareTtm.value finns. Lämna annars de fälten null.",
