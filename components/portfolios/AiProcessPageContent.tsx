@@ -10,17 +10,19 @@ const stages = [
     number: "1",
     title: "Data & nyheter",
     paragraphs: [
-      "Varje handelsdag kör DivLab fyra schemalagda researchpass i svensk tid: 09:20 för Norden samt 15:50, 18:30 och 21:30 med fokus på USA. Syftet är att samla marknadsdata och relevant underlag från tillåtna källor innan AI:n tar ställning.",
-      "I det nordiska morgonpasset sker en bred Yahoo-baserad screening av ett underhållet large/mid-cap-univers, följt av en begränsad kortlista och djupare research. Befintliga innehav ingår alltid i researchen. Cacheade kandidatpaket återanvänds när de fortfarande är färska (cirka två timmar).",
-      "Det nordiska 09:20-passet använder inte EODHD. USA-passen kompletterar i stället med Yahoo-screens, en kvalitets­kärna och innehav, och kan endast som fallback hämta fundamentals via EODHD inom en hård daglig budget. Valfri Google-/nyhetsenrichment kan läggas till men får aldrig vara det enda underlaget.",
-      "Saknad, stale eller otillräckligt verifierad data leder till fail-closed beteende: systemet spekulerar inte fram saknade nyckeltal.",
+      "Varje handelsdag kör DivLab fyra schemalagda researchpass i svensk tid: 09:20 för Norden samt 15:50, 18:30 och 21:30 med fokus på USA. Syftet är att samla marknadsdata och relevant underlag från tillåtna källor innan varje förvaltare tar ställning.",
+      "Datahämtningen är gemensam och kostnadskontrollerad: samma källor, cache och budgettak används för att hålla researchen inom fasta ramar. Därefter styrs det hämtade underlaget medvetet in i olika researchprofiler – inte som köpsignaler, utan som sök- och bevakningskapacitet inför nästa steg.",
+      "Försiktig får etablerad kvalitets- och kärnkapacitet. Medelrisk får en bredare, balanserad bevakning. Högrisk får small/mid- och opportunitetskapacitet. Utdelning får inkomstinriktad kapacitet mot preferens- och D-aktier samt utdelande ETF:er. Befintliga innehav bevakas alltid, även när de inte skulle kvalificera som nya köp i dag. Cacheade kandidatpaket återanvänds när de fortfarande är färska (cirka två timmar).",
+      "Det nordiska 09:20-passet använder inte EODHD. USA-passen kan endast som fallback hämta fundamentals via EODHD inom en hård daglig budget. Valfri Google-/nyhetsenrichment kan läggas till men får aldrig vara det enda underlaget.",
+      "Saknad, stale eller otillräckligt verifierad data behandlas konservativt: systemet spekulerar inte fram saknade nyckeltal.",
     ],
   },
   {
     number: "2",
     title: "AI-analys",
     paragraphs: [
-      "Varje modellportfölj har ett eget mandat: Försiktig, Medelrisk, Högrisk eller Utdelning. AI:n rankar kandidater efter mandatets vikter, går djupare på en begränsad shortlist och föreslår KÖP, SÄLJ, MINSKA/OMVIKTA eller AVVAKTA (HOLD).",
+      "Varje förvaltare får ett eget relevant kandidat- och bevakningsurval från den gemensamma researchmotorn. De fyra portföljerna behöver därför varken analysera samma bolag eller komma fram till samma beslut.",
+      "Befintliga innehav syns alltid för HOLD, SÄLJ eller MINSKA/OMVIKTA, även om de inte skulle kvalificera som nya köp i dag. AI:n föreslår KÖP, SÄLJ, MINSKA/OMVIKTA eller AVVAKTA (HOLD). Deterministisk verifiering är det som slutgiltigt avgör om en affär bokförs.",
       "Teknisk analys används som timing- och riskstöd. Den får aldrig ensam utgöra tesen bakom en affär. HOLD är ett fullvärdigt och ofta önskvärt utfall när signalerna inte är tillräckligt starka eller när courtage och friktion äter upp fördelen.",
       "AI:n lämnar endast strukturerade förslag. Den kan inte kringgå riskvalidatorn eller skriva portföljdata direkt.",
     ],
@@ -53,9 +55,10 @@ export default function AiProcessPageContent() {
           Så arbetar DivLabs AI-portföljer
         </h1>
         <p className="max-w-2xl text-sm leading-7 text-divlab-text-secondary sm:text-base">
-          DivLab använder AI för aktieanalys i fyra separata modellportföljer.
-          Processen är densamma i grunden, men varje portfölj arbetar inom sitt eget
-          mandat. Det här är allmän information om hur systemet fungerar i dag –
+          DivLab använder fyra olika AI-förvaltare med fyra olika mål: Försiktig,
+          Medelrisk, Högrisk och Utdelning. De delar kostnadseffektiv data- och
+          säkerhetsinfrastruktur, men söker, filtrerar och handlar inte på samma sätt.
+          Det här är allmän information om hur systemet fungerar i dag –
           inte personlig investeringsrådgivning och ingen garanti för avkastning.
         </p>
         <p className="text-sm text-divlab-text-muted">
@@ -87,12 +90,12 @@ export default function AiProcessPageContent() {
 
       <section className="border divlab-border-neutral bg-divlab-surface/45 px-5 py-6 sm:px-7">
         <h2 className="text-xl font-semibold tracking-[-0.03em] text-divlab-text">
-          Fyra mandat, samma process
+          Fyra förvaltare, gemensam infrastruktur
         </h2>
         <p className="mt-3 text-sm leading-7 text-divlab-text-secondary">
-          Skillnaden mellan portföljerna ligger i riskmandat, omsättningsdisciplin och
-          hur aggressivt AI:n får ompröva case – inte i att någon strategi bara köper
-          ”AI-aktier”.
+          Förvaltarna delar datahämtning, säkerhetskontroller och simulerat
+          genomförande. Det som skiljer dem är mål, sökpreferenser, bevakningsfilter
+          och handelsdisciplin – inte fyra risketiketter på samma förvaltare.
         </p>
         <ul className="mt-5 space-y-4">
           {MODEL_PORTFOLIO_PUBLIC_CATALOG.map((portfolio) => {
@@ -128,6 +131,8 @@ export default function AiProcessPageContent() {
         <p>
           Modellportföljerna är simulerade. Historisk avkastning är kort eftersom
           strategierna är nyligen lanserade, och säger ingenting om framtida resultat.
+          Förbättringar i förvaltningslogiken gäller kommande körningar och skriver
+          inte om redan bokförda portföljbeslut.
         </p>
       </section>
 
