@@ -126,11 +126,11 @@ export function classifyResearchMarketCap(candidate: Pick<ResearchCandidate, "ex
   return "large_cap";
 }
 
-function marketCapPreference(segment: ResearchMarketCapSegment): number {
+function marketCapPreference(segment: ResearchMarketCapSegment): number | null {
   if (segment === "small_cap") return 1;
   if (segment === "mid_cap") return 0.9;
   if (segment === "large_cap") return 0.3;
-  return 0.5;
+  return null;
 }
 
 function drawdownOpportunityScore(drawdown: number | null): number {
