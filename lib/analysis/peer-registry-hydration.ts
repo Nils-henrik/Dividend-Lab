@@ -5,13 +5,20 @@ import {
   type VerifiedPeerComparison,
   type VerifiedPeerInput,
 } from "./peer-comparison";
-import type { LoadedPeerRegistrySet } from "./peer-registry-read";
+import type {
+  LoadedPeerRegistryMember,
+  LoadedPeerRegistrySet,
+} from "./peer-registry-read";
 
 export type MissingRegistryPeer = {
   symbol: string;
   exchange: string;
   name: string;
 };
+
+export type RegistryPeerResearchLoader = (
+  member: LoadedPeerRegistryMember,
+) => Promise<DivLabResearchPacket | null>;
 
 export type RegistryPeerComparisonResult = {
   registry: {
@@ -126,4 +133,28 @@ export function buildPeerComparisonFromRegistry(input: {
     },
     comparison,
   };
+}
+
+/**
+ * Controlled async hydration boundary. Exactly one research lookup is requested
+ * for every registered member. A loader may return null when a fresh packet is
+ * unavailable, but it may not substitute another instrument; identity checking
+ * remains authoritative in `buildPeerComparisonFromRegistry`.
+ */
+export async function hydratePeerComparisonFromRegistry(input: {
+  targetPacket: DivLabResearchPacket;
+  registry: LoadedPeerRegistrySet;
+  loadPeerResearch: RegistryPeerResearchLoader;
+}): Promise<RegistryPeerComparisonResult> {
+  const peerPackets = await Promise.all(
+    input.registry.members.map((member) => input.loadPeerResearch(member)),
+  );
+
+  return buildPeerComparisonFromRegistry({
+    targetPacket: input.targetPacket,
+    registry: input.registry,
+    peerPackets: peerPackets.filter(
+      (packet): packet is DivLabResearchPacket => packet !== null,
+    ),
+  });
 }
