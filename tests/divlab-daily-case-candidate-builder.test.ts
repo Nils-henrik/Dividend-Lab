@@ -104,7 +104,10 @@ describe("DivLab daily case candidate builder", () => {
     assert.equal(candidate.signals.technicalSetup?.value, 0.8);
     assert.equal(candidate.signals.abnormalVolume?.value, 1);
     assert.equal(candidate.signals.priceMove?.value, 1);
-    assert.equal(candidate.signals.fundamentalOpportunity?.value, 0.86);
+    assert.ok(
+      candidate.signals.fundamentalOpportunity?.value !== undefined &&
+        Math.abs(candidate.signals.fundamentalOpportunity.value - 0.86) < 1e-12,
+    );
     assert.equal(candidate.signals.readerInterest?.value, 0.7);
     assert.equal(candidate.signals.dataReadiness?.value, 1);
     assert.deepEqual(candidate.signals.estimateRevisions?.sourceIds, ["revisions:test"]);
