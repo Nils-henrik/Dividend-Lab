@@ -5,6 +5,7 @@ import {
   type FundamentalAnalysis,
   type FundamentalSnapshot,
 } from "./fundamental-analysis";
+import type { CurrencyAwareFundamentalSnapshot } from "./financial-statement-normalizer";
 import {
   analyzeSupportResistance,
   type SupportResistanceAnalysis,
@@ -67,6 +68,32 @@ function cloneFundamentalSnapshot(
   };
 }
 
+function currencyMetadata(snapshot: FundamentalSnapshot): {
+  reportingCurrency: string | null;
+  epsTtmCurrency: string | null;
+} {
+  const currencyAware = snapshot as CurrencyAwareFundamentalSnapshot;
+  const hasReportingCurrency = Object.prototype.hasOwnProperty.call(
+    currencyAware,
+    "reportingCurrency",
+  );
+  const hasEpsCurrency = Object.prototype.hasOwnProperty.call(
+    currencyAware,
+    "epsTtmCurrency",
+  );
+  return {
+    // Hand-built/test snapshots historically declare all values in `currency`.
+    // Provider snapshots explicitly include the metadata fields; an explicit
+    // null stays unknown and may not be silently assumed compatible.
+    reportingCurrency: hasReportingCurrency
+      ? currencyAware.reportingCurrency ?? null
+      : snapshot.currency,
+    epsTtmCurrency: hasEpsCurrency
+      ? currencyAware.epsTtmCurrency ?? null
+      : snapshot.currency,
+  };
+}
+
 export function buildDivLabResearchPacket(input: {
   symbol: string;
   exchange: string;
@@ -95,11 +122,14 @@ export function buildDivLabResearchPacket(input: {
   const fundamental = analyzeFundamentals(fundamentalSnapshot);
   const technicalSnapshot = analyzeTechnicalSignals(input.history);
   const levels = analyzeSupportResistance(input.history);
+  const currencies = currencyMetadata(fundamentalSnapshot);
   const valuation = buildValuationAnalysis({
     currentPrice: input.currentPrice,
     currency: input.currency,
     epsTtm: fundamental.metrics.epsTtm,
+    epsCurrency: currencies.epsTtmCurrency,
     freeCashFlowPerShareTtm: fundamental.metrics.freeCashFlowPerShare,
+    freeCashFlowPerShareCurrency: currencies.reportingCurrency,
     scenarios: input.valuationScenarios,
   });
   const sources = input.sources.map((source) => ({ ...source }));
