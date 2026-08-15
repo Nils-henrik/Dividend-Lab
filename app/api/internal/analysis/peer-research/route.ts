@@ -6,6 +6,8 @@ import { createDivLabPeerResearchVersion } from "@/lib/analysis/peer-research-se
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const BATCH_CONCURRENCY = 3;
+
 function noStore(response: NextResponse) {
   response.headers.set("Cache-Control", "no-store, max-age=0");
   return response;
@@ -25,11 +27,101 @@ function curatedPeer(symbol: string, exchange: string) {
   return null;
 }
 
+function allCuratedPeers() {
+  const byIdentity = new Map<string, NonNullable<ReturnType<typeof curatedPeer>>>();
+  for (const set of DIVLAB_CURATED_PEER_SETS) {
+    for (const member of set.registry.members) {
+      byIdentity.set(`${member.exchange}:${member.symbol}`, member);
+    }
+  }
+  return [...byIdentity.values()];
+}
+
+type DevAdminClient = NonNullable<ReturnType<typeof createDivLabAnalysisDevAdminClient>>;
+type CuratedPeer = NonNullable<ReturnType<typeof curatedPeer>>;
+
+async function runPeerResearch(member: CuratedPeer, supabase?: DevAdminClient) {
+  try {
+    const result = await createDivLabPeerResearchVersion({
+      symbol: member.symbol,
+      exchange: member.exchange,
+      name: member.name,
+      supabase,
+    });
+
+    if (!result.ok) {
+      return {
+        httpStatus: 422,
+        payload: {
+          status: result.stage === "research" ? "research_failed" : "peer_not_ready",
+          symbol: member.symbol,
+          exchange: member.exchange,
+          reason: result.reason,
+          readiness:
+            result.stage === "peer_readiness"
+              ? {
+                  version: result.readiness.version,
+                  ready: result.readiness.ready,
+                  blockers: result.readiness.blockers,
+                  eligibleMetrics: result.readiness.eligibleMetrics,
+                  checks: result.readiness.checks,
+                }
+              : null,
+        },
+      } as const;
+    }
+
+    return {
+      httpStatus: 200,
+      payload: {
+        status: supabase ? "persisted" : "ready",
+        symbol: result.packet.instrument.symbol,
+        exchange: result.packet.instrument.exchange,
+        name: result.packet.instrument.name,
+        dataAsOf: result.packet.dataAsOf,
+        ordinaryPublishable: result.packet.qualityGate.publishable,
+        readiness: result.readiness,
+        persistence: result.persistence,
+      },
+    } as const;
+  } catch (error) {
+    const reason = error instanceof Error ? error.message.slice(0, 180) : "peer_research_smoke_failed";
+    return {
+      httpStatus: 503,
+      payload: {
+        status: "failed",
+        symbol: member.symbol,
+        exchange: member.exchange,
+        reason,
+      },
+    } as const;
+  }
+}
+
+async function runBatchDryResearch() {
+  const members = allCuratedPeers();
+  const results: Array<Awaited<ReturnType<typeof runPeerResearch>>["payload"]> = [];
+
+  for (let index = 0; index < members.length; index += BATCH_CONCURRENCY) {
+    const chunk = members.slice(index, index + BATCH_CONCURRENCY);
+    const chunkResults = await Promise.all(
+      chunk.map(async (member) => (await runPeerResearch(member)).payload),
+    );
+    results.push(...chunkResults);
+  }
+
+  return results;
+}
+
 /**
  * Temporary Preview-only validation surface for the curated peer catalog.
  * Production always returns 404. Persistence additionally requires the guarded
  * dividend-lab-dev service-role client; an incorrectly configured Preview can
  * therefore inspect neither nor mutate production through this route.
+ *
+ * `batch=1` is deliberately dry-run-only and evaluates the complete curated
+ * catalog with bounded concurrency so one protected Preview request can prove
+ * real-company readiness without weakening Deployment Protection.
  */
 export async function GET(request: Request) {
   if (process.env.VERCEL_ENV?.trim().toLowerCase() !== "preview") {
@@ -40,6 +132,29 @@ export async function GET(request: Request) {
   const symbol = url.searchParams.get("symbol") ?? "";
   const exchange = url.searchParams.get("exchange") ?? "ST";
   const persist = url.searchParams.get("persist") === "1";
+  const batch = url.searchParams.get("batch") === "1";
+
+  if (batch) {
+    if (persist) {
+      return noStore(
+        NextResponse.json(
+          { status: "batch_persistence_forbidden" },
+          { status: 400 },
+        ),
+      );
+    }
+
+    const results = await runBatchDryResearch();
+    return noStore(
+      NextResponse.json({
+        status: "batch_complete",
+        persist: false,
+        count: results.length,
+        results,
+      }),
+    );
+  }
+
   const member = curatedPeer(symbol, exchange);
   if (!member) {
     return noStore(
@@ -62,57 +177,6 @@ export async function GET(request: Request) {
     );
   }
 
-  try {
-    const result = await createDivLabPeerResearchVersion({
-      symbol: member.symbol,
-      exchange: member.exchange,
-      name: member.name,
-      supabase,
-    });
-
-    if (!result.ok) {
-      return noStore(
-        NextResponse.json(
-          {
-            status: result.stage === "research" ? "research_failed" : "peer_not_ready",
-            symbol: member.symbol,
-            exchange: member.exchange,
-            reason: result.reason,
-            readiness:
-              result.stage === "peer_readiness"
-                ? {
-                    version: result.readiness.version,
-                    ready: result.readiness.ready,
-                    blockers: result.readiness.blockers,
-                    eligibleMetrics: result.readiness.eligibleMetrics,
-                    checks: result.readiness.checks,
-                  }
-                : null,
-          },
-          { status: 422 },
-        ),
-      );
-    }
-
-    return noStore(
-      NextResponse.json({
-        status: persist ? "persisted" : "ready",
-        symbol: result.packet.instrument.symbol,
-        exchange: result.packet.instrument.exchange,
-        name: result.packet.instrument.name,
-        dataAsOf: result.packet.dataAsOf,
-        ordinaryPublishable: result.packet.qualityGate.publishable,
-        readiness: result.readiness,
-        persistence: result.persistence,
-      }),
-    );
-  } catch (error) {
-    const reason = error instanceof Error ? error.message.slice(0, 180) : "peer_research_smoke_failed";
-    return noStore(
-      NextResponse.json(
-        { status: "failed", symbol: member.symbol, exchange: member.exchange, reason },
-        { status: 503 },
-      ),
-    );
-  }
+  const result = await runPeerResearch(member, supabase);
+  return noStore(NextResponse.json(result.payload, { status: result.httpStatus }));
 }
