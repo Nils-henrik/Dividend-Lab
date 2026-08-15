@@ -10,6 +10,12 @@ export type PersistedDivLabAnalysisVersion = {
   publishable: boolean;
 };
 
+export type DivLabAnalysisInstrumentIdentity = {
+  name: string;
+  symbol: string;
+  exchange: string;
+};
+
 function slugify(value: string): string {
   return value
     .normalize("NFKD")
@@ -20,7 +26,9 @@ function slugify(value: string): string {
     .slice(0, 100);
 }
 
-export function defaultAnalysisSlug(packet: DivLabResearchPacket): string {
+export function defaultAnalysisSlug(packet: {
+  instrument: DivLabAnalysisInstrumentIdentity;
+}): string {
   const company = slugify(packet.instrument.name);
   const symbol = slugify(packet.instrument.symbol);
   const exchange = slugify(packet.instrument.exchange);
