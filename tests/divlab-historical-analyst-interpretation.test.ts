@@ -164,7 +164,7 @@ describe("historical analyst interpretation", () => {
   it("rejects manipulated statistics and point-in-time bindings", () => {
     const { history, context, interpretation } = validSetup();
     const manipulated = structuredClone(interpretation);
-    manipulated.interpretations[0]!.statistics.median = 99;
+    manipulated.interpretations[0]!.statistics.median = 23.5;
 
     assert.throws(
       () =>
