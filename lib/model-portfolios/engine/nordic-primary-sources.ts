@@ -192,11 +192,24 @@ async function queryNasdaqCns(input: {
 }): Promise<NasdaqCnsItem[]> {
   const url = new URL(NASDAQ_CNS_ENDPOINT);
   url.searchParams.set("type", "json");
-  // Needed to discover official PDF report attachments for document retrieval.
+  // Nasdaq's current Company News surface exposes company discovery through
+  // Freetext. `company=` is reserved by the CNS endpoint for its own company
+  // selector values, so passing a display name there can silently return no
+  // issuer rows. Keep the same bounded number of alias queries and filter every
+  // returned row against the issuer name below.
   url.searchParams.set("showAttachments", "true");
-  url.searchParams.set("countResults", "true");
-  url.searchParams.set("company", input.company);
-  url.searchParams.set("count", String(input.count));
+  url.searchParams.set("showCnsSpecific", "true");
+  url.searchParams.set("showCompany", "true");
+  url.searchParams.set("countResults", "false");
+  url.searchParams.set("freeText", input.company);
+  url.searchParams.set("company", "");
+  url.searchParams.set("globalGroup", "exchangeNotice");
+  url.searchParams.set("globalName", "NordicMainMarkets");
+  url.searchParams.set("displayLanguage", "en");
+  url.searchParams.set("language", "en");
+  url.searchParams.set("timeZone", "CET");
+  url.searchParams.set("dateMask", "yyyy-MM-dd HH:mm:ss");
+  url.searchParams.set("limit", String(input.count));
   url.searchParams.set("start", "0");
   url.searchParams.set("dir", "DESC");
 
