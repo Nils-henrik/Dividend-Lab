@@ -228,6 +228,7 @@ async function queryNasdaqCns(input: {
   searchTerm: string;
   fetchImpl: typeof fetch;
   count: number;
+  includeGrowthMarkets?: boolean;
 }): Promise<NasdaqCnsItem[]> {
   const url = new URL(NASDAQ_CNS_ENDPOINT);
   url.searchParams.set("type", "json");
@@ -243,7 +244,14 @@ async function queryNasdaqCns(input: {
   url.searchParams.set("freeText", input.searchTerm);
   url.searchParams.set("company", "");
   url.searchParams.set("globalGroup", "exchangeNotice");
-  url.searchParams.set("globalName", "NordicMainMarkets");
+  // Ordinary portfolio research keeps the existing Main Market scope. Dedicated
+  // report-aware Deep Research must also be able to discover Nasdaq First North
+  // issuers (for example Kambi), so it uses the broader exchange-notice group
+  // without adding a second request or weakening local issuer filtering.
+  url.searchParams.set(
+    "globalName",
+    input.includeGrowthMarkets ? "" : "NordicMainMarkets",
+  );
   url.searchParams.set("displayLanguage", "en");
   url.searchParams.set("language", "en");
   url.searchParams.set("timeZone", "CET");
@@ -303,7 +311,12 @@ export async function fetchNordicPrimarySourceEvents(input: {
 
   for (const searchTerm of searchTerms) {
     if (hits.length >= maxHits) break;
-    const items = await queryNasdaqCns({ searchTerm, fetchImpl, count: queryCount });
+    const items = await queryNasdaqCns({
+      searchTerm,
+      fetchImpl,
+      count: queryCount,
+      includeGrowthMarkets: input.preferFinancialReports === true,
+    });
     for (const item of items) {
       if (hits.length >= maxHits) break;
       const issuer = text(item.company);
