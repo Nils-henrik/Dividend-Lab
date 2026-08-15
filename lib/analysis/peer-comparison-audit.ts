@@ -1,9 +1,13 @@
-import type { DivLabResearchPacket } from "./deep-research";
+import {
+  DIVLAB_DEEP_RESEARCH_VERSION,
+  type DivLabResearchPacket,
+} from "./deep-research";
 import {
   buildPeerComparisonFromRegistry,
   type RegistryPeerComparisonResult,
 } from "./peer-registry-hydration";
 import type { LoadedPeerRegistrySet } from "./peer-registry-read";
+import { DIVLAB_VALUATION_PROVENANCE_VERSION } from "./valuation-provenance";
 
 export const DIVLAB_PEER_COMPARISON_AUDIT_VERSION = "peer-comparison-audit-v1" as const;
 
@@ -49,9 +53,14 @@ function versionBinding(input: VersionedResearchPacket): PeerResearchVersionBind
   const engineVersion = input.packet.version?.trim();
   const provenanceVersion = input.packet.valuationProvenance?.version?.trim();
   const dataAsOf = new Date(input.packet.dataAsOf);
-  if (!engineVersion) throw new Error("peer_comparison_audit_engine_version_required");
-  if (!provenanceVersion) {
-    throw new Error("peer_comparison_audit_valuation_provenance_version_required");
+  if (engineVersion !== DIVLAB_DEEP_RESEARCH_VERSION) {
+    throw new Error("peer_comparison_audit_engine_version_invalid");
+  }
+  if (input.packet.qualityGate?.publishable !== true) {
+    throw new Error("peer_comparison_audit_requires_publishable_research");
+  }
+  if (provenanceVersion !== DIVLAB_VALUATION_PROVENANCE_VERSION) {
+    throw new Error("peer_comparison_audit_valuation_provenance_version_invalid");
   }
   if (!Number.isFinite(dataAsOf.getTime())) {
     throw new Error("peer_comparison_audit_data_as_of_invalid");
@@ -71,7 +80,8 @@ function versionBinding(input: VersionedResearchPacket): PeerResearchVersionBind
 /**
  * Creates the only peer-comparison shape intended for eventual analyst
  * consumption. The peer registry remains authoritative for membership and every
- * research packet must already have an immutable analysis-version id.
+ * research packet must already have an immutable, publishable analysis-version
+ * id with the current provenance contract.
  *
  * The existing unversioned hydration path remains useful for internal research
  * QA, but it must not be treated as a historical analyst input because a packet
@@ -102,7 +112,7 @@ export function buildVersionBoundPeerComparisonAudit(input: {
     peerPackets: input.peerResearch.map((entry) => entry.packet),
   });
 
-  if (result.hydration.status !== "complete") {
+  if (result.hydration.status !== "complete" || result.comparison.status !== "ready") {
     throw new Error("peer_comparison_audit_requires_complete_registry_hydration");
   }
   if (peerBindings.length !== input.registry.members.length) {
