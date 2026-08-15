@@ -40,23 +40,14 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
-      - name: Peer readiness test (diagnostic)
-        run: npx tsx --test tests/divlab-peer-research-readiness.test.ts
+      - name: Legacy peer audit test (diagnostic)
+        run: npx tsx --test tests/divlab-peer-comparison-audit.test.ts
 
-      - name: Peer audit readiness test (diagnostic)
-        run: npx tsx --test tests/divlab-peer-audit-peer-ready.test.ts
+      - name: Remaining legacy peer tests (diagnostic)
+        run: npx tsx --test tests/divlab-peer-analyst-composition.test.ts tests/divlab-peer-analyst-context.test.ts tests/divlab-peer-analyst-v3.test.ts tests/divlab-peer-comparison.test.ts tests/divlab-peer-registry-contract.test.ts tests/divlab-peer-registry-hydration.test.ts tests/divlab-peer-registry-read.test.ts
 
-      - name: Peer migration contract test (diagnostic)
-        run: npx tsx --test tests/divlab-peer-research-migration-contract.test.ts
-
-      - name: Curated peer catalog test (diagnostic)
-        run: npx tsx --test tests/divlab-curated-peer-catalog.test.ts
-
-      - name: Preview peer route safety test (diagnostic)
-        run: npx tsx --test tests/divlab-peer-preview-route-contract.test.ts
-
-      - name: Legacy peer contract tests (diagnostic)
-        run: npx tsx --test tests/divlab-peer-analyst-composition.test.ts tests/divlab-peer-analyst-context.test.ts tests/divlab-peer-analyst-v3.test.ts tests/divlab-peer-comparison-audit.test.ts tests/divlab-peer-comparison.test.ts tests/divlab-peer-registry-contract.test.ts tests/divlab-peer-registry-hydration.test.ts tests/divlab-peer-registry-read.test.ts
+      - name: New peer tests (diagnostic)
+        run: npx tsx --test tests/divlab-peer-research-readiness.test.ts tests/divlab-peer-audit-peer-ready.test.ts tests/divlab-peer-research-migration-contract.test.ts tests/divlab-curated-peer-catalog.test.ts tests/divlab-peer-preview-route-contract.test.ts
 
       - name: Core tests
         run: npm test
