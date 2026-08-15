@@ -76,7 +76,7 @@ const METRICS: readonly MetricSpec[] = [
       /\bcredit\s+loss\s+ratio\b/iu,
       /\bloan\s+loss\s+ratio\b/iu,
       /\bimpairment\s+(?:loss\s+)?ratio\b/iu,
-      /\bkreditf[oö]rlustniv[aå]\b/iu,
+      /\bkreditf[oö]rlustniv[aå](?=$|[^\p{L}\p{N}_])/iu,
       /\bkreditf[oö]rlustrelation\b/iu,
     ],
     minPct: -10,
