@@ -1,10 +1,10 @@
 # DivLab real peer validation — 2026-08-15
 
-Status: internal validation checkpoint. Peer registry v1 is permanently present in `dividend-lab-dev`; real peer research versions have **not** yet been persisted. No production write, merge or public UI is included.
+Status: internal validation checkpoint. Peer registry v1 is permanently present in `dividend-lab-dev`; real facts-only peer research versions have **not** yet been persisted. No production write, merge or public UI is included.
 
 ## Why this checkpoint exists
 
-`analyst-v3-peer` now has a complete version-bound audit and content contract, but a synthetic fixture is not enough to prove economic usefulness. The next validation layer uses curated real-company comparison sets and deliberately separates:
+`analyst-v3-peer` now has a complete version-bound audit and content contract, but a synthetic fixture is not enough to prove economic usefulness. The real-company validation layer deliberately separates:
 
 1. peer relationship curation;
 2. facts-only peer research readiness;
@@ -77,7 +77,7 @@ The registry remains immutable/versioned and is not mixed with valuation researc
 
 ## Facts-only peer research
 
-New contract: `peer-research-readiness-v1`.
+Contract: `peer-research-readiness-v1`.
 
 A peer research version may remain `publishable=false` as a public DivLab Analysis while still being eligible for peer comparison. This avoids generating irrelevant Bear/Base/Bull assumptions or making an unnecessary analyst-model call for every peer.
 
@@ -115,7 +115,7 @@ The rule is enforced both in audit persistence and deferred audit-integrity veri
 
 ## Cost-safe target orchestration
 
-`createDivLabPeerTargetAnalysis(...)` now preflights the registry and all three peer-ready versions before any target analyst call.
+`createDivLabPeerTargetAnalysis(...)` preflights the registry and all three peer-ready versions before any target analyst call.
 
 When preflight passes:
 
@@ -129,9 +129,9 @@ When preflight passes:
 8. run `peer-analyst-quality-v1`;
 9. persist `analyst-v3-peer` content through the dedicated RPC.
 
-No second analyst-model call is required.
+No second analyst-model call is required. If peer preflight fails, target Analyst is never invoked.
 
-## Preview validation surface
+## Protected Preview validation surface
 
 A temporary Preview-only research route exists solely for the nine curated peer symbols.
 
@@ -142,9 +142,61 @@ Safety boundaries:
 - production project ref is not accepted;
 - arbitrary symbols are rejected;
 - no model call is made by the peer-research route;
-- responses are `no-store`.
+- responses are `no-store`;
+- catalog-wide `batch=1` is dry-run-only;
+- `batch=1&persist=1` is explicitly forbidden;
+- batch concurrency is fixed at 3;
+- optional primary-source diagnostics return only bounded metadata, never report text/excerpts.
 
-Vercel Deployment Protection remains enabled. The available connector currently receives the protection SSO redirect instead of an authenticated cookie-bearing API response, so no real peer-research write has been attempted through that route yet. Protection must not be weakened merely to complete the smoke.
+Vercel Deployment Protection remains enabled. Protected connector access was successfully established without weakening the deployment boundary.
+
+## First real nine-peer Preview batch
+
+The protected Preview runtime executed all nine curated peers in one dry-run request. Result: **0/9 ready** and **0 writes**.
+
+### Atlas Copco peer set
+
+- `MTRS.ST`: blocked by `freshPrimarySource` and `primaryEvidenceCoverage`; eligible P/E, P/FCF, EV/EBITDA.
+- `SAND.ST`: blocked by `freshPrimarySource` and `primaryEvidenceCoverage`; eligible P/E, P/FCF, EV/EBITDA.
+- `EPI-A.ST`: blocked by `freshPrimarySource` and `primaryEvidenceCoverage`; eligible P/E, P/FCF, EV/EBITDA.
+
+### Evolution peer set
+
+- `HACK.ST`: additionally blocked by `multiYearFundamentalCoverage`; eligible P/E, P/FCF, EV/EBITDA.
+- `KAMBI.ST`: blocked by `freshPrimarySource` and `primaryEvidenceCoverage`; eligible P/E, P/FCF, EV/EBITDA.
+- `GIG-SDB.ST`: blocked by `multiYearFundamentalCoverage`, `freshPrimarySource`, `primaryEvidenceCoverage` and `peerMetricCoverage`; no eligible peer metric.
+
+### Embracer peer set
+
+- `PDX.ST`: blocked by `freshPrimarySource` and `primaryEvidenceCoverage`; eligible P/E, P/FCF, EV/EBITDA.
+- `SF.ST`: blocked by `freshPrimarySource` and `primaryEvidenceCoverage`; eligible P/FCF and EV/EBITDA.
+- `MTG-B.ST`: blocked by `freshPrimarySource` and `primaryEvidenceCoverage`; eligible P/E, P/FCF, EV/EBITDA.
+
+Interpretation: the common failure is a **systematic Nordic primary-report discovery/enrichment gap**, not nine independent valuation failures. Eight of nine already satisfy peer metric coverage; Hacksaw and GiG also expose shorter-history limitations, while GiG currently lacks enough positive traceable peer multiples.
+
+A direct database check after the batch confirmed:
+
+- zero `divlab_analysis_versions` for the nine curated peer symbols;
+- zero new analysis versions in the dry-run window.
+
+## Primary-source discovery correction
+
+Current Nasdaq Company News exposes issuer/news filtering through its Freetext surface, while the existing CNS adapter passed display-name aliases through `company=` and used `count=` for the result window. Current Nasdaq disclosures for companies such as Sandvik and Munters prove that fresh 2026 reports and official `attachment.news.eu.nasdaq.com` PDFs exist, so weakening `freshPrimarySource` would be incorrect.
+
+The adapter has therefore been corrected prospectively to:
+
+- send the same bounded company aliases through `freeText=`;
+- leave `company=` empty instead of pretending display names are CNS selector values;
+- use `limit=` for the existing bounded query count;
+- retain `showAttachments`, `showCnsSpecific` and `showCompany`;
+- retain local issuer-name matching to reject free-text noise;
+- retain the official attachment hostname allowlist;
+- retain the same hard caps: max 12 accepted hits and max 20 CNS rows per alias;
+- retain one official PDF attempt per company/pass.
+
+This is a discovery-contract fix, **not** a larger research/network budget and not a quality-gate relaxation.
+
+A dedicated root Quality Gate contract now prevents `company=<display name>` / `count=` from silently returning in a future refactor.
 
 ## Current real-data state
 
@@ -156,7 +208,7 @@ Permanent in dev:
 - 12 peer-set source records;
 - normalized member-to-source links.
 
-Not yet present:
+Intentionally not yet present:
 
 - real facts-only peer research versions for the nine peer members;
 - real peer comparison audits for Atlas Copco, Evolution or Embracer;
@@ -164,11 +216,12 @@ Not yet present:
 
 ## Next execution step
 
-When the protected Preview runtime can be invoked with its authenticated session intact:
+1. deploy the corrected CNS discovery code to a protected Preview once Vercel accepts the next Preview build;
+2. repeat the exact nine-peer dry-run;
+3. persist only peers that actually pass `peer-research-readiness-v1`;
+4. leave failed peers as explicit blockers — no automatic substitution;
+5. verify persisted peer versions are `publishable=false` and SQL `divlab_peer_research_ready(research_packet)=true`;
+6. execute the first target through the single-call orchestrator only when all three registered peers are ready;
+7. perform qualitative human review before allowing peer context to influence the AI-written thesis or scenarios.
 
-1. dry-run all nine peers without persistence;
-2. persist only peers that pass `peer-research-readiness-v1`;
-3. leave failed peers as explicit blockers — no automatic substitution;
-4. verify persisted peer versions are `publishable=false` and SQL `divlab_peer_research_ready(research_packet)=true`;
-5. execute the first target through the single-call orchestrator only when all three registered peers are ready;
-6. perform qualitative human review before allowing peer context to influence the AI-written thesis or scenarios.
+No historical portfolio decision, trade, holding or prior research version is rewritten by this work.
