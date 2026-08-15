@@ -18,69 +18,131 @@ import {
 } from "./bank-content-repository";
 import { buildBankResearch, type DivLabBankResearch } from "./bank-research";
 import { buildBankScenarioSet, type DivLabBankScenarioSet } from "./bank-scenarios";
-import { buildDivLabAnalysisDraft } from "./draft-service";
-import type { DivLabResearchPacket } from "./deep-research";
+import {
+  buildDivLabResearchPacket,
+  type DivLabResearchPacket,
+} from "./deep-research";
 import {
   loadDivLabResearchInputs,
-  type LoadDivLabResearchInputsDeps,
+  type DivLabResearchLoadResult,
 } from "./research-loader";
 
-export type CreateDivLabBankAiAnalysisResult = {
-  stage:
-    | "methodology"
-    | "bank_research"
-    | "bank_research_quality"
-    | "gateway_auth_missing"
-    | "analyst_quality"
-    | "complete";
-  basePacket: DivLabResearchPacket;
-  bankResearch: DivLabBankResearch | null;
-  packet: DivLabBankResearchPacket | null;
-  bankScenarios: DivLabBankScenarioSet | null;
-  draft: DivLabBankAnalystDraft | null;
-  analystQualityGate: DivLabBankAnalystQualityGate | null;
-  analystModel: string | null;
-  usage: DivLabAnalystUsage | null;
-  persisted: PersistedDivLabBankAnalysisBundle | null;
-  error: string | null;
-};
+export type CreateDivLabBankAiAnalysisResult =
+  | {
+      ok: false;
+      stage: "research";
+      reason: Extract<DivLabResearchLoadResult, { ok: false }>["reason"];
+    }
+  | {
+      ok: false;
+      stage:
+        | "methodology"
+        | "bank_research"
+        | "bank_research_quality"
+        | "gateway_auth_missing"
+        | "analyst_quality";
+      reason: string;
+      basePacket: DivLabResearchPacket;
+      bankResearch: DivLabBankResearch | null;
+      packet: DivLabBankResearchPacket | null;
+      bankScenarios: DivLabBankScenarioSet | null;
+      draft: DivLabBankAnalystDraft | null;
+      analystQualityGate: DivLabBankAnalystQualityGate | null;
+      analystModel: string | null;
+      usage: DivLabAnalystUsage | null;
+    }
+  | {
+      ok: true;
+      stage: "complete";
+      basePacket: DivLabResearchPacket;
+      bankResearch: DivLabBankResearch;
+      packet: DivLabBankResearchPacket;
+      bankScenarios: DivLabBankScenarioSet;
+      draft: DivLabBankAnalystDraft;
+      analystQualityGate: DivLabBankAnalystQualityGate;
+      analystModel: string;
+      usage: DivLabAnalystUsage;
+      persisted: PersistedDivLabBankAnalysisBundle | null;
+    };
 
+/**
+ * Standalone bank-v3 analysis flow. The generic operating-company service is
+ * intentionally untouched until this specialized path has passed its own full
+ * repository and database verification.
+ */
 export async function createDivLabBankAiAnalysis(input: {
   symbol: string;
   exchange: string;
+  name: string;
+  fetchImpl?: typeof fetch;
+  now?: Date;
   supabase?: SupabaseClient;
   persist?: boolean;
   slug?: string;
   useEscalationModel?: boolean;
-  deps?: LoadDivLabResearchInputsDeps;
 }): Promise<CreateDivLabBankAiAnalysisResult> {
-  const inputs = await loadDivLabResearchInputs({
+  const now = input.now ?? new Date();
+  const loaded = await loadDivLabResearchInputs({
     symbol: input.symbol,
     exchange: input.exchange,
-    deps: input.deps,
+    name: input.name,
+    fetchImpl: input.fetchImpl,
+    now,
   });
-  const basePacket = buildDivLabAnalysisDraft(inputs).packet;
+  if (!loaded.ok) {
+    return {
+      ok: false,
+      stage: "research",
+      reason: loaded.reason,
+    };
+  }
 
-  const emptyResult = (
-    stage: CreateDivLabBankAiAnalysisResult["stage"],
-    error: string,
-    bankResearch: DivLabBankResearch | null = null,
-  ): CreateDivLabBankAiAnalysisResult => ({
+  const research = loaded.value;
+  const common = {
+    symbol: research.instrument.symbol,
+    exchange: research.instrument.exchange,
+    name: research.instrument.name,
+    currency: research.instrument.currency,
+    currentPrice: research.instrument.currentPrice,
+    history: research.history,
+    fundamentals: research.fundamentals,
+    companyClassification: research.companyClassification,
+    fxConversion: research.fxConversion,
+    sources: research.sources,
+    evidence: research.evidence,
+    now,
+  };
+  const basePacket = buildDivLabResearchPacket({
+    ...common,
+    valuationScenarios: [],
+  });
+
+  const failure = (
+    stage: Exclude<CreateDivLabBankAiAnalysisResult, { ok: true }>["stage"],
+    reason: string,
+    overrides: Partial<
+      Omit<
+        Exclude<CreateDivLabBankAiAnalysisResult, { ok: false; stage: "research" }>,
+        "ok" | "stage" | "reason" | "basePacket"
+      >
+    > = {},
+  ): Exclude<CreateDivLabBankAiAnalysisResult, { ok: true } | { stage: "research" }> => ({
+    ok: false,
     stage,
+    reason,
     basePacket,
-    bankResearch,
+    bankResearch: null,
     packet: null,
     bankScenarios: null,
     draft: null,
     analystQualityGate: null,
     analystModel: null,
     usage: null,
-    persisted: null,
-    error,
+    ...overrides,
   });
 
   if (basePacket.companyClassification.type !== "bank") {
-    return emptyResult("methodology", "bank_analysis_requires_bank_classification");
+    return failure("methodology", "bank_analysis_requires_bank_classification");
   }
 
   const bankResearch = buildBankResearch({
@@ -89,11 +151,11 @@ export async function createDivLabBankAiAnalysis(input: {
     currentPrice: basePacket.instrument.currentPrice,
     marketCurrency: basePacket.instrument.currency,
     reportingCurrency: basePacket.currencyContext.reportingCurrency,
-    fxConversion: inputs.fxConversion,
+    fxConversion: research.fxConversion,
     sources: basePacket.sources,
   });
   if (bankResearch.status !== "research_ready") {
-    return emptyResult("bank_research", "bank_research_not_ready", bankResearch);
+    return failure("bank_research", "bank_research_not_ready", { bankResearch });
   }
 
   let analyst: Awaited<ReturnType<typeof generateDivLabBankAnalystDraft>>;
@@ -105,7 +167,7 @@ export async function createDivLabBankAiAnalysis(input: {
     });
   } catch (error) {
     if (error instanceof Error && error.message === "gateway_auth_missing") {
-      return emptyResult("gateway_auth_missing", "gateway_auth_missing", bankResearch);
+      return failure("gateway_auth_missing", "gateway_auth_missing", { bankResearch });
     }
     throw error;
   }
@@ -118,20 +180,20 @@ export async function createDivLabBankAiAnalysis(input: {
     scenarios: analyst.draft.valuationScenarios,
   });
   const packet = buildDivLabBankResearchPacket({
-    now: new Date(),
+    now,
     basePacket,
     bankResearch,
     bankScenarios,
   });
   if (!packet.qualityGate.publishable) {
-    return {
-      ...emptyResult("bank_research_quality", "bank_research_quality_gate_failed", bankResearch),
+    return failure("bank_research_quality", "bank_research_quality_gate_failed", {
+      bankResearch,
       packet,
       bankScenarios,
       draft: analyst.draft,
       analystModel: analyst.model,
       usage: analyst.usage,
-    };
+    });
   }
 
   const analystQualityGate = evaluateBankAnalystContentQuality({
@@ -140,9 +202,7 @@ export async function createDivLabBankAiAnalysis(input: {
     scenarios: bankScenarios,
   });
   if (!analystQualityGate.publishable) {
-    return {
-      stage: "analyst_quality",
-      basePacket,
+    return failure("analyst_quality", "bank_analyst_quality_gate_failed", {
       bankResearch,
       packet,
       bankScenarios,
@@ -150,26 +210,25 @@ export async function createDivLabBankAiAnalysis(input: {
       analystQualityGate,
       analystModel: analyst.model,
       usage: analyst.usage,
-      persisted: null,
-      error: "bank_analyst_quality_gate_failed",
-    };
-  }
-
-  let persisted: PersistedDivLabBankAnalysisBundle | null = null;
-  if (input.persist !== false) {
-    if (!input.supabase) throw new Error("supabase_client_required_for_persistence");
-    persisted = await persistDivLabBankAnalysisBundle({
-      supabase: input.supabase,
-      packet,
-      draft: analyst.draft,
-      analystModel: analyst.model,
-      usage: analyst.usage,
-      qualityGate: analystQualityGate,
-      slug: input.slug,
     });
   }
 
+  const persisted =
+    input.supabase && input.persist !== false
+      ? await persistDivLabBankAnalysisBundle({
+          supabase: input.supabase,
+          packet,
+          draft: analyst.draft,
+          analystModel: analyst.model,
+          usage: analyst.usage,
+          qualityGate: analystQualityGate,
+          generatedAt: now.toISOString(),
+          slug: input.slug,
+        })
+      : null;
+
   return {
+    ok: true,
     stage: "complete",
     basePacket,
     bankResearch,
@@ -180,6 +239,5 @@ export async function createDivLabBankAiAnalysis(input: {
     analystModel: analyst.model,
     usage: analyst.usage,
     persisted,
-    error: null,
   };
 }
