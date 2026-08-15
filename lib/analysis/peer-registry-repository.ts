@@ -2,7 +2,11 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { PeerBasisSource, VerifiedPeerInput } from "./peer-comparison";
-import { buildPeerRegistryBundle } from "./peer-registry-contract";
+import {
+  buildPeerRegistryBundle,
+  buildPeerRegistryBundleFromMembers,
+  type PeerRegistryBundle,
+} from "./peer-registry-contract";
 import {
   buildLoadedPeerRegistrySet,
   type LoadedPeerRegistrySet,
@@ -68,12 +72,44 @@ function queryError(stage: string, error: { code?: string } | null): Error {
   return new Error(`divlab_peer_registry_${stage}_failed:${error?.code ?? "unknown"}`);
 }
 
+async function persistBundle(input: {
+  supabase: SupabaseClient;
+  bundle: PeerRegistryBundle;
+}): Promise<PersistedPeerSet> {
+  const { data, error } = await input.supabase.rpc("persist_divlab_peer_set", {
+    p_target_symbol: input.bundle.target.symbol,
+    p_target_exchange: input.bundle.target.exchange,
+    p_target_name: input.bundle.target.name,
+    p_data_as_of: input.bundle.dataAsOf,
+    p_methodology_version: input.bundle.methodologyVersion,
+    p_sources: input.bundle.sources,
+    p_members: input.bundle.members,
+  });
+
+  if (error) {
+    throw new Error(`divlab_peer_registry_persist_failed:${error.code ?? "unknown"}`);
+  }
+  return readPersistResult(data);
+}
+
+/** Persist one already-curated registry bundle after revalidating its boundary. */
+export async function persistDivLabPeerRegistryBundle(input: {
+  supabase: SupabaseClient;
+  bundle: PeerRegistryBundle;
+}): Promise<PersistedPeerSet> {
+  const bundle = buildPeerRegistryBundleFromMembers({
+    target: input.bundle.target,
+    dataAsOf: input.bundle.dataAsOf,
+    sources: input.bundle.sources,
+    members: input.bundle.members,
+  });
+  return persistBundle({ supabase: input.supabase, bundle });
+}
+
 /**
- * Persist one immutable, explicitly sourced peer-set version.
- *
- * This does not discover peers and does not persist comparison output. The
- * registry stores only the audited relationship decision so fresh Deep Research
- * packets can later be compared deterministically against that same peer set.
+ * Persist one immutable, explicitly sourced peer-set version from already
+ * hydrated research inputs. This does not discover peers or store comparison
+ * output; it stores only the audited relationship decision.
  */
 export async function persistDivLabPeerSet(input: {
   supabase: SupabaseClient;
@@ -92,34 +128,13 @@ export async function persistDivLabPeerSet(input: {
     sources: input.sources,
     peers: input.peers,
   });
-
-  const { data, error } = await input.supabase.rpc("persist_divlab_peer_set", {
-    p_target_symbol: bundle.target.symbol,
-    p_target_exchange: bundle.target.exchange,
-    p_target_name: bundle.target.name,
-    p_data_as_of: bundle.dataAsOf,
-    p_methodology_version: bundle.methodologyVersion,
-    p_sources: bundle.sources,
-    p_members: bundle.members,
-  });
-
-  if (error) {
-    throw new Error(`divlab_peer_registry_persist_failed:${error.code ?? "unknown"}`);
-  }
-  return readPersistResult(data);
+  return persistBundle({ supabase: input.supabase, bundle });
 }
 
 /**
  * Load the latest immutable peer-set version for one canonical instrument.
- *
- * `maxDataAsOf` makes the same read path point-in-time safe for historical
- * analyst work: a newer peer-set version is never substituted for an older
- * target research version.
- *
- * The read side never invents or completes a partial relationship. Rows are
- * assembled through `buildLoadedPeerRegistrySet`, which fails closed if the
- * selected version is incomplete, cross-linked to another set or lacks an
- * explicit source relationship for any member.
+ * `maxDataAsOf` makes the read path point-in-time safe for historical analyst
+ * work: a newer peer-set version is never substituted for an older target.
  */
 export async function loadLatestDivLabPeerSet(input: {
   supabase: SupabaseClient;
