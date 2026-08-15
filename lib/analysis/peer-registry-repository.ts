@@ -56,6 +56,14 @@ function canonicalIdentity(value: string): string {
   return value.trim().toUpperCase();
 }
 
+function canonicalDataAsOf(value: string): string {
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) {
+    throw new Error("divlab_peer_registry_data_as_of_invalid");
+  }
+  return date.toISOString();
+}
+
 function queryError(stage: string, error: { code?: string } | null): Error {
   return new Error(`divlab_peer_registry_${stage}_failed:${error?.code ?? "unknown"}`);
 }
@@ -104,19 +112,27 @@ export async function persistDivLabPeerSet(input: {
 /**
  * Load the latest immutable peer-set version for one canonical instrument.
  *
+ * `maxDataAsOf` makes the same read path point-in-time safe for historical
+ * analyst work: a newer peer-set version is never substituted for an older
+ * target research version.
+ *
  * The read side never invents or completes a partial relationship. Rows are
  * assembled through `buildLoadedPeerRegistrySet`, which fails closed if the
- * latest version is incomplete, cross-linked to another set or lacks an
+ * selected version is incomplete, cross-linked to another set or lacks an
  * explicit source relationship for any member.
  */
 export async function loadLatestDivLabPeerSet(input: {
   supabase: SupabaseClient;
   symbol: string;
   exchange: string;
+  maxDataAsOf?: string;
 }): Promise<LoadedPeerRegistrySet | null> {
   const symbol = canonicalIdentity(input.symbol);
   const exchange = canonicalIdentity(input.exchange);
   if (!symbol || !exchange) throw new Error("divlab_peer_registry_identity_required");
+  const maxDataAsOf = input.maxDataAsOf
+    ? canonicalDataAsOf(input.maxDataAsOf)
+    : null;
 
   const targetResult = await input.supabase
     .from("divlab_peer_targets")
@@ -128,16 +144,20 @@ export async function loadLatestDivLabPeerSet(input: {
   if (targetResult.error) throw queryError("load_target", targetResult.error);
   if (!targetResult.data) return null;
 
-  const peerSetResult = await input.supabase
+  const peerSetQuery = input.supabase
     .from("divlab_peer_sets")
     .select("id,target_id,version_number,target_name,data_as_of,methodology_version")
-    .eq("target_id", targetResult.data.id)
+    .eq("target_id", targetResult.data.id);
+  const boundedPeerSetQuery = maxDataAsOf
+    ? peerSetQuery.lte("data_as_of", maxDataAsOf)
+    : peerSetQuery;
+  const peerSetResult = await boundedPeerSetQuery
     .order("version_number", { ascending: false })
     .limit(1)
     .maybeSingle();
 
   if (peerSetResult.error) throw queryError("load_set", peerSetResult.error);
-  if (!peerSetResult.data) throw new Error("divlab_peer_registry_target_without_set");
+  if (!peerSetResult.data) return null;
 
   const peerSetId = peerSetResult.data.id;
   const [sourceResult, memberResult, linkResult] = await Promise.all([
