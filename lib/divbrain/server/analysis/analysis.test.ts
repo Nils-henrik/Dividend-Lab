@@ -29,9 +29,15 @@ function draft(): DivLabAnalystDraft {
     horizonMonths: { min: 12, max: 36 },
     executiveSummary:
       "Bolaget har en stark verifierad profil, men värdering och efterfrågerisk måste följas löpande.",
-    investmentCase: [claim("Kassaflödet stödjer investeringscaset.")],
+    investmentCase: [
+      claim("Kassaflödet stödjer investeringscaset."),
+      claim("Lönsamheten ger stöd åt ett långsiktigt kvalitetscase."),
+    ],
     latestReport: [claim("Senaste rapporten visar stabil lönsamhet.")],
-    fundamentalInterpretation: [claim("Flerårstrenden är stabil.")],
+    fundamentalInterpretation: [
+      claim("Flerårstrenden är stabil."),
+      claim("Balans och kassaflöde behöver följas tillsammans med tillväxten."),
+    ],
     valuationInterpretation: [
       {
         measure: "pe",
