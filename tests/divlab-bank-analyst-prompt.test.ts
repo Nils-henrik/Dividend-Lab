@@ -138,7 +138,7 @@ function bankResearch(): DivLabBankResearch {
 describe("DivLab bank analyst v3 prompt", () => {
   it("encodes the bank-specific methodological prohibitions and scenario rules", () => {
     const mandate = buildBankAnalystSystemMandate();
-    assert.match(mandate, /nettorskuld\/EBITDA/i);
+    assert.match(mandate, /nettoskuld\/EBITDA/i);
     assert.match(mandate, /P\/FCF/i);
     assert.match(mandate, /EV\/EBITDA/i);
     assert.match(mandate, /managementm[aå]l/i);
