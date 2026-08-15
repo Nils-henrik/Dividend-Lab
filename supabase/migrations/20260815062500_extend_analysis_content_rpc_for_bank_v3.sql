@@ -28,10 +28,6 @@ declare
   v_scenario jsonb;
   v_quality_checks jsonb;
 begin
-  if auth.role() is distinct from 'service_role' then
-    raise exception 'service_role_required';
-  end if;
-
   if p_analysis_version_id is null
      or nullif(trim(p_schema_version), '') is null
      or nullif(trim(p_analyst_model), '') is null
