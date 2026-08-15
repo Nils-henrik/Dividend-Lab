@@ -115,11 +115,13 @@ function numericCandidates(raw: string): number[] {
 
 function percentTokens(value: string): Array<{ raw: string; scale: number }> {
   const tokens: Array<{ raw: string; scale: number }> = [];
-  const percentPattern = /(-?\d+(?:[.,]\d+)?)\s*(?:%|percent|per\s+cent|procent)\b?/giu;
+  const percentPattern =
+    /(-?\d+(?:[.,]\d+)?)\s*(?:%|percent\b|per\s+cent\b|procent\b)/giu;
   for (const match of value.matchAll(percentPattern)) {
     if (match[1]) tokens.push({ raw: match[1], scale: 1 });
   }
-  const bpPattern = /(-?\d+(?:[.,]\d+)?)\s*(?:bp|bps|basis\s+points?|baspunkter?)\b/giu;
+  const bpPattern =
+    /(-?\d+(?:[.,]\d+)?)\s*(?:bp|bps|basis\s+points?|baspunkter?)\b/giu;
   for (const match of value.matchAll(bpPattern)) {
     if (match[1]) tokens.push({ raw: match[1], scale: 0.01 });
   }
@@ -131,8 +133,14 @@ function metricFromExcerpt(input: {
   sourceId: string;
   spec: MetricSpec;
 }): DivLabBankMetric {
-  const matches = new Map<string, { valuePct: number; rawToken: string; context: string }>();
-  const lines = input.excerpt.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  const matches = new Map<
+    string,
+    { valuePct: number; rawToken: string; context: string }
+  >();
+  const lines = input.excerpt
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
 
   for (const line of lines) {
     const label = input.spec.labels.find((pattern) => pattern.test(line));
@@ -237,16 +245,24 @@ export function extractBankReportMetrics(
       Boolean(item.documentExcerpt?.trim()),
   );
   if (!report?.documentExcerpt?.trim()) {
-    return emptyResult("Ingen ren, hämtad primärrapporttext finns för bankspecialiserad analys.");
+    return emptyResult(
+      "Ingen ren, hämtad primärrapporttext finns för bankspecialiserad analys.",
+    );
   }
 
   const extracted = METRICS.map((spec) =>
-    metricFromExcerpt({ excerpt: report.documentExcerpt!, sourceId: report.sourceId, spec }),
+    metricFromExcerpt({
+      excerpt: report.documentExcerpt!,
+      sourceId: report.sourceId,
+      spec,
+    }),
   );
   const metrics = Object.fromEntries(
     extracted.map((metric) => [metric.name, metric]),
   ) as Record<DivLabBankMetricName, DivLabBankMetric>;
-  const confirmedMetrics = extracted.filter((metric) => metric.status === "confirmed").length;
+  const confirmedMetrics = extracted.filter(
+    (metric) => metric.status === "confirmed",
+  ).length;
   const requiredCoreConfirmed =
     metrics.cet1Ratio.status === "confirmed" &&
     metrics.returnOnEquity.status === "confirmed";
@@ -255,11 +271,16 @@ export function extractBankReportMetrics(
     metrics.netInterestMargin.status === "confirmed" ||
     metrics.costIncomeRatio.status === "confirmed";
   const coverage = confirmedMetrics / METRICS.length;
-  const evidenceReady = requiredCoreConfirmed && hasRiskOrMarginContext && confirmedMetrics >= 3;
+  const evidenceReady =
+    requiredCoreConfirmed && hasRiskOrMarginContext && confirmedMetrics >= 3;
 
   return {
     version: DIVLAB_BANK_ANALYSIS_VERSION,
-    status: evidenceReady ? "evidence_ready" : confirmedMetrics >= 2 ? "partial" : "insufficient",
+    status: evidenceReady
+      ? "evidence_ready"
+      : confirmedMetrics >= 2
+        ? "partial"
+        : "insufficient",
     sourceId: report.sourceId,
     reportPeriod: report.reportPeriod,
     reportYear: report.reportYear,
