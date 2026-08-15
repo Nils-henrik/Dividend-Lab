@@ -88,7 +88,7 @@ function readyRange(input: HistoricalValuationAnalysis, metric: HistoricalValuat
     throw new Error("historical_valuation_claim_sample_invalid");
   }
 
-  return range;
+  return { ...range, statistics: range.statistics };
 }
 
 function validateHistoryBindings(
