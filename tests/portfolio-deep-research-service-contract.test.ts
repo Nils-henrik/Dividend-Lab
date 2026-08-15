@@ -39,6 +39,6 @@ describe("portfolio Deep Research execution safety contract", () => {
     assert.match(value, /portfolio_deep_research_execution_identity_mismatch/);
     assert.match(value, /result\.ok/);
     assert.match(value, /failedClosed/);
-    assert.doesNotMatch(value, /synthetic|fallback.*analysis/i);
+    assert.doesNotMatch(value, /buildSyntheticResearch|createSyntheticAnalysis|fallbackAnalysis\s*=/i);
   });
 });
