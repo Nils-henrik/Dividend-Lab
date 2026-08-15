@@ -7,7 +7,12 @@ import {
 } from "../lib/analysis/peer-comparison-audit";
 import type { LoadedPeerRegistrySet } from "../lib/analysis/peer-registry-read";
 
-function packet(symbol: string, name = symbol, base = 10): DivLabResearchPacket {
+function packet(
+  symbol: string,
+  name = symbol,
+  base = 10,
+  publishable = true,
+): DivLabResearchPacket {
   const measure = (value: number, suffix: string) => ({
     value,
     traceable: true,
@@ -16,7 +21,7 @@ function packet(symbol: string, name = symbol, base = 10): DivLabResearchPacket 
   });
 
   return {
-    version: "deep-research-v1",
+    version: "deep-research-v2",
     instrument: {
       symbol,
       exchange: "ST",
@@ -25,6 +30,9 @@ function packet(symbol: string, name = symbol, base = 10): DivLabResearchPacket 
       currentPrice: 100,
     },
     dataAsOf: "2026-08-15T09:00:00.000Z",
+    qualityGate: {
+      publishable,
+    },
     valuation: {
       trailing: {
         pe: base,
@@ -46,8 +54,6 @@ function packet(symbol: string, name = symbol, base = 10): DivLabResearchPacket 
         evToEbit: measure(base - 1, "ev-ebit"),
         evToEbitda: measure(base - 2, "ev-ebitda"),
       },
-      traceable: true,
-      blockers: [],
     },
   } as unknown as DivLabResearchPacket;
 }
@@ -90,7 +96,7 @@ const IDS = {
 } as const;
 
 describe("DivLab version-bound peer comparison audit", () => {
-  it("binds the immutable registry and every research packet to exact analysis versions", () => {
+  it("binds the immutable registry and every publishable research packet to exact analysis versions", () => {
     const audit = buildVersionBoundPeerComparisonAudit({
       registry: registry(),
       targetResearch: {
@@ -112,7 +118,7 @@ describe("DivLab version-bound peer comparison audit", () => {
       registeredPeerCount: 3,
     });
     assert.equal(audit.targetResearch.analysisVersionId, IDS.target);
-    assert.equal(audit.targetResearch.engineVersion, "deep-research-v1");
+    assert.equal(audit.targetResearch.engineVersion, "deep-research-v2");
     assert.equal(
       audit.targetResearch.valuationProvenanceVersion,
       "valuation-provenance-v1",
@@ -145,6 +151,25 @@ describe("DivLab version-bound peer comparison audit", () => {
           ],
         }),
       /peer_comparison_audit_requires_complete_registry_hydration/,
+    );
+  });
+
+  it("rejects non-publishable research even when registry membership is complete", () => {
+    assert.throws(
+      () =>
+        buildVersionBoundPeerComparisonAudit({
+          registry: registry(),
+          targetResearch: {
+            analysisVersionId: IDS.target,
+            packet: packet("EVO", "Evolution", 12),
+          },
+          peerResearch: [
+            { analysisVersionId: IDS.aaa, packet: packet("AAA") },
+            { analysisVersionId: IDS.bbb, packet: packet("BBB", "BBB", 10, false) },
+            { analysisVersionId: IDS.ccc, packet: packet("CCC") },
+          ],
+        }),
+      /peer_comparison_audit_requires_publishable_research/,
     );
   });
 
