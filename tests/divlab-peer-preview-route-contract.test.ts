@@ -34,4 +34,14 @@ describe("preview peer research safety boundary", () => {
     assert.match(value, /runBatchDryResearch/);
     assert.match(value, /persist: false/);
   });
+
+  it("exposes only bounded primary-source metadata, never report text", () => {
+    const value = file("app/api/internal/analysis/peer-research/route.ts");
+    assert.match(value, /primaryDiagnostics/);
+    assert.match(value, /documentRetrieved/);
+    assert.match(value, /reportPeriod/);
+    assert.match(value, /documentType/);
+    assert.doesNotMatch(value, /documentExcerpt/);
+    assert.doesNotMatch(value, /item\.content/);
+  });
 });
