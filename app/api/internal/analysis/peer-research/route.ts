@@ -50,7 +50,9 @@ export async function GET(request: Request) {
     );
   }
 
-  const supabase = persist ? createDivLabAnalysisDevAdminClient() : undefined;
+  const supabase = persist
+    ? createDivLabAnalysisDevAdminClient() ?? undefined
+    : undefined;
   if (persist && !supabase) {
     return noStore(
       NextResponse.json(
