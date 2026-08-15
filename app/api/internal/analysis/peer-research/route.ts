@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { DIVLAB_CURATED_PEER_SETS } from "@/lib/analysis/curated-peer-catalog";
 import { createDivLabAnalysisDevAdminClient } from "@/lib/analysis/dev-admin";
+import type { DivLabResearchPacket } from "@/lib/analysis/deep-research";
 import { createDivLabPeerResearchVersion } from "@/lib/analysis/peer-research-service";
 
 export const runtime = "nodejs";
@@ -37,6 +38,39 @@ function allCuratedPeers() {
   return [...byIdentity.values()];
 }
 
+function primaryDiagnostics(packet: DivLabResearchPacket) {
+  const sources = packet.sources
+    .filter((source) => source.id.startsWith("nordic-primary:"))
+    .map((source) => ({
+      id: source.id,
+      kind: source.kind,
+      publisher: source.publisher,
+      url: source.url,
+      publishedAt: source.publishedAt,
+      primary: source.primary,
+    }));
+  const evidence = packet.evidence
+    .filter((item) => item.sourceId.startsWith("nordic-primary:"))
+    .map((item) => ({
+      sourceId: item.sourceId,
+      kind: item.kind,
+      title: item.title,
+      publishedAt: item.publishedAt,
+      primary: item.primary,
+      documentRetrieved: item.documentRetrieved,
+      reportPeriod: item.reportPeriod,
+      reportYear: item.reportYear,
+      documentType: item.documentType,
+    }));
+
+  return {
+    sourceCount: sources.length,
+    evidenceCount: evidence.length,
+    sources,
+    evidence,
+  };
+}
+
 type DevAdminClient = NonNullable<ReturnType<typeof createDivLabAnalysisDevAdminClient>>;
 type CuratedPeer = NonNullable<ReturnType<typeof curatedPeer>>;
 
@@ -67,6 +101,10 @@ async function runPeerResearch(member: CuratedPeer, supabase?: DevAdminClient) {
                   checks: result.readiness.checks,
                 }
               : null,
+          primaryDiagnostics:
+            result.stage === "peer_readiness"
+              ? primaryDiagnostics(result.packet)
+              : null,
         },
       } as const;
     }
@@ -81,6 +119,7 @@ async function runPeerResearch(member: CuratedPeer, supabase?: DevAdminClient) {
         dataAsOf: result.packet.dataAsOf,
         ordinaryPublishable: result.packet.qualityGate.publishable,
         readiness: result.readiness,
+        primaryDiagnostics: primaryDiagnostics(result.packet),
         persistence: result.persistence,
       },
     } as const;
@@ -121,7 +160,8 @@ async function runBatchDryResearch() {
  *
  * `batch=1` is deliberately dry-run-only and evaluates the complete curated
  * catalog with bounded concurrency so one protected Preview request can prove
- * real-company readiness without weakening Deployment Protection.
+ * real-company readiness without weakening Deployment Protection. Diagnostic
+ * output is bounded to source/document metadata; report text is never returned.
  */
 export async function GET(request: Request) {
   if (process.env.VERCEL_ENV?.trim().toLowerCase() !== "preview") {
