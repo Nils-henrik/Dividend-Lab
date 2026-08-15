@@ -4,6 +4,7 @@ import {
   companyNamesLikelyMatch,
   fetchNordicPrimarySourceEvents,
   nordicDisclosureCompanyAliases,
+  nordicDisclosureSearchTerms,
 } from "./nordic-primary-sources";
 
 describe("Nordic primary-source event enrichment", () => {
@@ -13,6 +14,23 @@ describe("Nordic primary-source event enrichment", () => {
     assert.ok(aliases.some((item) => item.includes("Atlas Copco")));
     assert.equal(companyNamesLikelyMatch("Atlas Copco AB", "Atlas Copco AB ser. A"), true);
     assert.equal(companyNamesLikelyMatch("Attendo AB", "Atlas Copco AB"), false);
+  });
+
+  it("replaces ordinary aliases with report-focused terms without exceeding five CNS searches", () => {
+    const ordinary = nordicDisclosureSearchTerms({
+      companyName: "Modern Times Group MTG B",
+      symbol: "MTG-B",
+    });
+    const deepResearch = nordicDisclosureSearchTerms({
+      companyName: "Modern Times Group MTG B",
+      symbol: "MTG-B",
+      preferFinancialReports: true,
+    });
+
+    assert.deepEqual(ordinary, nordicDisclosureCompanyAliases("Modern Times Group MTG B"));
+    assert.ok(deepResearch.includes("MTG report"));
+    assert.ok(deepResearch.some((term) => /modern times.*report/i.test(term)));
+    assert.ok(deepResearch.length <= 5);
   });
 
   it("queries Nasdaq CNS through bounded freetext discovery and attributes the destination publisher", async () => {
