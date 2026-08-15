@@ -173,6 +173,53 @@ describe("DivLab version-bound peer comparison audit", () => {
     );
   });
 
+  it("rejects registry evidence verified after the target research boundary", () => {
+    const futureRegistry = registry();
+    futureRegistry.sources[0] = {
+      ...futureRegistry.sources[0],
+      verifiedAt: "2026-08-15T09:01:00.000Z",
+    };
+
+    assert.throws(
+      () =>
+        buildVersionBoundPeerComparisonAudit({
+          registry: futureRegistry,
+          targetResearch: {
+            analysisVersionId: IDS.target,
+            packet: packet("EVO", "Evolution", 12),
+          },
+          peerResearch: [
+            { analysisVersionId: IDS.aaa, packet: packet("AAA") },
+            { analysisVersionId: IDS.bbb, packet: packet("BBB") },
+            { analysisVersionId: IDS.ccc, packet: packet("CCC") },
+          ],
+        }),
+      /peer_comparison_audit_registry_source_lookahead:basis:verified/,
+    );
+  });
+
+  it("rejects peer research newer than the target research boundary", () => {
+    const futurePeer = packet("BBB");
+    futurePeer.dataAsOf = "2026-08-15T09:01:00.000Z";
+
+    assert.throws(
+      () =>
+        buildVersionBoundPeerComparisonAudit({
+          registry: registry(),
+          targetResearch: {
+            analysisVersionId: IDS.target,
+            packet: packet("EVO", "Evolution", 12),
+          },
+          peerResearch: [
+            { analysisVersionId: IDS.aaa, packet: packet("AAA") },
+            { analysisVersionId: IDS.bbb, packet: futurePeer },
+            { analysisVersionId: IDS.ccc, packet: packet("CCC") },
+          ],
+        }),
+      /peer_comparison_audit_peer_research_lookahead:ST:BBB/,
+    );
+  });
+
   it("rejects reuse of one immutable analysis version for two identities", () => {
     assert.throws(
       () =>
