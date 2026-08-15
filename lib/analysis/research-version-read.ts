@@ -3,6 +3,7 @@ import {
   type DivLabResearchPacket,
 } from "./deep-research";
 import type { VersionedResearchPacket } from "./peer-comparison-audit";
+import { assertPeerResearchReady } from "./peer-research-readiness";
 import { DIVLAB_VALUATION_PROVENANCE_VERSION } from "./valuation-provenance";
 
 const UUID_PATTERN =
@@ -32,18 +33,11 @@ export function normalizeAnalysisVersionId(value: string): string {
   return normalized;
 }
 
-/**
- * Convert one immutable analysis-version row into a research packet safe for
- * analyst-grade peer comparison.
- *
- * Database JSON is treated as untrusted at this boundary. Only current,
- * publishable Deep Research v2 packets with the exact persisted data-as-of and
- * current valuation provenance contract are accepted.
- */
-export function buildVersionedResearchPacketFromRow(input: {
+function baseVersionedResearchPacket(input: {
   row: unknown;
   expectedSymbol?: string;
   expectedExchange?: string;
+  requirePublishable: boolean;
 }): VersionedResearchPacket {
   const row = record(input.row);
   if (!row) throw new Error("divlab_research_version_row_invalid");
@@ -54,12 +48,16 @@ export function buildVersionedResearchPacketFromRow(input: {
   const packet = record(row.research_packet);
   if (
     !id ||
-    row.publishable !== true ||
+    (input.requirePublishable && row.publishable !== true) ||
     engineVersion !== DIVLAB_DEEP_RESEARCH_VERSION ||
     rowDataAsOf === null ||
     !packet
   ) {
-    throw new Error("divlab_research_version_not_analyst_grade");
+    throw new Error(
+      input.requirePublishable
+        ? "divlab_research_version_not_analyst_grade"
+        : "divlab_peer_research_version_not_candidate",
+    );
   }
 
   const instrument = record(packet.instrument);
@@ -79,7 +77,7 @@ export function buildVersionedResearchPacketFromRow(input: {
     packet.version !== DIVLAB_DEEP_RESEARCH_VERSION ||
     packetDataAsOf === null ||
     packetDataAsOf !== rowDataAsOf ||
-    qualityGate?.publishable !== true ||
+    (input.requirePublishable && qualityGate?.publishable !== true) ||
     valuationProvenance?.version !== DIVLAB_VALUATION_PROVENANCE_VERSION ||
     !provenanceMeasures ||
     !trailing ||
@@ -87,7 +85,11 @@ export function buildVersionedResearchPacketFromRow(input: {
     !exchange ||
     !name
   ) {
-    throw new Error("divlab_research_version_packet_contract_invalid");
+    throw new Error(
+      input.requirePublishable
+        ? "divlab_research_version_packet_contract_invalid"
+        : "divlab_peer_research_version_packet_contract_invalid",
+    );
   }
 
   const canonicalSymbol = symbol.toUpperCase();
@@ -101,8 +103,46 @@ export function buildVersionedResearchPacketFromRow(input: {
     throw new Error("divlab_research_version_identity_mismatch");
   }
 
-  return {
+  const versioned = {
     analysisVersionId: normalizeAnalysisVersionId(id),
     packet: packet as unknown as DivLabResearchPacket,
   };
+
+  if (!input.requirePublishable) {
+    try {
+      assertPeerResearchReady(versioned.packet);
+    } catch {
+      throw new Error("divlab_peer_research_version_not_ready");
+    }
+  }
+
+  return versioned;
+}
+
+/**
+ * Convert one immutable analysis-version row into a research packet safe for
+ * analyst-grade target consumption. Only current, publishable Deep Research v2
+ * packets with the exact persisted data-as-of and valuation provenance contract
+ * are accepted.
+ */
+export function buildVersionedResearchPacketFromRow(input: {
+  row: unknown;
+  expectedSymbol?: string;
+  expectedExchange?: string;
+}): VersionedResearchPacket {
+  return baseVersionedResearchPacket({ ...input, requirePublishable: true });
+}
+
+/**
+ * Convert one immutable analysis-version row into facts-only research safe for
+ * peer comparison. The row may remain publishable=false as a public analysis,
+ * but must pass peer-research-readiness-v1 and all immutable identity/provenance
+ * checks before it can be used by an audit.
+ */
+export function buildPeerReadyResearchPacketFromRow(input: {
+  row: unknown;
+  expectedSymbol?: string;
+  expectedExchange?: string;
+}): VersionedResearchPacket {
+  return baseVersionedResearchPacket({ ...input, requirePublishable: false });
 }
