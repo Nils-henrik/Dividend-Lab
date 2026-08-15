@@ -67,6 +67,10 @@ async function fetchEnrichedNordicResearch(input: {
     now,
     maxHits: 12,
     queryCount: 20,
+    // Dedicated analysis needs a current report before generic releases. The
+    // shared adapter reuses the same maximum five CNS searches; it only replaces
+    // some aliases with report-focused terms, so network bounds do not grow.
+    preferFinancialReports: true,
   });
   if (!hits.length) return { sources: [], evidence: [] };
 
