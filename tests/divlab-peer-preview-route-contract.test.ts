@@ -25,4 +25,13 @@ describe("preview peer research safety boundary", () => {
     assert.match(value, /createDivLabPeerResearchVersion/);
     assert.match(value, /Cache-Control/);
   });
+
+  it("keeps catalog-wide batch validation dry-run-only and bounded", () => {
+    const value = file("app/api/internal/analysis/peer-research/route.ts");
+    assert.match(value, /const BATCH_CONCURRENCY = 3/);
+    assert.match(value, /batch_persistence_forbidden/);
+    assert.match(value, /if \(batch\)[\s\S]*if \(persist\)[\s\S]*status: 400/i);
+    assert.match(value, /runBatchDryResearch/);
+    assert.match(value, /persist: false/);
+  });
 });
