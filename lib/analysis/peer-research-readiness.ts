@@ -37,10 +37,10 @@ function finitePositive(value: number | null | undefined): value is number {
 }
 
 function metricValue(packet: DivLabResearchPacket, metric: PeerResearchMetric): number | null {
-  if (metric === "pe") return packet.valuation.trailing.pe;
-  if (metric === "priceToFcf") return packet.valuation.trailing.priceToFcf;
-  if (metric === "evToEbit") return packet.valuation.trailing.evToEbit;
-  return packet.valuation.trailing.evToEbitda;
+  if (metric === "pe") return packet.valuation?.trailing?.pe ?? null;
+  if (metric === "priceToFcf") return packet.valuation?.trailing?.priceToFcf ?? null;
+  if (metric === "evToEbit") return packet.valuation?.trailing?.evToEbit ?? null;
+  return packet.valuation?.trailing?.evToEbitda ?? null;
 }
 
 /**
@@ -58,25 +58,29 @@ export function evaluatePeerResearchReadiness(
   packet: DivLabResearchPacket,
 ): DivLabPeerResearchReadiness {
   const blockers: string[] = [];
-  const base = packet.qualityGate.checks;
+  const base = packet.qualityGate?.checks;
   const valuationProvenanceVersion =
-    packet.valuationProvenance.version === DIVLAB_VALUATION_PROVENANCE_VERSION;
+    packet.valuationProvenance?.version === DIVLAB_VALUATION_PROVENANCE_VERSION;
 
   const eligibleMetrics = PEER_RESEARCH_METRICS.filter((metric) => {
-    const provenance = packet.valuationProvenance.measures[metric];
-    return provenance.available && provenance.traceable && finitePositive(metricValue(packet, metric));
+    const provenance = packet.valuationProvenance?.measures?.[metric];
+    return Boolean(
+      provenance?.available &&
+        provenance.traceable &&
+        finitePositive(metricValue(packet, metric)),
+    );
   });
   const peerMetricCoverage = eligibleMetrics.length >= 2;
 
   const checks = {
-    companyClassificationCoverage: base.companyClassificationCoverage,
-    fundamentalMethodologyCoverage: base.fundamentalMethodologyCoverage,
-    fundamentalCoverage: base.fundamentalCoverage,
-    multiYearFundamentalCoverage: base.multiYearFundamentalCoverage,
-    freshPrimarySource: base.freshPrimarySource,
-    sourceTraceability: base.sourceTraceability,
-    primaryEvidenceCoverage: base.primaryEvidenceCoverage,
-    valuationTraceability: base.valuationTraceability,
+    companyClassificationCoverage: base?.companyClassificationCoverage === true,
+    fundamentalMethodologyCoverage: base?.fundamentalMethodologyCoverage === true,
+    fundamentalCoverage: base?.fundamentalCoverage === true,
+    multiYearFundamentalCoverage: base?.multiYearFundamentalCoverage === true,
+    freshPrimarySource: base?.freshPrimarySource === true,
+    sourceTraceability: base?.sourceTraceability === true,
+    primaryEvidenceCoverage: base?.primaryEvidenceCoverage === true,
+    valuationTraceability: base?.valuationTraceability === true,
     valuationProvenanceVersion,
     peerMetricCoverage,
   };
