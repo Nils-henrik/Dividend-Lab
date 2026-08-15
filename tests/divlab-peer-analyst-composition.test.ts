@@ -21,46 +21,10 @@ function context(): DivLabPeerAnalystContext {
     peerCount: 3,
     readyMetricCount: 3,
     metrics: [
-      {
-        metric: "pe",
-        status: "ready",
-        targetValue: 20,
-        peerSampleSize: 3,
-        peerMedian: 18,
-        peerMin: 15,
-        peerMax: 22,
-        targetVsMedianPct: 0.111111,
-      },
-      {
-        metric: "priceToFcf",
-        status: "ready",
-        targetValue: 15,
-        peerSampleSize: 3,
-        peerMedian: 16,
-        peerMin: 14,
-        peerMax: 19,
-        targetVsMedianPct: -0.0625,
-      },
-      {
-        metric: "evToEbit",
-        status: "insufficient",
-        targetValue: 14,
-        peerSampleSize: 2,
-        peerMedian: 13,
-        peerMin: 12,
-        peerMax: 14,
-        targetVsMedianPct: 0.076923,
-      },
-      {
-        metric: "evToEbitda",
-        status: "ready",
-        targetValue: 13.01,
-        peerSampleSize: 3,
-        peerMedian: 13,
-        peerMin: 11,
-        peerMax: 15,
-        targetVsMedianPct: 0.000769,
-      },
+      { metric: "pe", status: "ready", targetValue: 20, peerSampleSize: 3, peerMedian: 18, peerMin: 15, peerMax: 22, targetVsMedianPct: 0.111111 },
+      { metric: "priceToFcf", status: "ready", targetValue: 15, peerSampleSize: 3, peerMedian: 16, peerMin: 14, peerMax: 19, targetVsMedianPct: -0.0625 },
+      { metric: "evToEbit", status: "insufficient", targetValue: 14, peerSampleSize: 2, peerMedian: 13, peerMin: 12, peerMax: 14, targetVsMedianPct: 0.076923 },
+      { metric: "evToEbitda", status: "ready", targetValue: 13.01, peerSampleSize: 3, peerMedian: 13, peerMin: 11, peerMax: 15, targetVsMedianPct: 0.000769 },
     ],
     notes: [],
   };
@@ -73,7 +37,7 @@ function baseDraft(): DivLabAnalystDraft {
     riskLevel: "medium",
     confidence: "medium",
     horizonMonths: { min: 12, max: 36 },
-    executiveSummary: "Test summary.",
+    executiveSummary: "Test summary med tillräcklig längd för Analyst-schemat.",
     investmentCase: [claim("Case one."), claim("Case two.")],
     latestReport: [claim("Latest report.")],
     fundamentalInterpretation: [claim("Fundamental one."), claim("Fundamental two.")],
@@ -109,11 +73,7 @@ function baseDraft(): DivLabAnalystDraft {
 describe("DivLab deterministic peer analyst composition", () => {
   it("covers every ready metric and excludes insufficient metrics", () => {
     const claims = buildDeterministicPeerInterpretation(context());
-
-    assert.deepEqual(
-      claims.map((claim) => claim.metric),
-      ["pe", "priceToFcf", "evToEbitda"],
-    );
+    assert.deepEqual(claims.map((claim) => claim.metric), ["pe", "priceToFcf", "evToEbitda"]);
     assert.ok(claims.every((claim) => claim.peerAuditId === AUDIT_ID));
     assert.ok(claims.every((claim) => /inte en köp- eller säljsignal/i.test(claim.text)));
     assert.match(claims[0]!.text, /11,1 % över peer-medianen/i);
@@ -124,7 +84,6 @@ describe("DivLab deterministic peer analyst composition", () => {
   it("upgrades the base draft without rewriting the AI-written target thesis", () => {
     const base = baseDraft();
     const result = composePeerAnalystDraft({ baseDraft: base, peerContext: context() });
-
     assert.equal(result.executiveSummary, base.executiveSummary);
     assert.deepEqual(result.valuationScenarios, base.valuationScenarios);
     assert.equal(result.peerContextVersion, "peer-analyst-context-v1");
@@ -135,9 +94,6 @@ describe("DivLab deterministic peer analyst composition", () => {
   it("fails closed when readyMetricCount does not match the actual ready set", () => {
     const invalid = context();
     invalid.readyMetricCount = 4;
-    assert.throws(
-      () => buildDeterministicPeerInterpretation(invalid),
-      /divlab_peer_analyst_composition_ready_metric_count_invalid/,
-    );
+    assert.throws(() => buildDeterministicPeerInterpretation(invalid), /divlab_peer_analyst_composition_ready_metric_count_invalid/);
   });
 });
