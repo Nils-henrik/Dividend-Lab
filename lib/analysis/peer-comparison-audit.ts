@@ -77,11 +77,41 @@ function versionBinding(input: VersionedResearchPacket): PeerResearchVersionBind
   };
 }
 
+function assertNoLookahead(input: {
+  registry: LoadedPeerRegistrySet;
+  target: PeerResearchVersionBinding;
+  peers: readonly PeerResearchVersionBinding[];
+}): void {
+  const targetTime = new Date(input.target.dataAsOf).getTime();
+  const registryTime = new Date(input.registry.dataAsOf).getTime();
+  if (!Number.isFinite(registryTime) || registryTime > targetTime) {
+    throw new Error("peer_comparison_audit_registry_lookahead");
+  }
+
+  for (const source of input.registry.sources) {
+    const verifiedAt = new Date(source.verifiedAt).getTime();
+    if (!Number.isFinite(verifiedAt) || verifiedAt > targetTime) {
+      throw new Error(`peer_comparison_audit_registry_source_lookahead:${source.id}`);
+    }
+  }
+
+  for (const peer of input.peers) {
+    if (new Date(peer.dataAsOf).getTime() > targetTime) {
+      throw new Error(`peer_comparison_audit_peer_research_lookahead:${identityKey(peer)}`);
+    }
+  }
+}
+
 /**
  * Creates the only peer-comparison shape intended for eventual analyst
  * consumption. The peer registry remains authoritative for membership and every
  * research packet must already have an immutable, publishable analysis-version
  * id with the current provenance contract.
+ *
+ * The audit is also point-in-time safe: registry evidence and peer research may
+ * not be newer than the target research version. This prevents a historical
+ * analyst result from silently receiving information that was not available at
+ * the target's data-as-of boundary.
  *
  * The existing unversioned hydration path remains useful for internal research
  * QA, but it must not be treated as a historical analyst input because a packet
@@ -94,6 +124,12 @@ export function buildVersionBoundPeerComparisonAudit(input: {
 }): VersionBoundPeerComparisonAudit {
   const targetResearch = versionBinding(input.targetResearch);
   const peerBindings = input.peerResearch.map(versionBinding);
+
+  assertNoLookahead({
+    registry: input.registry,
+    target: targetResearch,
+    peers: peerBindings,
+  });
 
   const versionIds = new Set<string>();
   versionIds.add(targetResearch.analysisVersionId);
