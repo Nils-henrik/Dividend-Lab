@@ -1,5 +1,12 @@
 import { DIVLAB_PEER_COMPARISON_VERSION, type PeerBasisSource, type VerifiedPeerInput } from "./peer-comparison";
 
+export type PeerRegistryMemberInput = {
+  symbol: string;
+  exchange: string;
+  name: string;
+  relationshipSourceIds: string[];
+};
+
 export type PeerRegistryBundle = {
   target: {
     symbol: string;
@@ -14,12 +21,7 @@ export type PeerRegistryBundle = {
     url: string;
     verifiedAt: string;
   }>;
-  members: Array<{
-    symbol: string;
-    exchange: string;
-    name: string;
-    relationshipSourceIds: string[];
-  }>;
+  members: PeerRegistryMemberInput[];
 };
 
 function normalizedIdentity(value: string): string {
@@ -43,10 +45,11 @@ function unique(values: readonly string[]): string[] {
 }
 
 /**
- * Pure boundary validator used before calling the database RPC.
- * PostgreSQL repeats the same invariants and remains authoritative.
+ * Pure boundary validator for a curated source-backed registry bundle. This
+ * shape is intentionally independent of valuation research: peer membership is
+ * curated first, then immutable research versions are hydrated separately.
  */
-export function buildPeerRegistryBundle(input: {
+export function buildPeerRegistryBundleFromMembers(input: {
   target: {
     symbol: string;
     exchange: string;
@@ -54,7 +57,7 @@ export function buildPeerRegistryBundle(input: {
   };
   dataAsOf: string;
   sources: readonly PeerBasisSource[];
-  peers: readonly VerifiedPeerInput[];
+  members: readonly PeerRegistryMemberInput[];
 }): PeerRegistryBundle {
   const target = {
     symbol: normalizedIdentity(input.target.symbol),
@@ -67,7 +70,7 @@ export function buildPeerRegistryBundle(input: {
   if (!validDate(input.dataAsOf)) {
     throw new Error("peer_registry_data_as_of_invalid");
   }
-  if (input.peers.length < 3) {
+  if (input.members.length < 3) {
     throw new Error("peer_registry_requires_three_members");
   }
   if (!input.sources.length) {
@@ -96,11 +99,11 @@ export function buildPeerRegistryBundle(input: {
 
   const targetKey = `${target.exchange}:${target.symbol}`;
   const memberKeys = new Set<string>();
-  const members = input.peers.map((peer) => {
+  const members = input.members.map((peer) => {
     const member = {
-      symbol: normalizedIdentity(peer.snapshot.instrument.symbol),
-      exchange: normalizedIdentity(peer.snapshot.instrument.exchange),
-      name: peer.snapshot.instrument.name.trim(),
+      symbol: normalizedIdentity(peer.symbol),
+      exchange: normalizedIdentity(peer.exchange),
+      name: peer.name.trim(),
       relationshipSourceIds: unique(peer.relationshipSourceIds),
     };
     if (!member.symbol || !member.exchange || !member.name) {
@@ -132,4 +135,32 @@ export function buildPeerRegistryBundle(input: {
     sources,
     members,
   };
+}
+
+/**
+ * Backward-compatible adapter for callers that already carry hydrated peer
+ * research snapshots. PostgreSQL repeats the same registry invariants and
+ * remains authoritative.
+ */
+export function buildPeerRegistryBundle(input: {
+  target: {
+    symbol: string;
+    exchange: string;
+    name: string;
+  };
+  dataAsOf: string;
+  sources: readonly PeerBasisSource[];
+  peers: readonly VerifiedPeerInput[];
+}): PeerRegistryBundle {
+  return buildPeerRegistryBundleFromMembers({
+    target: input.target,
+    dataAsOf: input.dataAsOf,
+    sources: input.sources,
+    members: input.peers.map((peer) => ({
+      symbol: peer.snapshot.instrument.symbol,
+      exchange: peer.snapshot.instrument.exchange,
+      name: peer.snapshot.instrument.name,
+      relationshipSourceIds: peer.relationshipSourceIds,
+    })),
+  });
 }
