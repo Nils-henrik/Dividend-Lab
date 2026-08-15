@@ -3,6 +3,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { VersionedResearchPacket } from "./peer-comparison-audit";
 import {
+  buildPeerReadyResearchPacketFromRow,
   buildVersionedResearchPacketFromRow,
   normalizeAnalysisVersionId,
 } from "./research-version-read";
@@ -50,13 +51,7 @@ export async function loadPublishableDivLabResearchVersionById(input: {
   });
 }
 
-/**
- * Resolve the newest publishable immutable research version that was available
- * no later than the supplied point-in-time boundary.
- *
- * This is the peer-side selector used before a version-bound audit is built. A
- * later research version is never silently substituted for a historical target.
- */
+/** Resolve the newest publishable immutable research version as-of a boundary. */
 export async function loadLatestPublishableDivLabResearchVersionAsOf(input: {
   supabase: SupabaseClient;
   symbol: string;
@@ -74,9 +69,7 @@ export async function loadLatestPublishableDivLabResearchVersionAsOf(input: {
     .eq("exchange", exchange)
     .maybeSingle();
 
-  if (analysisResult.error) {
-    throw queryError("load_analysis", analysisResult.error);
-  }
+  if (analysisResult.error) throw queryError("load_analysis", analysisResult.error);
   if (!analysisResult.data || analysisResult.data.status === "archived") return null;
 
   const versionResult = await input.supabase
@@ -90,9 +83,7 @@ export async function loadLatestPublishableDivLabResearchVersionAsOf(input: {
     .limit(1)
     .maybeSingle();
 
-  if (versionResult.error) {
-    throw queryError("load_as_of", versionResult.error);
-  }
+  if (versionResult.error) throw queryError("load_as_of", versionResult.error);
   if (!versionResult.data) return null;
 
   return buildVersionedResearchPacketFromRow({
@@ -100,4 +91,65 @@ export async function loadLatestPublishableDivLabResearchVersionAsOf(input: {
     expectedSymbol: symbol,
     expectedExchange: exchange,
   });
+}
+
+/**
+ * Resolve the newest immutable peer-ready research version available no later
+ * than the supplied point-in-time boundary. Public publishability is not
+ * required; every candidate is revalidated through peer-research-readiness-v1.
+ *
+ * We scan a bounded recent history because a newer non-ready facts version must
+ * never mask an older valid peer-ready version that existed at the same boundary.
+ */
+export async function loadLatestPeerReadyDivLabResearchVersionAsOf(input: {
+  supabase: SupabaseClient;
+  symbol: string;
+  exchange: string;
+  maxDataAsOf: string;
+}): Promise<VersionedResearchPacket | null> {
+  const symbol = canonicalIdentity(input.symbol);
+  const exchange = canonicalIdentity(input.exchange);
+  const maxDataAsOf = isoBoundary(input.maxDataAsOf);
+
+  const analysisResult = await input.supabase
+    .from("divlab_analyses")
+    .select("id,instrument_symbol,exchange,status")
+    .eq("instrument_symbol", symbol)
+    .eq("exchange", exchange)
+    .maybeSingle();
+
+  if (analysisResult.error) throw queryError("load_peer_analysis", analysisResult.error);
+  if (!analysisResult.data || analysisResult.data.status === "archived") return null;
+
+  const versionResult = await input.supabase
+    .from("divlab_analysis_versions")
+    .select("id,version_number,engine_version,data_as_of,research_packet,publishable")
+    .eq("analysis_id", analysisResult.data.id)
+    .lte("data_as_of", maxDataAsOf)
+    .order("data_as_of", { ascending: false })
+    .order("version_number", { ascending: false })
+    .limit(20);
+
+  if (versionResult.error) throw queryError("load_peer_as_of", versionResult.error);
+
+  for (const row of versionResult.data ?? []) {
+    try {
+      return buildPeerReadyResearchPacketFromRow({
+        row,
+        expectedSymbol: symbol,
+        expectedExchange: exchange,
+      });
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        (error.message.startsWith("divlab_peer_research_version_") ||
+          error.message === "divlab_research_version_identity_mismatch")
+      ) {
+        continue;
+      }
+      throw error;
+    }
+  }
+
+  return null;
 }
