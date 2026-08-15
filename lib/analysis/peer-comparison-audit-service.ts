@@ -17,7 +17,7 @@ import {
 import type { LoadedPeerRegistryMember, LoadedPeerRegistrySet } from "./peer-registry-read";
 import { loadLatestDivLabPeerSet } from "./peer-registry-repository";
 import {
-  loadLatestPublishableDivLabResearchVersionAsOf,
+  loadLatestPeerReadyDivLabResearchVersionAsOf,
   loadPublishableDivLabResearchVersionById,
 } from "./research-version-repository";
 
@@ -78,7 +78,7 @@ async function loadPeerVersions(input: {
       cursor += 1;
       if (index >= input.members.length) return;
       const member = input.members[index];
-      output[index] = await loadLatestPublishableDivLabResearchVersionAsOf({
+      output[index] = await loadLatestPeerReadyDivLabResearchVersionAsOf({
         supabase: input.supabase,
         symbol: member.symbol,
         exchange: member.exchange,
@@ -97,10 +97,10 @@ async function loadPeerVersions(input: {
  * Build and persist one analyst-grade peer comparison strictly from immutable
  * research already stored in DivLab.
  *
- * This service never triggers live research and never substitutes an unregistered
- * peer. It selects the latest publishable peer version available no later than
- * the exact target research boundary, then persists the resulting audit before
- * any future analyst-consumption step can use it.
+ * The target remains a full publishable research version. Peer observations may
+ * be full publishable versions or facts-only versions certified by
+ * peer-research-readiness-v1. This service never triggers live research and
+ * never substitutes an unregistered or future peer version.
  */
 export async function createPersistedVersionBoundPeerComparisonAudit(input: {
   supabase: SupabaseClient;
