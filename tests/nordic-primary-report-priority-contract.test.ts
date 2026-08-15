@@ -23,8 +23,18 @@ describe("dedicated Nordic Deep Research report discovery", () => {
     assert.match(analysis, /preferFinancialReports:\s*true/);
   });
 
-  it("keeps report prioritization isolated from ordinary portfolio callers", () => {
+  it("includes First North only in dedicated report-aware scope while ordinary portfolio callers stay on Main Market", () => {
     const engine = file("lib/model-portfolios/engine/nordic-primary-sources.ts");
+
+    assert.match(engine, /includeGrowthMarkets\?: boolean/);
+    assert.match(
+      engine,
+      /input\.includeGrowthMarkets\s*\?\s*""\s*:\s*"NordicMainMarkets"/,
+    );
+    assert.match(
+      engine,
+      /includeGrowthMarkets:\s*input\.preferFinancialReports\s*===\s*true/,
+    );
     assert.match(engine, /if \(!input\.preferFinancialReports\) return aliases/);
     assert.doesNotMatch(engine, /DEFAULT_MAX_HITS\s*=\s*12/);
     assert.doesNotMatch(engine, /DEFAULT_QUERY_COUNT\s*=\s*20/);
