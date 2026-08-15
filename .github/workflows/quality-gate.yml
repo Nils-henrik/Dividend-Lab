@@ -40,6 +40,9 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Peer contract tests (diagnostic)
+        run: npx tsx --test "tests/divlab-peer-*.test.ts" "tests/divlab-curated-peer-catalog.test.ts"
+
       - name: Core tests
         run: npm test
 
