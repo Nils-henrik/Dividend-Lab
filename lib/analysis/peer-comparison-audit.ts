@@ -7,6 +7,7 @@ import {
   type RegistryPeerComparisonResult,
 } from "./peer-registry-hydration";
 import type { LoadedPeerRegistrySet } from "./peer-registry-read";
+import { assertPeerResearchReady } from "./peer-research-readiness";
 import { DIVLAB_VALUATION_PROVENANCE_VERSION } from "./valuation-provenance";
 
 export const DIVLAB_PEER_COMPARISON_AUDIT_VERSION = "peer-comparison-audit-v1" as const;
@@ -49,16 +50,31 @@ function analysisVersionId(value: string): string {
   return normalized;
 }
 
-function versionBinding(input: VersionedResearchPacket): PeerResearchVersionBinding {
+function versionBinding(
+  input: VersionedResearchPacket,
+  role: "target" | "peer",
+): PeerResearchVersionBinding {
   const engineVersion = input.packet.version?.trim();
   const provenanceVersion = input.packet.valuationProvenance?.version?.trim();
   const dataAsOf = new Date(input.packet.dataAsOf);
   if (engineVersion !== DIVLAB_DEEP_RESEARCH_VERSION) {
     throw new Error("peer_comparison_audit_engine_version_invalid");
   }
-  if (input.packet.qualityGate?.publishable !== true) {
-    throw new Error("peer_comparison_audit_requires_publishable_research");
+
+  if (role === "target") {
+    if (input.packet.qualityGate?.publishable !== true) {
+      throw new Error("peer_comparison_audit_requires_publishable_research");
+    }
+  } else if (input.packet.qualityGate?.publishable !== true) {
+    try {
+      assertPeerResearchReady(input.packet);
+    } catch {
+      // Keep the historical error key for callers while widening the accepted
+      // peer role to explicitly certified facts-only research.
+      throw new Error("peer_comparison_audit_requires_publishable_research");
+    }
   }
+
   if (provenanceVersion !== DIVLAB_VALUATION_PROVENANCE_VERSION) {
     throw new Error("peer_comparison_audit_valuation_provenance_version_invalid");
   }
@@ -103,27 +119,21 @@ function assertNoLookahead(input: {
 }
 
 /**
- * Creates the only peer-comparison shape intended for eventual analyst
- * consumption. The peer registry remains authoritative for membership and every
- * research packet must already have an immutable, publishable analysis-version
- * id with the current provenance contract.
+ * Creates the only peer-comparison shape intended for analyst consumption.
+ * The target must be a full immutable publishable research version. Registered
+ * peers may be full publishable versions or facts-only versions that pass the
+ * narrower peer-research-readiness-v1 contract.
  *
- * The audit is also point-in-time safe: registry evidence and peer research may
- * not be newer than the target research version. This prevents a historical
- * analyst result from silently receiving information that was not available at
- * the target's data-as-of boundary.
- *
- * The existing unversioned hydration path remains useful for internal research
- * QA, but it must not be treated as a historical analyst input because a packet
- * without an immutable version reference cannot later be reproduced exactly.
+ * Registry evidence and peer research may not be newer than the target research
+ * boundary. No unversioned or substitute packet is accepted.
  */
 export function buildVersionBoundPeerComparisonAudit(input: {
   registry: LoadedPeerRegistrySet;
   targetResearch: VersionedResearchPacket;
   peerResearch: readonly VersionedResearchPacket[];
 }): VersionBoundPeerComparisonAudit {
-  const targetResearch = versionBinding(input.targetResearch);
-  const peerBindings = input.peerResearch.map(versionBinding);
+  const targetResearch = versionBinding(input.targetResearch, "target");
+  const peerBindings = input.peerResearch.map((packet) => versionBinding(packet, "peer"));
 
   assertNoLookahead({
     registry: input.registry,
