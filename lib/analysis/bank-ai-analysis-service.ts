@@ -118,7 +118,7 @@ export async function createDivLabBankAiAnalysis(input: {
   });
 
   const failure = (
-    stage: Exclude<CreateDivLabBankAiAnalysisResult, { ok: true }>["stage"],
+    stage: Exclude<Exclude<CreateDivLabBankAiAnalysisResult, { ok: true }>["stage"], "research">,
     reason: string,
     overrides: Partial<
       Omit<
