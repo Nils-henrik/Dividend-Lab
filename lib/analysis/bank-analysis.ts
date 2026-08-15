@@ -44,7 +44,7 @@ const METRICS: readonly MetricSpec[] = [
     name: "cet1Ratio",
     labels: [
       /\bCET1\s+(?:capital\s+)?ratio\b/iu,
-      /\bcommon\s+equity\s+tier\s*1\s+(?:capital\s+)?ratio\b/iu,
+      /\bcommon\s+equity\s+tier\s*1\s*(?:\(CET1\)\s*)?(?:capital\s+)?ratio\b/iu,
       /\bk[aä]rnprim[aä]rkapitalrelation\b/iu,
     ],
     minPct: 0,
@@ -74,6 +74,7 @@ const METRICS: readonly MetricSpec[] = [
     name: "creditLossRatio",
     labels: [
       /\bcredit\s+loss\s+ratio\b/iu,
+      /\bcredit\s+impairment\s+ratio\b/iu,
       /\bloan\s+loss\s+ratio\b/iu,
       /\bimpairment\s+(?:loss\s+)?ratio\b/iu,
       /\bkreditf[oö]rlustniv[aå](?=$|[^\p{L}\p{N}_])/iu,
@@ -88,6 +89,7 @@ const METRICS: readonly MetricSpec[] = [
     labels: [
       /\bcost[\s/-]*income\s+ratio\b/iu,
       /\bcost\s+to\s+income\s+ratio\b/iu,
+      /\bC\/I\s+ratio\b/iu,
       /\bK\/I[-\s]?tal\b/iu,
       /\bkostnads[\s/-]*int[aä]ktsrelation\b/iu,
     ],
@@ -113,6 +115,10 @@ function numericCandidates(raw: string): number[] {
   return [...candidates];
 }
 
+function plainNumericTokens(value: string): string[] {
+  return value.match(/-?\d+(?:[.,]\d+)?/g)?.slice(0, 8) ?? [];
+}
+
 function percentTokens(value: string): Array<{ raw: string; scale: number }> {
   const tokens: Array<{ raw: string; scale: number }> = [];
   const percentPattern =
@@ -125,6 +131,26 @@ function percentTokens(value: string): Array<{ raw: string; scale: number }> {
   for (const match of value.matchAll(bpPattern)) {
     if (match[1]) tokens.push({ raw: match[1], scale: 0.01 });
   }
+
+  // Flattened financial tables often declare the unit before the period values,
+  // e.g. `CET1 capital ratio, % 17.4 18.3`. In that format every number after
+  // the explicit unit is retained. More than one distinct value therefore
+  // becomes `ambiguous` later instead of assuming the first column is current.
+  const percentPrefix =
+    /^\s*[,;:]?\s*(?:%|percent\b|per\s+cent\b|procent\b)\s+(.+)$/iu.exec(value);
+  if (percentPrefix?.[1]) {
+    for (const raw of plainNumericTokens(percentPrefix[1])) {
+      tokens.push({ raw, scale: 1 });
+    }
+  }
+  const bpPrefix =
+    /^\s*[,;:]?\s*(?:bp|bps|basis\s+points?|baspunkter?)\b\s+(.+)$/iu.exec(value);
+  if (bpPrefix?.[1]) {
+    for (const raw of plainNumericTokens(bpPrefix[1])) {
+      tokens.push({ raw, scale: 0.01 });
+    }
+  }
+
   return tokens;
 }
 
