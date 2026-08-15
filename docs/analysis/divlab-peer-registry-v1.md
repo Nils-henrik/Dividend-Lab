@@ -1,34 +1,33 @@
 # DivLab Peer Registry v1
 
-Status: internal backend foundation / APPLIED_TO_DEV + READ_PIPELINE_VERIFIED. No public peer UI or analyst consumption yet.
+Status: internal backend foundation / APPLIED_TO_DEV + POINT_IN_TIME_READ + VERSION_BOUND_AUDIT VERIFIED. No public peer UI or AI analyst consumption yet.
 
 ## Objective
 
-Peer comparison must not let the AI choose whichever competitors make a valuation story look attractive. Peer selection is therefore versioned and source-backed separately from the market/fundamental data used to calculate current valuation multiples.
+Peer comparison must not let an AI choose whichever competitors make a valuation story look attractive. Peer membership is therefore versioned and source-backed separately from the market/fundamental data used to calculate valuation multiples.
 
-## Model
+The registry stores the **relationship decision**. Deterministic research versions store the financial facts. `peer-comparison-audit-v1` binds the exact two histories together.
 
-The registry stores the **relationship** between a target company and its verified comparison set. It deliberately does not persist today's P/E, P/FCF, EV/EBIT or EV/EBITDA values. Those are recalculated from fresh Deep Research packets by `peer-comparison-v1`.
+## Registry model
 
 Tables:
 
 - `divlab_peer_targets` — stable target instrument identity;
-- `divlab_peer_sets` — immutable versions per target;
-- `divlab_peer_set_sources` — source material supporting the peer basis for one version;
+- `divlab_peer_sets` — immutable peer-set versions per target;
+- `divlab_peer_set_sources` — source material supporting one peer-set version;
 - `divlab_peer_set_members` — peer members for one version;
-- `divlab_peer_member_sources` — normalized member-to-source links constrained to the same immutable set version.
+- `divlab_peer_member_sources` — normalized member-to-source links constrained to that same immutable version.
 
 RPC:
 
-- `persist_divlab_peer_set(...)`
-- `SECURITY INVOKER`
-- fixed `search_path = public`
-- execute granted only to `service_role`
-- anon/authenticated have no table read access and cannot execute the RPC.
+- `persist_divlab_peer_set(...)`;
+- `SECURITY INVOKER`;
+- fixed `search_path = public`;
+- execute granted only to `service_role`.
 
 The normal service-role path has `SELECT + INSERT` only. It has no `UPDATE` or `DELETE` privileges on registry tables.
 
-## Invariants
+## Registry invariants
 
 A persisted peer set requires:
 
@@ -47,9 +46,9 @@ Application code validates and normalizes the bundle first in `peer-registry-con
 
 ## Version allocation and immutability
 
-Version numbers are allocated serially per target. An initial implementation used `SELECT ... FOR UPDATE` on the stable target row, but a live service-role smoke correctly exposed that PostgreSQL requires `UPDATE` table privilege for that lock mode.
+Version numbers are allocated serially per target. The RPC uses a transaction-scoped advisory lock keyed by canonical `exchange:symbol`, then calculates the next immutable version number.
 
-DivLab does **not** grant `UPDATE` merely to obtain a lock. The final RPC uses a transaction-scoped advisory lock keyed by canonical `exchange:symbol`, then calculates the next immutable peer-set version. This preserves concurrency safety while the service role remains unable to mutate historical rows.
+This keeps concurrent creation safe without granting `UPDATE` privilege merely to obtain a row lock. Historical registry rows remain non-updatable through the normal service-role path.
 
 ## Read-side resolver
 
@@ -59,11 +58,15 @@ The resolver:
 
 1. canonicalizes target symbol/exchange;
 2. resolves the stable target identity;
-3. loads the highest immutable `version_number`;
+3. selects one immutable peer-set version;
 4. loads that version's sources, members and member↔source links;
 5. rebuilds the set through a pure validator before returning it.
 
-A target that has never received a registry version returns `null`. A target that exists but whose latest registry version is incomplete or internally inconsistent throws an error instead of silently returning a smaller or source-less peer set.
+For current research, omitting `maxDataAsOf` selects the highest immutable `version_number`.
+
+For historical analyst-grade work, `maxDataAsOf` restricts the query to peer-set rows whose `data_as_of` is at or before the target research boundary. A future registry version is therefore never silently substituted into an older analysis.
+
+A target with no eligible registry version returns `null`. An inconsistent selected version throws instead of silently returning a smaller/source-less set.
 
 The pure assembler rejects, among other cases:
 
@@ -76,103 +79,172 @@ The pure assembler rejects, among other cases:
 - fewer than three members;
 - a member without an explicit relationship-source link.
 
-## Registry → Deep Research hydration
+## Registry → research hydration
 
-`peer-registry-hydration.ts` makes the immutable registry authoritative for membership while allowing fresh Deep Research packets to supply today's valuation data.
+`peer-registry-hydration.ts` makes the immutable registry authoritative for membership.
 
 Rules:
 
-- target ResearchPacket must match the registry target exactly;
+- target research must match the registry target exactly;
 - only exact registered member identities may be hydrated;
-- an extra/unregistered research packet is rejected;
-- duplicate research packets for one member are rejected;
-- a research loader returning another instrument as a substitute is rejected;
-- a missing/null research result remains an explicit missing registered peer;
+- an extra/unregistered packet is rejected;
+- duplicate packets for one member are rejected;
+- a loader returning another instrument as a substitute is rejected;
+- a missing/null result remains an explicit missing registered peer;
 - if any registered member is missing, the **overall** comparison is `insufficient` even if a subset contains three usable valuation observations.
 
-DivLab therefore never converts a four-company registry into a three-company comparison universe merely because one packet could not be loaded.
+DivLab therefore never converts a four-company registry into a three-company comparison universe merely because one packet is unavailable.
 
-## Bounded research concurrency
+### Bounded concurrency
 
-A peer registry may contain up to 25 members, but hydration must not fan out 25 live research/API jobs at once.
-
-`hydratePeerComparisonFromRegistry(...)` uses a bounded worker pool:
+The general hydration contract uses a bounded worker pool:
 
 - default maximum concurrent peer research loads: **3**;
-- hard maximum accepted by the contract: **5**;
-- values outside `1..5` fail before research work begins;
-- exactly one loader call is requested for each registered member.
+- hard maximum: **5**;
+- values outside `1..5` fail before work begins.
 
-The server bridge `createLatestRegistryPeerComparison(...)` accepts an injected research loader and optional concurrency limit. The bridge deliberately does **not** decide whether a packet comes from cache, persisted research or a fresh Deep Research run; that budget/freshness policy remains outside the registry layer.
+The new analyst-grade historical service reuses the same bounds but does **not** trigger live external research. It reads existing persisted research versions only.
 
-## Deterministic peer comparison
+## Persisted research-version boundary
 
-After exact hydration, `peer-comparison-v1` compares only available + fully traceable dimensionless valuation measures:
+`research-version-read.ts` and `research-version-repository.ts` treat database JSON as untrusted input at the analyst-grade boundary.
 
-- P/E;
-- P/FCF;
-- EV/EBIT;
-- EV/EBITDA.
+An eligible research version must have:
 
-Output is neutral context only: target value, peer median/min/max, sample size and target-vs-median. There is no cheapness, buy or composite score, and a lower multiple is never automatically treated as a better investment.
+- a valid immutable analysis-version UUID;
+- engine version `deep-research-v2`;
+- row `publishable=true`;
+- packet `qualityGate.publishable=true`;
+- exact row/packet `dataAsOf` equality;
+- `valuation-provenance-v1`;
+- valid target identity and valuation structures.
 
-## Supabase dev status — 14 August 2026
+Two read modes exist:
 
-The registry is permanently applied to `dividend-lab-dev` (`faaxloafogpsywfkpbrm`). Supabase registered these migration versions:
+- exact research version by UUID;
+- newest publishable version for one symbol/exchange whose `data_as_of` is no later than a supplied historical boundary.
 
-- `20260814211105_create_divlab_peer_registry.sql`
-- `20260814211115_index_divlab_peer_registry_member_sources.sql`
-- `20260814211138_harden_divlab_peer_registry.sql`
-- `20260814211543_fix_divlab_peer_registry_service_role_locking.sql`
+This is the basis for reproducible peer comparison without look-ahead.
 
-Repository filenames are aligned with those registered versions. The already-applied SQL blobs were not rewritten merely to align timestamps.
+## Version-bound peer-comparison audit
 
-### Dev verification
+The audit layer permanently applied to `dividend-lab-dev` consists of:
 
-Verified under the actual `service_role` database role:
+- `divlab_peer_comparison_audits`;
+- `divlab_peer_comparison_audit_members`;
+- `persist_divlab_peer_comparison_audit(jsonb)`.
 
-- a valid 3-peer/1-source set reaches `persist_divlab_peer_set(...)` successfully;
-- the RPC returns version `1`, peer count `3`, source count `1` and methodology `peer-comparison-v1` for the isolated fixture;
-- a target included as its own peer is rejected with `divlab_peer_set_contains_target`;
-- both smoke transactions were rolled back;
-- post-smoke checks found zero `TEST/ST` target or peer-set rows;
-- all five peer tables have RLS enabled;
-- anon/authenticated cannot read the peer tables;
-- anon/authenticated cannot execute the persistence RPC;
-- `service_role` can `SELECT + INSERT` but cannot `UPDATE` or `DELETE` peer-registry rows;
-- the RPC is `SECURITY INVOKER`, not `SECURITY DEFINER`.
+The audit row records the exact target research version, exact peer-set version and deterministic comparison payload. Normalized member rows bind every registered peer member to its exact immutable research-version ID.
 
-No real company peer memberships have been inserted yet.
+Foreign keys use `ON DELETE RESTRICT` for research/registry history. Both audit tables have RLS enabled. The service-role path has `SELECT + INSERT`, not `UPDATE`/`DELETE`. The RPC is `SECURITY INVOKER` with execute granted only to `service_role`.
 
-## Verification status
+### Audit contract
 
-Full repository Quality Gate has passed on the peer read/hydration/service implementation, including:
+A persisted analyst-grade audit requires:
 
-- fail-closed latest-version assembly;
-- exact member hydration;
-- missing-peer handling;
-- substitute/extra/duplicate peer rejection;
-- bounded hydration concurrency;
-- lint;
-- TypeScript;
-- core tests;
-- SEO/news tests;
-- DivBrain tests;
-- Cursor bridge tests;
-- production build.
+- `peer-comparison-audit-v1`;
+- registry methodology `peer-comparison-v1`;
+- comparison status `ready`;
+- 3–25 registered peers and exactly the same number of research bindings;
+- publishable `deep-research-v2` target and peer versions;
+- `valuation-provenance-v1` for target and peers;
+- target identity matching the registry target;
+- every peer identity matching a member of that exact registry version;
+- no target version reused as a peer;
+- no duplicate peer analysis-version binding;
+- comparison `dataAsOf` matching the deterministic oldest participating research timestamp.
+
+Concurrent retries for the same target-analysis-version + peer-set are serialized with a transaction advisory lock. An identical retry is idempotent and returns the existing audit ID; a conflicting payload is rejected.
+
+## Point-in-time / no-lookahead invariant
+
+Analyst-grade peer history cannot use information newer than the target research version.
+
+Both TypeScript and PostgreSQL reject:
+
+- registry `dataAsOf` later than target research `dataAsOf`;
+- any peer-basis source whose `verifiedAt` is later than the target boundary;
+- any peer research version newer than the target research version.
+
+A target analysis therefore cannot acquire future peer relationships or future financial results merely because those rows exist today.
+
+## End-to-end audit service
+
+`createPersistedVersionBoundPeerComparisonAudit(...)` ties the internal pieces together:
+
+1. load the exact target publishable research version;
+2. load the latest eligible peer registry **as of the target boundary**;
+3. load the latest publishable research version for every registered peer **as of the same boundary**;
+4. fail closed if any registered peer lacks eligible research;
+5. build deterministic `peer-comparison-v1`;
+6. build `peer-comparison-audit-v1`;
+7. persist the immutable audit.
+
+No live market/provider/AI call is made in this historical assembly path.
+
+## Verified dev status — 15 August 2026
+
+The original peer registry is permanently applied to `dividend-lab-dev` (`faaxloafogpsywfkpbrm`). Registered registry migrations:
+
+- `20260814211105_create_divlab_peer_registry.sql`;
+- `20260814211115_index_divlab_peer_registry_member_sources.sql`;
+- `20260814211138_harden_divlab_peer_registry.sql`;
+- `20260814211543_fix_divlab_peer_registry_service_role_locking.sql`.
+
+Registered peer-audit migrations:
+
+- `20260815095948_create_divlab_peer_comparison_audit_persistence.sql`;
+- `20260815100432_harden_divlab_peer_comparison_audit_persistence.sql`;
+- `20260815100840_prevent_divlab_peer_comparison_audit_lookahead.sql`.
+
+### Live service-role verification
+
+Verified in rollback transactions under the actual `service_role` role:
+
+- a valid three-peer/one-source registry set persists successfully;
+- target-as-own-peer is rejected;
+- four publishable research versions (target + three peers) can be persisted through the real research-version path;
+- the three-member registry can be joined to those exact immutable versions;
+- one peer audit persists with exactly three normalized member/version rows;
+- repeating the exact audit returns the same audit ID with `idempotent=true`;
+- post-rollback checks show zero smoke analysis, registry and audit rows.
+
+All internal peer and audit tables have RLS enabled. Anon/authenticated cannot use the persistence RPCs. The service role cannot update/delete historical registry or audit rows through its normal grants.
+
+## Read-back before analyst context
+
+Persisted audit JSON is not trusted by itself.
+
+`peer-comparison-audit-read.ts` cross-checks:
+
+- audit row IDs/version/methodology;
+- target analysis-version ID;
+- peer-set ID and version;
+- ready comparison peer count;
+- every `audit.peerResearch[].analysisVersionId` against the normalized `divlab_peer_comparison_audit_members` FK rows.
+
+Only an exact set match becomes `StoredPeerComparisonAudit`.
+
+`peer-analyst-context-v1` then exposes bounded neutral aggregate facts only: audit/version references, target identity, peer count and P/E/P-FCF/EV-EBIT/EV-EBITDA median/min/max/sample/target-vs-median data. It deliberately omits raw peer research and peer source IDs from the model context.
+
+## Analyst boundary
+
+The existing `analyst-v2` claim schema is scoped to the target company's source IDs. Peer evidence has a different provenance chain, so DivLab does **not** silently mix peer claims into v2.
+
+The audit/read/context foundation exists so a future explicit analyst schema can refer to one persisted peer-audit ID and define its own validation/persistence semantics without weakening the current target-company source contract.
 
 ## Advisor boundary
 
-The Supabase project already contains existing security/performance advisor notices outside this feature (for example older `SECURITY DEFINER` functions and unrelated unindexed foreign keys). Registry verification compares the post-migration advisor output against that pre-migration baseline and treats only new `divlab_peer_*` notices as belonging to this milestone.
+Post-DDL Supabase security/performance advisors show no new peer-audit WARN/ERROR and no new unindexed peer-audit foreign-key warning. New peer/audit objects only produce expected INFO notices for internal RLS-without-client-policy and currently-unused indexes before real data exists.
 
-No new peer-registry WARN/ERROR or unindexed peer-registry foreign-key warning was introduced. New registry objects only have expected INFO notices for internal RLS-without-client-policy and currently-unused indexes before real peer data exists.
+Existing unrelated project advisor notices remain outside this feature.
 
 ## Deliberately not included yet
 
 1. a production-quality source/curation workflow for selecting real peers;
 2. any real Atlas Copco, Evolution, Embracer or other company peer membership;
-3. analyst consumption of peer-comparison output;
+3. AI analyst interpretation of peer context;
 4. public display of peer comparison;
-5. a rule that a lower peer multiple means a better investment.
+5. any rule that a lower peer multiple means a better investment.
 
-The analyst is not allowed to invent its own comparison group. Peer comparison reaches the analyst only after a verified registry version exists and its exact members have valid research coverage.
+The analyst is never allowed to invent its own comparison group. Peer context reaches an AI analyst only after the exact source-backed registry and immutable research histories have passed the audit boundary above.
