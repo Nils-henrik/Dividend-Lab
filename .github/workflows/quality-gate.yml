@@ -24,40 +24,33 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
+
       - name: Setup Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: "22"
           cache: npm
+
       - name: Install dependencies
         run: npm ci
+
       - name: Lint
         run: npm run lint
+
       - name: Typecheck
         run: npm run typecheck
-      - name: Analyst composition legacy (diagnostic)
-        run: npx tsx --test tests/divlab-peer-analyst-composition.test.ts
-      - name: Analyst context legacy (diagnostic)
-        run: npx tsx --test tests/divlab-peer-analyst-context.test.ts
-      - name: Analyst v3 legacy (diagnostic)
-        run: npx tsx --test tests/divlab-peer-analyst-v3.test.ts
-      - name: Peer comparison legacy (diagnostic)
-        run: npx tsx --test tests/divlab-peer-comparison.test.ts
-      - name: Registry contract legacy (diagnostic)
-        run: npx tsx --test tests/divlab-peer-registry-contract.test.ts
-      - name: Registry hydration legacy (diagnostic)
-        run: npx tsx --test tests/divlab-peer-registry-hydration.test.ts
-      - name: Registry read legacy (diagnostic)
-        run: npx tsx --test tests/divlab-peer-registry-read.test.ts
-      - name: Audit + new peer contracts (diagnostic)
-        run: npx tsx --test tests/divlab-peer-comparison-audit.test.ts tests/divlab-peer-research-readiness.test.ts tests/divlab-peer-audit-peer-ready.test.ts tests/divlab-peer-research-migration-contract.test.ts tests/divlab-curated-peer-catalog.test.ts tests/divlab-peer-preview-route-contract.test.ts
+
       - name: Core tests
         run: npm test
+
       - name: SEO and news tests
         run: npm run test:seo
+
       - name: DivBrain tests
         run: npm run test:divbrain
+
       - name: Cursor bridge tests
         run: npm run test:cursor-bridge
+
       - name: Production build
         run: npm run build
