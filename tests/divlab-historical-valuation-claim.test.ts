@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  assertHistoricalAnalystContextMatches,
+  buildHistoricalAnalystContext,
+  DIVLAB_HISTORICAL_ANALYST_CONTEXT_VERSION,
+} from "../lib/analysis/historical-analyst-context";
+import {
   assertHistoricalValuationClaimMatches,
   buildHistoricalValuationClaim,
   DIVLAB_HISTORICAL_VALUATION_CLAIM_VERSION,
@@ -181,6 +186,71 @@ describe("historical valuation claim provenance", () => {
     assert.throws(
       () => buildHistoricalValuationClaim({ history: duplicate, metric: "pe" }),
       /historical_valuation_claim_duplicate_analysis_version/,
+    );
+  });
+});
+
+describe("historical analyst context", () => {
+  it("contains only ready, validated claims from one point-in-time history", () => {
+    const history = fixture();
+    const context = buildHistoricalAnalystContext({ history });
+    assert.ok(context);
+    assert.equal(context.version, DIVLAB_HISTORICAL_ANALYST_CONTEXT_VERSION);
+    assert.equal(context.maxObservationAt, history.maxObservationAt);
+    assert.deepEqual(context.claims.map((claim) => claim.metric), ["pe"]);
+    assert.doesNotThrow(() =>
+      assertHistoricalAnalystContextMatches({ context, history }),
+    );
+  });
+
+  it("fails closed when an explicitly requested metric is insufficient", () => {
+    const history = fixture();
+    assert.throws(
+      () => buildHistoricalAnalystContext({ history, metrics: ["pe", "priceToFcf"] }),
+      /historical_analyst_context_metric_not_ready:priceToFcf/,
+    );
+  });
+
+  it("rejects duplicate metrics and mixed point-in-time boundaries", () => {
+    const history = fixture();
+    assert.throws(
+      () => buildHistoricalAnalystContext({ history, metrics: ["pe", "pe"] }),
+      /historical_analyst_context_duplicate_metric:pe/,
+    );
+
+    const context = buildHistoricalAnalystContext({ history, metrics: ["pe"] });
+    assert.ok(context);
+    assert.throws(
+      () =>
+        assertHistoricalAnalystContextMatches({
+          context: { ...context, maxObservationAt: "2026-08-14T12:00:00.000Z" },
+          history,
+        }),
+      /historical_analyst_context_boundary_mismatch/,
+    );
+  });
+
+  it("rejects a manipulated claim inside an otherwise valid context", () => {
+    const history = fixture();
+    const context = buildHistoricalAnalystContext({ history, metrics: ["pe"] });
+    assert.ok(context);
+    const claim = context.claims[0]!;
+
+    assert.throws(
+      () =>
+        assertHistoricalAnalystContextMatches({
+          context: {
+            ...context,
+            claims: [
+              {
+                ...claim,
+                statistics: { ...claim.statistics, median: 99 },
+              },
+            ],
+          },
+          history,
+        }),
+      /historical_valuation_claim_statistic_mismatch:median/,
     );
   });
 });
