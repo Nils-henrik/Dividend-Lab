@@ -9,11 +9,10 @@ import {
   ignoreMessageRequestAction,
 } from "@/app/messages/actions";
 import ProfileAvatar from "@/components/account/ProfileAvatar";
-import { formatMessageTimestamp } from "@/lib/messages/format";
 import { DIVLAB_MEMBER_LABEL } from "@/lib/site/brand";
 import type { ConversationThread, MessageActionState } from "@/lib/messages/types";
+import ChatTranscript from "./chat/ChatTranscript";
 import MessageComposer from "./MessageComposer";
-import MessageListAutoScroll from "./MessageListAutoScroll";
 
 const idleState: MessageActionState = {
   status: "idle",
@@ -35,11 +34,6 @@ export default function ConversationThreadView({
     conversation.subject?.trim() ||
     otherParticipant?.name ||
     "Konversation";
-  const receivedSenderLabel = otherParticipant?.username
-    ? `@${otherParticipant.username.replace(/^@/, "")}`
-    : (otherParticipant?.name ?? DIVLAB_MEMBER_LABEL);
-  const lastMessageId =
-    conversation.messages[conversation.messages.length - 1]?.id ?? "empty";
   const [acceptState, acceptAction, acceptPending] = useActionState(
     acceptMessageRequestAction,
     idleState,
@@ -142,59 +136,11 @@ export default function ConversationThreadView({
           </p>
         </div>
 
-        {conversation.messages.length === 0 ? (
-          <div className="flex flex-1 items-center px-5 py-8">
-            <p className="text-sm leading-6 text-divlab-text-secondary">
-              Inga meddelanden än. Skriv ett lugnt och tydligt första meddelande.
-            </p>
-          </div>
-        ) : (
-          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4 sm:px-5">
-            {conversation.messages.map((message) => {
-              const isOwnMessage = message.senderId === currentUserId;
-              const senderLabel = isOwnMessage ? "DU" : receivedSenderLabel;
-
-              return (
-                <div
-                  key={message.id}
-                  className={`flex w-full ${
-                    isOwnMessage ? "justify-end" : "justify-start"
-                  }`}
-                >
-                  <article
-                    className={`max-w-[92%] rounded-2xl border px-4 py-3 md:max-w-[68%] ${
-                      isOwnMessage
-                        ? "rounded-br-md border-divlab-blue/30 bg-divlab-blue/10 text-divlab-text"
-                        : "rounded-bl-md border-divlab-border-neutral bg-divlab-surface text-divlab-text-secondary"
-                    }`}
-                  >
-                    <div
-                      className={`mb-1.5 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between ${
-                        isOwnMessage ? "sm:flex-row-reverse" : ""
-                      }`}
-                    >
-                      <p
-                        className={`truncate text-[10px] font-medium uppercase tracking-[0.16em] ${
-                          isOwnMessage ? "text-divlab-blue-muted" : "text-divlab-text-muted"
-                        }`}
-                      >
-                        {senderLabel}
-                      </p>
-                      <p className="shrink-0 text-[10px] tabular-nums text-divlab-text-muted">
-                        {formatMessageTimestamp(message.createdAt)}
-                      </p>
-                    </div>
-
-                    <p className="whitespace-pre-wrap break-words text-sm leading-6">
-                      {message.body}
-                    </p>
-                  </article>
-                </div>
-              );
-            })}
-            <MessageListAutoScroll scrollKey={lastMessageId} />
-          </div>
-        )}
+        <ChatTranscript
+          messages={conversation.messages}
+          currentUserId={currentUserId}
+          otherParticipant={otherParticipant}
+        />
 
         <div className="border-t divlab-border-neutral bg-divlab-surface px-4 py-4 sm:px-5">
           {conversation.canSend ? (

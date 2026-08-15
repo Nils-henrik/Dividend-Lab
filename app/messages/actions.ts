@@ -4,17 +4,20 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAuthenticatedUser } from "@/lib/auth/session";
 import {
-  areAcceptedContacts,
+  acceptMessageRequestMutation,
+  declineMessageRequestMutation,
+  ignoreMessageRequestMutation,
+  loadConversationThreadMutation,
+  markConversationReadMutation,
+  openAcceptedContactConversationMutation,
+  sendPrivateMessageMutation,
+  startConversationMutation,
+} from "@/lib/messages/mutations";
+import {
   findConversationIdBetweenUsers,
   getProfileByUserId,
-  getProfileByUsername,
 } from "@/lib/messages/messages";
-import {
-  MESSAGE_BODY_MAX_LENGTH,
-  MESSAGE_SUBJECT_MAX_LENGTH,
-  type MessageActionState,
-} from "@/lib/messages/types";
-import { createClient } from "@/lib/supabase/server";
+import type { ChatMutationResult, ConversationThread, MessageActionState } from "@/lib/messages/types";
 
 function getFormString(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -22,64 +25,11 @@ function getFormString(formData: FormData, key: string) {
   return typeof value === "string" ? value : "";
 }
 
-function validateMessageBody(body: string, { required }: { required: boolean }) {
-  const normalizedBody = body.trim();
-
-  if (!normalizedBody) {
-    if (!required) {
-      return {
-        body: "",
-        error: null as string | null,
-      };
-    }
-
-    return {
-      body: "",
-      error: "Skriv ett meddelande innan du skickar.",
-    };
+function revalidateConversation(conversationId?: string) {
+  revalidatePath("/messages");
+  if (conversationId) {
+    revalidatePath(`/messages/${conversationId}`);
   }
-
-  if (normalizedBody.length > MESSAGE_BODY_MAX_LENGTH) {
-    return {
-      body: "",
-      error: `Meddelandet får vara högst ${MESSAGE_BODY_MAX_LENGTH} tecken.`,
-    };
-  }
-
-  return {
-    body: normalizedBody,
-    error: null as string | null,
-  };
-}
-
-function validateConversationSubject(subject: string, { required }: { required: boolean }) {
-  const normalizedSubject = subject.trim();
-
-  if (!normalizedSubject) {
-    if (!required) {
-      return {
-        subject: "",
-        error: null as string | null,
-      };
-    }
-
-    return {
-      subject: "",
-      error: "Ange ett ämne för konversationen.",
-    };
-  }
-
-  if (normalizedSubject.length > MESSAGE_SUBJECT_MAX_LENGTH) {
-    return {
-      subject: "",
-      error: `Ämnet får vara högst ${MESSAGE_SUBJECT_MAX_LENGTH} tecken.`,
-    };
-  }
-
-  return {
-    subject: normalizedSubject,
-    error: null as string | null,
-  };
 }
 
 export async function openConversationWithUserAction(targetUserId: string) {
@@ -94,22 +44,10 @@ export async function openConversationWithUserAction(targetUserId: string) {
     redirect(`/messages/${existingId}`);
   }
 
-  const areContacts = await areAcceptedContacts(user.id, targetUserId);
-  if (areContacts) {
-    const supabase = await createClient();
-    const { data: conversationId, error } = await supabase.rpc(
-      "open_or_create_private_conversation",
-      {
-        p_target_user_id: targetUserId,
-        p_initial_body: null,
-        p_subject: null,
-      },
-    );
-
-    if (!error && conversationId) {
-      revalidatePath("/messages");
-      redirect(`/messages/${conversationId}`);
-    }
+  const opened = await openAcceptedContactConversationMutation(targetUserId);
+  if (opened.status === "success" && opened.data?.conversationId) {
+    revalidateConversation(opened.data.conversationId);
+    redirect(`/messages/${opened.data.conversationId}`);
   }
 
   const profile = await getProfileByUserId(targetUserId);
@@ -124,118 +62,42 @@ export async function startConversationAction(
   _state: MessageActionState,
   formData: FormData,
 ): Promise<MessageActionState> {
-  const user = await requireAuthenticatedUser();
-  const targetUserId = getFormString(formData, "targetUserId").trim();
-  const username = getFormString(formData, "username")
-    .trim()
-    .replace(/^@/, "")
-    .toLowerCase();
-  const subjectValidation = validateConversationSubject(
-    getFormString(formData, "subject"),
-    { required: false },
-  );
-  const messageValidation = validateMessageBody(getFormString(formData, "body"), {
-    required: true,
+  const result = await startConversationMutation({
+    targetUserId: getFormString(formData, "targetUserId").trim(),
+    username: getFormString(formData, "username"),
+    subject: getFormString(formData, "subject"),
+    body: getFormString(formData, "body"),
   });
 
-  if (subjectValidation.error) {
+  if (result.status === "error" || !result.data?.conversationId) {
     return {
       status: "error",
-      message: subjectValidation.error,
+      message: result.message,
     };
   }
 
-  if (messageValidation.error) {
-    return {
-      status: "error",
-      message: messageValidation.error,
-    };
-  }
-
-  const targetProfile = targetUserId
-    ? await getProfileByUserId(targetUserId)
-    : username
-      ? await getProfileByUsername(username)
-      : null;
-
-  if (!targetProfile) {
-    return {
-      status: "error",
-      message: "Vi hittade ingen användare med det användarnamnet.",
-    };
-  }
-
-  if (targetProfile.id === user.id) {
-    return {
-      status: "error",
-      message: "Du kan inte starta en konversation med dig själv.",
-    };
-  }
-
-  const supabase = await createClient();
-  const { data: conversationId, error } = await supabase.rpc(
-    "open_or_create_private_conversation",
-    {
-      p_target_user_id: targetProfile.id,
-      p_initial_body: messageValidation.body,
-      p_subject: subjectValidation.subject || null,
-    },
-  );
-
-  if (error || !conversationId) {
-    const areContacts = await areAcceptedContacts(user.id, targetProfile.id);
-    return {
-      status: "error",
-      message: areContacts
-        ? "Konversationen kunde inte startas. Försök igen."
-        : "Meddelandeförfrågan kunde inte skickas. Försök igen.",
-    };
-  }
-
-  revalidatePath("/messages");
-  redirect(`/messages/${conversationId}`);
+  revalidateConversation(result.data.conversationId);
+  redirect(`/messages/${result.data.conversationId}`);
 }
 
 export async function sendMessageAction(
   _state: MessageActionState,
   formData: FormData,
 ): Promise<MessageActionState> {
-  await requireAuthenticatedUser();
   const conversationId = getFormString(formData, "conversationId").trim();
-  const messageValidation = validateMessageBody(getFormString(formData, "body"), {
-    required: true,
-  });
+  const result = await sendPrivateMessageMutation(
+    conversationId,
+    getFormString(formData, "body"),
+  );
 
-  if (!conversationId) {
+  if (result.status === "error") {
     return {
       status: "error",
-      message: "Konversationen saknas. Öppna inkorgen och försök igen.",
+      message: result.message,
     };
   }
 
-  if (messageValidation.error) {
-    return {
-      status: "error",
-      message: messageValidation.error,
-    };
-  }
-
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("send_private_message", {
-    p_conversation_id: conversationId,
-    p_body: messageValidation.body,
-  });
-
-  if (error) {
-    return {
-      status: "error",
-      message: "Det gick inte att skicka meddelandet. Försök igen.",
-    };
-  }
-
-  revalidatePath("/messages");
-  revalidatePath(`/messages/${conversationId}`);
-
+  revalidateConversation(conversationId);
   redirect(`/messages/${conversationId}`);
 }
 
@@ -243,65 +105,29 @@ export async function acceptMessageRequestAction(
   _state: MessageActionState,
   formData: FormData,
 ): Promise<MessageActionState> {
-  await requireAuthenticatedUser();
   const conversationId = getFormString(formData, "conversationId").trim();
+  const result = await acceptMessageRequestMutation(conversationId);
 
-  if (!conversationId) {
-    return {
-      status: "error",
-      message: "Förfrågan saknas.",
-    };
+  if (result.status === "error") {
+    return result;
   }
 
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("accept_message_request", {
-    p_conversation_id: conversationId,
-  });
-
-  if (error) {
-    return {
-      status: "error",
-      message: "Meddelandeförfrågan kunde inte accepteras. Försök igen.",
-    };
-  }
-
-  revalidatePath("/messages");
-  revalidatePath(`/messages/${conversationId}`);
-
-  return {
-    status: "success",
-    message: "Meddelandeförfrågan accepterad.",
-  };
+  revalidateConversation(conversationId);
+  return result;
 }
 
 export async function ignoreMessageRequestAction(
   _state: MessageActionState,
   formData: FormData,
 ): Promise<MessageActionState> {
-  await requireAuthenticatedUser();
   const conversationId = getFormString(formData, "conversationId").trim();
+  const result = await ignoreMessageRequestMutation(conversationId);
 
-  if (!conversationId) {
-    return {
-      status: "error",
-      message: "Förfrågan saknas.",
-    };
+  if (result.status === "error") {
+    return result;
   }
 
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("ignore_message_request", {
-    p_conversation_id: conversationId,
-  });
-
-  if (error) {
-    return {
-      status: "error",
-      message: "Meddelandeförfrågan kunde inte ignoreras. Försök igen.",
-    };
-  }
-
-  revalidatePath("/messages");
-  revalidatePath(`/messages/${conversationId}`);
+  revalidateConversation(conversationId);
   redirect("/messages?tab=requests");
 }
 
@@ -309,29 +135,131 @@ export async function declineMessageRequestAction(
   _state: MessageActionState,
   formData: FormData,
 ): Promise<MessageActionState> {
-  await requireAuthenticatedUser();
   const conversationId = getFormString(formData, "conversationId").trim();
+  const result = await declineMessageRequestMutation(conversationId);
 
-  if (!conversationId) {
-    return {
-      status: "error",
-      message: "Förfrågan saknas.",
-    };
+  if (result.status === "error") {
+    return result;
   }
 
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("decline_message_request", {
-    p_conversation_id: conversationId,
-  });
-
-  if (error) {
-    return {
-      status: "error",
-      message: "Meddelandeförfrågan kunde inte nekas. Försök igen.",
-    };
-  }
-
-  revalidatePath("/messages");
-  revalidatePath(`/messages/${conversationId}`);
+  revalidateConversation(conversationId);
   redirect("/messages?tab=requests");
 }
+
+export async function sendChatMessageAction(
+  conversationId: string,
+  body: string,
+) {
+  const result = await sendPrivateMessageMutation(conversationId, body);
+  if (result.status === "success") {
+    revalidateConversation(conversationId);
+  }
+  return result;
+}
+
+export async function openChatWithContactAction(targetUserId: string) {
+  const opened = await openAcceptedContactConversationMutation(targetUserId);
+  if (opened.status === "error" || !opened.data?.conversationId) {
+    return opened;
+  }
+
+  const thread = await loadConversationThreadMutation(opened.data.conversationId, {
+    markRead: true,
+  });
+
+  if (thread.status === "error" || !thread.data) {
+    return {
+      status: "error" as const,
+      message: thread.message,
+    };
+  }
+
+  revalidateConversation(opened.data.conversationId);
+  return {
+    status: "success" as const,
+    message: opened.message,
+    data: {
+      conversationId: opened.data.conversationId,
+      thread: thread.data,
+    },
+  };
+}
+
+export async function loadChatThreadAction(conversationId: string) {
+  const result = await loadConversationThreadMutation(conversationId, {
+    markRead: true,
+  });
+  if (result.status === "success") {
+    revalidateConversation(conversationId);
+  }
+  return result;
+}
+
+export async function peekChatThreadAction(conversationId: string) {
+  return loadConversationThreadMutation(conversationId, { markRead: false });
+}
+
+export async function markChatConversationReadAction(conversationId: string) {
+  return markConversationReadMutation(conversationId);
+}
+
+export async function acceptChatRequestAction(conversationId: string) {
+  const result = await acceptMessageRequestMutation(conversationId);
+  if (result.status === "success") {
+    revalidateConversation(conversationId);
+  }
+  return result;
+}
+
+export async function ignoreChatRequestAction(conversationId: string) {
+  const result = await ignoreMessageRequestMutation(conversationId);
+  if (result.status === "success") {
+    revalidateConversation(conversationId);
+  }
+  return result;
+}
+
+export async function declineChatRequestAction(conversationId: string) {
+  const result = await declineMessageRequestMutation(conversationId);
+  if (result.status === "success") {
+    revalidateConversation(conversationId);
+  }
+  return result;
+}
+
+export async function startChatConversationAction(input: {
+  targetUserId?: string;
+  username?: string;
+  subject?: string;
+  body: string;
+}): Promise<ChatMutationResult<{ conversationId: string; thread: ConversationThread }>> {
+  const result = await startConversationMutation(input);
+  if (result.status === "error" || !result.data?.conversationId) {
+    return {
+      status: "error",
+      message: result.message,
+    };
+  }
+
+  const thread = await loadConversationThreadMutation(result.data.conversationId, {
+    markRead: true,
+  });
+
+  if (thread.status === "error" || !thread.data) {
+    return {
+      status: "error",
+      message: thread.message,
+    };
+  }
+
+  revalidateConversation(result.data.conversationId);
+  return {
+    status: "success",
+    message: result.message,
+    data: {
+      conversationId: result.data.conversationId,
+      thread: thread.data,
+    },
+  };
+}
+

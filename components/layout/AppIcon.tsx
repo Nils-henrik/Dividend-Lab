@@ -6,6 +6,9 @@ export type AppIconName =
   | "chart"
   | "check"
   | "chevronDown"
+  | "chevronLeft"
+  | "close"
+  | "compose"
   | "contacts"
   | "dashboard"
   | "diamond"
@@ -14,6 +17,7 @@ export type AppIconName =
   | "goals"
   | "learning"
   | "messages"
+  | "minus"
   | "news"
   | "pieChart"
   | "portfolio"
@@ -39,6 +43,9 @@ const icons: Record<AppIconName, string> = {
   chart: "M4 19h16M6 16V9m6 7V5m6 11v-4",
   check: "M5 12.5 9.5 17 19 7.5",
   chevronDown: "m6 9 6 6 6-6",
+  chevronLeft: "m15 6-6 6 6 6",
+  close: "M6 6l12 12M18 6 6 18",
+  compose: "M12 5v14M5 12h14",
   contacts: "M16 11a4 4 0 1 0-4-4 4 4 0 0 0 4 4ZM4 20a6 6 0 0 1 12 0M19 8v6M22 11h-6",
   dashboard: "M4 13h6V4H4v9Zm10 7h6V4h-6v16ZM4 20h6v-5H4v5Z",
   diamond: "M5 8l3-4h8l3 4-7 12L5 8",
@@ -48,6 +55,7 @@ const icons: Record<AppIconName, string> = {
     "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm0-4a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0-3a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z",
   learning: "M22 10 12 5 2 10l10 5 10-5Zm0 0v6M6 12v5c0 1.5 2.7 3 6 3s6-1.5 6-3v-5",
   messages: "M4 5h16v11H8l-4 4V5Zm5 4h6M9 12h4",
+  minus: "M5 12h14",
   news: "M6 4h12a1 1 0 0 1 1 1v14H5V5a1 1 0 0 1 1-1ZM8 8h8M8 12h8M8 16h5",
   pieChart: "M12 3a9 9 0 1 0 9 9h-9V3Zm0 0v9h9a9 9 0 0 0-9-9Z",
   portfolio: "M4 8h16v11H4V8Zm4 0V5h8v3M4 13h16",

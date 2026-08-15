@@ -119,6 +119,24 @@ describe("contact and chat independence", () => {
   });
 });
 
+describe("presence is contact-only", () => {
+  it("does not expose active status to a non-contact message requester", () => {
+    const canReadPresence = (params: {
+      areAcceptedContacts: boolean;
+      shareActiveStatus: boolean;
+    }) => params.areAcceptedContacts && params.shareActiveStatus;
+
+    assert.equal(
+      canReadPresence({ areAcceptedContacts: false, shareActiveStatus: true }),
+      false,
+    );
+    assert.equal(
+      canReadPresence({ areAcceptedContacts: true, shareActiveStatus: true }),
+      true,
+    );
+  });
+});
+
 describe("payload privacy", () => {
   it("never includes email fields in public contact summaries", () => {
     const contactPayload = {

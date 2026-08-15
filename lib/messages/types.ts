@@ -51,3 +51,45 @@ export type MessageActionState = {
   status: "idle" | "success" | "error";
   message: string;
 };
+
+export type PresenceKind = "online" | "recent" | "offline";
+
+export type PresenceSnapshot = {
+  userId: string;
+  lastSeenAt: string | null;
+  shareActiveStatus: boolean;
+};
+
+export type PresenceView = {
+  kind: PresenceKind;
+  lastSeenAt: string | null;
+  compactLabel: string | null;
+  srLabel: string | null;
+};
+
+export type ChatContact = {
+  userId: string;
+  name: string;
+  username: string | null;
+  initials: string;
+  avatarUrl: string | null;
+  conversationId: string | null;
+  hasUnread: boolean;
+  lastActivityAt: string | null;
+};
+
+export type GlobalChatBootstrap = {
+  currentUserId: string;
+  contacts: ChatContact[];
+  chats: ConversationSummary[];
+  requests: ConversationSummary[];
+  unreadCount: number;
+  shareActiveStatus: boolean;
+  presenceByUserId: Record<string, PresenceSnapshot>;
+};
+
+export type ChatMutationResult<T = undefined> = {
+  status: "success" | "error";
+  message: string;
+  data?: T;
+};

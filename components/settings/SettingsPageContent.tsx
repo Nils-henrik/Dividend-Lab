@@ -1,6 +1,14 @@
+import { getAuthenticatedUser } from "@/lib/auth/session";
+import { getOwnShareActiveStatus } from "@/lib/messages/chat-bootstrap";
+import ActiveStatusSetting from "./ActiveStatusSetting";
 import ChangePasswordForm from "./ChangePasswordForm";
 
-export default function SettingsPageContent() {
+export default async function SettingsPageContent() {
+  const user = await getAuthenticatedUser();
+  const shareActiveStatus = user
+    ? await getOwnShareActiveStatus(user.id)
+    : true;
+
   return (
     <div className="space-y-8">
       <section className="divlab-hero">
@@ -13,6 +21,7 @@ export default function SettingsPageContent() {
         </p>
       </section>
 
+      <ActiveStatusSetting initialEnabled={shareActiveStatus} />
       <ChangePasswordForm />
     </div>
   );
