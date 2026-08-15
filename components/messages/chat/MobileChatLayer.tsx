@@ -84,18 +84,20 @@ export default function MobileChatLayer({
       return;
     }
 
+    const activeViewport = viewport;
+
     function updateOffset() {
       const next =
-        window.innerHeight - viewport.height - viewport.offsetTop;
+        window.innerHeight - activeViewport.height - activeViewport.offsetTop;
       setKeyboardOffset(Math.max(0, next));
     }
 
     updateOffset();
-    viewport.addEventListener("resize", updateOffset);
-    viewport.addEventListener("scroll", updateOffset);
+    activeViewport.addEventListener("resize", updateOffset);
+    activeViewport.addEventListener("scroll", updateOffset);
     return () => {
-      viewport.removeEventListener("resize", updateOffset);
-      viewport.removeEventListener("scroll", updateOffset);
+      activeViewport.removeEventListener("resize", updateOffset);
+      activeViewport.removeEventListener("scroll", updateOffset);
     };
   }, []);
 

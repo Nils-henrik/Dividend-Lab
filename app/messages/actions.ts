@@ -157,10 +157,15 @@ export async function sendChatMessageAction(
   return result;
 }
 
-export async function openChatWithContactAction(targetUserId: string) {
+export async function openChatWithContactAction(targetUserId: string): Promise<
+  ChatMutationResult<{ conversationId: string; thread: ConversationThread }>
+> {
   const opened = await openAcceptedContactConversationMutation(targetUserId);
   if (opened.status === "error" || !opened.data?.conversationId) {
-    return opened;
+    return {
+      status: "error",
+      message: opened.message,
+    };
   }
 
   const thread = await loadConversationThreadMutation(opened.data.conversationId, {
@@ -169,14 +174,14 @@ export async function openChatWithContactAction(targetUserId: string) {
 
   if (thread.status === "error" || !thread.data) {
     return {
-      status: "error" as const,
+      status: "error",
       message: thread.message,
     };
   }
 
   revalidateConversation(opened.data.conversationId);
   return {
-    status: "success" as const,
+    status: "success",
     message: opened.message,
     data: {
       conversationId: opened.data.conversationId,

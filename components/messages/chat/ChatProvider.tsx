@@ -152,9 +152,15 @@ type Props = {
 };
 
 export default function ChatProvider({ bootstrap, children }: Props) {
-  const persisted = useRef(readPersistedState()).current;
   const launcherRestoreRef = useRef<HTMLElement | null>(null);
   const historyDepthRef = useRef(0);
+  const visibilityRef = useRef({
+    isDesktop: true,
+    windows: [] as DesktopChatWindowState[],
+    mobileLayer: "closed" as MobileChatLayer,
+    mobileConversationId: null as string | null,
+    knownConversationIds: new Set<string>(),
+  });
   const [contacts, setContacts] = useState(bootstrap.contacts);
   const [chats, setChats] = useState(bootstrap.chats);
   const [requests, setRequests] = useState(bootstrap.requests);
@@ -166,15 +172,15 @@ export default function ChatProvider({ bootstrap, children }: Props) {
     "connecting" | "connected" | "disconnected"
   >("connecting");
   const [windows, setWindows] = useState<DesktopChatWindowState[]>(
-    persisted.windows,
+    () => readPersistedState().windows,
   );
   const [threads, setThreads] = useState<Record<string, ConversationThread>>({});
   const [desktopDrawerOpen, setDesktopDrawerOpen] = useState(false);
   const [mobileLayer, setMobileLayer] = useState<MobileChatLayer>(
-    persisted.mobileLayer,
+    () => readPersistedState().mobileLayer,
   );
   const [mobileConversationId, setMobileConversationId] = useState<string | null>(
-    persisted.mobileConversationId,
+    () => readPersistedState().mobileConversationId,
   );
   const [mobileQuery, setMobileQuery] = useState("");
   const [showingRequests, setShowingRequests] = useState(false);
@@ -197,14 +203,6 @@ export default function ChatProvider({ bootstrap, children }: Props) {
     action: "accept" | "ignore" | "decline";
   } | null>(null);
 
-  const visibilityRef = useRef({
-    isDesktop: true,
-    windows: persisted.windows,
-    mobileLayer: persisted.mobileLayer,
-    mobileConversationId: persisted.mobileConversationId,
-    knownConversationIds: new Set<string>(),
-  });
-
   const isDesktop = viewportWidth >= DESKTOP_CHAT_MIN_VIEWPORT;
   const isWideDesktop = viewportWidth >= DESKTOP_RAIL_MIN_VIEWPORT;
   const maxOpenWindows = getMaxOpenDesktopWindows({
@@ -212,6 +210,10 @@ export default function ChatProvider({ bootstrap, children }: Props) {
     sidebarWidth: 80,
     railVisible: isWideDesktop,
   });
+  const dockWindows = useMemo(
+    () => reconcileDesktopWindows(windows, maxOpenWindows),
+    [maxOpenWindows, windows],
+  );
 
   const presenceByUserId = useMemo(
     () =>
@@ -231,16 +233,25 @@ export default function ChatProvider({ bootstrap, children }: Props) {
 
   const unreadCount = unreadIds.length;
 
-  visibilityRef.current = {
+  useEffect(() => {
+    visibilityRef.current = {
+      isDesktop,
+      windows: dockWindows,
+      mobileLayer,
+      mobileConversationId,
+      knownConversationIds: new Set([
+        ...chats.map((chat) => chat.id),
+        ...requests.map((request) => request.id),
+      ]),
+    };
+  }, [
+    chats,
+    dockWindows,
     isDesktop,
-    windows,
-    mobileLayer,
     mobileConversationId,
-    knownConversationIds: new Set([
-      ...chats.map((chat) => chat.id),
-      ...requests.map((request) => request.id),
-    ]),
-  };
+    mobileLayer,
+    requests,
+  ]);
 
   useEffect(() => {
     function updateViewport() {
@@ -254,12 +265,12 @@ export default function ChatProvider({ bootstrap, children }: Props) {
 
   useEffect(() => {
     const payload = serializePersistedChatUiState({
-      windows,
+      windows: dockWindows,
       mobileLayer,
       mobileConversationId,
     });
     window.sessionStorage.setItem(CHAT_WINDOW_STORAGE_KEY, payload);
-  }, [mobileConversationId, mobileLayer, windows]);
+  }, [dockWindows, mobileConversationId, mobileLayer]);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -393,22 +404,23 @@ export default function ChatProvider({ bootstrap, children }: Props) {
       }
 
       const result = await openChatWithContactAction(userId);
-      if (result.status !== "success" || !result.data) {
+      if (result.status !== "success" || !result.data || !("thread" in result.data)) {
         return;
       }
 
+      const opened = result.data;
       setThreads((current) => ({
         ...current,
-        [result.data!.conversationId]: result.data!.thread,
+        [opened.conversationId]: opened.thread,
       }));
       setContacts((current) =>
         current.map((contact) =>
           contact.userId === userId
-            ? { ...contact, conversationId: result.data!.conversationId }
+            ? { ...contact, conversationId: opened.conversationId }
             : contact,
         ),
       );
-      await openConversationInPlace(result.data.conversationId);
+      await openConversationInPlace(opened.conversationId);
     },
     [contacts, openConversationInPlace, threads],
   );
@@ -544,21 +556,36 @@ export default function ChatProvider({ bootstrap, children }: Props) {
   }, [desktopDrawerOpen, isDesktop, mobileBack, mobileLayer, windows]);
 
   useEffect(() => {
-    setWindows((current) => reconcileDesktopWindows(current, maxOpenWindows));
-  }, [maxOpenWindows]);
-
-  useEffect(() => {
     const conversationIds = [
-      ...windows.map((windowState) => windowState.conversationId),
+      ...dockWindows.map((windowState) => windowState.conversationId),
       ...(mobileConversationId ? [mobileConversationId] : []),
-    ];
+    ].filter((conversationId) => !threads[conversationId]);
 
-    for (const conversationId of conversationIds) {
-      if (!threads[conversationId]) {
-        void ensureThread(conversationId);
-      }
+    if (conversationIds.length === 0) {
+      return;
     }
-  }, [ensureThread, mobileConversationId, threads, windows]);
+
+    let cancelled = false;
+
+    void Promise.all(
+      conversationIds.map(async (conversationId) => {
+        const result = await loadChatThreadAction(conversationId);
+        if (cancelled || result.status !== "success" || !result.data) {
+          return;
+        }
+
+        setThreads((current) =>
+          current[conversationId]
+            ? current
+            : { ...current, [conversationId]: result.data! },
+        );
+      }),
+    );
+
+    return () => {
+      cancelled = true;
+    };
+  }, [dockWindows, mobileConversationId, threads]);
 
   useEffect(() => {
     let channel: ReturnType<ReturnType<typeof createClient>["channel"]> | null =
@@ -726,7 +753,7 @@ export default function ChatProvider({ bootstrap, children }: Props) {
           }
         });
     } catch {
-      setRealtimeStatus("disconnected");
+      queueMicrotask(() => setRealtimeStatus("disconnected"));
     }
 
     return () => {
@@ -884,7 +911,7 @@ export default function ChatProvider({ bootstrap, children }: Props) {
       requests,
       presenceByUserId,
       realtimeStatus,
-      windows,
+      windows: dockWindows,
       threads,
       isWideDesktop,
       isDesktop,
@@ -930,9 +957,11 @@ export default function ChatProvider({ bootstrap, children }: Props) {
       acceptRequest,
       bootstrap.currentUserId,
       chats,
+      closeDesktopDrawer,
       contacts,
       declineRequest,
       desktopDrawerOpen,
+      dockWindows,
       ignoreRequest,
       isDesktop,
       isWideDesktop,
@@ -956,7 +985,6 @@ export default function ChatProvider({ bootstrap, children }: Props) {
       threads,
       unreadByConversationId,
       unreadCount,
-      windows,
     ],
   );
 
