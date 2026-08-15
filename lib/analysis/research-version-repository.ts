@@ -98,8 +98,10 @@ export async function loadLatestPublishableDivLabResearchVersionAsOf(input: {
  * than the supplied point-in-time boundary. Public publishability is not
  * required; every candidate is revalidated through peer-research-readiness-v1.
  *
- * We scan a bounded recent history because a newer non-ready facts version must
- * never mask an older valid peer-ready version that existed at the same boundary.
+ * We scan a bounded recent history because a newer ordinary non-ready research
+ * attempt must not mask an older valid peer-ready version. Corrupted immutable
+ * rows (identity/current-contract violations) still fail closed instead of being
+ * silently skipped.
  */
 export async function loadLatestPeerReadyDivLabResearchVersionAsOf(input: {
   supabase: SupabaseClient;
@@ -142,8 +144,8 @@ export async function loadLatestPeerReadyDivLabResearchVersionAsOf(input: {
     } catch (error) {
       if (
         error instanceof Error &&
-        (error.message.startsWith("divlab_peer_research_version_") ||
-          error.message === "divlab_research_version_identity_mismatch")
+        (error.message === "divlab_peer_research_version_not_ready" ||
+          error.message === "divlab_peer_research_version_not_candidate")
       ) {
         continue;
       }
