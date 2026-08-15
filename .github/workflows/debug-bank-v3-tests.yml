@@ -20,7 +20,11 @@ jobs:
           node-version: "22"
           cache: npm
       - run: npm ci
-      - name: Bank analyst prompt tests
-        run: npx tsx --test tests/divlab-bank-analyst-prompt.test.ts
+      - name: Bank prompt mandate test
+        run: npx tsx --test --test-name-pattern "methodological prohibitions" tests/divlab-bank-analyst-prompt.test.ts
+      - name: Bank prompt valuation facts test
+        run: npx tsx --test --test-name-pattern "bank-appropriate valuation facts" tests/divlab-bank-analyst-prompt.test.ts
+      - name: Bank prompt evidence bounding test
+        run: npx tsx --test --test-name-pattern "bounded evidence" tests/divlab-bank-analyst-prompt.test.ts
       - name: Bank deep research v3 tests
         run: npx tsx --test tests/divlab-bank-deep-research.test.ts
