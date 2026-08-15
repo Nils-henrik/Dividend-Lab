@@ -8,11 +8,15 @@ function file(path: string): string {
 }
 
 describe("preview peer research safety boundary", () => {
-  it("hard-locks the admin client to Preview and dividend-lab-dev", () => {
+  it("hard-locks the admin client to Preview, dividend-lab-dev and dedicated server-only credentials", () => {
     const value = file("lib/analysis/dev-admin.ts");
     assert.match(value, /VERCEL_ENV[^\n]*preview/i);
     assert.match(value, /faaxloafogpsywfkpbrm/);
+    assert.match(value, /DIVLAB_ANALYSIS_DEV_SUPABASE_URL/);
+    assert.match(value, /DIVLAB_ANALYSIS_DEV_SUPABASE_SERVICE_ROLE_KEY/);
     assert.match(value, /hostname !== `\$\{DIVLAB_ANALYSIS_DEV_PROJECT_REF\}\.supabase\.co`/);
+    assert.doesNotMatch(value, /process\.env\.NEXT_PUBLIC_SUPABASE_URL\b/);
+    assert.doesNotMatch(value, /process\.env\.SUPABASE_SERVICE_ROLE_KEY\b/);
     assert.doesNotMatch(value, /nudnybicacgvhckfndim/);
   });
 
