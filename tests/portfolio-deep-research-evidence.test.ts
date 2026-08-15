@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { buildPortfolioEvidenceFromDeepResearch } from "../lib/analysis/portfolio-deep-research-evidence";
+import type { VersionedResearchPacket } from "../lib/analysis/peer-comparison-audit";
 
 const VERSION_ID = "11111111-2222-4333-8444-555555555555";
 
-function fixture(publishable = true) {
+function fixture(publishable = true): VersionedResearchPacket {
   return {
     analysisVersionId: VERSION_ID,
     packet: {
@@ -70,7 +71,7 @@ function fixture(publishable = true) {
       sources: [{ primary: true }, { primary: false }],
       qualityGate: { publishable },
     },
-  } as any;
+  } as unknown as VersionedResearchPacket;
 }
 
 describe("Deep Research -> portfolio evidence", () => {
