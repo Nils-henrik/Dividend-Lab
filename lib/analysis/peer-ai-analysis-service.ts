@@ -1,20 +1,19 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { ModelPortfolioAiModel } from "@/lib/model-portfolios/engine/ai";
 import {
   generateDivLabAnalystDraft,
   type DivLabAnalystUsage,
 } from "./analyst";
+import { validateAnalystDraftAgainstPacket } from "./analyst-contract";
+import type { DivLabAnalystDraft } from "./analyst-schema";
 import {
   persistDivLabPeerAnalysisContent,
   type PersistedDivLabPeerAnalysisContent,
 } from "./peer-analysis-content-repository";
-import {
-  composePeerAnalystDraft,
-} from "./peer-analyst-composition";
-import {
-  validatePeerAnalystDraft,
-} from "./peer-analyst-contract";
+import { composePeerAnalystDraft } from "./peer-analyst-composition";
+import { validatePeerAnalystDraft } from "./peer-analyst-contract";
 import {
   buildDivLabPeerAnalystContext,
   type DivLabPeerAnalystContext,
@@ -28,34 +27,25 @@ import {
   createPersistedVersionBoundPeerComparisonAudit,
   type CreatePersistedPeerComparisonAuditResult,
 } from "./peer-comparison-audit-service";
-import {
-  loadStoredPeerComparisonAuditById,
-} from "./peer-comparison-audit-read-repository";
-import {
-  loadPublishableDivLabResearchVersionById,
-} from "./research-version-repository";
+import { loadStoredPeerComparisonAuditById } from "./peer-comparison-audit-read-repository";
+import { loadPublishableDivLabResearchVersionById } from "./research-version-repository";
+
+export type PreparedDivLabAnalystResult = {
+  draft: DivLabAnalystDraft;
+  model: ModelPortfolioAiModel;
+  usage: DivLabAnalystUsage;
+};
 
 export type CreateDivLabPeerAiAnalysisResult =
   | { status: "target_research_missing" }
-  | {
-      status: "content_already_exists";
-      contentId: string;
-      schemaVersion: string;
-    }
-  | {
-      status: "registry_missing";
-      targetAnalysisVersionId: string;
-    }
+  | { status: "content_already_exists"; contentId: string; schemaVersion: string }
+  | { status: "registry_missing"; targetAnalysisVersionId: string }
   | {
       status: "peer_research_missing";
       targetAnalysisVersionId: string;
       missingPeers: Array<{ symbol: string; exchange: string; name: string }>;
     }
-  | {
-      status: "gateway_auth_missing";
-      targetAnalysisVersionId: string;
-      peerAuditId: string;
-    }
+  | { status: "gateway_auth_missing"; targetAnalysisVersionId: string; peerAuditId: string }
   | {
       status: "analyst_quality_failed";
       targetAnalysisVersionId: string;
@@ -81,33 +71,16 @@ function auditFailure(
   result: Exclude<CreatePersistedPeerComparisonAuditResult, { status: "ready" }>,
   targetAnalysisVersionId: string,
 ): CreateDivLabPeerAiAnalysisResult {
-  if (result.status === "target_research_missing") {
-    return { status: "target_research_missing" };
-  }
-  if (result.status === "registry_missing") {
-    return { status: "registry_missing", targetAnalysisVersionId };
-  }
-  return {
-    status: "peer_research_missing",
-    targetAnalysisVersionId,
-    missingPeers: result.missingPeers,
-  };
+  if (result.status === "target_research_missing") return { status: "target_research_missing" };
+  if (result.status === "registry_missing") return { status: "registry_missing", targetAnalysisVersionId };
+  return { status: "peer_research_missing", targetAnalysisVersionId, missingPeers: result.missingPeers };
 }
 
 /**
- * Conservative first Analyst v3-peer execution path.
- *
- * 1. The target is one already-persisted immutable publishable research version.
- * 2. A point-in-time peer audit is assembled exclusively from already-persisted
- *    research versions and persisted before model work.
- * 3. The established Analyst v2 model call generates the target-company thesis.
- * 4. Peer context is appended deterministically; it does not steer the AI-written
- *    core view/scenarios and does not add another model/provider call.
- * 5. v3-peer contract + quality gate run before the dedicated database RPC.
- *
- * This keeps cost and financial behavior bounded while making peer valuation
- * visible in a fully auditable analysis version. A later model-enabled peer
- * interpretation can be evaluated separately without silently changing v2.
+ * Conservative Analyst v3-peer execution for one already-persisted target
+ * research version. Callers may supply the exact Analyst v2 result that created
+ * the target's valuation scenarios; when supplied it is revalidated against the
+ * immutable target packet and reused, avoiding a second model call.
  */
 export async function createDivLabPeerAiAnalysis(input: {
   supabase: SupabaseClient;
@@ -115,6 +88,7 @@ export async function createDivLabPeerAiAnalysis(input: {
   now?: Date;
   useEscalationModel?: boolean;
   maxPeerConcurrency?: number;
+  preparedAnalyst?: PreparedDivLabAnalystResult;
 }): Promise<CreateDivLabPeerAiAnalysisResult> {
   const targetResearch = await loadPublishableDivLabResearchVersionById({
     supabase: input.supabase,
@@ -128,9 +102,7 @@ export async function createDivLabPeerAiAnalysis(input: {
     .eq("analysis_version_id", targetResearch.analysisVersionId)
     .maybeSingle();
   if (existing.error) {
-    throw new Error(
-      `divlab_peer_ai_analysis_existing_content_failed:${existing.error.code ?? "unknown"}`,
-    );
+    throw new Error(`divlab_peer_ai_analysis_existing_content_failed:${existing.error.code ?? "unknown"}`);
   }
   if (existing.data) {
     return {
@@ -145,40 +117,41 @@ export async function createDivLabPeerAiAnalysis(input: {
     targetAnalysisVersionId: targetResearch.analysisVersionId,
     maxConcurrency: input.maxPeerConcurrency,
   });
-  if (auditResult.status !== "ready") {
-    return auditFailure(auditResult, targetResearch.analysisVersionId);
-  }
+  if (auditResult.status !== "ready") return auditFailure(auditResult, targetResearch.analysisVersionId);
 
   const storedAudit = await loadStoredPeerComparisonAuditById({
     supabase: input.supabase,
     auditId: auditResult.persisted.auditId,
   });
-  if (!storedAudit) {
-    throw new Error("divlab_peer_ai_analysis_persisted_audit_missing");
-  }
+  if (!storedAudit) throw new Error("divlab_peer_ai_analysis_persisted_audit_missing");
   const peerContext = buildDivLabPeerAnalystContext(storedAudit);
 
-  let analyst: Awaited<ReturnType<typeof generateDivLabAnalystDraft>>;
-  try {
-    analyst = await generateDivLabAnalystDraft({
+  let analyst: PreparedDivLabAnalystResult;
+  if (input.preparedAnalyst) {
+    validateAnalystDraftAgainstPacket({
       packet: targetResearch.packet,
-      useEscalationModel: input.useEscalationModel,
+      draft: input.preparedAnalyst.draft,
     });
-  } catch (error) {
-    if (error instanceof Error && error.message === "gateway_auth_missing") {
-      return {
-        status: "gateway_auth_missing",
-        targetAnalysisVersionId: targetResearch.analysisVersionId,
-        peerAuditId: storedAudit.auditId,
-      };
+    analyst = input.preparedAnalyst;
+  } else {
+    try {
+      analyst = await generateDivLabAnalystDraft({
+        packet: targetResearch.packet,
+        useEscalationModel: input.useEscalationModel,
+      });
+    } catch (error) {
+      if (error instanceof Error && error.message === "gateway_auth_missing") {
+        return {
+          status: "gateway_auth_missing",
+          targetAnalysisVersionId: targetResearch.analysisVersionId,
+          peerAuditId: storedAudit.auditId,
+        };
+      }
+      throw error;
     }
-    throw error;
   }
 
-  const draft = composePeerAnalystDraft({
-    baseDraft: analyst.draft,
-    peerContext,
-  });
+  const draft = composePeerAnalystDraft({ baseDraft: analyst.draft, peerContext });
   validatePeerAnalystDraft({
     packet: targetResearch.packet,
     targetAnalysisVersionId: targetResearch.analysisVersionId,
