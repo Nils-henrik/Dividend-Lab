@@ -15,8 +15,10 @@ describe("Nordic primary-source event enrichment", () => {
     assert.equal(companyNamesLikelyMatch("Attendo AB", "Atlas Copco AB"), false);
   });
 
-  it("attributes Nasdaq CNS disclosures to the destination publisher and degrades on miss", async () => {
-    let requestedCompany = "";
+  it("queries Nasdaq CNS through bounded freetext discovery and attributes the destination publisher", async () => {
+    let requestedFreeText = "";
+    let requestedCompany: string | null = null;
+    let requestedLimit: string | null = null;
     const hits = await fetchNordicPrimarySourceEvents({
       companyName: "Investor AB ser. B",
       symbol: "INVE-B",
@@ -24,8 +26,10 @@ describe("Nordic primary-source event enrichment", () => {
       now: new Date("2026-08-11T07:20:00.000Z"),
       fetchImpl: async (input) => {
         const url = new URL(String(input));
-        requestedCompany = url.searchParams.get("company") ?? "";
-        if (requestedCompany === "Investor AB" || requestedCompany.startsWith("Investor")) {
+        requestedFreeText = url.searchParams.get("freeText") ?? "";
+        requestedCompany = url.searchParams.get("company");
+        requestedLimit = url.searchParams.get("limit");
+        if (requestedFreeText === "Investor AB" || requestedFreeText.startsWith("Investor")) {
           return Response.json({
             count: 1,
             results: {
@@ -55,7 +59,9 @@ describe("Nordic primary-source event enrichment", () => {
       },
     });
 
-    assert.ok(requestedCompany.length > 0);
+    assert.ok(requestedFreeText.length > 0);
+    assert.equal(requestedCompany, "");
+    assert.equal(requestedLimit, "5");
     assert.equal(hits.length, 1);
     assert.equal(hits[0]?.sourceKind, "company_primary");
     assert.equal(hits[0]?.publisher, "view.news.eu.nasdaq.com");
