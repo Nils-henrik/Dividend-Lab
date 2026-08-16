@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import ProfileAvatar from "@/components/account/ProfileAvatar";
 import { filterChatSearch, sortChatContacts } from "@/lib/messages/chat-state";
 import { formatMessageTimestamp } from "@/lib/messages/format";
@@ -23,6 +23,7 @@ type Props = {
   onOpenConversation: (conversationId: string) => void;
   onShowRequests: () => void;
   showingRequests: boolean;
+  composeMode?: boolean;
 };
 
 export default function MobileChatInbox({
@@ -36,10 +37,18 @@ export default function MobileChatInbox({
   onOpenConversation,
   onShowRequests,
   showingRequests,
+  composeMode = false,
 }: Props) {
+  const searchRef = useRef<HTMLInputElement | null>(null);
   const filtered = useMemo(
-    () => filterChatSearch({ query, chats, contacts }),
-    [query, chats, contacts],
+    () =>
+      filterChatSearch({
+        query,
+        chats,
+        contacts,
+        includeContactsWhenEmpty: composeMode,
+      }),
+    [query, chats, contacts, composeMode],
   );
   const activeContacts = useMemo(
     () =>
@@ -48,8 +57,17 @@ export default function MobileChatInbox({
       ),
     [contacts, presenceByUserId],
   );
-  const visibleChats = query ? filtered.chats : chats;
-  const visibleContacts = query ? filtered.contacts : [];
+  const visibleChats = query ? filtered.chats : composeMode ? [] : chats;
+  const visibleContacts = composeMode || query ? filtered.contacts : [];
+
+  useEffect(() => {
+    if (!composeMode) {
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => searchRef.current?.focus());
+    return () => window.cancelAnimationFrame(frame);
+  }, [composeMode]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -57,15 +75,16 @@ export default function MobileChatInbox({
         <label className="block">
           <span className="sr-only">Sök chattar och kontakter</span>
           <input
+            ref={searchRef}
             value={query}
             onChange={(event) => onQueryChange(event.target.value)}
-            placeholder="Sök"
+            placeholder={composeMode ? "Sök personer eller chattar" : "Sök"}
             className="w-full divlab-input px-3 py-2.5 text-sm"
           />
         </label>
       </div>
 
-      {activeContacts.length > 0 && !showingRequests ? (
+      {activeContacts.length > 0 && !showingRequests && !composeMode ? (
         <section className="border-b divlab-border-neutral px-4 pb-4">
           <p className="mb-3 text-xs font-medium uppercase tracking-[0.18em] text-divlab-text-muted">
             Aktiva nu
@@ -100,19 +119,25 @@ export default function MobileChatInbox({
         </section>
       ) : null}
 
-      <div className="flex items-center justify-between px-4 py-3">
-        <button
-          type="button"
-          onClick={onShowRequests}
-          className="text-sm text-divlab-blue-muted transition hover:text-divlab-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/40"
-        >
-          {showingRequests ? "Tillbaka till chattar" : "Meddelandeförfrågningar"}
-          {!showingRequests && requests.length > 0 ? ` (${requests.length})` : ""}
-        </button>
-      </div>
+      {!composeMode ? (
+        <div className="flex items-center justify-between px-4 py-3">
+          <button
+            type="button"
+            onClick={onShowRequests}
+            className="text-sm text-divlab-blue-muted transition hover:text-divlab-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/40"
+          >
+            {showingRequests ? "Tillbaka till chattar" : "Meddelandeförfrågningar"}
+            {!showingRequests && requests.length > 0 ? ` (${requests.length})` : ""}
+          </button>
+        </div>
+      ) : (
+        <p className="px-4 pb-2 text-xs font-medium uppercase tracking-[0.18em] text-divlab-text-muted">
+          Välj kontakt eller sök efter en befintlig chatt
+        </p>
+      )}
 
       <div className="min-h-0 flex-1 overflow-y-auto">
-        {showingRequests ? (
+        {showingRequests && !composeMode ? (
           requests.length === 0 ? (
             <p className="px-4 py-6 text-sm text-divlab-text-secondary">
               Inga meddelandeförfrågningar.
@@ -155,7 +180,7 @@ export default function MobileChatInbox({
                 onClick={() => onOpenConversation(conversation.id)}
               />
             ))}
-            {visibleContacts.map((contact) => (
+            {sortChatContacts(visibleContacts, presenceByUserId).map((contact) => (
               <InboxRow
                 key={contact.userId}
                 name={contact.name}
@@ -170,7 +195,7 @@ export default function MobileChatInbox({
             ))}
             {visibleChats.length === 0 && visibleContacts.length === 0 ? (
               <p className="px-4 py-6 text-sm text-divlab-text-secondary">
-                Inga chattar ännu.
+                {composeMode ? "Inga kontakter eller chattar matchar sökningen." : "Inga chattar ännu."}
               </p>
             ) : null}
           </>
@@ -240,14 +265,14 @@ function InboxRow({
         <PresenceIndicator presence={presence} />
       </span>
       {hasUnread ? (
-        <span
-          aria-hidden="true"
-          className="h-2 w-2 shrink-0 rounded-full bg-divlab-blue"
-        />
-      ) : (
-        <span className="sr-only">{hasUnread ? "Oläst konversation" : ""}</span>
-      )}
-      {hasUnread ? <span className="sr-only">Oläst konversation</span> : null}
+        <>
+          <span
+            aria-hidden="true"
+            className="h-2 w-2 shrink-0 rounded-full bg-divlab-blue"
+          />
+          <span className="sr-only">Oläst konversation</span>
+        </>
+      ) : null}
     </button>
   );
 }
