@@ -63,12 +63,29 @@ describe("presence freshness", () => {
     );
   });
 
-  it("never exposes online or recent UI when sharing is disabled", () => {
+  it("immediately clears cached online or recent data when sharing is disabled", () => {
+    const formerlyOnline = snapshot();
+    assert.equal(toPresenceView(formerlyOnline, now).kind, "online");
+
+    const disabledUpdate: PresenceSnapshot = {
+      ...formerlyOnline,
+      shareActiveStatus: false,
+      lastSeenAt: null,
+    };
+    const view = toPresenceView(disabledUpdate, now);
+    assert.equal(view.kind, "offline");
+    assert.equal(view.lastSeenAt, null);
+    assert.equal(view.compactLabel, null);
+    assert.equal(view.srLabel, null);
+  });
+
+  it("does not leak a leftover cached timestamp when sharing is disabled", () => {
     const view = toPresenceView(
       snapshot({ shareActiveStatus: false }),
       now,
     );
     assert.equal(view.kind, "offline");
+    assert.equal(view.lastSeenAt, null);
     assert.equal(view.compactLabel, null);
     assert.equal(view.srLabel, null);
   });
