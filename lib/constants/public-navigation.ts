@@ -1,6 +1,7 @@
 /** Primary public navigation for logged-out visitors. */
 export const PUBLIC_NAV_LINKS = [
   { href: "/news", label: "Börsnyheter" },
+  { href: "/analyses", label: "Analyser" },
   { href: "/learning", label: "Utbildning" },
   { href: "/portfolios", label: "AI-portföljer" },
   { href: "/verktyg", label: "Verktyg" },

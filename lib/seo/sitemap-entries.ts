@@ -62,20 +62,32 @@ async function loadDynamicPublicEntries(): Promise<SitemapEntry[]> {
       { listPublicForumThreadSitemapEntries },
       { listActiveForumCompanySitemapEntries },
       { listPublicProfileSitemapEntries },
+      { listPublishedAnalysisSitemapEntries },
     ] = await Promise.all([
       import("@/lib/seo/sitemap-forum-threads"),
       import("@/lib/seo/sitemap-forum-companies"),
       import("@/lib/seo/sitemap-profiles"),
+      import("@/lib/seo/sitemap-analyses"),
     ]);
 
-    const [forumThreadEntries, forumCompanyEntries, profileEntries] =
-      await Promise.all([
-        listPublicForumThreadSitemapEntries(),
-        listActiveForumCompanySitemapEntries(),
-        listPublicProfileSitemapEntries(),
-      ]);
+    const [
+      forumThreadEntries,
+      forumCompanyEntries,
+      profileEntries,
+      analysisEntries,
+    ] = await Promise.all([
+      listPublicForumThreadSitemapEntries(),
+      listActiveForumCompanySitemapEntries(),
+      listPublicProfileSitemapEntries(),
+      listPublishedAnalysisSitemapEntries(),
+    ]);
 
-    return [...forumThreadEntries, ...forumCompanyEntries, ...profileEntries];
+    return [
+      ...forumThreadEntries,
+      ...forumCompanyEntries,
+      ...profileEntries,
+      ...analysisEntries,
+    ];
   } catch {
     // Fail-soft outside the Next.js server runtime (unit tests) or when DB is unavailable.
     return [];
@@ -140,4 +152,5 @@ export async function buildSitemapEntries(): Promise<SitemapEntry[]> {
 /** Paths that SEO regression tests expect to remain indexable product routes. */
 export const REQUIRED_INDEXABLE_PRODUCT_PATHS = [
   ...MODEL_PORTFOLIO_INDEXABLE_PATHS,
+  "/analyses",
 ] as const;

@@ -1,4 +1,7 @@
 import "server-only";
+import { companyNamesLikelyMatch } from "./company-name-matching";
+
+export { companyNamesLikelyMatch } from "./company-name-matching";
 
 /**
  * Nordic company-primary event evidence.
@@ -11,7 +14,9 @@ import "server-only";
  * - Google remains optional supplemental discovery only (see google-research.ts).
  * - Oslo/Euronext lacks a stable public JSON news endpoint here; when CNS has
  *   no match we degrade to zero primary hits (HOLD), never fabricate evidence.
- * - Bounded: at most a few disclosures per target company per pass.
+ * - Bounded: at most a few disclosures per target company per pass by default;
+ *   callers doing dedicated deep research may request a larger but still hard-
+ *   capped window without changing the model-portfolio default.
  */
 
 export type NordicPrimaryAttachment = {
@@ -58,7 +63,11 @@ type NasdaqCnsResponse = {
 
 const NASDAQ_CNS_ENDPOINT = "https://api.news.eu.nasdaq.com/news/query.action";
 const USER_AGENT = "DivLab/1.0 nordic-primary-research";
-const MAX_HITS = 2;
+const DEFAULT_MAX_HITS = 2;
+const DEFAULT_QUERY_COUNT = 5;
+const HARD_MAX_HITS = 12;
+const HARD_MAX_QUERY_COUNT = 20;
+const HARD_MAX_SEARCH_TERMS = 5;
 
 function text(value: unknown): string | null {
   return typeof value === "string" && value.trim() ? value.trim() : null;
@@ -89,6 +98,11 @@ function toIsoMaybe(value: string | null): string | null {
   return Number.isFinite(parsed) ? new Date(parsed).toISOString() : null;
 }
 
+function boundedInteger(value: number | undefined, fallback: number, max: number): number {
+  const candidate = Number.isFinite(value) ? Math.floor(value as number) : fallback;
+  return Math.max(1, Math.min(max, candidate));
+}
+
 /**
  * Build query aliases from seed display names like "Atlas Copco AB ser. A".
  */
@@ -115,30 +129,45 @@ export function nordicDisclosureCompanyAliases(companyName: string): string[] {
   if (tokens.length >= 2) aliases.add(tokens.slice(0, 2).join(" "));
   if (tokens.length >= 1 && tokens[0]!.length >= 4) aliases.add(tokens[0]!);
 
-  return [...aliases].filter((item) => item.length >= 3).slice(0, 5);
+  return [...aliases].filter((item) => item.length >= 3).slice(0, HARD_MAX_SEARCH_TERMS);
 }
 
-function normalizeName(value: string): string {
-  return value
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim();
+function compactTickerSearchToken(symbol: string): string | null {
+  const normalized = symbol.trim().toUpperCase();
+  if (!normalized) return null;
+  const base = normalized.replace(/-(?:A|B|SDB)$/i, "");
+  return base.length >= 3 ? base : normalized;
 }
 
-export function companyNamesLikelyMatch(candidateCompany: string, targetCompany: string): boolean {
-  const left = normalizeName(candidateCompany);
-  const right = normalizeName(targetCompany);
-  if (!left || !right) return false;
-  if (left === right) return true;
-  if (left.includes(right) || right.includes(left)) return true;
+/**
+ * Dedicated Deep Research must reliably surface a real financial report even
+ * when frequent generic releases (for example weekly share buy-backs) dominate
+ * the newest company-news rows. We do this without adding requests: report-
+ * focused terms replace some of the ordinary alias terms inside the same hard
+ * maximum of five CNS searches.
+ */
+export function nordicDisclosureSearchTerms(input: {
+  companyName: string;
+  symbol: string;
+  preferFinancialReports?: boolean;
+}): string[] {
+  const aliases = nordicDisclosureCompanyAliases(input.companyName);
+  if (!input.preferFinancialReports) return aliases;
 
-  const leftTokens = left.split(" ").filter((token) => token.length > 2);
-  const rightTokens = right.split(" ").filter((token) => token.length > 2);
-  if (!leftTokens.length || !rightTokens.length) return false;
-  const overlap = rightTokens.filter((token) => leftTokens.includes(token)).length;
-  return overlap >= Math.min(2, rightTokens.length);
+  const terms = new Set<string>();
+  const ticker = compactTickerSearchToken(input.symbol);
+  if (ticker) terms.add(`${ticker} report`);
+  const compactCompanyAlias = aliases
+    .filter((alias) => alias.split(/\s+/).length >= 2)
+    .sort((a, b) => a.length - b.length)[0] ?? aliases[0] ?? null;
+  if (compactCompanyAlias) terms.add(`${compactCompanyAlias} report`);
+
+  for (const alias of aliases) {
+    if (terms.size >= HARD_MAX_SEARCH_TERMS) break;
+    terms.add(alias);
+  }
+
+  return [...terms].slice(0, HARD_MAX_SEARCH_TERMS);
 }
 
 function itemsFromBody(body: NasdaqCnsResponse): NasdaqCnsItem[] {
@@ -176,16 +205,34 @@ function attachmentsFromItem(item: NasdaqCnsItem): NordicPrimaryAttachment[] {
 }
 
 async function queryNasdaqCns(input: {
-  company: string;
+  searchTerm: string;
   fetchImpl: typeof fetch;
+  count: number;
 }): Promise<NasdaqCnsItem[]> {
   const url = new URL(NASDAQ_CNS_ENDPOINT);
   url.searchParams.set("type", "json");
-  // Needed to discover official PDF report attachments for document retrieval.
+  // Nasdaq's current Company News surface exposes company discovery through
+  // Freetext. `company=` is reserved by the CNS endpoint for its own company
+  // selector values, so passing a display name there can silently return no
+  // issuer rows. Keep the same bounded number of queries and filter every
+  // returned row against the issuer name below.
   url.searchParams.set("showAttachments", "true");
-  url.searchParams.set("countResults", "true");
-  url.searchParams.set("company", input.company);
-  url.searchParams.set("count", "5");
+  url.searchParams.set("showCnsSpecific", "true");
+  url.searchParams.set("showCompany", "true");
+  url.searchParams.set("countResults", "false");
+  url.searchParams.set("freeText", input.searchTerm);
+  url.searchParams.set("company", "");
+  url.searchParams.set("globalGroup", "exchangeNotice");
+  // Keep the last runtime-proven CNS scope. A blank `globalName` was tested in
+  // protected Preview and returned zero primary rows even for known Main Market
+  // issuers. First North therefore remains an explicit unsupported source scope
+  // until a separate Nasdaq query contract is empirically verified.
+  url.searchParams.set("globalName", "NordicMainMarkets");
+  url.searchParams.set("displayLanguage", "en");
+  url.searchParams.set("language", "en");
+  url.searchParams.set("timeZone", "CET");
+  url.searchParams.set("dateMask", "yyyy-MM-dd HH:mm:ss");
+  url.searchParams.set("limit", String(input.count));
   url.searchParams.set("start", "0");
   url.searchParams.set("dir", "DESC");
 
@@ -205,6 +252,12 @@ async function queryNasdaqCns(input: {
 /**
  * Fetch bounded official exchange disclosures for a Nordic shortlist name.
  * Returns [] when no matching primary evidence is discoverable.
+ *
+ * The model-portfolio caller keeps the conservative defaults (2 hits / 5 CNS
+ * rows per term). Dedicated DivLab Deep Research may explicitly request a
+ * wider result window, hard-capped at 12 hits / 20 CNS rows per term, and may
+ * prioritize financial-report search terms without increasing the number of
+ * CNS requests.
  */
 export async function fetchNordicPrimarySourceEvents(input: {
   companyName: string;
@@ -212,6 +265,9 @@ export async function fetchNordicPrimarySourceEvents(input: {
   exchange: string;
   fetchImpl?: typeof fetch;
   now?: Date;
+  maxHits?: number;
+  queryCount?: number;
+  preferFinancialReports?: boolean;
 }): Promise<NordicPrimarySourceHit[]> {
   const companyName = input.companyName.trim();
   const symbol = input.symbol.trim();
@@ -219,20 +275,26 @@ export async function fetchNordicPrimarySourceEvents(input: {
 
   const fetchImpl = input.fetchImpl ?? fetch;
   const now = input.now ?? new Date();
-  const aliases = nordicDisclosureCompanyAliases(companyName);
+  const maxHits = boundedInteger(input.maxHits, DEFAULT_MAX_HITS, HARD_MAX_HITS);
+  const queryCount = boundedInteger(input.queryCount, DEFAULT_QUERY_COUNT, HARD_MAX_QUERY_COUNT);
+  const searchTerms = nordicDisclosureSearchTerms({
+    companyName,
+    symbol,
+    preferFinancialReports: input.preferFinancialReports,
+  });
   const hits: NordicPrimarySourceHit[] = [];
   const seenUrls = new Set<string>();
 
-  for (const alias of aliases) {
-    if (hits.length >= MAX_HITS) break;
-    const items = await queryNasdaqCns({ company: alias, fetchImpl });
+  for (const searchTerm of searchTerms) {
+    if (hits.length >= maxHits) break;
+    const items = await queryNasdaqCns({ searchTerm, fetchImpl, count: queryCount });
     for (const item of items) {
-      if (hits.length >= MAX_HITS) break;
+      if (hits.length >= maxHits) break;
       const issuer = text(item.company);
       const title = text(item.headline);
       const url = httpsUrl(item.messageUrl);
       if (!issuer || !title || !url) continue;
-      if (!companyNamesLikelyMatch(issuer, companyName) && !companyNamesLikelyMatch(issuer, alias)) {
+      if (!companyNamesLikelyMatch(issuer, companyName)) {
         continue;
       }
       if (seenUrls.has(url)) continue;
