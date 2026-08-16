@@ -1,6 +1,8 @@
 import { getAuthenticatedUser, requireAuthenticatedUserWithProfile } from "@/lib/auth/session";
 import type { AuthenticatedUser } from "@/lib/auth/user";
 import type { UserDisplayIdentity } from "@/lib/profiles/identity";
+import { getGlobalChatBootstrap } from "@/lib/messages/chat-bootstrap";
+import type { GlobalChatBootstrap } from "@/lib/messages/types";
 import { getNotificationBellData } from "@/lib/notifications/feed";
 import type { NotificationFeedItem } from "@/lib/notifications/types";
 import { getProfileForUser } from "@/lib/profiles/profile";
@@ -20,6 +22,27 @@ const emptyBell = {
   items: [] as NotificationFeedItem[],
   userId: null as string | null,
 };
+
+const emptyChatBootstrap = {
+  currentUserId: "",
+  contacts: [],
+  chats: [],
+  requests: [],
+  unreadCount: 0,
+  shareActiveStatus: true,
+  presenceByUserId: {},
+} satisfies GlobalChatBootstrap;
+
+async function loadChatBootstrap(userId: string) {
+  try {
+    return await getGlobalChatBootstrap(userId);
+  } catch {
+    return {
+      ...emptyChatBootstrap,
+      currentUserId: userId,
+    };
+  }
+}
 
 async function loadBellData(userId: string) {
   try {
@@ -47,7 +70,10 @@ export default async function AppShell({
   if (user) {
     const profile = identity ? null : await getProfileForUser(user.id);
     const displayIdentity = identity ?? getUserDisplayIdentity(user, profile);
-    const bell = await loadBellData(user.id);
+    const [bell, chatBootstrap] = await Promise.all([
+      loadBellData(user.id),
+      loadChatBootstrap(user.id),
+    ]);
 
     return (
       <AppShellClient
@@ -56,6 +82,7 @@ export default async function AppShell({
         unreadNotificationCount={bell.unreadCount}
         notificationItems={bell.items}
         notificationUserId={bell.userId}
+        chatBootstrap={chatBootstrap}
       >
         {children}
       </AppShellClient>
@@ -66,7 +93,10 @@ export default async function AppShell({
 
   if (authenticatedUser) {
     const session = await requireAuthenticatedUserWithProfile();
-    const bell = await loadBellData(session.user.id);
+    const [bell, chatBootstrap] = await Promise.all([
+      loadBellData(session.user.id),
+      loadChatBootstrap(session.user.id),
+    ]);
 
     return (
       <AppShellClient
@@ -75,6 +105,7 @@ export default async function AppShell({
         unreadNotificationCount={bell.unreadCount}
         notificationItems={bell.items}
         notificationUserId={bell.userId}
+        chatBootstrap={chatBootstrap}
       >
         {children}
       </AppShellClient>
@@ -97,7 +128,10 @@ export default async function AppShell({
   }
 
   const session = await requireAuthenticatedUserWithProfile();
-  const bell = await loadBellData(session.user.id);
+  const [bell, chatBootstrap] = await Promise.all([
+    loadBellData(session.user.id),
+    loadChatBootstrap(session.user.id),
+  ]);
 
   return (
     <AppShellClient
@@ -106,6 +140,7 @@ export default async function AppShell({
       unreadNotificationCount={bell.unreadCount}
       notificationItems={bell.items}
       notificationUserId={bell.userId}
+      chatBootstrap={chatBootstrap}
     >
       {children}
     </AppShellClient>

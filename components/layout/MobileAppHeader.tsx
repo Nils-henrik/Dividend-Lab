@@ -7,6 +7,8 @@ import GlobalSearch from "@/components/search/GlobalSearch";
 import type { NotificationFeedItem } from "@/lib/notifications/types";
 import type { UserDisplayIdentity } from "@/lib/profiles/identity";
 import { getPageTitle } from "@/lib/constants/navigation";
+import ChatLauncherButton from "@/components/messages/chat/ChatLauncherButton";
+import { useOptionalChat } from "@/components/messages/chat/ChatProvider";
 import ProfileDropdown from "./ProfileDropdown";
 import NotificationBell from "./NotificationBell";
 
@@ -18,6 +20,7 @@ type Props = {
   isMenuOpen?: boolean;
   isGuest?: boolean;
   unreadNotificationCount: number;
+  unreadMessageCount?: number;
   notificationItems: NotificationFeedItem[];
   notificationUserId?: string | null;
 };
@@ -30,12 +33,15 @@ export default function MobileAppHeader({
   isMenuOpen = false,
   isGuest = false,
   unreadNotificationCount,
+  unreadMessageCount = 0,
   notificationItems,
   notificationUserId = null,
 }: Props) {
   const pathname = usePathname();
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const pageTitle = getPageTitle(pathname);
+  const chat = useOptionalChat();
+  const liveUnread = chat?.unreadCount ?? unreadMessageCount;
 
   return (
     <header className="fixed inset-x-0 top-0 z-40 divlab-shell-header lg:hidden">
@@ -80,6 +86,13 @@ export default function MobileAppHeader({
 
         {!isSearchExpanded && (
           <>
+            {chat ? (
+              <ChatLauncherButton
+                unreadCount={liveUnread}
+                pressed={chat.mobileLayer !== "closed"}
+                onClick={chat.openLauncher}
+              />
+            ) : null}
             <NotificationBell
               unreadCount={unreadNotificationCount}
               items={notificationItems}

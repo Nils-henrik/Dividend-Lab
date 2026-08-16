@@ -91,3 +91,39 @@ export async function changePasswordAction(
     message: "Ditt lösenord har uppdaterats.",
   };
 }
+
+export type ShareActiveStatusState = {
+  status: "idle" | "success" | "error";
+  message: string;
+  enabled: boolean;
+};
+
+export async function setShareActiveStatusAction(
+  enabled: boolean,
+): Promise<ShareActiveStatusState> {
+  await requireAuthenticatedUser();
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("set_share_active_status", {
+    p_enabled: enabled,
+  });
+
+  if (error) {
+    return {
+      status: "error",
+      message:
+        "Det gick inte att spara inställningen just nu. Försök igen om en stund.",
+      enabled: !enabled,
+    };
+  }
+
+  return {
+    status: "success",
+    message: enabled
+      ? "Dina kontakter kan se när du är aktiv."
+      : "Dina kontakter kan inte längre se när du är aktiv.",
+    enabled: Boolean(
+      (data as { share_active_status?: boolean } | null)?.share_active_status ??
+        enabled,
+    ),
+  };
+}

@@ -2,6 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import ChatExperience from "@/components/messages/chat/ChatExperience";
+import ChatProvider, {
+  useOptionalChat,
+} from "@/components/messages/chat/ChatProvider";
+import type { GlobalChatBootstrap } from "@/lib/messages/types";
 import type { NotificationFeedItem } from "@/lib/notifications/types";
 import type { UserDisplayIdentity } from "@/lib/profiles/identity";
 import { createClient } from "@/lib/supabase/client";
@@ -21,6 +26,7 @@ type Props = {
   notificationItems: NotificationFeedItem[];
   notificationUserId?: string | null;
   isGuest?: boolean;
+  chatBootstrap?: GlobalChatBootstrap | null;
 };
 
 export default function AppShellClient({
@@ -31,8 +37,40 @@ export default function AppShellClient({
   notificationItems,
   notificationUserId = null,
   isGuest = false,
+  chatBootstrap = null,
 }: Props) {
+  const frame = (
+    <AppShellFrame
+      user={user}
+      unreadMessageCount={unreadMessageCount}
+      unreadNotificationCount={unreadNotificationCount}
+      notificationItems={notificationItems}
+      notificationUserId={notificationUserId}
+      isGuest={isGuest}
+    >
+      {children}
+    </AppShellFrame>
+  );
+
+  if (isGuest || !chatBootstrap?.currentUserId) {
+    return frame;
+  }
+
+  return <ChatProvider bootstrap={chatBootstrap}>{frame}</ChatProvider>;
+}
+
+function AppShellFrame({
+  children,
+  user,
+  unreadMessageCount,
+  unreadNotificationCount,
+  notificationItems,
+  notificationUserId = null,
+  isGuest = false,
+}: Omit<Props, "chatBootstrap">) {
   const router = useRouter();
+  const chat = useOptionalChat();
+  const liveUnreadMessageCount = chat?.unreadCount ?? unreadMessageCount;
   const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isPointerInSidebarRef = useRef(false);
   const isPointerInTriggerRef = useRef(false);
@@ -130,7 +168,7 @@ export default function AppShellClient({
         onMouseEnter={handleSidebarEnter}
         onMouseLeave={handleSidebarLeave}
         onExpandSidebar={openSidebar}
-        unreadMessageCount={unreadMessageCount}
+        unreadMessageCount={liveUnreadMessageCount}
       />
       <MobileAppHeader
         user={user}
@@ -140,13 +178,14 @@ export default function AppShellClient({
         isMenuOpen={isMobileNavOpen}
         isGuest={isGuest}
         unreadNotificationCount={unreadNotificationCount}
+        unreadMessageCount={liveUnreadMessageCount}
         notificationItems={notificationItems}
         notificationUserId={notificationUserId}
       />
       <MobileNavDrawer
         isOpen={isMobileNavOpen}
         onClose={() => setIsMobileNavOpen(false)}
-        unreadMessageCount={unreadMessageCount}
+        unreadMessageCount={liveUnreadMessageCount}
       />
       <AppHeader
         user={user}
@@ -154,14 +193,16 @@ export default function AppShellClient({
         isLoggingOut={isLoggingOut}
         isSidebarCollapsed={isSidebarCollapsed}
         unreadNotificationCount={unreadNotificationCount}
+        unreadMessageCount={liveUnreadMessageCount}
         notificationItems={notificationItems}
         notificationUserId={notificationUserId}
         isGuest={isGuest}
       />
+      {chat ? <ChatExperience /> : null}
       <div
         className={`flex min-h-screen flex-col pt-16 transition-[padding] duration-[225ms] ease-in-out lg:pt-20 ${
           isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"
-        }`}
+        } ${chat?.isWideDesktop ? "xl:pr-72" : ""}`}
       >
         <div className="flex flex-1 flex-col px-4 py-4 lg:px-8 lg:py-8">
           <div className="min-w-0 flex-1">{children}</div>

@@ -5,6 +5,8 @@ import type { NotificationFeedItem } from "@/lib/notifications/types";
 import type { UserDisplayIdentity } from "@/lib/profiles/identity";
 import { getPageTitle } from "@/lib/constants/navigation";
 import { DIVLAB_BRAND_NAME } from "@/lib/site/brand";
+import ChatLauncherButton from "@/components/messages/chat/ChatLauncherButton";
+import { useOptionalChat } from "@/components/messages/chat/ChatProvider";
 import NotificationBell from "./NotificationBell";
 import ProfileDropdown from "./ProfileDropdown";
 import SearchBar from "./SearchBar";
@@ -15,6 +17,7 @@ type Props = {
   isLoggingOut: boolean;
   isSidebarCollapsed: boolean;
   unreadNotificationCount: number;
+  unreadMessageCount?: number;
   notificationItems: NotificationFeedItem[];
   notificationUserId?: string | null;
   isGuest?: boolean;
@@ -26,12 +29,15 @@ export default function AppHeader({
   isLoggingOut,
   isSidebarCollapsed,
   unreadNotificationCount,
+  unreadMessageCount = 0,
   notificationItems,
   notificationUserId = null,
   isGuest = false,
 }: Props) {
   const pathname = usePathname();
   const pageTitle = getPageTitle(pathname);
+  const chat = useOptionalChat();
+  const liveUnread = chat?.unreadCount ?? unreadMessageCount;
 
   return (
     <header
@@ -51,6 +57,13 @@ export default function AppHeader({
 
         <div className="flex items-center gap-3">
           <SearchBar />
+          {chat ? (
+            <ChatLauncherButton
+              unreadCount={liveUnread}
+              pressed={chat.desktopDrawerOpen}
+              onClick={chat.openLauncher}
+            />
+          ) : null}
           <NotificationBell
             unreadCount={unreadNotificationCount}
             items={notificationItems}
