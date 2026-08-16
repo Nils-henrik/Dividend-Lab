@@ -15,6 +15,7 @@ import {
   reduceMobileChatLayer,
   serializePersistedChatUiState,
   shouldCoverMainContent,
+  shouldSubmitChatComposerKey,
   sortChatContacts,
 } from "../lib/messages/chat-state";
 import { validateMessageBody } from "../lib/messages/validation";
@@ -203,6 +204,18 @@ describe("mobile overlay navigation", () => {
     assert.equal(backToInbox, "inbox");
     assert.equal(backToPage, "closed");
   });
+
+  it("exposes accepted contacts immediately in new-message mode", () => {
+    const result = filterChatSearch({
+      query: "",
+      chats: [summary({ id: "c1" })],
+      contacts: [contact({ userId: "ada", name: "Ada" })],
+      includeContactsWhenEmpty: true,
+    });
+
+    assert.equal(result.chats.length, 0);
+    assert.equal(result.contacts[0]?.userId, "ada");
+  });
 });
 
 describe("unread semantics", () => {
@@ -239,6 +252,47 @@ describe("unread semantics", () => {
       2,
     );
     assert.equal(formatUnreadChatBadgeLabel(1), "Meddelanden, 1 oläst konversation");
+  });
+});
+
+describe("composer keyboard behavior", () => {
+  it("submits plain Enter but not Shift+Enter", () => {
+    assert.equal(
+      shouldSubmitChatComposerKey({
+        key: "Enter",
+        shiftKey: false,
+        isComposing: false,
+      }),
+      true,
+    );
+    assert.equal(
+      shouldSubmitChatComposerKey({
+        key: "Enter",
+        shiftKey: true,
+        isComposing: false,
+      }),
+      false,
+    );
+  });
+
+  it("never submits Enter while an IME composition is active", () => {
+    assert.equal(
+      shouldSubmitChatComposerKey({
+        key: "Enter",
+        shiftKey: false,
+        isComposing: true,
+      }),
+      false,
+    );
+    assert.equal(
+      shouldSubmitChatComposerKey({
+        key: "Enter",
+        shiftKey: false,
+        isComposing: false,
+        keyCode: 229,
+      }),
+      false,
+    );
   });
 });
 
