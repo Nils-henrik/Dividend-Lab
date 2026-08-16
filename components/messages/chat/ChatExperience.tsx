@@ -40,6 +40,7 @@ export default function ChatExperience() {
             unreadByConversationId={chat.unreadByConversationId}
             railVisible={chat.isWideDesktop}
             drawerOpen={chat.desktopDrawerOpen}
+            visibleMinimizedCount={chat.visibleMinimizedCount}
             pendingConversationId={chat.pendingConversationId}
             sendErrorById={chat.sendErrorById}
             requestErrorById={chat.requestErrorById}

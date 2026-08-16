@@ -1,11 +1,15 @@
 "use client";
 
 import { useEffect, useId, useRef } from "react";
-import { CHAT_COMPOSER_EMOJIS } from "@/lib/messages/chat-composer";
+import {
+  CHAT_COMPOSER_EMOJIS,
+  shouldDismissEmojiPickerForPointerTarget,
+  type ChatEmojiPickerDismissReason,
+} from "@/lib/messages/chat-composer";
 
 type Props = {
   open: boolean;
-  onClose: () => void;
+  onClose: (reason: Exclude<ChatEmojiPickerDismissReason, "select">) => void;
   onSelect: (emoji: string) => void;
 };
 
@@ -21,12 +25,17 @@ export default function ChatEmojiPicker({ open, onClose, onSelect }: Props) {
 
     firstEmojiRef.current?.focus();
 
-    function handlePointerDown(event: MouseEvent) {
-      if (panelRef.current?.contains(event.target as Node)) {
+    function handlePointerDown(event: PointerEvent) {
+      if (
+        !shouldDismissEmojiPickerForPointerTarget({
+          target: event.target,
+          panel: panelRef.current,
+        })
+      ) {
         return;
       }
 
-      onClose();
+      onClose("outside");
     }
 
     function handleKeyDown(event: KeyboardEvent) {
@@ -36,14 +45,14 @@ export default function ChatEmojiPicker({ open, onClose, onSelect }: Props) {
 
       event.preventDefault();
       event.stopPropagation();
-      onClose();
+      onClose("escape");
     }
 
-    document.addEventListener("click", handlePointerDown);
+    document.addEventListener("pointerdown", handlePointerDown);
     document.addEventListener("keydown", handleKeyDown, true);
 
     return () => {
-      document.removeEventListener("click", handlePointerDown);
+      document.removeEventListener("pointerdown", handlePointerDown);
       document.removeEventListener("keydown", handleKeyDown, true);
     };
   }, [onClose, open]);
@@ -57,7 +66,6 @@ export default function ChatEmojiPicker({ open, onClose, onSelect }: Props) {
       ref={panelRef}
       data-chat-emoji-picker="true"
       role="dialog"
-      aria-modal="true"
       aria-labelledby={titleId}
       className="absolute bottom-full left-0 z-20 mb-2 w-[17.5rem] rounded-2xl border divlab-border-neutral bg-divlab-elevated p-3 shadow-[var(--divlab-shadow-panel)]"
     >

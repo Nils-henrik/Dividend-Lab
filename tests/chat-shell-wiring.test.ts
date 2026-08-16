@@ -89,7 +89,20 @@ describe("global chat shell wiring", () => {
     assert.match(bubble, /aktiv nu/);
     assert.match(dock, /getDesktopChatDockLayout/);
     assert.match(dock, /DesktopMinimizedChatBubble/);
+    assert.match(dock, /selectVisibleMinimizedWindows/);
     assert.doesNotMatch(windowSource, /max-w-\[9rem\] truncate/);
+  });
+
+  it("bounds visible minimized bubbles from the real minimized set instead of a hard-coded zero", () => {
+    const provider = read("components/messages/chat/ChatProvider.tsx");
+    const state = read("lib/messages/chat-state.ts");
+
+    assert.match(provider, /planDesktopChatDock/);
+    assert.match(provider, /visibleMinimizedCount/);
+    assert.doesNotMatch(provider, /minimizedCount:\s*0/);
+    assert.match(state, /getMaxVisibleMinimizedBubbles/);
+    assert.match(state, /selectVisibleMinimizedWindows/);
+    assert.doesNotMatch(state, /sessionStorage\.setItem\([^\)]*body/);
   });
 
   it("keeps the composer native with emoji insertion and no fake media controls", () => {
@@ -101,6 +114,13 @@ describe("global chat shell wiring", () => {
     assert.match(composer, /insertComposerText/);
     assert.match(composer, /aria-label="Skicka"/);
     assert.match(picker, /CHAT_COMPOSER_EMOJIS/);
+    assert.match(picker, /role="dialog"/);
+    assert.doesNotMatch(picker, /aria-modal/);
+    assert.match(picker, /onClose\("escape"\)/);
+    assert.match(picker, /onClose\("outside"\)/);
+    assert.match(picker, /firstEmojiRef/);
+    assert.match(composer, /shouldRestoreComposerFocusAfterEmojiPickerDismiss/);
+    assert.match(composer, /data-chat-emoji-trigger/);
     assert.match(helper, /insertComposerText/);
     assert.doesNotMatch(composer, /GIF|video|telefon|file upload|paperclip/i);
     assert.doesNotMatch(picker, /facebook|messenger|meta/i);

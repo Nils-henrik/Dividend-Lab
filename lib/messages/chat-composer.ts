@@ -94,3 +94,41 @@ export function insertComposerText(params: {
     caret: start + params.insert.length,
   };
 }
+
+export type ChatEmojiPickerDismissReason = "escape" | "outside" | "select";
+
+export function shouldRestoreComposerFocusAfterEmojiPickerDismiss(
+  reason: ChatEmojiPickerDismissReason,
+) {
+  return reason !== "outside";
+}
+
+export function shouldDismissEmojiPickerForPointerTarget(params: {
+  target: EventTarget | null;
+  panel: { contains(node: Node): boolean } | null;
+  triggerSelector?: string;
+}) {
+  const triggerSelector =
+    params.triggerSelector ?? "[data-chat-emoji-trigger='true']";
+  const target = params.target;
+
+  if (target == null) {
+    return true;
+  }
+
+  if (
+    params.panel &&
+    typeof (target as { nodeType?: unknown }).nodeType === "number" &&
+    params.panel.contains(target as Node)
+  ) {
+    return false;
+  }
+
+  const closest = (target as { closest?: (selector: string) => Element | null })
+    .closest;
+  if (typeof closest === "function" && closest.call(target, triggerSelector)) {
+    return false;
+  }
+
+  return true;
+}

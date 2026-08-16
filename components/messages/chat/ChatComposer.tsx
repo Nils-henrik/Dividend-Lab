@@ -4,7 +4,9 @@ import { useCallback, useRef, useState } from "react";
 import AppIcon from "@/components/layout/AppIcon";
 import {
   insertComposerText,
+  shouldRestoreComposerFocusAfterEmojiPickerDismiss,
   shouldSubmitChatComposerKey,
+  type ChatEmojiPickerDismissReason,
 } from "@/lib/messages/chat-composer";
 import { MESSAGE_BODY_MAX_LENGTH } from "@/lib/messages/types";
 import ChatEmojiPicker from "./ChatEmojiPicker";
@@ -45,14 +47,21 @@ export default function ChatComposer({
     };
   }, []);
 
-  const closeEmojiPicker = useCallback(() => {
-    setEmojiOpen(false);
-    window.requestAnimationFrame(() => {
-      textareaRef.current?.focus();
-      const { start, end } = selectionRef.current;
-      textareaRef.current?.setSelectionRange(start, end);
-    });
-  }, []);
+  const closeEmojiPicker = useCallback(
+    (reason: Exclude<ChatEmojiPickerDismissReason, "select">) => {
+      setEmojiOpen(false);
+      if (!shouldRestoreComposerFocusAfterEmojiPickerDismiss(reason)) {
+        return;
+      }
+
+      window.requestAnimationFrame(() => {
+        textareaRef.current?.focus();
+        const { start, end } = selectionRef.current;
+        textareaRef.current?.setSelectionRange(start, end);
+      });
+    },
+    [],
+  );
 
   function insertEmoji(emoji: string) {
     const next = insertComposerText({
@@ -109,6 +118,7 @@ export default function ChatComposer({
         <div className="relative">
           <button
             type="button"
+            data-chat-emoji-trigger="true"
             aria-label="Öppna emoji"
             aria-haspopup="dialog"
             aria-expanded={emojiOpen}

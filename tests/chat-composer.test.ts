@@ -3,6 +3,8 @@ import { describe, it } from "node:test";
 import {
   CHAT_COMPOSER_EMOJIS,
   insertComposerText,
+  shouldDismissEmojiPickerForPointerTarget,
+  shouldRestoreComposerFocusAfterEmojiPickerDismiss,
   shouldSubmitChatComposerKey,
 } from "../lib/messages/chat-composer";
 import { validateMessageBody } from "../lib/messages/validation";
@@ -109,6 +111,61 @@ describe("chat composer emoji insertion", () => {
     assert.equal(
       CHAT_COMPOSER_EMOJIS.some((emoji) => /[A-Za-z]/.test(emoji)),
       false,
+    );
+  });
+});
+
+describe("chat emoji picker dismiss contract", () => {
+  it("restores composer focus after Escape or select, but not after an outside click", () => {
+    assert.equal(shouldRestoreComposerFocusAfterEmojiPickerDismiss("escape"), true);
+    assert.equal(shouldRestoreComposerFocusAfterEmojiPickerDismiss("select"), true);
+    assert.equal(shouldRestoreComposerFocusAfterEmojiPickerDismiss("outside"), false);
+  });
+
+  it("does not treat the picker panel or emoji trigger as an outside dismiss", () => {
+    const inside = { nodeType: 1 };
+    const panel = {
+      contains(node: Node) {
+        return node === (inside as unknown as Node);
+      },
+    };
+
+    assert.equal(
+      shouldDismissEmojiPickerForPointerTarget({
+        target: inside as unknown as EventTarget,
+        panel,
+      }),
+      false,
+    );
+    assert.equal(
+      shouldDismissEmojiPickerForPointerTarget({
+        target: {
+          closest(selector: string) {
+            return selector.includes("data-chat-emoji-trigger")
+              ? ({} as Element)
+              : null;
+          },
+        } as EventTarget,
+        panel: { contains: () => false },
+      }),
+      false,
+    );
+    assert.equal(
+      shouldDismissEmojiPickerForPointerTarget({
+        target: {
+          nodeType: 1,
+          closest: () => null,
+        } as unknown as EventTarget,
+        panel: { contains: () => false },
+      }),
+      true,
+    );
+    assert.equal(
+      shouldDismissEmojiPickerForPointerTarget({
+        target: null,
+        panel: null,
+      }),
+      true,
     );
   });
 });

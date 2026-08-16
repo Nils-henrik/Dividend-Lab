@@ -1,6 +1,10 @@
 "use client";
 
-import { getDesktopChatDockLayout, type DesktopChatWindowState } from "@/lib/messages/chat-state";
+import {
+  getDesktopChatDockLayout,
+  selectVisibleMinimizedWindows,
+  type DesktopChatWindowState,
+} from "@/lib/messages/chat-state";
 import type { ConversationThread, PresenceView } from "@/lib/messages/types";
 import DesktopChatWindow from "./DesktopChatWindow";
 import DesktopMinimizedChatBubble from "./DesktopMinimizedChatBubble";
@@ -13,6 +17,7 @@ type Props = {
   unreadByConversationId: Record<string, boolean>;
   railVisible: boolean;
   drawerOpen?: boolean;
+  visibleMinimizedCount: number;
   pendingConversationId?: string | null;
   sendErrorById?: Record<string, string>;
   requestErrorById?: Record<string, string>;
@@ -37,6 +42,7 @@ export default function DesktopChatDock({
   unreadByConversationId,
   railVisible,
   drawerOpen = false,
+  visibleMinimizedCount,
   pendingConversationId,
   sendErrorById = {},
   requestErrorById = {},
@@ -50,7 +56,10 @@ export default function DesktopChatDock({
   onDeclineRequest,
 }: Props) {
   const openWindows = windows.filter((windowState) => !windowState.minimized);
-  const minimizedWindows = windows.filter((windowState) => windowState.minimized);
+  const minimizedWindows = selectVisibleMinimizedWindows(
+    windows,
+    visibleMinimizedCount,
+  );
   const layout = getDesktopChatDockLayout({
     railVisible,
     drawerOpen,

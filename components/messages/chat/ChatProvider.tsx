@@ -23,15 +23,14 @@ import {
   applyIncomingUnread,
   CHAT_HISTORY_STATE_KEY,
   CHAT_WINDOW_STORAGE_KEY,
+  DESKTOP_APP_SIDEBAR_WIDTH,
   DESKTOP_CHAT_MIN_VIEWPORT,
   DESKTOP_RAIL_MIN_VIEWPORT,
-  getDesktopChatReservedRightWidth,
-  getMaxOpenDesktopWindows,
   markConversationUnreadCleared,
   openDesktopWindow,
   parsePersistedChatUiState,
   persistedStateContainsTranscript,
-  reconcileDesktopWindows,
+  planDesktopChatDock,
   reduceMobileChatLayer,
   resolveDesktopChatLauncherIntent,
   serializePersistedChatUiState,
@@ -67,6 +66,7 @@ type ChatContextValue = {
   presenceByUserId: Record<string, PresenceView>;
   realtimeStatus: "connecting" | "connected" | "disconnected";
   windows: DesktopChatWindowState[];
+  visibleMinimizedCount: number;
   threads: Record<string, ConversationThread>;
   isWideDesktop: boolean;
   isDesktop: boolean;
@@ -212,19 +212,20 @@ export default function ChatProvider({ bootstrap, children }: Props) {
 
   const isDesktop = viewportWidth >= DESKTOP_CHAT_MIN_VIEWPORT;
   const isWideDesktop = viewportWidth >= DESKTOP_RAIL_MIN_VIEWPORT;
-  const maxOpenWindows = getMaxOpenDesktopWindows({
-    viewportWidth,
-    sidebarWidth: 80,
-    railVisible: isWideDesktop,
-    reservedRightWidth: getDesktopChatReservedRightWidth({
-      drawerOpen: desktopDrawerOpen,
-      minimizedCount: 0,
-    }),
-  });
-  const dockWindows = useMemo(
-    () => reconcileDesktopWindows(windows, maxOpenWindows),
-    [maxOpenWindows, windows],
+  const desktopDockPlan = useMemo(
+    () =>
+      planDesktopChatDock({
+        windows,
+        viewportWidth,
+        sidebarWidth: DESKTOP_APP_SIDEBAR_WIDTH,
+        railVisible: isWideDesktop,
+        drawerOpen: desktopDrawerOpen,
+      }),
+    [desktopDrawerOpen, isWideDesktop, viewportWidth, windows],
   );
+  const maxOpenWindows = desktopDockPlan.maxOpenWindows;
+  const dockWindows = desktopDockPlan.windows;
+  const visibleMinimizedCount = desktopDockPlan.visibleMinimizedCount;
 
   const presenceByUserId = useMemo(
     () =>
@@ -915,6 +916,7 @@ export default function ChatProvider({ bootstrap, children }: Props) {
       presenceByUserId,
       realtimeStatus,
       windows: dockWindows,
+      visibleMinimizedCount,
       threads,
       isWideDesktop,
       isDesktop,
@@ -970,6 +972,7 @@ export default function ChatProvider({ bootstrap, children }: Props) {
       desktopDrawerOpen,
       dockWindows,
       ignoreRequest,
+      visibleMinimizedCount,
       isDesktop,
       isWideDesktop,
       maxOpenWindows,
