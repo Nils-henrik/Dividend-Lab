@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type SearchResult = {
   yahooSymbol: string;
@@ -14,9 +14,18 @@ type SearchResult = {
   unsupportedReason: string | null;
 };
 
+type MethodologyPreflight = {
+  status?: string;
+  supported?: boolean;
+  companyType?: string | null;
+  methodologyStatus?: string | null;
+  message?: string;
+};
+
 type RunResult = {
   status?: string;
   reason?: string;
+  message?: string;
   publicPath?: string | null;
   researchQuality?: number;
   analystQuality?: number;
@@ -32,17 +41,52 @@ function kindLabel(kind: SearchResult["kind"]): string {
   return "Instrument";
 }
 
+function runStatusLabel(status: string | undefined): string {
+  if (status === "published") return "Publicerad";
+  if (status === "persisted") return "Sparad";
+  if (status === "ready") return "Klar";
+  if (status === "research_failed") return "Research stoppades";
+  if (status === "methodology_failed" || status === "methodology_not_supported") {
+    return "Metodik saknas";
+  }
+  if (status === "analyst_failed") return "Analysmotorn stoppades";
+  if (status === "analyst_quality_failed" || status === "research_quality_failed") {
+    return "Kvalitetsgrinden stoppade analysen";
+  }
+  if (status === "failed") return "Analysen stoppades";
+  return status ? "Analysen stoppades" : "Okänt resultat";
+}
+
+function friendlyRunError(payload: RunResult): string {
+  if (payload.message?.trim()) return payload.message;
+  if (payload.reason === "fundamental_methodology_not_supported") {
+    return "Bolagstypen kräver en separat fundamental metodik. DivLab startar inte en analys med fel värderingsmodell.";
+  }
+  if (payload.status === "research_failed") {
+    return "Research-underlaget nådde inte hela vägen fram. Ingen analys publicerades.";
+  }
+  if (payload.status === "analyst_quality_failed" || payload.status === "research_quality_failed") {
+    return "Analysen klarade inte DivLabs kvalitetsgrind och publicerades därför inte.";
+  }
+  return "Analysen stoppades av motorn. Ingen ofullständig analys publicerades.";
+}
+
 export default function AnalysisCreator() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [selected, setSelected] = useState<SearchResult | null>(null);
+  const [preflight, setPreflight] = useState<MethodologyPreflight | null>(null);
   const [searching, setSearching] = useState(false);
+  const [preflighting, setPreflighting] = useState(false);
   const [running, setRunning] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [runResult, setRunResult] = useState<RunResult | null>(null);
+  const preflightRequestRef = useRef(0);
 
   const normalizedQuery = query.trim();
-  const canRun = Boolean(selected?.supported && !running);
+  const canRun = Boolean(
+    selected?.supported && preflight?.supported && !preflighting && !running,
+  );
 
   useEffect(() => {
     if (normalizedQuery.length < 2) return;
@@ -84,8 +128,48 @@ export default function AnalysisCreator() {
     return `${selected.name} · ${selected.yahooSymbol}`;
   }, [selected]);
 
+  async function selectResult(result: SearchResult) {
+    const requestId = preflightRequestRef.current + 1;
+    preflightRequestRef.current = requestId;
+    setSelected(result);
+    setPreflight(null);
+    setRunResult(null);
+    setMessage(null);
+    setPreflighting(false);
+
+    if (!result.supported) return;
+
+    setPreflighting(true);
+    try {
+      const params = new URLSearchParams({
+        symbol: result.symbol,
+        exchange: result.exchange,
+      });
+      const response = await fetch(`/api/internal/analysis/preflight?${params.toString()}`, {
+        cache: "no-store",
+      });
+      const payload = (await response.json().catch(() => ({}))) as MethodologyPreflight;
+      if (requestId !== preflightRequestRef.current) return;
+      if (!response.ok) {
+        setPreflight(null);
+        setMessage(
+          payload.message ??
+            "DivLab kunde inte verifiera bolagstyp och metodik just nu. Försök igen om en stund.",
+        );
+        return;
+      }
+      setPreflight(payload);
+    } catch {
+      if (requestId !== preflightRequestRef.current) return;
+      setPreflight(null);
+      setMessage("Kunde inte verifiera bolagsmetodiken just nu. Ingen analys startades.");
+    } finally {
+      if (requestId === preflightRequestRef.current) setPreflighting(false);
+    }
+  }
+
   async function runAnalysis() {
-    if (!selected?.supported || running) return;
+    if (!selected?.supported || !preflight?.supported || running) return;
     setRunning(true);
     setMessage(null);
     setRunResult(null);
@@ -103,7 +187,7 @@ export default function AnalysisCreator() {
       const payload = (await response.json().catch(() => ({}))) as RunResult;
       setRunResult(payload);
       if (!response.ok) {
-        setMessage(payload.reason ?? payload.status ?? "Analysen stoppades av motorn.");
+        setMessage(friendlyRunError(payload));
       }
     } catch {
       setMessage("Kunde inte starta analysmotorn.");
@@ -121,7 +205,7 @@ export default function AnalysisCreator() {
             Sök bolag eller marknadsindex
           </h2>
           <p className="mt-3 text-sm leading-6 text-slate-500 sm:text-base">
-            Skriv namn eller ticker, till exempel Atlas Copco, EVO eller OMXS30. Nordiska aktier kan köras genom hela bolagsmotorn. Index visas separat tills indexmetodiken är verifierad.
+            Skriv namn eller ticker, till exempel Atlas Copco, EVO eller OMXS30. Nordiska aktier verifieras mot rätt bolagsmetodik innan Deep Research startar. Index visas separat tills indexmetodiken är verifierad.
           </p>
         </div>
       </div>
@@ -135,8 +219,11 @@ export default function AnalysisCreator() {
             value={query}
             onChange={(event) => {
               const nextQuery = event.target.value;
+              preflightRequestRef.current += 1;
               setQuery(nextQuery);
               setSelected(null);
+              setPreflight(null);
+              setPreflighting(false);
               setRunResult(null);
               setMessage(null);
               if (nextQuery.trim().length < 2) {
@@ -162,11 +249,7 @@ export default function AnalysisCreator() {
                   <button
                     key={`${result.yahooSymbol}-${result.kind}`}
                     type="button"
-                    onClick={() => {
-                      setSelected(result);
-                      setMessage(result.supported ? null : result.unsupportedReason);
-                      setRunResult(null);
-                    }}
+                    onClick={() => void selectResult(result)}
                     className={`flex w-full items-start justify-between gap-4 border-b border-white/10 px-4 py-4 text-left transition last:border-b-0 ${
                       isSelected ? "bg-blue-400/[0.07]" : "hover:bg-white/[0.025]"
                     }`}
@@ -177,8 +260,8 @@ export default function AnalysisCreator() {
                         {result.yahooSymbol} · {kindLabel(result.kind)}{result.currency ? ` · ${result.currency}` : ""}
                       </span>
                     </span>
-                    <span className={`shrink-0 text-xs font-semibold ${result.supported ? "text-emerald-300" : "text-slate-600"}`}>
-                      {result.supported ? "Kan analyseras" : "Separat metodik"}
+                    <span className={`shrink-0 text-xs font-semibold ${result.supported ? "text-blue-300/80" : "text-slate-600"}`}>
+                      {result.supported ? "Verifieras vid val" : "Separat metodik"}
                     </span>
                   </button>
                 );
@@ -197,6 +280,18 @@ export default function AnalysisCreator() {
             <div className="mt-1 font-medium text-slate-200">{selectedLabel}</div>
             {!selected.supported && selected.unsupportedReason ? (
               <p className="mt-2 max-w-3xl text-sm leading-6 text-amber-200/80">{selected.unsupportedReason}</p>
+            ) : preflighting ? (
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-blue-200/80">
+                Verifierar bolagstyp och fundamental metodik…
+              </p>
+            ) : preflight?.supported ? (
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-emerald-300/90">
+                Metodik verifierad · Kan analyseras
+              </p>
+            ) : preflight?.message ? (
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-amber-200/80">
+                {preflight.message}
+              </p>
             ) : null}
           </div>
           <button
@@ -205,7 +300,7 @@ export default function AnalysisCreator() {
             disabled={!canRun}
             className="shrink-0 border border-blue-400/45 px-5 py-3 text-sm font-semibold text-blue-200 transition hover:bg-blue-400/10 disabled:cursor-not-allowed disabled:border-white/10 disabled:text-slate-700"
           >
-            {running ? "Deep Research kör…" : "Skapa & publicera analys"}
+            {preflighting ? "Verifierar metodik…" : running ? "Deep Research kör…" : "Skapa & publicera analys"}
           </button>
         </div>
       ) : null}
@@ -216,7 +311,7 @@ export default function AnalysisCreator() {
         <div className="mt-5 border-t border-white/12 pt-5">
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
             <span className={runResult.status === "published" ? "font-semibold text-emerald-300" : "font-semibold text-amber-300"}>
-              {runResult.status ?? "okänt resultat"}
+              {runStatusLabel(runResult.status)}
             </span>
             <span className="text-slate-500">Research {runResult.researchQuality ?? "—"}/100</span>
             <span className="text-slate-500">Analyst {runResult.analystQuality ?? "—"}/100</span>
