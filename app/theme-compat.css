@@ -147,8 +147,10 @@
   color: #b91c1c;
 }
 
-:root[data-theme="light"] .divlab-card :is(h1, h2, h3, h4, p, dt, dd, span).text-white,
-:root[data-theme="light"] .divlab-surface-panel :is(h1, h2, h3, h4, p, dt, dd, span).text-white {
+:root[data-theme="light"] .divlab-card :is(h1, h2, h3, h4, p, dt, dd).text-white,
+:root[data-theme="light"] .divlab-surface-panel :is(h1, h2, h3, h4, p, dt, dd).text-white,
+:root[data-theme="light"] .divlab-card span.text-white:not([class*="bg-"]),
+:root[data-theme="light"] .divlab-surface-panel span.text-white:not([class*="bg-"]) {
   color: var(--divlab-text);
 }
 
@@ -171,8 +173,10 @@
   background-color: var(--divlab-elevated);
 }
 
-:root[data-theme="light"] [class~="bg-[#111111]/85"] :is(h1, h2, h3, h4, p, dt, dd, span).text-white,
-:root[data-theme="light"] [class~="bg-[#161616]"] :is(h1, h2, h3, h4, p, dt, dd, span).text-white {
+:root[data-theme="light"] [class~="bg-[#111111]/85"] :is(h1, h2, h3, h4, p, dt, dd).text-white,
+:root[data-theme="light"] [class~="bg-[#161616]"] :is(h1, h2, h3, h4, p, dt, dd).text-white,
+:root[data-theme="light"] [class~="bg-[#111111]/85"] span.text-white:not([class*="bg-"]),
+:root[data-theme="light"] [class~="bg-[#161616]"] span.text-white:not([class*="bg-"]) {
   color: var(--divlab-text);
 }
 
