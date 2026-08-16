@@ -86,7 +86,7 @@ export default async function AnalysesPage() {
           <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 border-y border-white/10 py-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
             <span>Fundamental analys</span>
             <span>Teknisk analys</span>
-            <span>Stöd &amp; motstånd</span>
+            <span>Stöd & motstånd</span>
             <span>Bear / Base / Bull</span>
             <span>Verifierade källor</span>
           </div>
