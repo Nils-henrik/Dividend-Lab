@@ -1,9 +1,60 @@
+import { MESSAGE_BODY_MAX_LENGTH } from "./types";
+
 export type ChatComposerKeyIntent = {
   key: string;
   shiftKey: boolean;
   isComposing: boolean;
   keyCode?: number;
 };
+
+export const CHAT_COMPOSER_EMOJIS = [
+  "😀",
+  "😃",
+  "😄",
+  "😁",
+  "😊",
+  "🙂",
+  "😉",
+  "😍",
+  "😘",
+  "😎",
+  "🤔",
+  "😮",
+  "😅",
+  "😆",
+  "😂",
+  "😢",
+  "😭",
+  "😡",
+  "👍",
+  "👎",
+  "👏",
+  "🙌",
+  "🙏",
+  "💪",
+  "🤝",
+  "🔥",
+  "❤️",
+  "💙",
+  "💚",
+  "🎉",
+  "✨",
+  "⭐",
+  "💯",
+  "✅",
+  "❌",
+  "📈",
+  "📉",
+  "💰",
+  "🏦",
+  "☕",
+  "🏠",
+  "🌞",
+  "🌙",
+  "⚡",
+  "💡",
+  "📌",
+] as const;
 
 /**
  * Enter sends only when the user is not composing an IME candidate.
@@ -19,4 +70,27 @@ export function shouldSubmitChatComposerKey(
     !intent.isComposing &&
     intent.keyCode !== 229
   );
+}
+
+export function insertComposerText(params: {
+  value: string;
+  insert: string;
+  selectionStart: number;
+  selectionEnd: number;
+  maxLength?: number;
+}): { value: string; caret: number } {
+  const maxLength = params.maxLength ?? MESSAGE_BODY_MAX_LENGTH;
+  const valueLength = params.value.length;
+  const start = Math.max(0, Math.min(params.selectionStart, valueLength));
+  const end = Math.max(start, Math.min(params.selectionEnd, valueLength));
+  const next = `${params.value.slice(0, start)}${params.insert}${params.value.slice(end)}`;
+
+  if (next.length > maxLength) {
+    return { value: params.value, caret: end };
+  }
+
+  return {
+    value: next,
+    caret: start + params.insert.length,
+  };
 }

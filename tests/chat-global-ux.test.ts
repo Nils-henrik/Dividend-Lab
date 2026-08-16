@@ -3,9 +3,15 @@ import { describe, it } from "node:test";
 import {
   applyIncomingUnread,
   countUnread,
+  DESKTOP_CHAT_DRAWER_WIDTH,
+  DESKTOP_CHAT_WINDOW_GAP,
+  DESKTOP_MINIMIZED_BUBBLE_GAP,
+  DESKTOP_MINIMIZED_BUBBLE_SIZE,
+  DESKTOP_RAIL_WIDTH,
   filterAcceptedContacts,
   filterChatSearch,
   formatUnreadChatBadgeLabel,
+  getDesktopChatDockLayout,
   getMaxOpenDesktopWindows,
   listMobileInboxResults,
   markConversationUnreadCleared,
@@ -14,6 +20,7 @@ import {
   persistedStateContainsTranscript,
   reconcileDesktopWindows,
   reduceMobileChatLayer,
+  resolveDesktopChatLauncherIntent,
   serializePersistedChatUiState,
   shouldCoverMainContent,
   sortChatContacts,
@@ -100,6 +107,50 @@ describe("contact rail membership", () => {
       sorted.map((item) => item.userId),
       ["online", "recent", "offline"],
     );
+  });
+});
+
+describe("desktop launcher and dock layout", () => {
+  it("toggles the inbox panel on every desktop width instead of opening a conversation", () => {
+    assert.equal(resolveDesktopChatLauncherIntent(true), "toggleInbox");
+    assert.equal(resolveDesktopChatLauncherIntent(false), "openMobileInbox");
+  });
+
+  it("keeps minimized bubbles and the inbox panel clear of the contacts rail", () => {
+    const withRail = getDesktopChatDockLayout({
+      railVisible: true,
+      drawerOpen: true,
+      openWindowCount: 1,
+      minimizedCount: 2,
+    });
+
+    assert.ok(withRail.drawerRight >= DESKTOP_RAIL_WIDTH);
+    assert.equal(
+      withRail.minimizedRights[0],
+      withRail.drawerRight + DESKTOP_CHAT_DRAWER_WIDTH + DESKTOP_CHAT_WINDOW_GAP,
+    );
+    assert.equal(
+      withRail.minimizedRights[1],
+      (withRail.minimizedRights[0] ?? 0) +
+        DESKTOP_MINIMIZED_BUBBLE_SIZE +
+        DESKTOP_MINIMIZED_BUBBLE_GAP,
+    );
+    assert.ok((withRail.openWindowRights[0] ?? 0) > (withRail.minimizedRights[1] ?? 0));
+    assert.ok(
+      (withRail.minimizedRights[1] ?? 0) - (withRail.minimizedRights[0] ?? 0) < 80,
+    );
+  });
+
+  it("docks bubbles at the compact desktop edge when the rail is hidden", () => {
+    const compact = getDesktopChatDockLayout({
+      railVisible: false,
+      drawerOpen: false,
+      openWindowCount: 1,
+      minimizedCount: 1,
+    });
+
+    assert.ok((compact.minimizedRights[0] ?? 0) < DESKTOP_RAIL_WIDTH);
+    assert.ok((compact.openWindowRights[0] ?? 0) > (compact.minimizedRights[0] ?? 0));
   });
 });
 
