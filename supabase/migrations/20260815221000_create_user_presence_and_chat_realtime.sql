@@ -10,7 +10,8 @@
 -- Privacy:
 --   last_seen_at is NOT stored on public.profiles
 --   Only the owner and accepted contacts may read a presence row
---   Contacts see a row only when share_active_status is true
+--   When sharing is disabled, accepted contacts can still read the row so
+--   realtime can invalidate stale UI, but last_seen_at is forced to NULL
 --   Anonymous and unrelated authenticated users cannot select or subscribe
 --
 -- Realtime publication is limited to messages + user_presence.
@@ -18,7 +19,7 @@
 
 create table if not exists public.user_presence (
   user_id uuid primary key references auth.users(id) on delete cascade,
-  last_seen_at timestamptz not null default now(),
+  last_seen_at timestamptz default now(),
   share_active_status boolean not null default true,
   updated_at timestamptz not null default now()
 );
@@ -43,10 +44,7 @@ create policy "Users can read own or accepted-contact presence"
   to authenticated
   using (
     user_id = (select auth.uid())
-    or (
-      share_active_status = true
-      and public._are_accepted_contacts_internal((select auth.uid()), user_id)
-    )
+    or public._are_accepted_contacts_internal((select auth.uid()), user_id)
   );
 
 -- No client writes. Heartbeat and the privacy toggle go through RPCs.
@@ -79,12 +77,13 @@ begin
     true
   )
   on conflict (user_id) do update
-    set
-      last_seen_at = case
-        when presence.last_seen_at < now() - interval '20 seconds'
-          then now()
-        else presence.last_seen_at
-      end
+    set last_seen_at = case
+      when presence.share_active_status = false then null
+      when presence.last_seen_at is null
+        or presence.last_seen_at < now() - interval '20 seconds'
+        then now()
+      else presence.last_seen_at
+    end
   returning * into result_row;
 
   return result_row;
@@ -103,6 +102,7 @@ set search_path = public
 as $$
 declare
   acting_user_id uuid := auth.uid();
+  desired_enabled boolean := coalesce(p_enabled, true);
   result_row public.user_presence;
 begin
   if acting_user_id is null then
@@ -116,11 +116,13 @@ begin
   )
   values (
     acting_user_id,
-    now(),
-    coalesce(p_enabled, true)
+    case when desired_enabled then now() else null end,
+    desired_enabled
   )
   on conflict (user_id) do update
-    set share_active_status = excluded.share_active_status
+    set
+      share_active_status = desired_enabled,
+      last_seen_at = case when desired_enabled then now() else null end
   returning * into result_row;
 
   return result_row;
