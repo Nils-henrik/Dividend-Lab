@@ -3,7 +3,12 @@
 import { useMemo, useState } from "react";
 import ProfileAvatar from "@/components/account/ProfileAvatar";
 import AppIcon from "@/components/layout/AppIcon";
-import { filterChatSearch, sortChatContacts } from "@/lib/messages/chat-state";
+import {
+  DESKTOP_CHAT_DRAWER_WIDTH,
+  filterChatSearch,
+  getDesktopChatDockOrigin,
+  sortChatContacts,
+} from "@/lib/messages/chat-state";
 import { formatMessageTimestamp } from "@/lib/messages/format";
 import { DIVLAB_MEMBER_LABEL } from "@/lib/site/brand";
 import type {
@@ -15,6 +20,7 @@ import PresenceIndicator from "./PresenceIndicator";
 
 type Props = {
   open: boolean;
+  railVisible?: boolean;
   contacts: ChatContact[];
   chats: ConversationSummary[];
   requests: ConversationSummary[];
@@ -26,6 +32,7 @@ type Props = {
 
 export default function DesktopChatDrawer({
   open,
+  railVisible = false,
   contacts,
   chats,
   requests,
@@ -50,7 +57,13 @@ export default function DesktopChatDrawer({
   }
 
   return (
-    <div className="fixed bottom-4 right-4 z-40 hidden w-[22rem] overflow-hidden rounded-2xl border divlab-border-neutral bg-divlab-card shadow-[var(--divlab-shadow-panel)] lg:block xl:hidden">
+    <div
+      className="fixed bottom-4 z-40 hidden overflow-hidden rounded-2xl border divlab-border-neutral bg-divlab-card shadow-[var(--divlab-shadow-panel)] lg:block"
+      style={{
+        right: getDesktopChatDockOrigin(railVisible),
+        width: DESKTOP_CHAT_DRAWER_WIDTH,
+      }}
+    >
       <div className="flex items-center justify-between border-b divlab-border-neutral px-4 py-3">
         <p className="text-sm font-semibold text-divlab-text">Chattar</p>
         <button

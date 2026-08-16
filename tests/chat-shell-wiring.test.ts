@@ -59,6 +59,74 @@ describe("global chat shell wiring", () => {
     assert.doesNotMatch(state, /sessionStorage\.setItem\([^\)]*body/);
   });
 
+  it("toggles a desktop inbox panel on lg and xl instead of opening the first chat", () => {
+    const provider = read("components/messages/chat/ChatProvider.tsx");
+    const drawer = read("components/messages/chat/DesktopChatDrawer.tsx");
+    const header = read("components/layout/AppHeader.tsx");
+    const launcher = read("components/messages/chat/ChatLauncherButton.tsx");
+
+    assert.match(provider, /resolveDesktopChatLauncherIntent\(isDesktop\)/);
+    assert.match(provider, /setDesktopDrawerOpen\(\(open\) => !open\)/);
+    assert.doesNotMatch(
+      provider,
+      /isWideDesktop[\s\S]{0,180}unreadChat/,
+    );
+    assert.match(drawer, /lg:block/);
+    assert.doesNotMatch(drawer, /xl:hidden/);
+    assert.match(header, /pressed=\{chat\.desktopDrawerOpen\}/);
+    assert.match(launcher, /aria-pressed=\{pressed\}/);
+    assert.match(launcher, /divlab-selected/);
+  });
+
+  it("renders minimized chats as circular avatar bubbles with restore labels", () => {
+    const bubble = read("components/messages/chat/DesktopMinimizedChatBubble.tsx");
+    const dock = read("components/messages/chat/DesktopChatDock.tsx");
+    const windowSource = read("components/messages/chat/DesktopChatWindow.tsx");
+
+    assert.match(bubble, /rounded-full/);
+    assert.match(bubble, /Återställ chatt med/);
+    assert.match(bubble, /oläst konversation/);
+    assert.match(bubble, /aktiv nu/);
+    assert.match(dock, /getDesktopChatDockLayout/);
+    assert.match(dock, /DesktopMinimizedChatBubble/);
+    assert.match(dock, /selectVisibleMinimizedWindows/);
+    assert.doesNotMatch(windowSource, /max-w-\[9rem\] truncate/);
+  });
+
+  it("bounds visible minimized bubbles from the real minimized set instead of a hard-coded zero", () => {
+    const provider = read("components/messages/chat/ChatProvider.tsx");
+    const state = read("lib/messages/chat-state.ts");
+
+    assert.match(provider, /planDesktopChatDock/);
+    assert.match(provider, /visibleMinimizedCount/);
+    assert.doesNotMatch(provider, /minimizedCount:\s*0/);
+    assert.match(state, /getMaxVisibleMinimizedBubbles/);
+    assert.match(state, /selectVisibleMinimizedWindows/);
+    assert.doesNotMatch(state, /sessionStorage\.setItem\([^\)]*body/);
+  });
+
+  it("keeps the composer native with emoji insertion and no fake media controls", () => {
+    const composer = read("components/messages/chat/ChatComposer.tsx");
+    const picker = read("components/messages/chat/ChatEmojiPicker.tsx");
+    const helper = read("lib/messages/chat-composer.ts");
+
+    assert.match(composer, /Öppna emoji/);
+    assert.match(composer, /insertComposerText/);
+    assert.match(composer, /aria-label="Skicka"/);
+    assert.match(picker, /CHAT_COMPOSER_EMOJIS/);
+    assert.match(picker, /role="dialog"/);
+    assert.doesNotMatch(picker, /aria-modal/);
+    assert.match(picker, /onClose\("escape"\)/);
+    assert.match(picker, /onClose\("outside"\)/);
+    assert.match(picker, /firstEmojiRef/);
+    assert.match(composer, /shouldRestoreComposerFocusAfterEmojiPickerDismiss/);
+    assert.match(composer, /data-chat-emoji-trigger/);
+    assert.match(helper, /insertComposerText/);
+    assert.doesNotMatch(composer, /GIF|video|telefon|file upload|paperclip/i);
+    assert.doesNotMatch(picker, /facebook|messenger|meta/i);
+    assert.doesNotMatch(composer, /facebook|messenger|meta/i);
+  });
+
   it("keeps ChatComposer IME-safe and does not regress the full-page composer", () => {
     const overlay = read("components/messages/chat/ChatComposer.tsx");
     const helper = read("lib/messages/chat-composer.ts");

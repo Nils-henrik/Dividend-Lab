@@ -67,7 +67,7 @@ export default function ConversationPane({
         compact={compact}
       />
 
-      <div className="border-t divlab-border-neutral bg-divlab-surface px-3 py-3">
+      <div className={`border-t divlab-border-neutral bg-divlab-surface ${compact ? "px-2 py-2" : "px-3 py-3"}`}>
         {conversation.isMessageRequestRecipient ||
         conversation.isPendingRequestSender ? (
           <ChatRequestBar

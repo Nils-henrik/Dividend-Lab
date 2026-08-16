@@ -23,6 +23,7 @@ export default function ChatExperience() {
         <>
           <DesktopChatDrawer
             open={chat.desktopDrawerOpen}
+            railVisible={chat.isWideDesktop}
             contacts={chat.contacts}
             chats={chat.chats}
             requests={chat.requests}
@@ -38,6 +39,8 @@ export default function ChatExperience() {
             presenceByUserId={chat.presenceByUserId}
             unreadByConversationId={chat.unreadByConversationId}
             railVisible={chat.isWideDesktop}
+            drawerOpen={chat.desktopDrawerOpen}
+            visibleMinimizedCount={chat.visibleMinimizedCount}
             pendingConversationId={chat.pendingConversationId}
             sendErrorById={chat.sendErrorById}
             requestErrorById={chat.requestErrorById}

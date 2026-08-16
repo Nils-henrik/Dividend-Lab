@@ -3,17 +3,29 @@ import { describe, it } from "node:test";
 import {
   applyIncomingUnread,
   countUnread,
+  DESKTOP_APP_SIDEBAR_WIDTH,
+  DESKTOP_CHAT_DRAWER_WIDTH,
+  DESKTOP_CHAT_WINDOW_GAP,
+  DESKTOP_MINIMIZED_BUBBLE_GAP,
+  DESKTOP_MINIMIZED_BUBBLE_SIZE,
+  DESKTOP_RAIL_MIN_VIEWPORT,
+  DESKTOP_RAIL_WIDTH,
   filterAcceptedContacts,
   filterChatSearch,
   formatUnreadChatBadgeLabel,
+  getDesktopChatDockLayout,
+  getDesktopChatDockOccupiedRightSpan,
   getMaxOpenDesktopWindows,
   listMobileInboxResults,
   markConversationUnreadCleared,
   openDesktopWindow,
   parsePersistedChatUiState,
   persistedStateContainsTranscript,
+  planDesktopChatDock,
   reconcileDesktopWindows,
   reduceMobileChatLayer,
+  resolveDesktopChatLauncherIntent,
+  selectVisibleMinimizedWindows,
   serializePersistedChatUiState,
   shouldCoverMainContent,
   sortChatContacts,
@@ -55,6 +67,11 @@ function summary(
     hasUnread: false,
     ...overrides,
   };
+}
+
+function conversationId(index: number) {
+  const n = String(index).padStart(2, "0");
+  return `11000000-0000-4000-8000-0000000000${n}`;
 }
 
 describe("contact rail membership", () => {
@@ -99,6 +116,180 @@ describe("contact rail membership", () => {
     assert.deepEqual(
       sorted.map((item) => item.userId),
       ["online", "recent", "offline"],
+    );
+  });
+});
+
+describe("desktop launcher and dock layout", () => {
+  it("toggles the inbox panel on every desktop width instead of opening a conversation", () => {
+    assert.equal(resolveDesktopChatLauncherIntent(true), "toggleInbox");
+    assert.equal(resolveDesktopChatLauncherIntent(false), "openMobileInbox");
+  });
+
+  it("keeps minimized bubbles and the inbox panel clear of the contacts rail", () => {
+    const withRail = getDesktopChatDockLayout({
+      railVisible: true,
+      drawerOpen: true,
+      openWindowCount: 1,
+      minimizedCount: 2,
+    });
+
+    assert.ok(withRail.drawerRight >= DESKTOP_RAIL_WIDTH);
+    assert.equal(
+      withRail.minimizedRights[0],
+      withRail.drawerRight + DESKTOP_CHAT_DRAWER_WIDTH + DESKTOP_CHAT_WINDOW_GAP,
+    );
+    assert.equal(
+      withRail.minimizedRights[1],
+      (withRail.minimizedRights[0] ?? 0) +
+        DESKTOP_MINIMIZED_BUBBLE_SIZE +
+        DESKTOP_MINIMIZED_BUBBLE_GAP,
+    );
+    assert.ok((withRail.openWindowRights[0] ?? 0) > (withRail.minimizedRights[1] ?? 0));
+    assert.ok(
+      (withRail.minimizedRights[1] ?? 0) - (withRail.minimizedRights[0] ?? 0) < 80,
+    );
+  });
+
+  it("docks bubbles at the compact desktop edge when the rail is hidden", () => {
+    const compact = getDesktopChatDockLayout({
+      railVisible: false,
+      drawerOpen: false,
+      openWindowCount: 1,
+      minimizedCount: 1,
+    });
+
+    assert.ok((compact.minimizedRights[0] ?? 0) < DESKTOP_RAIL_WIDTH);
+    assert.ok((compact.openWindowRights[0] ?? 0) > (compact.minimizedRights[0] ?? 0));
+  });
+
+  it("keeps rail, drawer, bounded bubbles and open windows inside the 1280px usable span", () => {
+    const minimizedIds = Array.from({ length: 12 }, (_, index) =>
+      conversationId(index + 1),
+    );
+    const openIds = [conversationId(13), conversationId(14)];
+    const windows = [
+      ...minimizedIds.map((id) => ({ conversationId: id, minimized: true })),
+      ...openIds.map((id) => ({ conversationId: id, minimized: false })),
+    ];
+
+    const plan = planDesktopChatDock({
+      windows,
+      viewportWidth: DESKTOP_RAIL_MIN_VIEWPORT,
+      sidebarWidth: DESKTOP_APP_SIDEBAR_WIDTH,
+      railVisible: true,
+      drawerOpen: true,
+    });
+    const openWindowCount = plan.windows.filter(
+      (windowState) => !windowState.minimized,
+    ).length;
+    const hiddenMinimizedCount =
+      plan.windows.filter((windowState) => windowState.minimized).length -
+      plan.visibleMinimizedCount;
+    const layout = getDesktopChatDockLayout({
+      railVisible: true,
+      drawerOpen: true,
+      openWindowCount,
+      minimizedCount: plan.visibleMinimizedCount,
+    });
+    const occupied = getDesktopChatDockOccupiedRightSpan({
+      layout,
+      drawerOpen: true,
+      minimizedCount: plan.visibleMinimizedCount,
+      openWindowCount,
+    });
+    const unboundedLayout = getDesktopChatDockLayout({
+      railVisible: true,
+      drawerOpen: true,
+      openWindowCount: 1,
+      minimizedCount: minimizedIds.length,
+    });
+    const unboundedOccupied = getDesktopChatDockOccupiedRightSpan({
+      layout: unboundedLayout,
+      drawerOpen: true,
+      minimizedCount: minimizedIds.length,
+      openWindowCount: 1,
+    });
+
+    assert.ok(plan.visibleMinimizedCount >= 2);
+    assert.ok(plan.visibleMinimizedCount < minimizedIds.length);
+    assert.ok(hiddenMinimizedCount > 0);
+    assert.equal(openWindowCount, 1);
+    assert.ok(occupied <= DESKTOP_RAIL_MIN_VIEWPORT - DESKTOP_APP_SIDEBAR_WIDTH);
+    assert.ok(unboundedOccupied > DESKTOP_RAIL_MIN_VIEWPORT - DESKTOP_APP_SIDEBAR_WIDTH);
+    assert.ok(occupied < unboundedOccupied);
+    assert.ok((layout.minimizedRights[0] ?? 0) >= DESKTOP_RAIL_WIDTH);
+    assert.equal(
+      plan.windows.filter((windowState) => windowState.minimized).length,
+      windows.filter((windowState) => windowState.minimized).length +
+        (openIds.length - openWindowCount),
+    );
+
+    const persisted = serializePersistedChatUiState({
+      windows: plan.windows,
+      mobileLayer: "closed",
+      mobileConversationId: null,
+    });
+    assert.equal(persistedStateContainsTranscript(persisted), false);
+    assert.equal(
+      parsePersistedChatUiState(persisted).windows.length,
+      plan.windows.length,
+    );
+  });
+
+  it("does not overlap visible minimized bubbles and restores the correct conversation", () => {
+    const minimizedIds = Array.from({ length: 10 }, (_, index) =>
+      conversationId(index + 1),
+    );
+    const openId = conversationId(11);
+    const plan = planDesktopChatDock({
+      windows: [
+        ...minimizedIds.map((id) => ({ conversationId: id, minimized: true })),
+        { conversationId: openId, minimized: false },
+      ],
+      viewportWidth: DESKTOP_RAIL_MIN_VIEWPORT,
+      sidebarWidth: DESKTOP_APP_SIDEBAR_WIDTH,
+      railVisible: true,
+      drawerOpen: true,
+    });
+    const layout = getDesktopChatDockLayout({
+      railVisible: true,
+      drawerOpen: true,
+      openWindowCount: 1,
+      minimizedCount: plan.visibleMinimizedCount,
+    });
+
+    for (let index = 1; index < layout.minimizedRights.length; index += 1) {
+      const previous = layout.minimizedRights[index - 1] ?? 0;
+      const current = layout.minimizedRights[index] ?? 0;
+      assert.ok(current - previous >= DESKTOP_MINIMIZED_BUBBLE_SIZE);
+    }
+
+    const visible = selectVisibleMinimizedWindows(
+      plan.windows,
+      plan.visibleMinimizedCount,
+    );
+    assert.equal(visible.length, plan.visibleMinimizedCount);
+    assert.deepEqual(
+      visible.map((windowState) => windowState.conversationId),
+      minimizedIds.slice(minimizedIds.length - plan.visibleMinimizedCount),
+    );
+
+    const restoreId = visible[visible.length - 1]?.conversationId;
+    assert.ok(restoreId);
+    const restored = openDesktopWindow(
+      plan.windows,
+      restoreId,
+      plan.maxOpenWindows,
+    );
+    assert.equal(
+      restored.find((windowState) => windowState.conversationId === restoreId)
+        ?.minimized,
+      false,
+    );
+    assert.equal(
+      restored.filter((windowState) => !windowState.minimized).length,
+      1,
     );
   });
 });
