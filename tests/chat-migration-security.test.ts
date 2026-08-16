@@ -27,7 +27,16 @@ describe("presence migration security contract", () => {
     const source = presenceMigrationSource();
     assert.match(source, /enable row level security/);
     assert.match(source, /force row level security/);
-    assert.match(source, /_are_accepted_contacts_internal/);
+    assert.match(source, /from public\.user_connections connection/);
+    assert.match(source, /connection\.status = 'accepted'/);
+    assert.match(
+      source,
+      /connection\.user_low_id = least\(\(select auth\.uid\(\)\), user_id\)/,
+    );
+    assert.match(
+      source,
+      /connection\.user_high_id = greatest\(\(select auth\.uid\(\)\), user_id\)/,
+    );
     assert.match(source, /user_id = \(select auth\.uid\(\)\)/);
     assert.doesNotMatch(source, /using\s*\(\s*true\s*\)/i);
     assert.match(source, /revoke insert, update, delete on table public\.user_presence/);
@@ -35,13 +44,14 @@ describe("presence migration security contract", () => {
     assert.match(source, /revoke all on table public\.user_presence from anon/);
   });
 
-  it("lets accepted contacts read the row after sharing is disabled", () => {
+  it("lets accepted contacts read only the tombstone row after sharing is disabled", () => {
     const source = presenceMigrationSource();
     const policy = source.match(
       /create policy "Users can read own or accepted-contact presence"[\s\S]*?;/,
     );
     assert.ok(policy);
-    assert.match(policy[0]!, /_are_accepted_contacts_internal/);
+    assert.match(policy[0]!, /from public\.user_connections connection/);
+    assert.match(policy[0]!, /connection\.status = 'accepted'/);
     assert.doesNotMatch(policy[0]!, /share_active_status/);
     assert.match(source, /last_seen_at timestamptz,/);
     assert.doesNotMatch(source, /last_seen_at timestamptz not null/);
