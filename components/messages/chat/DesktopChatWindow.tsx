@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import AppIcon from "@/components/layout/AppIcon";
 import ProfileAvatar from "@/components/account/ProfileAvatar";
 import { DIVLAB_MEMBER_LABEL } from "@/lib/site/brand";
@@ -42,6 +43,7 @@ export default function DesktopChatWindow({
 }: Props) {
   const name =
     conversation?.otherParticipant?.name ?? DIVLAB_MEMBER_LABEL;
+  const username = conversation?.otherParticipant?.username ?? null;
   const initials = conversation?.otherParticipant?.initials ?? "DL";
   const avatarUrl = conversation?.otherParticipant?.avatarUrl ?? null;
 
@@ -59,7 +61,16 @@ export default function DesktopChatWindow({
           textClassName="text-[10px]"
         />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-divlab-text">{name}</p>
+          {username ? (
+            <Link
+              href={`/profile/${username}`}
+              className="block truncate rounded-sm text-sm font-semibold text-divlab-text transition hover:text-divlab-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/40"
+            >
+              {name}
+            </Link>
+          ) : (
+            <p className="truncate text-sm font-semibold text-divlab-text">{name}</p>
+          )}
           <PresenceIndicator presence={presence} showLabel />
         </div>
         <button
