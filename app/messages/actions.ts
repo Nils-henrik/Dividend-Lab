@@ -191,13 +191,10 @@ export async function openChatWithContactAction(targetUserId: string): Promise<
 }
 
 export async function loadChatThreadAction(conversationId: string) {
-  const result = await loadConversationThreadMutation(conversationId, {
-    markRead: true,
-  });
-  if (result.status === "success") {
-    revalidateConversation(conversationId);
-  }
-  return result;
+  // Loading a thread is intentionally read-only. The client marks it read only
+  // after the conversation is actually visible, so minimized/restored windows
+  // cannot clear unread state in the background.
+  return loadConversationThreadMutation(conversationId, { markRead: false });
 }
 
 export async function peekChatThreadAction(conversationId: string) {
