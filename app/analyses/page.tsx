@@ -83,6 +83,13 @@ export default async function AnalysesPage() {
           <p className="mt-5 text-base leading-7 text-slate-400 sm:text-lg sm:leading-8">
             Skapa nya bolagsanalyser och läs tidigare publicerade analyser. Varje publicering måste klara både Research 100/100 och Analyst 100/100.
           </p>
+          <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 border-y border-white/10 py-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+            <span>Fundamental analys</span>
+            <span>Teknisk analys</span>
+            <span>Stöd &amp; motstånd</span>
+            <span>Bear / Base / Bull</span>
+            <span>Verifierade källor</span>
+          </div>
         </div>
 
         {canCreate ? (
