@@ -42,6 +42,7 @@ docs/
     DECISIONS.md
     API.md
     DATABASE.md
+    CHAT_ATTACHMENTS.md
 
   design/
     DESIGN_SYSTEM.md

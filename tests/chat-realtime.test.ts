@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 import {
   applyMessageToSummaries,
   mapRealtimeMessageRow,
+  mergeMessageAttachments,
   mergeRealtimeMessage,
   mergeRealtimeMessages,
 } from "../lib/messages/realtime-messages";
@@ -14,6 +15,8 @@ const first: ConversationMessage = {
   senderId: "other",
   body: "Första",
   createdAt: "2026-08-15T12:00:00.000Z",
+  hasAttachments: false,
+  attachments: [],
 };
 
 const second: ConversationMessage = {
@@ -22,6 +25,8 @@ const second: ConversationMessage = {
   senderId: "other",
   body: "Andra",
   createdAt: "2026-08-15T12:01:00.000Z",
+  hasAttachments: false,
+  attachments: [],
 };
 
 describe("realtime message merge", () => {
@@ -92,7 +97,81 @@ describe("realtime message merge", () => {
         senderId: "other",
         body: "OK",
         createdAt: "2026-08-15T12:02:00.000Z",
+        hasAttachments: false,
+        attachments: [],
       },
     );
+  });
+
+  it("hydrates attachments onto an existing message without duplicating it", () => {
+    const withFlag: ConversationMessage = {
+      ...second,
+      body: "",
+      hasAttachments: true,
+    };
+    const merged = mergeRealtimeMessage([first], withFlag);
+    const hydrated = mergeMessageAttachments(merged, withFlag.id, [
+      {
+        id: "a1",
+        filename: "foto.gif",
+        mimeType: "image/gif",
+        byteSize: 1200,
+        kind: "image",
+      },
+    ]);
+
+    assert.deepEqual(
+      hydrated.map((message) => message.id),
+      ["m1", "m2"],
+    );
+    assert.equal(hydrated[1]?.attachments[0]?.filename, "foto.gif");
+    assert.equal(
+      mergeRealtimeMessage(hydrated, withFlag)[1]?.attachments[0]?.filename,
+      "foto.gif",
+    );
+  });
+
+  it("uses a Swedish attachment preview when the body is empty", () => {
+    const summaries: ConversationSummary[] = [
+      {
+        id: "c1",
+        subject: null,
+        status: "active",
+        initiatedBy: "me",
+        updatedAt: first.createdAt,
+        otherParticipant: {
+          id: "other",
+          name: "Kontakt",
+          username: "kontakt",
+          initials: "KO",
+          avatarUrl: null,
+        },
+        lastMessagePreview: first.body,
+        lastMessageAt: first.createdAt,
+        hasUnread: false,
+      },
+    ];
+    const attachmentOnly: ConversationMessage = {
+      ...second,
+      body: "",
+      hasAttachments: true,
+      attachments: [
+        {
+          id: "a1",
+          filename: "rapport.pdf",
+          mimeType: "application/pdf",
+          byteSize: 2048,
+          kind: "file",
+        },
+      ],
+    };
+
+    const next = applyMessageToSummaries(summaries, attachmentOnly, {
+      currentUserId: "me",
+      isOpenAndVisible: true,
+    });
+
+    assert.equal(next[0]?.lastMessagePreview, "Bilaga: rapport.pdf");
+    assert.equal(next[0]?.hasUnread, false);
   });
 });

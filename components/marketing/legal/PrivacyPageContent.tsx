@@ -37,6 +37,7 @@ export default function PrivacyPageContent() {
             "profilbild (avatar)",
             "forumtrådar, svar, reaktioner och aggregerad reputation",
             "privata meddelanden och konversationsämnen",
+            "privata chattbilagor (små bilder, GIF och tillåtna småfiler) som endast deltagarna i konversationen kan öppna",
             "kommentarer på utbildningsartiklar",
             "läst/oläst-status i meddelanden",
             "sessions- och säkerhetsrelaterad teknisk data",
@@ -51,7 +52,7 @@ export default function PrivacyPageContent() {
       <LegalSection title="Hur uppgifterna samlas in">
         <p>
           Uppgifter samlas in när du registrerar konto, loggar in, redigerar profil, deltar i
-          forum, skickar meddelanden, kommenterar artiklar eller använder andra funktioner som
+          forum, skickar meddelanden, bifogar filer i privat chatt, kommenterar artiklar eller använder andra funktioner som
           kräver konto. Vissa tekniska uppgifter skapas automatiskt vid användning, till exempel
           sessionscookies, loggar och anonymiserad trafikstatistik via Vercel Web Analytics.
         </p>
@@ -72,7 +73,7 @@ export default function PrivacyPageContent() {
             "tillhandahålla och administrera konto",
             "autentisera användare och upprätthålla säkerhet",
             "visa offentliga profiler och community-funktioner",
-            "möjliggöra privata meddelanden och kommentarer",
+            "möjliggöra privata meddelanden, chattbilagor och kommentarer",
             "visa reaktioner och reputation",
             "driva, utveckla och felsöka tjänsten",
             "förstå aggregerad användning av webbplatsen via anonym trafikstatistik",
@@ -106,11 +107,14 @@ export default function PrivacyPageContent() {
         <p>
           Användarnamn, profiluppgifter, avatarer, forumtrådar, svar och synliga kommentarer kan
           vara offentligt tillgängliga för besökare och andra användare. Privata meddelanden är
-          avsedda endast för deltagarna i respektive konversation.
+          avsedda endast för deltagarna i respektive konversation. Filer som bifogas i privat chatt
+          lagras i en sluten fillagring utan publika permanenta länkar; åtkomst ges tillfälligt
+          efter att deltagarskap i konversationen har kontrollerats.
         </p>
         <p>
           Publicera inte känsliga personuppgifter, konfidentiell information eller uppgifter om
-          andra utan tillåtelse.
+          andra utan tillåtelse. Chattbilagor är inte en generell molnlagring och ska inte användas
+          för arkiv, säkerhetskopior eller känsliga dokument som inte hör till konversationen.
         </p>
       </LegalSection>
 
@@ -145,6 +149,14 @@ export default function PrivacyPageContent() {
           Konto- och innehållsdata kvarstår i regel så länge kontot finns, om inte innehåll tas
           bort enligt tillgängliga funktioner eller efter begäran som hanteras enligt tillämplig
           lag. Fasta lagringsperioder för all behandling är ännu inte angivna i tjänsten.
+        </p>
+        <p>
+          Privata chattbilagor som skickats i en konversation kvarstår i regel så länge meddelandet
+          och kontot finns. Ej skickade eller övergivna uppladdningar städas tekniskt med en
+          tidsbegränsning och en kvot per användare så att fillagringen inte kan användas som
+          obegränsad molndisk. Radering av lagrade objekt vid kontoborttagning ska ske via
+          fillagringens API i den operativa raderingsrutinen; denna policy ersätter inte den
+          granskningen.
         </p>
         <p>
           Den saltade hash som används för unika läsare sparas för att samma läsare inte ska

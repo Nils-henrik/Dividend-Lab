@@ -156,3 +156,30 @@ Composition is centralized in `createEventCore()` with `runtime.ts` exporting th
 - Database-backed repositories implement `EventRepositoryContract` without service changes
 - Dividend Brain consumes `CompanyEvent` directly — no additional transformation layer
 - `data/calendar.ts` is deprecated; calendar data flows through Event Core services
+
+---
+
+## ADR-007: Private 1:1 chat attachments (Issue #239)
+
+Date: 2026-08-16
+Status: Accepted (pending production apply)
+
+### Context
+
+DivLab 1:1 chat persisted text-only messages. Users need Messenger-familiar sharing of small images, GIFs and ordinary files without a public bucket or a general cloud drive. DivBrain already has a private attachment pipeline; chat must not reuse or change that architecture.
+
+### Decision
+
+- Store metadata in `message_attachments` and bytes in a **private** `chat-attachments` bucket.
+- Use prepare → signed private upload → server confirm (magic bytes/size/ownership) → atomic `send_private_message_with_attachments`.
+- Authenticated clients SELECT only ready, message-linked rows for conversations they participate in. Writes are server-owned.
+- Allow empty `messages.body` only when the send RPC links attachments. Text-only continues to use `send_private_message`.
+- Downloads use an authenticated route that issues a short-lived signed URL after participant authorization.
+- Document privacy impact explicitly; do not auto-apply the migration or auto-merge.
+
+### Consequences
+
+- Production release requires manual migration/RLS/Storage/privacy review.
+- Conversation/account deletion must use the Storage API for physical objects.
+- Future file types (audio/video/archives) are out of v1 scope.
+
