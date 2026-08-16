@@ -9,11 +9,11 @@ export function isThemePreference(value: string | null): value is ThemePreferenc
 
 export function getStoredThemePreference(): ThemePreference {
   if (typeof window === "undefined") {
-    return "system";
+    return "dark";
   }
 
   const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
-  return isThemePreference(stored) ? stored : "system";
+  return isThemePreference(stored) ? stored : "dark";
 }
 
 export function resolveTheme(preference: ThemePreference): ResolvedTheme {
