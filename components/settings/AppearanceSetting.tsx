@@ -8,28 +8,6 @@ import {
   type ThemePreference,
 } from "@/lib/theme/client";
 
-const OPTIONS: Array<{
-  value: ThemePreference;
-  label: string;
-  description: string;
-}> = [
-  {
-    value: "light",
-    label: "Ljust",
-    description: "Ljus bakgrund med mörk text och DivLabs marknadsfärger.",
-  },
-  {
-    value: "dark",
-    label: "Mörkt",
-    description: "DivLabs mörka marknadsläge med hög kontrast.",
-  },
-  {
-    value: "system",
-    label: "System",
-    description: "Följer automatiskt inställningen på din mobil eller dator.",
-  },
-];
-
 function subscribeToThemePreference(onStoreChange: () => void) {
   function handleStorage(event: StorageEvent) {
     if (event.key === THEME_STORAGE_KEY) {
@@ -47,7 +25,36 @@ function subscribeToThemePreference(onStoreChange: () => void) {
 }
 
 function getServerThemePreference(): ThemePreference {
-  return "dark";
+  return "light";
+}
+
+function SunIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
+      <circle cx="12" cy="12" r="3.25" fill="currentColor" />
+      <path
+        d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.28 5.28 6.7 6.7M17.3 17.3l1.42 1.42M18.72 5.28 17.3 6.7M6.7 17.3l-1.42 1.42"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function MoonIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
+      <path
+        d="M20.1 15.15A8.35 8.35 0 0 1 8.85 3.9 8.35 8.35 0 1 0 20.1 15.15Z"
+        fill="currentColor"
+      />
+      <circle cx="17.2" cy="6.1" r="1" fill="currentColor" />
+      <circle cx="19.4" cy="9.1" r="0.75" fill="currentColor" />
+      <circle cx="14.9" cy="4.25" r="0.65" fill="currentColor" />
+    </svg>
+  );
 }
 
 export default function AppearanceSetting() {
@@ -56,65 +63,63 @@ export default function AppearanceSetting() {
     getStoredThemePreference,
     getServerThemePreference,
   );
+  const isDark = preference === "dark";
 
-  function handleChange(nextPreference: ThemePreference) {
-    saveThemePreference(nextPreference);
+  function toggleTheme() {
+    saveThemePreference(isDark ? "light" : "dark");
   }
 
   return (
     <section className="divlab-card rounded-3xl p-6 sm:p-8">
-      <div className="mb-6">
-        <p className="mb-2 divlab-section-label">Utseende</p>
-        <h3 className="text-lg font-semibold text-divlab-text">Tema</h3>
-        <p className="mt-2 text-sm leading-6 text-divlab-text-secondary">
-          Välj hur DivLab ska se ut. Valet sparas på den här enheten och gäller
-          hela DivLab.
-        </p>
-      </div>
+      <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+        <div className="max-w-xl">
+          <p className="mb-2 divlab-section-label">Utseende</p>
+          <h3 className="text-lg font-semibold text-divlab-text">Tema</h3>
+          <p className="mt-2 text-sm leading-6 text-divlab-text-secondary">
+            Växla mellan ljust och mörkt läge. Ljust tema är standard och ditt
+            val sparas på den här enheten.
+          </p>
+        </div>
 
-      <div
-        role="group"
-        aria-label="Välj tema"
-        className="grid gap-3 md:grid-cols-3"
-      >
-        {OPTIONS.map((option) => {
-          const isSelected = preference === option.value;
-
-          return (
-            <button
-              key={option.value}
-              type="button"
-              aria-pressed={isSelected}
-              onClick={() => handleChange(option.value)}
-              className={`min-h-32 rounded-2xl border p-4 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/40 ${
-                isSelected
-                  ? "divlab-selected"
-                  : "divlab-border-neutral bg-divlab-inset hover:border-divlab-blue/30"
+        <div className="flex shrink-0 items-center gap-3">
+          <span className={`text-sm font-medium ${isDark ? "text-divlab-text-muted" : "text-divlab-text"}`}>
+            Ljust
+          </span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={isDark}
+            aria-label={`Byt till ${isDark ? "ljust" : "mörkt"} tema`}
+            onClick={toggleTheme}
+            className={`relative h-12 w-[92px] rounded-full border p-1 transition-[background-color,border-color,box-shadow] duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/45 focus-visible:ring-offset-2 focus-visible:ring-offset-divlab-bg ${
+              isDark
+                ? "border-white/10 bg-[#24272c] shadow-inner"
+                : "divlab-border-neutral bg-divlab-elevated shadow-inner"
+            }`}
+          >
+            <span
+              aria-hidden="true"
+              className={`absolute top-1/2 z-0 -translate-y-1/2 transition-all duration-300 ${
+                isDark
+                  ? "left-4 text-slate-300 opacity-100"
+                  : "right-4 text-divlab-text-muted opacity-100"
               }`}
             >
-              <span className="flex items-center justify-between gap-3">
-                <span className="text-sm font-semibold text-divlab-text">
-                  {option.label}
-                </span>
-                <span
-                  aria-hidden="true"
-                  className={`flex h-5 w-5 items-center justify-center rounded-full border ${
-                    isSelected
-                      ? "border-divlab-blue bg-divlab-blue"
-                      : "divlab-border-strong bg-divlab-surface"
-                  }`}
-                >
-                  {isSelected ? (
-                    <span className="h-1.5 w-1.5 rounded-full bg-white" />
-                  ) : null}
-                </span>
-              </span>
-              <span className="mt-3 block text-xs leading-5 text-divlab-text-secondary">
-                {option.description}
-              </span>
-            </button>
-          );
-        })}
+              {isDark ? <MoonIcon /> : <SunIcon />}
+            </span>
+            <span
+              aria-hidden="true"
+              className={`absolute left-1 top-1 h-10 w-10 rounded-full border shadow-md transition-transform duration-300 ease-out ${
+                isDark
+                  ? "translate-x-10 border-white/10 bg-[#3a3d43]"
+                  : "translate-x-0 divlab-border-neutral bg-white"
+              }`}
+            />
+          </button>
+          <span className={`text-sm font-medium ${isDark ? "text-divlab-text" : "text-divlab-text-muted"}`}>
+            Mörkt
+          </span>
+        </div>
       </div>
     </section>
   );
