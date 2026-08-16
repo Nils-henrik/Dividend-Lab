@@ -35,14 +35,6 @@ function viewLabel(view: View): string {
   return view === "positive" ? "Positiv" : view === "negative" ? "Negativ" : "Neutral";
 }
 
-function viewClass(view: View): string {
-  return view === "positive"
-    ? "text-emerald-300"
-    : view === "negative"
-      ? "text-red-300"
-      : "text-slate-200";
-}
-
 function riskLabel(value: "low" | "medium" | "high"): string {
   return value === "low" ? "Låg" : value === "high" ? "Hög" : "Medel";
 }

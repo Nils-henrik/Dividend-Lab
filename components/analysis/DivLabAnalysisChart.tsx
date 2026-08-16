@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -41,7 +42,6 @@ type LwcSeries = {
 };
 
 type LwcTimeScale = {
-  fitContent(): void;
   setVisibleLogicalRange(range: { from: number; to: number }): void;
   coordinateToTime(x: number): LwcTime | null;
   timeToCoordinate(time: LwcTime): number | null;
@@ -184,18 +184,15 @@ export function DivLabAnalysisChart({
   const chartRef = useRef<LwcChart | null>(null);
   const priceSeriesRef = useRef<LwcSeries | null>(null);
   const drawStartRef = useRef<DomainPoint | null>(null);
-  const refreshOverlayRef = useRef<() => void>(() => undefined);
+  const drawingsRef = useRef<UserDrawing[]>([]);
   const [mode, setMode] = useState<DrawingMode>("cursor");
-  const [drawings, setDrawings] = useState<UserDrawing[]>([]);
   const [screenDrawings, setScreenDrawings] = useState<ScreenDrawing[]>([]);
   const [screenZones, setScreenZones] = useState<ScreenZone[]>([]);
   const [plotWidth, setPlotWidth] = useState(0);
   const [libraryError, setLibraryError] = useState(false);
-  const [chartReady, setChartReady] = useState(0);
   const visibleSessions = safeVisibleSessions(requestedVisibleSessions);
-  const drawingStorageKey = `divlab-analysis-drawings:${symbol?.trim().toUpperCase() || "chart"}`;
 
-  refreshOverlayRef.current = () => {
+  const refreshOverlay = useCallback(() => {
     const chart = chartRef.current;
     const series = priceSeriesRef.current;
     if (!chart || !series) return;
@@ -220,7 +217,7 @@ export function DivLabAnalysisChart({
     setScreenZones(zones);
 
     const timeScale = chart.timeScale();
-    const projected = drawings
+    const projected = drawingsRef.current
       .map((drawing): ScreenDrawing | null => {
         if (drawing.type === "level") {
           const y = series.priceToCoordinate(drawing.price);
@@ -245,28 +242,7 @@ export function DivLabAnalysisChart({
       })
       .filter((drawing): drawing is ScreenDrawing => drawing !== null);
     setScreenDrawings(projected);
-  };
-
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(drawingStorageKey);
-      if (stored) {
-        const parsed = JSON.parse(stored) as unknown;
-        if (Array.isArray(parsed)) setDrawings(parsed as UserDrawing[]);
-      }
-    } catch {
-      // Browser-local drawings are optional. A corrupt entry should never block the chart.
-    }
-  }, [drawingStorageKey]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(drawingStorageKey, JSON.stringify(drawings));
-    } catch {
-      // Ignore storage failures; the analysis chart remains fully usable.
-    }
-    refreshOverlayRef.current();
-  }, [drawings, drawingStorageKey, chartReady]);
+  }, [model]);
 
   useEffect(() => {
     const container = chartContainerRef.current;
@@ -382,12 +358,11 @@ export function DivLabAnalysisChart({
           to: model.bars.length + 4,
         });
 
-        const handleRange = () => window.requestAnimationFrame(() => refreshOverlayRef.current());
+        const handleRange = () => window.requestAnimationFrame(refreshOverlay);
         chart.timeScale().subscribeVisibleTimeRangeChange(handleRange);
         const resizeObserver = new ResizeObserver(handleRange);
         resizeObserver.observe(container);
-        setChartReady((value) => value + 1);
-        window.requestAnimationFrame(() => refreshOverlayRef.current());
+        window.requestAnimationFrame(refreshOverlay);
 
         cleanup = () => {
           resizeObserver.disconnect();
@@ -405,7 +380,7 @@ export function DivLabAnalysisChart({
       cancelled = true;
       cleanup?.();
     };
-  }, [currency, model, visibleSessions]);
+  }, [currency, model, refreshOverlay, visibleSessions]);
 
   function pointFromEvent(event: ReactPointerEvent<HTMLDivElement>): DomainPoint | null {
     const chart = chartRef.current;
@@ -419,6 +394,16 @@ export function DivLabAnalysisChart({
     const price = series.coordinateToPrice(y);
     if (time === null || !finite(price)) return null;
     return { time, price };
+  }
+
+  function addDrawing(drawing: UserDrawing) {
+    drawingsRef.current = [...drawingsRef.current, drawing];
+    window.requestAnimationFrame(refreshOverlay);
+  }
+
+  function clearDrawings() {
+    drawingsRef.current = [];
+    window.requestAnimationFrame(refreshOverlay);
   }
 
   function handlePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
@@ -437,13 +422,12 @@ export function DivLabAnalysisChart({
     if (!start || !end) return;
 
     if (mode === "level") {
-      setDrawings((items) => [...items, { id: drawingId(), type: "level", price: end.price }]);
+      addDrawing({ id: drawingId(), type: "level", price: end.price });
       return;
     }
-    setDrawings((items) => [
-      ...items,
-      { id: drawingId(), type: mode, start, end } as UserDrawing,
-    ]);
+    if (mode === "trend" || mode === "zone") {
+      addDrawing({ id: drawingId(), type: mode, start, end });
+    }
   }
 
   const chartTitle = [symbol?.trim().toUpperCase(), "TEKNISK ANALYS"]
@@ -473,7 +457,7 @@ export function DivLabAnalysisChart({
             <button type="button" onClick={() => setMode("level")} className={toolClass(mode === "level")} aria-pressed={mode === "level"}>Nivå</button>
             <button type="button" onClick={() => setMode("trend")} className={toolClass(mode === "trend")} aria-pressed={mode === "trend"}>Trend</button>
             <button type="button" onClick={() => setMode("zone")} className={toolClass(mode === "zone")} aria-pressed={mode === "zone"}>Zon</button>
-            <button type="button" onClick={() => setDrawings([])} className={toolClass(false)}>Rensa</button>
+            <button type="button" onClick={clearDrawings} className={toolClass(false)}>Rensa</button>
           </div>
         </div>
 
@@ -546,7 +530,7 @@ export function DivLabAnalysisChart({
         </div>
 
         <figcaption className="flex flex-col gap-1 border-t border-white/10 py-3 text-[11px] leading-5 text-slate-600 sm:flex-row sm:items-center sm:justify-between">
-          <span>DivLab-AI ritar stöd och motstånd från verifierad pris- och volymdata. Egna ritningar sparas endast lokalt i din webbläsare.</span>
+          <span>DivLab-AI ritar stöd och motstånd från verifierad pris- och volymdata. Egna ritningar gäller den aktuella visningen.</span>
           <a href="https://www.tradingview.com/" target="_blank" rel="noreferrer" className="shrink-0 text-slate-500 hover:text-slate-300">
             Grafmotor: TradingView Lightweight Charts™
           </a>
