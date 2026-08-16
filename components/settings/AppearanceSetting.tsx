@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import {
   getStoredThemePreference,
   saveThemePreference,
+  THEME_STORAGE_KEY,
   type ThemePreference,
 } from "@/lib/theme/client";
 
@@ -29,17 +30,34 @@ const OPTIONS: Array<{
   },
 ];
 
-export default function AppearanceSetting() {
-  const [preference, setPreference] = useState<ThemePreference>("system");
-  const [isReady, setIsReady] = useState(false);
+function subscribeToThemePreference(onStoreChange: () => void) {
+  function handleStorage(event: StorageEvent) {
+    if (event.key === THEME_STORAGE_KEY) {
+      onStoreChange();
+    }
+  }
 
-  useEffect(() => {
-    setPreference(getStoredThemePreference());
-    setIsReady(true);
-  }, []);
+  window.addEventListener("storage", handleStorage);
+  window.addEventListener("divlab-theme-change", onStoreChange);
+
+  return () => {
+    window.removeEventListener("storage", handleStorage);
+    window.removeEventListener("divlab-theme-change", onStoreChange);
+  };
+}
+
+function getServerThemePreference(): ThemePreference {
+  return "system";
+}
+
+export default function AppearanceSetting() {
+  const preference = useSyncExternalStore(
+    subscribeToThemePreference,
+    getStoredThemePreference,
+    getServerThemePreference,
+  );
 
   function handleChange(nextPreference: ThemePreference) {
-    setPreference(nextPreference);
     saveThemePreference(nextPreference);
   }
 
@@ -67,9 +85,8 @@ export default function AppearanceSetting() {
               key={option.value}
               type="button"
               aria-pressed={isSelected}
-              disabled={!isReady}
               onClick={() => handleChange(option.value)}
-              className={`min-h-32 rounded-2xl border p-4 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/40 disabled:cursor-wait ${
+              className={`min-h-32 rounded-2xl border p-4 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/40 ${
                 isSelected
                   ? "divlab-selected"
                   : "divlab-border-neutral bg-divlab-inset hover:border-divlab-blue/30"
