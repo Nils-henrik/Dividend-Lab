@@ -27,7 +27,16 @@ describe("presence migration security contract", () => {
     const source = presenceMigrationSource();
     assert.match(source, /enable row level security/);
     assert.match(source, /force row level security/);
-    assert.match(source, /_are_accepted_contacts_internal/);
+    assert.match(source, /from public\.user_connections connection/);
+    assert.match(source, /connection\.status = 'accepted'/);
+    assert.match(
+      source,
+      /connection\.user_low_id = least\(\(select auth\.uid\(\)\), user_id\)/,
+    );
+    assert.match(
+      source,
+      /connection\.user_high_id = greatest\(\(select auth\.uid\(\)\), user_id\)/,
+    );
     assert.match(source, /user_id = \(select auth\.uid\(\)\)/);
     assert.doesNotMatch(source, /using\s*\(\s*true\s*\)/i);
     assert.match(source, /revoke insert, update, delete on table public\.user_presence/);
