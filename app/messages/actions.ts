@@ -5,11 +5,15 @@ import { redirect } from "next/navigation";
 import { requireAuthenticatedUser } from "@/lib/auth/session";
 import {
   acceptMessageRequestMutation,
+  confirmChatAttachmentUploadMutation,
   declineMessageRequestMutation,
+  discardChatUnlinkedAttachmentMutation,
+  hydrateChatMessageAttachmentsMutation,
   ignoreMessageRequestMutation,
   loadConversationThreadMutation,
   markConversationReadMutation,
   openAcceptedContactConversationMutation,
+  prepareChatAttachmentUploadMutation,
   sendPrivateMessageMutation,
   startConversationMutation,
 } from "@/lib/messages/mutations";
@@ -85,9 +89,26 @@ export async function sendMessageAction(
   formData: FormData,
 ): Promise<MessageActionState> {
   const conversationId = getFormString(formData, "conversationId").trim();
+  const attachmentIdsRaw = getFormString(formData, "attachmentIds");
+  let attachmentIds: string[] = [];
+  if (attachmentIdsRaw) {
+    try {
+      const parsed = JSON.parse(attachmentIdsRaw);
+      if (Array.isArray(parsed)) {
+        attachmentIds = parsed.filter((item): item is string => typeof item === "string");
+      }
+    } catch {
+      return {
+        status: "error",
+        message: "Bilagorna kunde inte tolkas.",
+      };
+    }
+  }
+
   const result = await sendPrivateMessageMutation(
     conversationId,
     getFormString(formData, "body"),
+    attachmentIds,
   );
 
   if (result.status === "error") {
@@ -149,8 +170,13 @@ export async function declineMessageRequestAction(
 export async function sendChatMessageAction(
   conversationId: string,
   body: string,
+  attachmentIds: readonly string[] = [],
 ) {
-  const result = await sendPrivateMessageMutation(conversationId, body);
+  const result = await sendPrivateMessageMutation(
+    conversationId,
+    body,
+    attachmentIds,
+  );
   if (result.status === "success") {
     revalidateConversation(conversationId);
   }
@@ -263,5 +289,33 @@ export async function startChatConversationAction(input: {
       thread: thread.data,
     },
   };
+}
+
+export async function prepareChatAttachmentUploadAction(input: {
+  conversationId: string;
+  filename: string;
+  mimeType: string;
+  byteSize: number;
+}) {
+  return prepareChatAttachmentUploadMutation(input);
+}
+
+export async function confirmChatAttachmentUploadAction(input: {
+  attachmentId: string;
+}) {
+  return confirmChatAttachmentUploadMutation(input);
+}
+
+export async function discardChatUnlinkedAttachmentAction(input: {
+  attachmentId: string;
+}) {
+  return discardChatUnlinkedAttachmentMutation(input);
+}
+
+export async function hydrateChatMessageAttachmentsAction(
+  conversationId: string,
+  messageId: string,
+) {
+  return hydrateChatMessageAttachmentsMutation(conversationId, messageId);
 }
 

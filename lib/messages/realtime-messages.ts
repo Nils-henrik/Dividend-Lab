@@ -1,10 +1,60 @@
+import { formatChatMessagePreview } from "./attachments";
+import type { ConversationMessageAttachment } from "./attachments";
 import type { ConversationMessage, ConversationSummary } from "./types";
+
+export function mapConversationMessage(input: {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  body: string;
+  createdAt: string;
+  hasAttachments?: boolean;
+  attachments?: ConversationMessageAttachment[];
+}): ConversationMessage {
+  const attachments = input.attachments ?? [];
+  return {
+    id: input.id,
+    conversationId: input.conversationId,
+    senderId: input.senderId,
+    body: input.body,
+    createdAt: input.createdAt,
+    hasAttachments: Boolean(input.hasAttachments) || attachments.length > 0,
+    attachments,
+  };
+}
+
+export function mergeMessageAttachments(
+  messages: ConversationMessage[],
+  messageId: string,
+  attachments: ConversationMessageAttachment[],
+): ConversationMessage[] {
+  return messages.map((message) =>
+    message.id === messageId
+      ? {
+          ...message,
+          hasAttachments: attachments.length > 0 || message.hasAttachments,
+          attachments,
+        }
+      : message,
+  );
+}
 
 export function mergeRealtimeMessage(
   messages: ConversationMessage[],
   incoming: ConversationMessage,
 ): ConversationMessage[] {
-  if (messages.some((message) => message.id === incoming.id)) {
+  const existing = messages.find((message) => message.id === incoming.id);
+  if (existing) {
+    if (
+      incoming.attachments.length > 0 &&
+      existing.attachments.length === 0
+    ) {
+      return mergeMessageAttachments(
+        messages,
+        incoming.id,
+        incoming.attachments,
+      );
+    }
     return messages;
   }
 
@@ -33,6 +83,7 @@ export function mapRealtimeMessageRow(row: {
   sender_id?: unknown;
   body?: unknown;
   created_at?: unknown;
+  has_attachments?: unknown;
 }): ConversationMessage | null {
   if (
     typeof row.id !== "string" ||
@@ -44,13 +95,15 @@ export function mapRealtimeMessageRow(row: {
     return null;
   }
 
-  return {
+  return mapConversationMessage({
     id: row.id,
     conversationId: row.conversation_id,
     senderId: row.sender_id,
     body: row.body,
     createdAt: row.created_at,
-  };
+    hasAttachments: row.has_attachments === true,
+    attachments: [],
+  });
 }
 
 export function applyMessageToSummaries(
@@ -70,12 +123,15 @@ export function applyMessageToSummaries(
     return summaries;
   }
 
+  const lastMessagePreview =
+    formatChatMessagePreview(message) || existing.lastMessagePreview;
+
   return summaries
     .map((summary) =>
       summary.id === message.conversationId
         ? {
             ...summary,
-            lastMessagePreview: message.body,
+            lastMessagePreview,
             lastMessageAt: message.createdAt,
             updatedAt: message.createdAt,
             hasUnread: hasUnread || (summary.hasUnread && !options.isOpenAndVisible),

@@ -1,5 +1,6 @@
 import { requireAuthenticatedUser } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
+import { CHAT_ATTACHMENT_MAX_PER_MESSAGE } from "./attachments";
 import {
   areAcceptedContacts,
   findConversationIdBetweenUsers,
@@ -8,12 +9,16 @@ import {
   getProfileByUsername,
   markConversationRead,
 } from "./messages";
+import { mapConversationMessage } from "./realtime-messages";
+import { createChatServiceRoleAttachmentRepository } from "./server/attachments/wiring";
+import { chatAttachmentSafeMessage } from "./server/attachments/validation";
 import type {
   ChatMutationResult,
   ConversationMessage,
   ConversationThread,
 } from "./types";
 import {
+  parseChatAttachmentIds,
   validateConversationSubject,
   validateMessageBody,
 } from "./validation";
@@ -26,24 +31,45 @@ type MessageRow = {
   sender_id: string;
   body: string;
   created_at: string;
+  has_attachments?: boolean | null;
 };
 
-function mapMessageRow(row: MessageRow): ConversationMessage {
-  return {
+function mapMessageRow(
+  row: MessageRow,
+  attachments: ConversationMessage["attachments"] = [],
+): ConversationMessage {
+  return mapConversationMessage({
     id: row.id,
     conversationId: row.conversation_id,
     senderId: row.sender_id,
     body: row.body,
     createdAt: row.created_at,
-  };
+    hasAttachments: Boolean(row.has_attachments) || attachments.length > 0,
+    attachments,
+  });
 }
 
 export async function sendPrivateMessageMutation(
   conversationId: string,
   body: string,
+  attachmentIds: readonly string[] = [],
 ): Promise<ChatMutationResult<ConversationMessage>> {
-  await requireAuthenticatedUser();
-  const messageValidation = validateMessageBody(body, { required: true });
+  const user = await requireAuthenticatedUser();
+  const parsedIds = parseChatAttachmentIds([...attachmentIds]);
+  if (parsedIds.error) {
+    return { status: "error", message: parsedIds.error };
+  }
+
+  if (parsedIds.ids.length > CHAT_ATTACHMENT_MAX_PER_MESSAGE) {
+    return {
+      status: "error",
+      message: "Du kan bifoga högst 3 filer per meddelande.",
+    };
+  }
+
+  const messageValidation = validateMessageBody(body, {
+    required: parsedIds.ids.length === 0,
+  });
 
   if (!conversationId) {
     return {
@@ -60,10 +86,17 @@ export async function sendPrivateMessageMutation(
   }
 
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("send_private_message", {
-    p_conversation_id: conversationId,
-    p_body: messageValidation.body,
-  });
+  const { data, error } =
+    parsedIds.ids.length === 0
+      ? await supabase.rpc("send_private_message", {
+          p_conversation_id: conversationId,
+          p_body: messageValidation.body,
+        })
+      : await supabase.rpc("send_private_message_with_attachments", {
+          p_conversation_id: conversationId,
+          p_body: messageValidation.body,
+          p_attachment_ids: parsedIds.ids,
+        });
 
   if (error || !data) {
     return {
@@ -72,10 +105,164 @@ export async function sendPrivateMessageMutation(
     };
   }
 
+  const row = data as MessageRow;
+  let attachments: ConversationMessage["attachments"] = [];
+  if (parsedIds.ids.length > 0) {
+    const thread = await getConversationThread(user.id, conversationId);
+    attachments =
+      thread?.messages.find((message) => message.id === row.id)?.attachments ??
+      [];
+  }
+
   return {
     status: "success",
     message: "Meddelandet skickades.",
-    data: mapMessageRow(data as MessageRow),
+    data: mapMessageRow(row, attachments),
+  };
+}
+
+export async function prepareChatAttachmentUploadMutation(input: {
+  conversationId: string;
+  filename: string;
+  mimeType: string;
+  byteSize: number;
+}): Promise<
+  ChatMutationResult<{
+    attachmentId: string;
+    signedUrl: string;
+    token: string;
+    shell: ConversationMessage["attachments"][number];
+  }>
+> {
+  const user = await requireAuthenticatedUser();
+  if (!input.conversationId) {
+    return { status: "error", message: "Konversationen saknas." };
+  }
+
+  const supabase = await createClient();
+  const { data: canSend, error: canSendError } = await supabase.rpc(
+    "can_send_private_message",
+    {
+      p_conversation_id: input.conversationId,
+      p_user_id: user.id,
+    },
+  );
+  if (canSendError || !canSend) {
+    return {
+      status: "error",
+      message: "Du kan inte skicka meddelanden i den här konversationen just nu.",
+    };
+  }
+
+  const repository = createChatServiceRoleAttachmentRepository();
+  if (!repository.ok) {
+    return {
+      status: "error",
+      message: "Det gick inte att ladda upp filen. Försök igen.",
+    };
+  }
+
+  const prepared = await repository.data.prepareUpload({
+    actorId: user.id,
+    conversationId: input.conversationId,
+    filename: input.filename,
+    mimeType: input.mimeType,
+    byteSize: input.byteSize,
+  });
+  if (!prepared.ok) {
+    return {
+      status: "error",
+      message: chatAttachmentSafeMessage(prepared.clientError),
+    };
+  }
+
+  return {
+    status: "success",
+    message: "Uppladdning förberedd.",
+    data: prepared,
+  };
+}
+
+export async function confirmChatAttachmentUploadMutation(input: {
+  attachmentId: string;
+}): Promise<
+  ChatMutationResult<{ shell: ConversationMessage["attachments"][number] }>
+> {
+  const user = await requireAuthenticatedUser();
+  const repository = createChatServiceRoleAttachmentRepository();
+  if (!repository.ok) {
+    return {
+      status: "error",
+      message: "Det gick inte att ladda upp filen. Försök igen.",
+    };
+  }
+
+  const confirmed = await repository.data.confirmUpload({
+    actorId: user.id,
+    attachmentId: input.attachmentId,
+  });
+  if (!confirmed.ok) {
+    return {
+      status: "error",
+      message: chatAttachmentSafeMessage(confirmed.clientError),
+    };
+  }
+
+  return {
+    status: "success",
+    message: "Filen är uppladdad.",
+    data: { shell: confirmed.shell },
+  };
+}
+
+export async function discardChatUnlinkedAttachmentMutation(input: {
+  attachmentId: string;
+}): Promise<ChatMutationResult> {
+  const user = await requireAuthenticatedUser();
+  const repository = createChatServiceRoleAttachmentRepository();
+  if (!repository.ok) {
+    return {
+      status: "error",
+      message: "Bilagan kunde inte tas bort. Försök igen.",
+    };
+  }
+
+  const discarded = await repository.data.discardUnlinkedAttachment({
+    actorId: user.id,
+    attachmentId: input.attachmentId,
+  });
+  if (!discarded.ok) {
+    return {
+      status: "error",
+      message: chatAttachmentSafeMessage(discarded.clientError),
+    };
+  }
+
+  return {
+    status: "success",
+    message: "Bilagan togs bort.",
+  };
+}
+
+export async function hydrateChatMessageAttachmentsMutation(
+  conversationId: string,
+  messageId: string,
+): Promise<ChatMutationResult<ConversationMessage["attachments"]>> {
+  const user = await requireAuthenticatedUser();
+  if (!conversationId || !messageId) {
+    return { status: "error", message: "Meddelandet saknas." };
+  }
+
+  const thread = await getConversationThread(user.id, conversationId);
+  if (!thread) {
+    return { status: "error", message: "Konversationen kunde inte öppnas." };
+  }
+
+  const message = thread.messages.find((item) => item.id === messageId);
+  return {
+    status: "success",
+    message: "Bilagor hämtade.",
+    data: message?.attachments ?? [],
   };
 }
 
