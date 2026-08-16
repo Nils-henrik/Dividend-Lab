@@ -52,8 +52,13 @@ function finite(value: number | null | undefined): value is number {
   return typeof value === "number" && Number.isFinite(value);
 }
 
+/**
+ * Support/resistance uses raw OHLC prices on one coherent price plane.
+ * `adjustedClose` is useful for return continuity, but mixing it with raw
+ * high/low shifts technical levels after dividends/corporate actions.
+ */
 function closeOf(bar: DailyBar): number {
-  return finite(bar.adjustedClose) && bar.adjustedClose > 0 ? bar.adjustedClose : bar.close;
+  return bar.close;
 }
 
 function average(values: readonly number[]): number | null {

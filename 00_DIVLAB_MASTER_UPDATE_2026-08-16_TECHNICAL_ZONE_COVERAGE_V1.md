@@ -5,7 +5,7 @@ Status: Preview release candidate / fail-closed
 
 ## Runtime finding
 
-The fourth real Atlas Copco A Preview run reached:
+The fifth real Atlas Copco A Preview run again reached:
 
 - Research quality: 91/100
 - Analyst quality: 100/100
@@ -13,40 +13,39 @@ The fourth real Atlas Copco A Preview run reached:
 - Risk / confidence: medium / medium
 - sole failed Research check: `technicalLevelCoverage`
 
-This proves the qualitative-primary-research expansion closed the previous Analyst quality gap without lowering any Analyst gate. The remaining release blocker is deterministic technical level coverage only.
-
-## Root cause class
-
-The support/resistance engine was too line-like for real market structure in two ways:
-
-1. volatility-near pivots could be split into separate narrow clusters even though a technician would treat them as one price area;
-2. `no_validated_resistance_above` used the absolute prior intraday high, so one isolated historical wick could keep resistance unresolved even when no robust resistance zone existed above the current price area.
-
-Neither issue should be solved by lowering `technicalLevelCoverage` or inventing a synthetic level.
+This confirms the qualitative-primary-research and Analyst-quality paths are now stable. The remaining blocker is deterministic technical-level coverage only.
 
 ## Technical Zone Coverage v1
 
-The deterministic support/resistance engine is hardened as follows:
+Earlier hardening already made support/resistance more zone-like without lowering the gate:
 
 - raw zone tolerance remains derived from current price and ATR/median daily range;
-- pivot clustering now has a bounded overlap envelope of 1.35x the raw tolerance so nearby volatility bands can form one zone;
-- merged clusters have a hard maximum spread of 2.4x raw tolerance to prevent chain-merging unrelated levels;
-- rendered zone envelopes widen modestly from 0.35x to 0.45x raw tolerance around the cluster center;
-- the existing publish filter remains unchanged: a zone still needs at least two pivot reactions or the existing strength score threshold;
-- robust wick-based resistance remains represented by validated resistance zones;
-- only when no validated resistance zone exists does price-discovery detection compare the current price with the prior closing high instead of allowing a single isolated intraday wick to block the state;
-- the public Research quality gate remains unchanged: at least one support zone plus either validated resistance or verified absence of validated resistance above is still mandatory.
+- pivot clustering uses a bounded overlap envelope of 1.35x raw tolerance;
+- merged clusters have a hard maximum spread of 2.4x raw tolerance;
+- rendered zone envelopes use 0.45x raw tolerance around the center;
+- zone acceptance is unchanged: at least two pivot reactions or the existing strength threshold;
+- an isolated historical wick no longer falsely blocks a legitimate price-discovery state when no validated resistance zone exists.
 
-## Regression protection
+## Raw OHLC price-plane correction
 
-New deterministic tests cover:
+The fifth runtime exposed the deeper issue: the support/resistance engine mixed two different price bases.
 
-- two nearby but previously split resistance pivots becoming one bounded volatility zone with at least two touches;
-- an isolated historical wick remaining visible in `priorHigh` while no longer falsely blocking `no_validated_resistance_above` when the closing-price history has been cleared.
+Yahoo history supplies raw OHLC (`open/high/low/close`) plus a separate dividend/split-adjusted close. The technical engine previously built pivot levels from raw `high/low` while using `adjustedClose` for the current close, ATR previous close and prior closing high. After dividends or corporate actions this can shift the current-price plane relative to the pivot-price plane and make valid support/resistance appear to be missing.
+
+Support/resistance now uses **raw close consistently with raw OHLC** for:
+
+- current technical price;
+- ATR/true-range previous close;
+- prior closing high used by price-discovery detection;
+- support/resistance distance calculations.
+
+`adjustedClose` remains available elsewhere for return/split continuity, but it is no longer mixed into raw OHLC technical levels.
+
+A deterministic regression test intentionally creates a material gap between raw close and adjusted close and requires the engine to retain the raw last close plus valid support and resolved resistance coverage.
 
 ## Release rule
 
-Production remains blocked until a fresh real Atlas Copco A protected Preview run reaches:
+Production remains blocked until a fresh protected Atlas Copco A Preview run reaches:
 
 1. Research quality 100/100;
 2. Analyst quality 100/100;
