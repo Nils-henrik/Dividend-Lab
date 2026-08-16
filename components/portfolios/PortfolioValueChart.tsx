@@ -18,10 +18,10 @@ import {
 } from "@/lib/model-portfolios/value-history";
 
 const colorBySlug: Record<string, string> = {
-  forsiktig: "#60a5fa",
-  medelrisk: "#22d3ee",
-  "hog-risk": "#fb923c",
-  utdelning: "#c084fc",
+  forsiktig: "var(--divlab-chart-series-blue)",
+  medelrisk: "var(--divlab-chart-series-cyan)",
+  "hog-risk": "var(--divlab-chart-series-orange)",
+  utdelning: "var(--divlab-chart-series-violet)",
 };
 
 function formatSekMinor(minor: number): string {
@@ -235,18 +235,18 @@ function ChartBody({
             <stop offset="95%" stopColor={color} stopOpacity={0.02} />
           </linearGradient>
         </defs>
-        <CartesianGrid stroke="rgba(148,163,184,0.12)" vertical={false} />
+        <CartesianGrid stroke="var(--divlab-chart-grid)" vertical={false} />
         <XAxis
           dataKey="snapshotAt"
           tickFormatter={(value) => formatChartDate(String(value), expanded, range)}
-          tick={{ fill: "#94a3b8", fontSize: expanded ? 12 : 10 }}
-          axisLine={{ stroke: "rgba(148,163,184,0.18)" }}
+          tick={{ fill: "var(--divlab-chart-axis)", fontSize: expanded ? 12 : 10 }}
+          axisLine={{ stroke: "var(--divlab-chart-axis-line)" }}
           tickLine={false}
           minTickGap={expanded ? 34 : 50}
         />
         <YAxis
           tickFormatter={(value) => `${formatAxisSek(Number(value))} kr`}
-          tick={{ fill: "#94a3b8", fontSize: expanded ? 12 : 10 }}
+          tick={{ fill: "var(--divlab-chart-axis)", fontSize: expanded ? 12 : 10 }}
           axisLine={false}
           tickLine={false}
           width={expanded ? 84 : 70}
@@ -257,12 +257,12 @@ function ChartBody({
           labelFormatter={(label) => formatFullDate(String(label))}
           formatter={(value) => [formatSekMinor(Math.round(Number(value) * 100)), "Portföljvärde"]}
           contentStyle={{
-            background: "#0f172a",
-            border: "1px solid rgba(148,163,184,0.25)",
+            background: "var(--divlab-chart-tooltip)",
+            border: "1px solid var(--divlab-chart-tooltip-border)",
             borderRadius: 0,
-            color: "#e2e8f0",
+            color: "var(--divlab-chart-tooltip-text)",
           }}
-          labelStyle={{ color: "#94a3b8" }}
+          labelStyle={{ color: "var(--divlab-chart-axis)" }}
         />
         <Area
           type="monotone"
@@ -270,7 +270,7 @@ function ChartBody({
           stroke={color}
           strokeWidth={expanded ? 2.5 : 2}
           fill={`url(#${gradientId})`}
-          activeDot={{ r: expanded ? 5 : 4, fill: color, stroke: "#0f172a", strokeWidth: 2 }}
+          activeDot={{ r: expanded ? 5 : 4, fill: color, stroke: "var(--divlab-surface)", strokeWidth: 2 }}
           dot={data.length <= 2 ? { r: 3, fill: color, strokeWidth: 0 } : false}
           isAnimationActive={false}
         />
