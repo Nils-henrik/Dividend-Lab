@@ -28,12 +28,29 @@ describe("presence migration security contract", () => {
     assert.match(source, /enable row level security/);
     assert.match(source, /force row level security/);
     assert.match(source, /_are_accepted_contacts_internal/);
-    assert.match(source, /share_active_status = true/);
     assert.match(source, /user_id = \(select auth\.uid\(\)\)/);
     assert.doesNotMatch(source, /using\s*\(\s*true\s*\)/i);
     assert.match(source, /revoke insert, update, delete on table public\.user_presence/);
     assert.match(source, /grant select on table public\.user_presence to authenticated/);
     assert.match(source, /revoke all on table public\.user_presence from anon/);
+  });
+
+  it("makes opt-out realtime-safe without exposing disabled last-seen data", () => {
+    const source = presenceMigrationSource();
+    assert.match(source, /last_seen_at timestamptz default now\(\)/);
+    assert.doesNotMatch(source, /last_seen_at timestamptz not null/);
+    assert.match(
+      source,
+      /when presence\.share_active_status = false then null/,
+    );
+    assert.match(
+      source,
+      /case when desired_enabled then now\(\) else null end/,
+    );
+    assert.match(
+      source,
+      /share_active_status = desired_enabled,[\s\S]*last_seen_at = case when desired_enabled then now\(\) else null end/,
+    );
   });
 
   it("publishes only the narrowly required realtime tables", () => {
