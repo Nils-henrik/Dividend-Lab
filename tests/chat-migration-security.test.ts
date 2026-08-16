@@ -46,11 +46,13 @@ describe("presence migration security contract", () => {
 
   it("makes opt-out realtime-safe without exposing disabled last-seen data", () => {
     const source = presenceMigrationSource();
-    assert.match(source, /last_seen_at timestamptz default now\(\)/);
+    assert.match(source, /last_seen_at timestamptz,/);
     assert.doesNotMatch(source, /last_seen_at timestamptz not null/);
+    assert.doesNotMatch(source, /last_seen_at timestamptz default now\(\)/);
+    assert.match(source, /and last_seen_at is not null/);
     assert.match(
       source,
-      /when presence\.share_active_status = false then null/,
+      /when presence\.share_active_status is not true then null/,
     );
     assert.match(
       source,
