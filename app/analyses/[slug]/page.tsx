@@ -83,20 +83,20 @@ function buildClientPayload(
     },
     technical: {
       trendRegime: technical.trend.regime,
-      rsi14: technical.momentum.rsi14,
-      priceVsSma50Pct: technical.trend.priceVsSma50Pct,
-      volumeRatio20: technical.volume.volumeRatio20,
+      rsi14: technical.momentum.rsi14 ?? null,
+      priceVsSma50Pct: technical.trend.priceVsSma50Pct ?? null,
+      volumeRatio20: technical.volume.volumeRatio20 ?? null,
       supports: analysis.packet.technical.levels.supports.map(mapLevel),
       resistances: analysis.packet.technical.levels.resistances.map(mapLevel),
     },
     view: analysis.draft.view,
     riskLevel: analysis.draft.riskLevel,
     confidence: analysis.draft.confidence,
-    fundamentalScore: analysis.packet.fundamental.scorecard.overall,
+    fundamentalScore: analysis.packet.fundamental.scorecard.overall ?? null,
     baseScenario: baseScenario
       ? {
-          valuePerShare: baseScenario.valuePerShare,
-          upsideDownsidePct: baseScenario.upsideDownsidePct,
+          valuePerShare: baseScenario.valuePerShare ?? null,
+          upsideDownsidePct: baseScenario.upsideDownsidePct ?? null,
         }
       : null,
     investmentCase: analysis.draft.investmentCase.map(mapClaim),
