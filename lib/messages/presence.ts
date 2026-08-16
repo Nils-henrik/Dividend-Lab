@@ -8,6 +8,11 @@ import type { PresenceKind, PresenceSnapshot, PresenceView } from "./types";
  * Online: last_seen_at within 90 seconds
  * Recent-active: last_seen_at within 24 hours
  * Stale/offline: older than 24 hours, missing, or share_active_status = false
+ *
+ * Privacy invalidation:
+ * Accepted contacts may read the presence row even when sharing is off, but
+ * last_seen_at is NULL in that state. A readable Realtime UPDATE can therefore
+ * clear cached online/recent UI immediately without exposing a hidden timestamp.
  */
 export const PRESENCE_HEARTBEAT_INTERVAL_MS = 30_000;
 export const PRESENCE_HEARTBEAT_MIN_WRITE_MS = 20_000;
@@ -88,18 +93,27 @@ export function toPresenceView(
   snapshot: PresenceSnapshot | null | undefined,
   nowMs: number,
 ): PresenceView {
+  if (!snapshot?.shareActiveStatus) {
+    return {
+      kind: "offline",
+      lastSeenAt: null,
+      compactLabel: null,
+      srLabel: null,
+    };
+  }
+
   const kind = resolvePresenceKind(snapshot, nowMs);
 
   if (kind === "online") {
     return {
       kind,
-      lastSeenAt: snapshot?.lastSeenAt ?? null,
+      lastSeenAt: snapshot.lastSeenAt,
       compactLabel: "Aktiv nu",
       srLabel: "Aktiv nu",
     };
   }
 
-  if (kind === "recent" && snapshot?.lastSeenAt) {
+  if (kind === "recent" && snapshot.lastSeenAt) {
     return {
       kind,
       lastSeenAt: snapshot.lastSeenAt,
@@ -110,7 +124,7 @@ export function toPresenceView(
 
   return {
     kind: "offline",
-    lastSeenAt: snapshot?.lastSeenAt ?? null,
+    lastSeenAt: snapshot.lastSeenAt ?? null,
     compactLabel: null,
     srLabel: null,
   };
