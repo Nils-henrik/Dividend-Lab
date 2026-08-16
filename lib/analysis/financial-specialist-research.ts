@@ -121,8 +121,8 @@ const TOTAL_AUM_PATTERNS = [
 ] as const;
 
 const FEE_AUM_PATTERNS = [
-  /(?:EUR|€)\s*(\d{2,4}(?:[.,]\d+)?)\s*(?:billion|bn|miljarder?)[^\n.]{0,100}?fee[- ]generating (?:assets under management|AUM)/i,
-  /fee[- ]generating (?:assets under management|AUM)[^\n.]{0,90}?(?:EUR|€)\s*(\d{2,4}(?:[.,]\d+)?)\s*(?:billion|bn|miljarder?)/i,
+  /(?:EUR|€)\s*(\d{2,4}(?:[.,]\d+)?)\s*(?:billion|bn|miljarder?)\s*(?:in|of)?\s*fee[- ]generating (?:assets under management|AUM)/i,
+  /fee[- ]generating (?:assets under management|AUM)[^\n.]{0,60}?(?:EUR|€)\s*(\d{2,4}(?:[.,]\d+)?)\s*(?:billion|bn|miljarder?)/i,
 ] as const;
 
 export function buildFinancialSpecialistResearch(input: {
