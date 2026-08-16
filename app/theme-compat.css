@@ -63,7 +63,8 @@
 :root[data-theme="light"] [class~="hover:bg-white/[0.03]"]:hover,
 :root[data-theme="light"] [class~="hover:bg-white/[0.035]"]:hover,
 :root[data-theme="light"] [class~="hover:bg-white/[0.04]"]:hover,
-:root[data-theme="light"] [class~="hover:bg-white/5"]:hover {
+:root[data-theme="light"] [class~="hover:bg-white/5"]:hover,
+:root[data-theme="light"] [class~="focus:bg-white/[0.04]"]:focus {
   background-color: var(--divlab-hover);
 }
 
@@ -98,7 +99,8 @@
 }
 
 :root[data-theme="light"] .group:hover .group-hover\:text-white,
-:root[data-theme="light"] [class~="hover:text-white"]:hover {
+:root[data-theme="light"] [class~="hover:text-white"]:hover,
+:root[data-theme="light"] [class~="focus:text-white"]:focus {
   color: var(--divlab-text);
 }
 
