@@ -21,8 +21,13 @@ export default function ChatLauncherButton({
       type="button"
       aria-label={formatUnreadChatBadgeLabel(unreadCount)}
       aria-pressed={pressed}
+      aria-expanded={pressed}
       onClick={onClick}
-      className="relative flex h-11 w-11 items-center justify-center divlab-input text-divlab-text-muted transition hover:border-divlab-blue/40 hover:text-divlab-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
+      className={`relative flex h-11 w-11 items-center justify-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 ${
+        pressed
+          ? "divlab-selected"
+          : "divlab-input text-divlab-text-muted hover:border-divlab-blue/40 hover:text-divlab-blue"
+      }`}
     >
       <AppIcon name="messages" />
       {hasUnread ? (

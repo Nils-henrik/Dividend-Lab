@@ -12,6 +12,7 @@ export type AppIconName =
   | "contacts"
   | "dashboard"
   | "diamond"
+  | "emoji"
   | "forum"
   | "gift"
   | "goals"
@@ -23,6 +24,7 @@ export type AppIconName =
   | "portfolio"
   | "rocket"
   | "search"
+  | "send"
   | "settings"
   | "shield"
   | "watchlist";
@@ -49,6 +51,8 @@ const icons: Record<AppIconName, string> = {
   contacts: "M16 11a4 4 0 1 0-4-4 4 4 0 0 0 4 4ZM4 20a6 6 0 0 1 12 0M19 8v6M22 11h-6",
   dashboard: "M4 13h6V4H4v9Zm10 7h6V4h-6v16ZM4 20h6v-5H4v5Z",
   diamond: "M5 8l3-4h8l3 4-7 12L5 8",
+  emoji:
+    "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM9 10h.01M15 10h.01M8.2 14.5c1.2 1.8 2.9 2.5 3.8 2.5s2.6-.7 3.8-2.5",
   forum: "M4 5h16v10H8l-4 4V5Zm5 4h6M9 12h8",
   gift: "M4 9h16v11H4V9m-1-4h18v4H3V5m9 0v15M12 5c-1.5-2-4-2-4 0s2 2 4 2 4-1 4-2-2.5-2-4 0",
   goals:
@@ -61,6 +65,7 @@ const icons: Record<AppIconName, string> = {
   portfolio: "M4 8h16v11H4V8Zm4 0V5h8v3M4 13h16",
   rocket: "M5 19l4-1 9-9 1-5-5 1-9 9-1 5Zm8-8 2 2M9 15l-2 4m6-2 4-2",
   search: "m21 21-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z",
+  send: "M4.5 12 19 4.5 14 19l-2.2-6.3L4.5 12Z",
   settings:
     "M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Zm0-12v3m0 11v3m8.5-8.5h-3m-11 0h-3m14.6-6.1-2.1 2.1M7.5 16.5l-2.1 2.1m0-12.7 2.1 2.1m9 8.5 2.1 2.1",
   shield: "M12 3l7 3v5c0 4-3 8-7 10-4-2-7-6-7-10V6l7-3",

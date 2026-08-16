@@ -25,6 +25,7 @@ import {
   CHAT_WINDOW_STORAGE_KEY,
   DESKTOP_CHAT_MIN_VIEWPORT,
   DESKTOP_RAIL_MIN_VIEWPORT,
+  getDesktopChatReservedRightWidth,
   getMaxOpenDesktopWindows,
   markConversationUnreadCleared,
   openDesktopWindow,
@@ -32,6 +33,7 @@ import {
   persistedStateContainsTranscript,
   reconcileDesktopWindows,
   reduceMobileChatLayer,
+  resolveDesktopChatLauncherIntent,
   serializePersistedChatUiState,
   type DesktopChatWindowState,
   type MobileChatLayer,
@@ -214,6 +216,10 @@ export default function ChatProvider({ bootstrap, children }: Props) {
     viewportWidth,
     sidebarWidth: 80,
     railVisible: isWideDesktop,
+    reservedRightWidth: getDesktopChatReservedRightWidth({
+      drawerOpen: desktopDrawerOpen,
+      minimizedCount: 0,
+    }),
   });
   const dockWindows = useMemo(
     () => reconcileDesktopWindows(windows, maxOpenWindows),
@@ -433,15 +439,7 @@ export default function ChatProvider({ bootstrap, children }: Props) {
   const openLauncher = useCallback(() => {
     launcherRestoreRef.current = document.activeElement as HTMLElement | null;
 
-    if (isDesktop) {
-      if (isWideDesktop) {
-        const unreadChat =
-          chats.find((chat) => unreadIds.includes(chat.id)) ?? chats[0];
-        if (unreadChat) {
-          void openConversationInPlace(unreadChat.id);
-        }
-        return;
-      }
+    if (resolveDesktopChatLauncherIntent(isDesktop) === "toggleInbox") {
       setDesktopDrawerOpen((open) => !open);
       return;
     }
@@ -458,7 +456,7 @@ export default function ChatProvider({ bootstrap, children }: Props) {
       window.history.pushState(state, "");
       historyDepthRef.current += 1;
     }
-  }, [chats, isDesktop, isWideDesktop, mobileLayer, openConversationInPlace, unreadIds]);
+  }, [isDesktop, mobileLayer]);
 
   const closeDesktopDrawer = useCallback(() => {
     setDesktopDrawerOpen(false);

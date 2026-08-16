@@ -5,6 +5,10 @@ export const CHAT_HISTORY_STATE_KEY = "divlabChat";
 
 export const DESKTOP_CHAT_WINDOW_WIDTH = 328;
 export const DESKTOP_CHAT_WINDOW_GAP = 12;
+export const DESKTOP_CHAT_DRAWER_WIDTH = 352;
+export const DESKTOP_CHAT_DOCK_INSET = 16;
+export const DESKTOP_MINIMIZED_BUBBLE_SIZE = 48;
+export const DESKTOP_MINIMIZED_BUBBLE_GAP = 10;
 export const DESKTOP_RAIL_WIDTH = 288;
 export const DESKTOP_RAIL_MIN_VIEWPORT = 1280;
 export const DESKTOP_CHAT_MIN_VIEWPORT = 1024;
@@ -121,14 +125,81 @@ export function persistedStateContainsTranscript(raw: string) {
   return /"body"\s*:/.test(raw) || /"messages"\s*:/.test(raw);
 }
 
+export function getDesktopChatDockOrigin(railVisible: boolean) {
+  return (railVisible ? DESKTOP_RAIL_WIDTH : 0) + DESKTOP_CHAT_DOCK_INSET;
+}
+
+export function getDesktopChatReservedRightWidth(params: {
+  drawerOpen: boolean;
+  minimizedCount: number;
+}) {
+  let width = 0;
+
+  if (params.drawerOpen) {
+    width += DESKTOP_CHAT_DRAWER_WIDTH + DESKTOP_CHAT_WINDOW_GAP;
+  }
+
+  if (params.minimizedCount > 0) {
+    width +=
+      params.minimizedCount *
+        (DESKTOP_MINIMIZED_BUBBLE_SIZE + DESKTOP_MINIMIZED_BUBBLE_GAP) -
+      DESKTOP_MINIMIZED_BUBBLE_GAP +
+      DESKTOP_CHAT_WINDOW_GAP;
+  }
+
+  return width;
+}
+
+export function getDesktopChatDockLayout(params: {
+  railVisible: boolean;
+  drawerOpen: boolean;
+  openWindowCount: number;
+  minimizedCount: number;
+}) {
+  const origin = getDesktopChatDockOrigin(params.railVisible);
+  let cursor = origin;
+
+  if (params.drawerOpen) {
+    cursor += DESKTOP_CHAT_DRAWER_WIDTH + DESKTOP_CHAT_WINDOW_GAP;
+  }
+
+  const minimizedRights: number[] = [];
+  for (let index = 0; index < params.minimizedCount; index += 1) {
+    minimizedRights.push(cursor);
+    cursor += DESKTOP_MINIMIZED_BUBBLE_SIZE + DESKTOP_MINIMIZED_BUBBLE_GAP;
+  }
+
+  if (params.minimizedCount > 0) {
+    cursor += DESKTOP_CHAT_WINDOW_GAP - DESKTOP_MINIMIZED_BUBBLE_GAP;
+  }
+
+  const openWindowRights: number[] = [];
+  for (let index = 0; index < params.openWindowCount; index += 1) {
+    openWindowRights.push(cursor);
+    cursor += DESKTOP_CHAT_WINDOW_WIDTH + DESKTOP_CHAT_WINDOW_GAP;
+  }
+
+  return {
+    drawerRight: origin,
+    minimizedRights,
+    openWindowRights,
+  };
+}
+
+export function resolveDesktopChatLauncherIntent(isDesktop: boolean) {
+  return isDesktop ? "toggleInbox" : "openMobileInbox";
+}
+
 export function getMaxOpenDesktopWindows(params: {
   viewportWidth: number;
   sidebarWidth: number;
   railVisible: boolean;
+  reservedRightWidth?: number;
 }) {
   const railWidth = params.railVisible ? DESKTOP_RAIL_WIDTH : 0;
+  const reserved = params.reservedRightWidth ?? 0;
   const available =
-    params.viewportWidth - params.sidebarWidth - railWidth - 32;
+    params.viewportWidth - params.sidebarWidth - railWidth - reserved - 32;
 
   return Math.max(
     1,
