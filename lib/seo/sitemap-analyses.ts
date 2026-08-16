@@ -23,7 +23,7 @@ type VersionRow = {
  * validation before rendering.
  */
 export async function listPublishedAnalysisSitemapEntries(): Promise<SitemapEntry[]> {
-  const supabase = createDivLabAnalysisReadClient();
+  const supabase = await createDivLabAnalysisReadClient();
   if (!supabase) return [];
 
   try {

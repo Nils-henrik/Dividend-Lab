@@ -74,7 +74,7 @@ async function loadPublishedAnalysisBySlug(
   const normalizedSlug = safeSlug(slug);
   if (!normalizedSlug) return null;
 
-  const supabase = createDivLabAnalysisReadClient();
+  const supabase = await createDivLabAnalysisReadClient();
   if (!supabase) return null;
 
   const { data: analysisData, error: analysisError } = await supabase
@@ -178,7 +178,7 @@ export async function getPublishedDivLabAnalysis(
 export async function listPublishedDivLabAnalyses(
   limit = 24,
 ): Promise<PublishedDivLabAnalysis[]> {
-  const supabase = createDivLabAnalysisReadClient();
+  const supabase = await createDivLabAnalysisReadClient();
   if (!supabase) return [];
 
   const safeLimit = Math.max(1, Math.min(60, Math.trunc(limit)));

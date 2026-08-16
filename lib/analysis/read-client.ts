@@ -2,21 +2,26 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createModelPortfolioAdminClient } from "@/lib/model-portfolios/admin";
-import { createDivLabAnalysisDevAdminClient } from "./dev-admin";
+import { createClient } from "@/lib/supabase/server";
 
 /**
- * Analysis reads follow the environment-specific persistence boundary:
+ * Analysis reads follow the environment-specific access boundary:
  *
- * - Preview: read only from the explicitly bound dividend-lab-dev project.
- * - Production/other runtimes: use the application's ordinary Supabase binding.
+ * - Preview: use the request-scoped authenticated Supabase client. RLS grants
+ *   founder/CEO/admin access only to already-published analysis rows.
+ * - Production/other runtimes: keep using the server admin binding so public
+ *   analysis pages remain readable without requiring a visitor session.
  *
- * A Preview deliberately does not fall back to the generic Supabase binding if
- * DEV credentials are missing. Otherwise a misconfigured Preview could render
- * analysis state from a different database than the operator writes to.
+ * Preview deliberately avoids a service-role dependency. This keeps the test
+ * center usable with the founder session while preserving fail-closed RLS.
  */
-export function createDivLabAnalysisReadClient(): SupabaseClient | null {
+export async function createDivLabAnalysisReadClient(): Promise<SupabaseClient | null> {
   if (process.env.VERCEL_ENV?.trim().toLowerCase() === "preview") {
-    return createDivLabAnalysisDevAdminClient();
+    try {
+      return await createClient();
+    } catch {
+      return null;
+    }
   }
   return createModelPortfolioAdminClient();
 }

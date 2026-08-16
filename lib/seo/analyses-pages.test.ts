@@ -33,7 +33,7 @@ describe("DivLab Analys public SEO contract", () => {
   it("fails closed unless storage says published and current research/content contracts revalidate", () => {
     const reader = source("lib/analysis/public-read.ts");
 
-    assert.match(reader, /createDivLabAnalysisReadClient/);
+    assert.match(reader, /await createDivLabAnalysisReadClient\(\)/);
     assert.match(reader, /\.eq\("status",\s*"published"\)/);
     assert.match(reader, /\.eq\("publishable",\s*true\)/);
     assert.match(reader, /\.not\("published_at",\s*"is",\s*null\)/);
@@ -44,12 +44,13 @@ describe("DivLab Analys public SEO contract", () => {
     assert.match(reader, /if \(!analystQualityGate\.publishable\) return null/);
   });
 
-  it("uses the explicit DEV analysis database for Preview reads without generic fallback", () => {
+  it("uses the request-scoped authenticated client for Preview reads and admin for production", () => {
     const client = source("lib/analysis/read-client.ts");
 
     assert.match(client, /VERCEL_ENV\?\.trim\(\)\.toLowerCase\(\) === "preview"/);
-    assert.match(client, /return createDivLabAnalysisDevAdminClient\(\)/);
+    assert.match(client, /return await createClient\(\)/);
     assert.match(client, /return createModelPortfolioAdminClient\(\)/);
+    assert.doesNotMatch(client, /createDivLabAnalysisDevAdminClient/);
   });
 
   it("keeps the X/Open Graph image large and grounded in the frozen chart", () => {
