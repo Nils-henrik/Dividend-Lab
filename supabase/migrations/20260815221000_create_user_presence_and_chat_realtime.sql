@@ -44,7 +44,13 @@ create policy "Users can read own or accepted-contact presence"
   to authenticated
   using (
     user_id = (select auth.uid())
-    or public._are_accepted_contacts_internal((select auth.uid()), user_id)
+    or exists (
+      select 1
+      from public.user_connections connection
+      where connection.status = 'accepted'
+        and connection.user_low_id = least((select auth.uid()), user_id)
+        and connection.user_high_id = greatest((select auth.uid()), user_id)
+    )
   );
 
 -- No client writes. Heartbeat and the privacy toggle go through RPCs.
