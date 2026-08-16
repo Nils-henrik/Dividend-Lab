@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { shouldSubmitChatComposerKey } from "@/lib/messages/chat-state";
 import { MESSAGE_BODY_MAX_LENGTH } from "@/lib/messages/types";
 
 type Props = {
@@ -36,10 +37,19 @@ export default function ChatComposer({
   }
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault();
-      event.currentTarget.form?.requestSubmit();
+    const shouldSubmit = shouldSubmitChatComposerKey({
+      key: event.key,
+      shiftKey: event.shiftKey,
+      isComposing: event.nativeEvent.isComposing,
+      keyCode: event.nativeEvent.keyCode,
+    });
+
+    if (!shouldSubmit) {
+      return;
     }
+
+    event.preventDefault();
+    event.currentTarget.form?.requestSubmit();
   }
 
   return (
