@@ -45,12 +45,7 @@ export default function AnalysisCreator() {
   const canRun = Boolean(selected?.supported && !running);
 
   useEffect(() => {
-    if (normalizedQuery.length < 2) {
-      setResults([]);
-      setSelected(null);
-      setMessage(null);
-      return;
-    }
+    if (normalizedQuery.length < 2) return;
 
     const controller = new AbortController();
     const timer = window.setTimeout(() => {
@@ -139,9 +134,15 @@ export default function AnalysisCreator() {
             id="analysis-search"
             value={query}
             onChange={(event) => {
-              setQuery(event.target.value);
+              const nextQuery = event.target.value;
+              setQuery(nextQuery);
               setSelected(null);
               setRunResult(null);
+              setMessage(null);
+              if (nextQuery.trim().length < 2) {
+                setResults([]);
+                setSearching(false);
+              }
             }}
             placeholder="Sök namn eller ticker…"
             autoComplete="off"
