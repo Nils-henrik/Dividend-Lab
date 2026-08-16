@@ -47,4 +47,28 @@ describe("global chat shell wiring", () => {
     assert.match(state, /conversationId/);
     assert.doesNotMatch(state, /sessionStorage\.setItem\([^\)]*body/);
   });
+
+  it("keeps ChatComposer IME-safe and does not regress the full-page composer", () => {
+    const overlay = read("components/messages/chat/ChatComposer.tsx");
+    const helper = read("lib/messages/chat-composer.ts");
+    const fullPage = read("components/messages/MessageComposer.tsx");
+    assert.match(overlay, /shouldSubmitChatComposerKey/);
+    assert.match(overlay, /event\.nativeEvent\.isComposing/);
+    assert.match(helper, /isComposing/);
+    assert.match(helper, /keyCode !== 229/);
+    assert.doesNotMatch(fullPage, /requestSubmit/);
+    assert.doesNotMatch(fullPage, /onKeyDown/);
+  });
+
+  it("makes the mobile compose control focus search and list accepted contacts", () => {
+    const experience = read("components/messages/chat/ChatExperience.tsx");
+    const inbox = read("components/messages/chat/MobileChatInbox.tsx");
+    const provider = read("components/messages/chat/ChatProvider.tsx");
+    assert.match(experience, /onCompose=\{chat\.beginMobileCompose\}/);
+    assert.match(inbox, /searchInputRef/);
+    assert.match(inbox, /listMobileInboxResults/);
+    assert.match(inbox, /composeMode/);
+    assert.match(provider, /beginMobileCompose/);
+    assert.match(provider, /applyPresenceRealtimePayload/);
+  });
 });

@@ -5,6 +5,7 @@
 import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { resolvePresenceKind, toPresenceView } from "../../lib/messages/presence";
 
 const API_URL = process.env.SUPABASE_URL ?? "http://127.0.0.1:54321";
 const ANON_KEY =
@@ -91,7 +92,7 @@ after(async () => {
 });
 
 describe("presence RLS", () => {
-  it("lets an accepted contact read enabled presence", async () => {
+  it("lets an accepted contact read enabled fresh presence", async () => {
     const beat = await userA.client.rpc("heartbeat_user_presence");
     assert.equal(beat.error, null, beat.error?.message);
 
@@ -101,6 +102,97 @@ describe("presence RLS", () => {
       .eq("user_id", userA.id);
     assert.equal(visible.error, null, visible.error?.message);
     assert.equal(visible.data?.length, 1);
+    assert.equal(visible.data?.[0]?.share_active_status, true);
+    assert.ok(visible.data?.[0]?.last_seen_at);
+    assert.equal(
+      resolvePresenceKind(
+        {
+          userId: userA.id,
+          lastSeenAt: visible.data?.[0]?.last_seen_at ?? null,
+          shareActiveStatus: true,
+        },
+        Date.now(),
+      ),
+      "online",
+    );
+  });
+
+  it("lets an accepted contact read a disabled row with no activity timestamp", async () => {
+    const disabled = await userA.client.rpc("set_share_active_status", {
+      p_enabled: false,
+    });
+    assert.equal(disabled.error, null, disabled.error?.message);
+
+    const visible = await userB.client
+      .from("user_presence")
+      .select("user_id, last_seen_at, share_active_status")
+      .eq("user_id", userA.id);
+    assert.equal(visible.error, null, visible.error?.message);
+    assert.equal(visible.data?.length, 1);
+    assert.equal(visible.data?.[0]?.share_active_status, false);
+    assert.equal(visible.data?.[0]?.last_seen_at, null);
+
+    const view = toPresenceView(
+      {
+        userId: userA.id,
+        lastSeenAt: visible.data?.[0]?.last_seen_at ?? null,
+        shareActiveStatus: visible.data?.[0]?.share_active_status === true,
+      },
+      Date.now(),
+    );
+    assert.equal(view.kind, "offline");
+    assert.equal(view.lastSeenAt, null);
+    assert.equal(view.compactLabel, null);
+  });
+
+  it("does not let heartbeat restore last_seen_at while sharing is disabled", async () => {
+    const beat = await userA.client.rpc("heartbeat_user_presence");
+    assert.equal(beat.error, null, beat.error?.message);
+    assert.equal(
+      (beat.data as { last_seen_at?: string | null; share_active_status?: boolean } | null)
+        ?.share_active_status,
+      false,
+    );
+    assert.equal(
+      (beat.data as { last_seen_at?: string | null } | null)?.last_seen_at,
+      null,
+    );
+
+    const visible = await userB.client
+      .from("user_presence")
+      .select("last_seen_at, share_active_status")
+      .eq("user_id", userA.id)
+      .maybeSingle();
+    assert.equal(visible.error, null, visible.error?.message);
+    assert.equal(visible.data?.share_active_status, false);
+    assert.equal(visible.data?.last_seen_at, null);
+  });
+
+  it("restores a fresh timestamp for accepted contacts after re-enable", async () => {
+    const enabled = await userA.client.rpc("set_share_active_status", {
+      p_enabled: true,
+    });
+    assert.equal(enabled.error, null, enabled.error?.message);
+
+    const visible = await userB.client
+      .from("user_presence")
+      .select("last_seen_at, share_active_status")
+      .eq("user_id", userA.id)
+      .maybeSingle();
+    assert.equal(visible.error, null, visible.error?.message);
+    assert.equal(visible.data?.share_active_status, true);
+    assert.ok(visible.data?.last_seen_at);
+    assert.equal(
+      resolvePresenceKind(
+        {
+          userId: userA.id,
+          lastSeenAt: visible.data?.last_seen_at ?? null,
+          shareActiveStatus: true,
+        },
+        Date.now(),
+      ),
+      "online",
+    );
   });
 
   it("hides presence from unrelated authenticated users", async () => {
@@ -118,22 +210,6 @@ describe("presence RLS", () => {
       .select("user_id, last_seen_at")
       .eq("user_id", userA.id);
     assert.ok(hidden.error || (hidden.data?.length ?? 0) === 0);
-  });
-
-  it("hides both online and recent state when sharing is disabled", async () => {
-    const disabled = await userA.client.rpc("set_share_active_status", {
-      p_enabled: false,
-    });
-    assert.equal(disabled.error, null, disabled.error?.message);
-
-    const hidden = await userB.client
-      .from("user_presence")
-      .select("user_id, last_seen_at")
-      .eq("user_id", userA.id);
-    assert.equal(hidden.error, null, hidden.error?.message);
-    assert.equal(hidden.data?.length, 0);
-
-    await userA.client.rpc("set_share_active_status", { p_enabled: true });
   });
 
   it("rejects direct client writes", async () => {

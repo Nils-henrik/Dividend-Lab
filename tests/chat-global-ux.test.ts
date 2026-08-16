@@ -7,6 +7,7 @@ import {
   filterChatSearch,
   formatUnreadChatBadgeLabel,
   getMaxOpenDesktopWindows,
+  listMobileInboxResults,
   markConversationUnreadCleared,
   openDesktopWindow,
   parsePersistedChatUiState,
@@ -251,6 +252,46 @@ describe("search and request separation", () => {
     });
     assert.equal(result.contacts[0]?.userId, "ada");
     assert.equal(result.contacts[0]?.conversationId, null);
+  });
+
+  it("exposes accepted contacts from the mobile compose control even with an empty query", () => {
+    const existing = summary({
+      id: "c1",
+      otherParticipant: {
+        id: "bert",
+        name: "Bert",
+        username: "bert",
+        initials: "BE",
+        avatarUrl: null,
+      },
+    });
+    const ada = contact({ userId: "ada", name: "Ada", conversationId: null });
+    const bert = contact({
+      userId: "bert",
+      name: "Bert",
+      conversationId: "c1",
+    });
+
+    const idle = listMobileInboxResults({
+      query: "",
+      chats: [existing],
+      contacts: [ada, bert],
+      composeMode: false,
+    });
+    assert.equal(idle.contacts.length, 0);
+    assert.equal(idle.chats.length, 1);
+
+    const composing = listMobileInboxResults({
+      query: "",
+      chats: [existing],
+      contacts: [ada, bert],
+      composeMode: true,
+    });
+    assert.deepEqual(
+      composing.contacts.map((item) => item.userId),
+      ["ada"],
+    );
+    assert.equal(composing.chats[0]?.id, "c1");
   });
 });
 

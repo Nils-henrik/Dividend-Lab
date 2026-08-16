@@ -10,7 +10,11 @@
 -- Privacy:
 --   last_seen_at is NOT stored on public.profiles
 --   Only the owner and accepted contacts may read a presence row
---   Contacts see a row only when share_active_status is true
+--   Accepted contacts can always read the row itself so disable events
+--   remain visible over Realtime
+--   When share_active_status is false, last_seen_at is persisted as NULL
+--   so contacts never receive an activity timestamp
+--   Heartbeat must not repopulate last_seen_at while sharing is disabled
 --   Anonymous and unrelated authenticated users cannot select or subscribe
 --
 -- Realtime publication is limited to messages + user_presence.
@@ -18,14 +22,15 @@
 
 create table if not exists public.user_presence (
   user_id uuid primary key references auth.users(id) on delete cascade,
-  last_seen_at timestamptz not null default now(),
+  last_seen_at timestamptz,
   share_active_status boolean not null default true,
   updated_at timestamptz not null default now()
 );
 
 create index if not exists user_presence_shared_last_seen_idx
   on public.user_presence (last_seen_at desc)
-  where share_active_status = true;
+  where share_active_status = true
+    and last_seen_at is not null;
 
 drop trigger if exists set_user_presence_updated_at on public.user_presence;
 create trigger set_user_presence_updated_at
@@ -43,10 +48,7 @@ create policy "Users can read own or accepted-contact presence"
   to authenticated
   using (
     user_id = (select auth.uid())
-    or (
-      share_active_status = true
-      and public._are_accepted_contacts_internal((select auth.uid()), user_id)
-    )
+    or public._are_accepted_contacts_internal((select auth.uid()), user_id)
   );
 
 -- No client writes. Heartbeat and the privacy toggle go through RPCs.
@@ -81,6 +83,8 @@ begin
   on conflict (user_id) do update
     set
       last_seen_at = case
+        when presence.share_active_status is not true then null
+        when presence.last_seen_at is null then now()
         when presence.last_seen_at < now() - interval '20 seconds'
           then now()
         else presence.last_seen_at
@@ -116,11 +120,16 @@ begin
   )
   values (
     acting_user_id,
-    now(),
+    case when coalesce(p_enabled, true) then now() else null end,
     coalesce(p_enabled, true)
   )
   on conflict (user_id) do update
-    set share_active_status = excluded.share_active_status
+    set
+      share_active_status = excluded.share_active_status,
+      last_seen_at = case
+        when excluded.share_active_status then now()
+        else null
+      end
   returning * into result_row;
 
   return result_row;

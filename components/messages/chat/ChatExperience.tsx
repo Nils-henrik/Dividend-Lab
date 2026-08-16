@@ -91,10 +91,9 @@ export default function ChatExperience() {
           onBack={chat.mobileBack}
           onOpenContact={chat.openContact}
           onOpenConversation={chat.openConversation}
-          onCompose={() => {
-            chat.setShowingRequests(false);
-            chat.setMobileQuery("");
-          }}
+          onCompose={chat.beginMobileCompose}
+          composeMode={chat.mobileComposeMode}
+          composeNonce={chat.mobileComposeNonce}
           onSend={chat.sendMessage}
           onAcceptRequest={chat.acceptRequest}
           onIgnoreRequest={chat.ignoreRequest}

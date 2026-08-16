@@ -8,7 +8,13 @@ import type { PresenceKind, PresenceSnapshot, PresenceView } from "./types";
  * Online: last_seen_at within 90 seconds
  * Recent-active: last_seen_at within 24 hours
  * Stale/offline: older than 24 hours, missing, or share_active_status = false
+ *
+ * Privacy invalidation:
+ * Accepted contacts may read the presence row even when sharing is off, but
+ * last_seen_at is NULL in that state. Realtime UPDATE events therefore remain
+ * readable and must immediately clear cached online/recent UI.
  */
+
 export const PRESENCE_HEARTBEAT_INTERVAL_MS = 30_000;
 export const PRESENCE_HEARTBEAT_MIN_WRITE_MS = 20_000;
 export const PRESENCE_ONLINE_THRESHOLD_MS = 90_000;
@@ -88,18 +94,27 @@ export function toPresenceView(
   snapshot: PresenceSnapshot | null | undefined,
   nowMs: number,
 ): PresenceView {
+  if (!snapshot?.shareActiveStatus) {
+    return {
+      kind: "offline",
+      lastSeenAt: null,
+      compactLabel: null,
+      srLabel: null,
+    };
+  }
+
   const kind = resolvePresenceKind(snapshot, nowMs);
 
   if (kind === "online") {
     return {
       kind,
-      lastSeenAt: snapshot?.lastSeenAt ?? null,
+      lastSeenAt: snapshot.lastSeenAt,
       compactLabel: "Aktiv nu",
       srLabel: "Aktiv nu",
     };
   }
 
-  if (kind === "recent" && snapshot?.lastSeenAt) {
+  if (kind === "recent" && snapshot.lastSeenAt) {
     return {
       kind,
       lastSeenAt: snapshot.lastSeenAt,
@@ -110,9 +125,77 @@ export function toPresenceView(
 
   return {
     kind: "offline",
-    lastSeenAt: snapshot?.lastSeenAt ?? null,
+    lastSeenAt: snapshot.lastSeenAt ?? null,
     compactLabel: null,
     srLabel: null,
+  };
+}
+
+export type PresenceRealtimePayload = {
+  eventType?: string;
+  new?: unknown;
+  old?: unknown;
+};
+
+function readPresenceUserId(value: unknown): string | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const userId = (value as { user_id?: unknown }).user_id;
+  return typeof userId === "string" && userId.length > 0 ? userId : null;
+}
+
+export function mapPresenceRealtimeRow(row: unknown): PresenceSnapshot | null {
+  if (!row || typeof row !== "object") {
+    return null;
+  }
+
+  const record = row as {
+    user_id?: unknown;
+    last_seen_at?: unknown;
+    share_active_status?: unknown;
+  };
+  const userId = readPresenceUserId(record);
+  if (!userId) {
+    return null;
+  }
+
+  const lastSeenAt =
+    typeof record.last_seen_at === "string" && record.last_seen_at.length > 0
+      ? record.last_seen_at
+      : null;
+
+  return {
+    userId,
+    lastSeenAt,
+    shareActiveStatus: record.share_active_status === true,
+  };
+}
+
+export function applyPresenceRealtimePayload(
+  current: Record<string, PresenceSnapshot>,
+  payload: PresenceRealtimePayload,
+): Record<string, PresenceSnapshot> {
+  if (payload.eventType === "DELETE") {
+    const userId = readPresenceUserId(payload.old);
+    if (!userId) {
+      return current;
+    }
+
+    const next = { ...current };
+    delete next[userId];
+    return next;
+  }
+
+  const snapshot = mapPresenceRealtimeRow(payload.new);
+  if (!snapshot) {
+    return current;
+  }
+
+  return {
+    ...current,
+    [snapshot.userId]: snapshot,
   };
 }
 

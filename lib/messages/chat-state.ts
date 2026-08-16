@@ -327,6 +327,37 @@ export function filterChatSearch(params: {
   return { chats, contacts };
 }
 
+export function listMobileInboxResults(params: {
+  query: string;
+  chats: ConversationSummary[];
+  contacts: ChatContact[];
+  composeMode: boolean;
+}) {
+  if (params.query.trim()) {
+    return filterChatSearch(params);
+  }
+
+  if (!params.composeMode) {
+    return {
+      chats: params.chats,
+      contacts: [] as ChatContact[],
+    };
+  }
+
+  const chatUserIds = new Set(
+    params.chats
+      .map((chat) => chat.otherParticipant?.id)
+      .filter((id): id is string => Boolean(id)),
+  );
+
+  return {
+    chats: params.chats,
+    contacts: params.contacts.filter(
+      (contact) => !chatUserIds.has(contact.userId),
+    ),
+  };
+}
+
 export function formatUnreadChatBadgeLabel(count: number) {
   if (count <= 0) {
     return "Meddelanden";

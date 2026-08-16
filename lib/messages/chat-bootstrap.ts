@@ -13,7 +13,7 @@ import { createClient } from "@/lib/supabase/server";
 
 type PresenceRow = {
   user_id: string;
-  last_seen_at: string;
+  last_seen_at: string | null;
   share_active_status: boolean;
 };
 
@@ -58,7 +58,7 @@ export async function getContactPresenceSnapshots(userIds: string[]) {
     for (const row of data ?? []) {
       snapshots[row.user_id] = {
         userId: row.user_id,
-        lastSeenAt: row.last_seen_at,
+        lastSeenAt: row.last_seen_at ?? null,
         shareActiveStatus: row.share_active_status,
       };
     }

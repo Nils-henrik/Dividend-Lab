@@ -28,12 +28,39 @@ describe("presence migration security contract", () => {
     assert.match(source, /enable row level security/);
     assert.match(source, /force row level security/);
     assert.match(source, /_are_accepted_contacts_internal/);
-    assert.match(source, /share_active_status = true/);
     assert.match(source, /user_id = \(select auth\.uid\(\)\)/);
     assert.doesNotMatch(source, /using\s*\(\s*true\s*\)/i);
     assert.match(source, /revoke insert, update, delete on table public\.user_presence/);
     assert.match(source, /grant select on table public\.user_presence to authenticated/);
     assert.match(source, /revoke all on table public\.user_presence from anon/);
+  });
+
+  it("lets accepted contacts read the row after sharing is disabled", () => {
+    const source = presenceMigrationSource();
+    const policy = source.match(
+      /create policy "Users can read own or accepted-contact presence"[\s\S]*?;/,
+    );
+    assert.ok(policy);
+    assert.match(policy[0]!, /_are_accepted_contacts_internal/);
+    assert.doesNotMatch(policy[0]!, /share_active_status/);
+    assert.match(source, /last_seen_at timestamptz,/);
+    assert.doesNotMatch(source, /last_seen_at timestamptz not null/);
+  });
+
+  it("nulls last_seen_at when sharing is disabled and keeps heartbeat from restoring it", () => {
+    const source = presenceMigrationSource();
+    assert.match(
+      source,
+      /when presence\.share_active_status is not true then null/,
+    );
+    assert.match(
+      source,
+      /when excluded\.share_active_status then now\(\)\s+else null/,
+    );
+    assert.match(
+      source,
+      /case when coalesce\(p_enabled, true\) then now\(\) else null end/,
+    );
   });
 
   it("publishes only the narrowly required realtime tables", () => {

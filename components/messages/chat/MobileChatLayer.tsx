@@ -35,6 +35,8 @@ type Props = {
   onOpenContact: (userId: string) => void;
   onOpenConversation: (conversationId: string) => void;
   onCompose: () => void;
+  composeMode: boolean;
+  composeNonce: number;
   onSend: (conversationId: string, body: string) => Promise<boolean>;
   onAcceptRequest: (conversationId: string) => void;
   onIgnoreRequest: (conversationId: string) => void;
@@ -62,6 +64,8 @@ export default function MobileChatLayer({
   onOpenContact,
   onOpenConversation,
   onCompose,
+  composeMode,
+  composeNonce,
   onSend,
   onAcceptRequest,
   onIgnoreRequest,
@@ -193,6 +197,8 @@ export default function MobileChatLayer({
           onOpenConversation={onOpenConversation}
           onShowRequests={onShowRequests}
           showingRequests={showingRequests}
+          composeMode={composeMode}
+          composeNonce={composeNonce}
         />
       )}
     </div>

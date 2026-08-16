@@ -37,6 +37,7 @@ import {
   type MobileChatLayer,
 } from "@/lib/messages/chat-state";
 import {
+  applyPresenceRealtimePayload,
   mapPresenceViews,
   PRESENCE_FRESHNESS_TICK_MS,
   PRESENCE_HEARTBEAT_INTERVAL_MS,
@@ -52,7 +53,6 @@ import type {
   ConversationSummary,
   ConversationThread,
   GlobalChatBootstrap,
-  PresenceSnapshot,
   PresenceView,
 } from "@/lib/messages/types";
 
@@ -73,6 +73,8 @@ type ChatContextValue = {
   mobileConversationId: string | null;
   mobileQuery: string;
   showingRequests: boolean;
+  mobileComposeMode: boolean;
+  mobileComposeNonce: number;
   unreadByConversationId: Record<string, boolean>;
   pendingConversationId: string | null;
   sendErrorById: Record<string, string>;
@@ -91,6 +93,7 @@ type ChatContextValue = {
   mobileBack: () => void;
   setMobileQuery: (value: string) => void;
   setShowingRequests: (value: boolean) => void;
+  beginMobileCompose: () => void;
   sendMessage: (conversationId: string, body: string) => Promise<boolean>;
   acceptRequest: (conversationId: string) => void;
   ignoreRequest: (conversationId: string) => void;
@@ -184,6 +187,8 @@ export default function ChatProvider({ bootstrap, children }: Props) {
   );
   const [mobileQuery, setMobileQuery] = useState("");
   const [showingRequests, setShowingRequests] = useState(false);
+  const [mobileComposeMode, setMobileComposeMode] = useState(false);
+  const [mobileComposeNonce, setMobileComposeNonce] = useState(0);
   const [unreadIds, setUnreadIds] = useState<string[]>(() => [
     ...bootstrap.chats.filter((chat) => chat.hasUnread).map((chat) => chat.id),
     ...bootstrap.requests
@@ -463,6 +468,8 @@ export default function ChatProvider({ bootstrap, children }: Props) {
     setMobileLayer("closed");
     setMobileConversationId(null);
     setShowingRequests(false);
+    setMobileComposeMode(false);
+    setMobileQuery("");
     launcherRestoreRef.current?.focus();
   }, []);
 
@@ -717,25 +724,9 @@ export default function ChatProvider({ bootstrap, children }: Props) {
           "postgres_changes",
           { event: "*", schema: "public", table: "user_presence" },
           (payload) => {
-            const row = (payload.new ?? {}) as {
-              user_id?: string;
-              last_seen_at?: string;
-              share_active_status?: boolean;
-            };
-            if (!row.user_id) {
-              return;
-            }
-
-            const snapshot: PresenceSnapshot = {
-              userId: row.user_id,
-              lastSeenAt: row.last_seen_at ?? null,
-              shareActiveStatus: Boolean(row.share_active_status),
-            };
-
-            setPresenceSnapshots((current) => ({
-              ...current,
-              [row.user_id!]: snapshot,
-            }));
+            setPresenceSnapshots((current) =>
+              applyPresenceRealtimePayload(current, payload),
+            );
           },
         )
         .subscribe((status) => {
@@ -763,6 +754,20 @@ export default function ChatProvider({ bootstrap, children }: Props) {
       }
     };
   }, [bootstrap.currentUserId]);
+
+  const updateShowingRequests = useCallback((value: boolean) => {
+    setShowingRequests(value);
+    if (value) {
+      setMobileComposeMode(false);
+    }
+  }, []);
+
+  const beginMobileCompose = useCallback(() => {
+    setShowingRequests(false);
+    setMobileQuery("");
+    setMobileComposeMode(true);
+    setMobileComposeNonce((current) => current + 1);
+  }, []);
 
   const sendMessage = useCallback(
     async (conversationId: string, body: string) => {
@@ -920,6 +925,8 @@ export default function ChatProvider({ bootstrap, children }: Props) {
       mobileConversationId,
       mobileQuery,
       showingRequests,
+      mobileComposeMode,
+      mobileComposeNonce,
       unreadByConversationId,
       pendingConversationId,
       sendErrorById,
@@ -947,7 +954,8 @@ export default function ChatProvider({ bootstrap, children }: Props) {
         ),
       mobileBack,
       setMobileQuery,
-      setShowingRequests,
+      setShowingRequests: updateShowingRequests,
+      beginMobileCompose,
       sendMessage,
       acceptRequest,
       ignoreRequest,
@@ -955,6 +963,7 @@ export default function ChatProvider({ bootstrap, children }: Props) {
     }),
     [
       acceptRequest,
+      beginMobileCompose,
       bootstrap.currentUserId,
       chats,
       closeDesktopDrawer,
@@ -970,6 +979,8 @@ export default function ChatProvider({ bootstrap, children }: Props) {
       mobileConversationId,
       mobileLayer,
       mobileQuery,
+      mobileComposeMode,
+      mobileComposeNonce,
       openContact,
       openConversationInPlace,
       openLauncher,
@@ -985,6 +996,7 @@ export default function ChatProvider({ bootstrap, children }: Props) {
       threads,
       unreadByConversationId,
       unreadCount,
+      updateShowingRequests,
     ],
   );
 

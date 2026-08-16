@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import ProfileAvatar from "@/components/account/ProfileAvatar";
-import { filterChatSearch, sortChatContacts } from "@/lib/messages/chat-state";
+import { listMobileInboxResults, sortChatContacts } from "@/lib/messages/chat-state";
 import { formatMessageTimestamp } from "@/lib/messages/format";
 import { DIVLAB_MEMBER_LABEL } from "@/lib/site/brand";
 import type {
@@ -23,6 +23,8 @@ type Props = {
   onOpenConversation: (conversationId: string) => void;
   onShowRequests: () => void;
   showingRequests: boolean;
+  composeMode: boolean;
+  composeNonce: number;
 };
 
 export default function MobileChatInbox({
@@ -36,10 +38,13 @@ export default function MobileChatInbox({
   onOpenConversation,
   onShowRequests,
   showingRequests,
+  composeMode,
+  composeNonce,
 }: Props) {
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
   const filtered = useMemo(
-    () => filterChatSearch({ query, chats, contacts }),
-    [query, chats, contacts],
+    () => listMobileInboxResults({ query, chats, contacts, composeMode }),
+    [query, chats, contacts, composeMode],
   );
   const activeContacts = useMemo(
     () =>
@@ -48,8 +53,16 @@ export default function MobileChatInbox({
       ),
     [contacts, presenceByUserId],
   );
-  const visibleChats = query ? filtered.chats : chats;
-  const visibleContacts = query ? filtered.contacts : [];
+  const visibleChats = filtered.chats;
+  const visibleContacts = filtered.contacts;
+
+  useEffect(() => {
+    if (!composeMode) {
+      return;
+    }
+
+    searchInputRef.current?.focus();
+  }, [composeMode, composeNonce]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -57,9 +70,10 @@ export default function MobileChatInbox({
         <label className="block">
           <span className="sr-only">Sök chattar och kontakter</span>
           <input
+            ref={searchInputRef}
             value={query}
             onChange={(event) => onQueryChange(event.target.value)}
-            placeholder="Sök"
+            placeholder={composeMode ? "Sök kontakt eller chatt" : "Sök"}
             className="w-full divlab-input px-3 py-2.5 text-sm"
           />
         </label>
@@ -170,7 +184,9 @@ export default function MobileChatInbox({
             ))}
             {visibleChats.length === 0 && visibleContacts.length === 0 ? (
               <p className="px-4 py-6 text-sm text-divlab-text-secondary">
-                Inga chattar ännu.
+                {composeMode
+                  ? "Inga kontakter att skriva till."
+                  : "Inga chattar ännu."}
               </p>
             ) : null}
           </>
