@@ -290,12 +290,15 @@ export function filterChatSearch(params: {
   query: string;
   chats: ConversationSummary[];
   contacts: ChatContact[];
+  includeContactsWhenEmpty?: boolean;
 }) {
   const query = params.query.trim().toLowerCase();
   if (!query) {
     return {
-      chats: params.chats,
-      contacts: [] as ChatContact[],
+      chats: params.includeContactsWhenEmpty ? [] : params.chats,
+      contacts: params.includeContactsWhenEmpty
+        ? params.contacts
+        : ([] as ChatContact[]),
     };
   }
 
@@ -325,6 +328,19 @@ export function filterChatSearch(params: {
   });
 
   return { chats, contacts };
+}
+
+export function shouldSubmitChatComposerKey(params: {
+  key: string;
+  shiftKey: boolean;
+  isComposing: boolean;
+  keyCode?: number;
+}) {
+  if (params.isComposing || params.keyCode === 229) {
+    return false;
+  }
+
+  return params.key === "Enter" && !params.shiftKey;
 }
 
 export function formatUnreadChatBadgeLabel(count: number) {
