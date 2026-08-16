@@ -10,8 +10,10 @@
 -- Privacy:
 --   last_seen_at is NOT stored on public.profiles
 --   Only the owner and accepted contacts may read a presence row
---   When sharing is disabled, accepted contacts can still read the row so
---   realtime can invalidate stale UI, but last_seen_at is forced to NULL
+--   Accepted contacts can read the row itself when sharing is disabled so a
+--   realtime UPDATE can invalidate stale UI immediately
+--   When share_active_status is false, last_seen_at is persisted as NULL
+--   Heartbeat must not repopulate last_seen_at while sharing is disabled
 --   Anonymous and unrelated authenticated users cannot select or subscribe
 --
 -- Realtime publication is limited to messages + user_presence.
@@ -19,14 +21,15 @@
 
 create table if not exists public.user_presence (
   user_id uuid primary key references auth.users(id) on delete cascade,
-  last_seen_at timestamptz default now(),
+  last_seen_at timestamptz,
   share_active_status boolean not null default true,
   updated_at timestamptz not null default now()
 );
 
 create index if not exists user_presence_shared_last_seen_idx
   on public.user_presence (last_seen_at desc)
-  where share_active_status = true;
+  where share_active_status = true
+    and last_seen_at is not null;
 
 drop trigger if exists set_user_presence_updated_at on public.user_presence;
 create trigger set_user_presence_updated_at
@@ -84,7 +87,7 @@ begin
   )
   on conflict (user_id) do update
     set last_seen_at = case
-      when presence.share_active_status = false then null
+      when presence.share_active_status is not true then null
       when presence.last_seen_at is null
         or presence.last_seen_at < now() - interval '20 seconds'
         then now()
