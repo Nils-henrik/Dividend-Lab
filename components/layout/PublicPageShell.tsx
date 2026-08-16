@@ -16,7 +16,7 @@ export default function PublicPageShell({
   contentClassName = "",
 }: Props) {
   return (
-    <div className="flex min-h-screen flex-col overflow-x-hidden bg-[#090909] text-white">
+    <div className="flex min-h-screen flex-col overflow-x-hidden bg-divlab-bg text-divlab-text">
       <Navbar />
       <main className={`flex-1 ${contentClassName}`.trim()}>{children}</main>
       <MarketingFooter />
