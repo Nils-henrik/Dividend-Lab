@@ -20,6 +20,10 @@ import {
   type AnalysisFxConversion,
 } from "./fx";
 import type { FundamentalSnapshot } from "./fundamental-analysis";
+import {
+  applyOmxs30SpecialClassification,
+  omxs30SpecialClassificationSource,
+} from "./omxs30-methodology-registry";
 import type { AnalysisSource } from "./quality-gate";
 import { fetchNordicDivLabAnalysisResearch } from "./nordic-primary-sources";
 import { fetchYahooFinancialStatements } from "./yahoo-financials";
@@ -35,9 +39,7 @@ export type DivLabResearchInputs = {
   };
   history: DailyBar[];
   fundamentals: FundamentalSnapshot;
-  /** Source-grounded provider metadata used to choose the correct fundamental methodology. */
   companyClassification: DivLabCompanyClassification;
-  /** Reporting-currency -> market-currency conversion, only when required and verified. */
   fxConversion: AnalysisFxConversion | null;
   sources: AnalysisSource[];
   evidence: AnalysisEvidence[];
@@ -158,7 +160,7 @@ export async function loadDivLabResearchInputs(input: {
   }
 
   const lastBar = market.history.at(-1)!;
-  const currentPrice = market.quote?.close ?? lastBar.adjustedClose ?? lastBar.close;
+  const currentPrice = market.quote?.close ?? lastBar.close ?? lastBar.adjustedClose;
   if (!Number.isFinite(currentPrice) || currentPrice <= 0) {
     return { ok: false, reason: "current_price_unavailable" };
   }
@@ -199,10 +201,22 @@ export async function loadDivLabResearchInputs(input: {
       primary: false,
     },
   ];
-  const companyClassification: DivLabCompanyClassification = {
+
+  const registrySource = omxs30SpecialClassificationSource({
+    yahooSymbol,
+    verifiedAt: now.toISOString(),
+  });
+  if (registrySource) sources.push(registrySource);
+
+  const providerClassification: DivLabCompanyClassification = {
     ...financials.companyClassification,
     sourceIds: [financialSourceId],
   };
+  const companyClassification = applyOmxs30SpecialClassification({
+    yahooSymbol,
+    classification: providerClassification,
+    sourceId: registrySource?.id,
+  });
   const evidence: AnalysisEvidence[] = [];
 
   const fx = await loadReportingToMarketFx({

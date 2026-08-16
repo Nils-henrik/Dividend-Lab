@@ -7,6 +7,7 @@ import {
   fundamentalMethodologyFor,
   type FundamentalMethodologyPolicy,
 } from "./fundamental-methodology";
+import { applyOmxs30SpecialClassification } from "./omxs30-methodology-registry";
 import type { AnalysisSource } from "./quality-gate";
 
 export const DIVLAB_COMPANY_PROFILE_PREFLIGHT_VERSION = "company-profile-preflight-v1" as const;
@@ -26,8 +27,10 @@ function normalizedYahooSymbol(value: string): string {
 }
 
 /**
- * Pure transformer for a lightweight Yahoo quoteSummary payload.
- * It never infers company type from ticker/name or financial ratios.
+ * Pure transformer for a lightweight Yahoo quoteSummary payload. Provider
+ * metadata is the default source of truth. The bounded OMXS30 specialist
+ * registry may promote exact current special-methodology symbols (bank,
+ * investment company, asset manager) to their verified specialist type.
  */
 export function buildCompanyProfilePreflightFromYahooPayload(input: {
   payload: unknown;
@@ -49,9 +52,13 @@ export function buildCompanyProfilePreflightFromYahooPayload(input: {
     verifiedAt: fetchedAt,
     primary: false,
   };
-  const classification = classifyCompanyMetadata({
+  const providerClassification = classifyCompanyMetadata({
     metadata: extractYahooCompanyMetadata(input.payload),
     sourceIds: [sourceId],
+  });
+  const classification = applyOmxs30SpecialClassification({
+    yahooSymbol,
+    classification: providerClassification,
   });
   return {
     version: DIVLAB_COMPANY_PROFILE_PREFLIGHT_VERSION,

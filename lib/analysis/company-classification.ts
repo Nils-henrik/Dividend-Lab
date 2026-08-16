@@ -6,6 +6,8 @@ export type DivLabCompanyType =
   | "insurance"
   | "real_estate"
   | "financial_other"
+  | "investment_company"
+  | "asset_manager"
   | "fund_or_etf"
   | "unknown";
 
@@ -76,6 +78,8 @@ export function extractYahooCompanyMetadata(payload: unknown): ProviderCompanyMe
  * This deliberately does not infer company type from the company name, ticker,
  * financial ratios or LLM interpretation. Ambiguous metadata remains unknown or
  * financial_other rather than being promoted to a more specific methodology.
+ * Symbol-exact, source-backed specialist overrides are applied separately by
+ * the OMXS30 methodology registry.
  */
 export function classifyCompanyMetadata(input: {
   metadata: ProviderCompanyMetadata;
@@ -132,8 +136,6 @@ export function classifyCompanyMetadata(input: {
     basis.push(`sector=${sector}`);
     if (industry) basis.push(`industry=${industry}`);
   } else if (quoteType === "EQUITY") {
-    // EQUITY alone is not enough to safely distinguish an operating company
-    // from a bank, insurer, property company or investment company.
     type = "unknown";
     confidence = "low";
     basis.push("quoteType=EQUITY_without_sector_metadata");

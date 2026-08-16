@@ -27,6 +27,8 @@ export type FundamentalMethodologyPolicy = {
     | "insurance_specialized"
     | "real_estate_specialized"
     | "financial_specialized"
+    | "investment_company_specialized"
+    | "asset_manager_specialized"
     | "fund_or_etf"
     | "unclassified";
   genericCorporateScorecardApplicable: boolean;
@@ -78,6 +80,20 @@ const SPECIALIZED_METRICS: Record<
     "relevant bokvärde/NAV",
     "kapitaltäckning eller finansieringsrisk där relevant",
     "verksamhetsspecifik avkastning på kapital",
+  ],
+  investment_company: [
+    "substansvärde per aktie/NAV per share",
+    "substansrabatt eller substanspremie",
+    "portföljsammansättning och koncentration",
+    "nettoshuld eller nettokassa i relation till substansvärde",
+    "substansvärdets utveckling",
+  ],
+  asset_manager: [
+    "totalt förvaltat kapital/AUM",
+    "avgiftsgenererande förvaltat kapital/Fee-generating AUM",
+    "fundraising och nettinflöden",
+    "avgiftsrelaterat resultat och marginal",
+    "realisationer/performance fees där relevant",
   ],
 };
 
@@ -139,6 +155,26 @@ export function fundamentalMethodologyFor(
         valuationSupport: { pe: true, priceToFcf: false, enterpriseMultiples: false },
         requiredSpecializedMetrics: [...SPECIALIZED_METRICS.financial_other],
       };
+    case "investment_company":
+      return {
+        version: DIVLAB_FUNDAMENTAL_METHODOLOGY_VERSION,
+        companyType: classification.type,
+        status: "specialized_required",
+        framework: "investment_company_specialized",
+        genericCorporateScorecardApplicable: false,
+        valuationSupport: { pe: false, priceToFcf: false, enterpriseMultiples: false },
+        requiredSpecializedMetrics: [...SPECIALIZED_METRICS.investment_company],
+      };
+    case "asset_manager":
+      return {
+        version: DIVLAB_FUNDAMENTAL_METHODOLOGY_VERSION,
+        companyType: classification.type,
+        status: "specialized_required",
+        framework: "asset_manager_specialized",
+        genericCorporateScorecardApplicable: false,
+        valuationSupport: { pe: true, priceToFcf: false, enterpriseMultiples: false },
+        requiredSpecializedMetrics: [...SPECIALIZED_METRICS.asset_manager],
+      };
     case "fund_or_etf":
       return {
         version: DIVLAB_FUNDAMENTAL_METHODOLOGY_VERSION,
@@ -187,10 +223,6 @@ function specializedPlaceholder(
       coverage: 0,
     },
     metrics: {
-      // EPS/ROE/ROA/share count/payout can remain useful raw context for several
-      // specialized financial/property frameworks. Generic cash/debt/margin
-      // measures are deliberately nulled so the analyst cannot treat them as a
-      // valid corporate scorecard for the wrong company type.
       revenueGrowthYoy: null,
       operatingMarginTtm: null,
       profitMarginTtm: null,
