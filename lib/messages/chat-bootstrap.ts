@@ -13,7 +13,7 @@ import { createClient } from "@/lib/supabase/server";
 
 type PresenceRow = {
   user_id: string;
-  last_seen_at: string;
+  last_seen_at: string | null;
   share_active_status: boolean;
 };
 
