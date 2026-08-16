@@ -106,9 +106,17 @@ function rollingAverageVolume(bars: readonly DailyBar[], index: number, period =
 
 function identifyPivots(bars: readonly DailyBar[], window = 3): Pivot[] {
   const pivots: Pivot[] = [];
-  for (let index = window; index < bars.length - window; index += 1) {
+
+  // Historical pivots use the ordinary symmetric window. At the live right
+  // edge, future sessions do not exist yet, so use every completed session that
+  // is actually available. The existing zone acceptance still requires repeat
+  // reactions or sufficient strength; no future confirmation is fabricated.
+  for (let index = window; index < bars.length; index += 1) {
     const current = bars[index]!;
-    const neighborhood = bars.slice(index - window, index + window + 1);
+    const neighborhood = bars.slice(
+      index - window,
+      Math.min(bars.length, index + window + 1),
+    );
     const localLow = Math.min(...neighborhood.map((bar) => bar.low));
     const localHigh = Math.max(...neighborhood.map((bar) => bar.high));
     const averageVolume = rollingAverageVolume(bars, index);
