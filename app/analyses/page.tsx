@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import AnalysisCreator from "@/components/analysis/AnalysisCreator";
 import PublicContentShell from "@/components/layout/PublicContentShell";
 import { listPublishedDivLabAnalyses } from "@/lib/analysis/public-read";
+import { getStaffRolesForUser } from "@/lib/profiles/staff-roles.server";
 import { getCanonicalUrl } from "@/lib/seo/canonical";
+import { createClient } from "@/lib/supabase/server";
 
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Aktieanalyser – teknisk, fundamental och värdering | DivLab",
@@ -22,6 +25,8 @@ export const metadata: Metadata = {
     siteName: "DivLab",
   },
 };
+
+const CREATOR_ROLES = new Set(["founder", "ceo_divlab", "admin"]);
 
 function date(value: string): string {
   const parsed = new Date(value);
@@ -46,8 +51,26 @@ function viewLabel(view: "positive" | "neutral" | "negative") {
   return { label: "Neutral", className: "text-slate-300" };
 }
 
+async function canCreateInPreview(): Promise<boolean> {
+  if (process.env.VERCEL_ENV?.trim().toLowerCase() !== "preview") return false;
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return false;
+    const roles = await getStaffRolesForUser(user.id);
+    return roles.some((role) => CREATOR_ROLES.has(role));
+  } catch {
+    return false;
+  }
+}
+
 export default async function AnalysesPage() {
-  const analyses = await listPublishedDivLabAnalyses(24);
+  const [analyses, canCreate] = await Promise.all([
+    listPublishedDivLabAnalyses(24),
+    canCreateInPreview(),
+  ]);
 
   return (
     <PublicContentShell publicContentClassName="bg-[#080b10] text-slate-100">
@@ -55,82 +78,81 @@ export default async function AnalysesPage() {
         <div className="max-w-3xl">
           <div className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-400">DivLab Analys</div>
           <h1 className="mt-3 text-4xl font-semibold tracking-[-0.04em] text-white sm:text-5xl">
-            Aktieanalyser med hela bilden
+            Analyscenter
           </h1>
           <p className="mt-5 text-base leading-7 text-slate-400 sm:text-lg sm:leading-8">
-            Fundamental utveckling, värdering, teknisk trend, volym och viktiga stöd- och motståndsområden i samma analys. AI:n tolkar underlaget, men varje publicerad analys måste först klara DivLabs kvalitetsgrindar.
+            Skapa nya bolagsanalyser och läs tidigare publicerade analyser. Varje publicering måste klara både Research 100/100 och Analyst 100/100.
           </p>
         </div>
 
-        <div className="mt-8 flex flex-wrap gap-2 text-xs text-slate-400">
-          {[
-            "Fundamental analys",
-            "Teknisk analys",
-            "Stöd & motstånd",
-            "Bear / Base / Bull",
-            "Verifierade källor",
-          ].map((item) => (
-            <span key={item} className="rounded-full border border-white/10 bg-white/[0.025] px-3 py-1.5">{item}</span>
-          ))}
-        </div>
+        {canCreate ? (
+          <div className="mt-9">
+            <AnalysisCreator />
+          </div>
+        ) : null}
 
-        {analyses.length ? (
-          <section className="mt-12 grid gap-5 md:grid-cols-2" aria-label="Publicerade analyser">
-            {analyses.map((analysis) => {
-              const { packet, draft } = analysis;
-              const view = viewLabel(draft.view);
-              const base = packet.valuation.scenarios.find((scenario) => scenario.name === "base");
-              return (
-                <Link
-                  key={analysis.versionId}
-                  href={`/analyses/${analysis.slug}`}
-                  className="group rounded-2xl border border-white/10 bg-white/[0.025] p-5 transition hover:border-blue-400/30 hover:bg-white/[0.04] sm:p-6"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                        {packet.instrument.symbol}.{packet.instrument.exchange}
+        <section className="mt-12" aria-labelledby="published-analyses-title">
+          <div className="flex items-end justify-between gap-5 border-b border-white/12 pb-4">
+            <div>
+              <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-600">Arkiv</div>
+              <h2 id="published-analyses-title" className="mt-1 text-2xl font-semibold tracking-[-0.025em] text-white">
+                Publicerade analyser
+              </h2>
+            </div>
+            <span className="text-xs text-slate-600">{analyses.length} publicerade</span>
+          </div>
+
+          {analyses.length ? (
+            <div>
+              {analyses.map((analysis) => {
+                const { packet, draft } = analysis;
+                const view = viewLabel(draft.view);
+                const base = packet.valuation.scenarios.find((scenario) => scenario.name === "base");
+                return (
+                  <Link
+                    key={analysis.versionId}
+                    href={`/analyses/${analysis.slug}`}
+                    className="group grid gap-4 border-b border-white/10 py-6 transition hover:bg-white/[0.015] sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:px-2"
+                  >
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                        <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-600">
+                          {packet.instrument.symbol}.{packet.instrument.exchange}
+                        </span>
+                        <span className={`text-xs font-semibold ${view.className}`}>{view.label}</span>
+                        <span className="text-xs text-slate-700">{date(analysis.publishedAt)}</span>
                       </div>
-                      <h2 className="mt-2 text-xl font-semibold text-slate-100 group-hover:text-white sm:text-2xl">
+                      <h3 className="mt-2 text-xl font-semibold text-slate-100 group-hover:text-white sm:text-2xl">
                         {packet.instrument.name}
-                      </h2>
+                      </h3>
+                      <p className="mt-3 line-clamp-2 max-w-3xl text-sm leading-6 text-slate-500">
+                        {draft.executiveSummary}
+                      </p>
                     </div>
-                    <span className={`text-sm font-semibold ${view.className}`}>{view.label}</span>
-                  </div>
 
-                  <p className="mt-4 line-clamp-3 text-sm leading-6 text-slate-400">
-                    {draft.executiveSummary}
-                  </p>
-
-                  <div className="mt-5 grid grid-cols-2 gap-3 border-t border-white/10 pt-4 text-sm">
-                    <div>
-                      <div className="text-xs text-slate-500">Analyskurs</div>
-                      <div className="mt-1 font-medium text-slate-200">{money(packet.instrument.currentPrice, packet.instrument.currency)}</div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-slate-500">Basscenario</div>
-                      <div className="mt-1 font-medium text-slate-200">
-                        {base?.valuePerShare ? money(base.valuePerShare, packet.instrument.currency) : "—"}
+                    <div className="flex items-center gap-6 text-sm sm:text-right">
+                      <div>
+                        <div className="text-[10px] uppercase tracking-[0.14em] text-slate-700">Analyskurs</div>
+                        <div className="mt-1 font-medium text-slate-300">{money(packet.instrument.currentPrice, packet.instrument.currency)}</div>
                       </div>
+                      <div>
+                        <div className="text-[10px] uppercase tracking-[0.14em] text-slate-700">Basscenario</div>
+                        <div className="mt-1 font-medium text-slate-300">
+                          {base?.valuePerShare ? money(base.valuePerShare, packet.instrument.currency) : "—"}
+                        </div>
+                      </div>
+                      <span className="hidden font-semibold text-blue-400 group-hover:text-blue-300 sm:block">→</span>
                     </div>
-                  </div>
-
-                  <div className="mt-4 flex items-center justify-between text-xs text-slate-500">
-                    <span>Publicerad {date(analysis.publishedAt)}</span>
-                    <span className="text-blue-400 group-hover:text-blue-300">Läs analys →</span>
-                  </div>
-                </Link>
-              );
-            })}
-          </section>
-        ) : (
-          <section className="mt-12 rounded-2xl border border-white/10 bg-white/[0.025] p-7 sm:p-9">
-            <h2 className="text-xl font-semibold text-slate-100">Första analysen förbereds</h2>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400 sm:text-base">
-              Analysbiblioteket är aktiverat, men endast analyser som klarar både research- och analystkvalitetsgrinden publiceras här.
-            </p>
-          </section>
-        )}
+                  </Link>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="border-b border-white/10 py-8 text-sm leading-6 text-slate-500">
+              Inga publicerade analyser ännu. Endast analyser som klarar båda kvalitetsgrindarna visas här.
+            </div>
+          )}
+        </section>
       </main>
     </PublicContentShell>
   );

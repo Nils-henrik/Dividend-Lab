@@ -3,12 +3,16 @@ import { createDivLabAiAnalysis } from "@/lib/analysis/ai-analysis-service";
 import { getCuratedPeerSet } from "@/lib/analysis/curated-peer-catalog";
 import { createDivLabAnalysisDevAdminClient } from "@/lib/analysis/dev-admin";
 import { founderPersistAndPublishDivLabAnalysis } from "@/lib/analysis/founder-publication-service";
+import { resolveNordicEquityAnalysisTarget } from "@/lib/analysis/instrument-search";
 import { defaultAnalysisSlug } from "@/lib/analysis/repository";
+import { getStaffRolesForUser } from "@/lib/profiles/staff-roles.server";
 import { createClient as createAuthenticatedSupabaseClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
+
+const CREATOR_ROLES = new Set(["founder", "ceo_divlab", "admin"]);
 
 function noStore(response: NextResponse) {
   response.headers.set("Cache-Control", "no-store, max-age=0");
@@ -33,13 +37,10 @@ type Body = {
  * Preview-only operator surface for creating productized DivLab analyses.
  * Production always returns 404.
  *
- * `publish=true` uses the signed-in DivLab session and a founder-only database
- * wrapper. The database verifies profile_staff_roles before calling the ordinary
- * immutable persistence + 100/100 publication gates in one transaction. This
- * avoids placing a service-role key in Vercel Preview.
- *
- * A persist-only internal run retains the explicit DEV service-role path for QA
- * compatibility, but the testcenter uses atomic founder publish.
+ * Curated QA targets still resolve locally. Founder/CEO/admin users may also
+ * select any Yahoo-verified Nordic equity from the analysis search surface.
+ * Indexes/ETFs are deliberately rejected here until their own methodology is
+ * implemented; they must never be forced through the company fundamental gate.
  */
 export async function POST(request: Request) {
   if (process.env.VERCEL_ENV?.trim().toLowerCase() !== "preview") {
@@ -59,18 +60,51 @@ export async function POST(request: Request) {
     );
   }
 
+  let authSupabase: Awaited<ReturnType<typeof createAuthenticatedSupabaseClient>> | null = null;
+  if (publish) {
+    authSupabase = await createAuthenticatedSupabaseClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await authSupabase.auth.getUser();
+    if (authError || !user) {
+      return noStore(
+        NextResponse.json({ status: "founder_auth_required" }, { status: 401 }),
+      );
+    }
+    const roles = await getStaffRolesForUser(user.id);
+    if (!roles.some((role) => CREATOR_ROLES.has(role))) {
+      return noStore(
+        NextResponse.json({ status: "founder_role_required" }, { status: 403 }),
+      );
+    }
+  }
+
   const curated = getCuratedPeerSet({ symbol, exchange });
-  if (!curated) {
+  const resolved = curated
+    ? {
+        symbol: curated.registry.target.symbol,
+        exchange: curated.registry.target.exchange,
+        name: curated.registry.target.name,
+      }
+    : await resolveNordicEquityAnalysisTarget({ symbol, exchange });
+
+  if (!resolved) {
     return noStore(
       NextResponse.json(
-        { status: "target_not_curated", symbol, exchange },
+        {
+          status: "target_not_supported",
+          symbol,
+          exchange,
+          reason:
+            "Instrumentet kunde inte verifieras som en nordisk aktie med nuvarande bolagsmetodik.",
+        },
         { status: 404 },
       ),
     );
   }
 
-  const target = curated.registry.target;
-  const slug = defaultAnalysisSlug({ instrument: target });
+  const slug = defaultAnalysisSlug({ instrument: resolved });
 
   // Persist-only QA retains the explicit DEV service-role client. Atomic
   // publish uses the authenticated founder wrapper instead.
@@ -83,9 +117,9 @@ export async function POST(request: Request) {
 
   try {
     const result = await createDivLabAiAnalysis({
-      symbol: target.symbol,
-      exchange: target.exchange,
-      name: target.name,
+      symbol: resolved.symbol,
+      exchange: resolved.exchange,
+      name: resolved.name,
       useEscalationModel,
       ...(serviceSupabase ? { supabase: serviceSupabase } : {}),
       slug,
@@ -124,9 +158,6 @@ export async function POST(request: Request) {
       return noStore(NextResponse.json(payload, { status: 422 }));
     }
 
-    // The founder publication RPC also enforces this, but expose the exact
-    // deterministic Research failure before any publication attempt so Preview
-    // QA never hides a 91/100 packet behind a later database error.
     if (!result.finalPacket.qualityGate.publishable) {
       return noStore(
         NextResponse.json(
@@ -152,13 +183,7 @@ export async function POST(request: Request) {
     let publication = null;
 
     if (publish) {
-      const authSupabase = await createAuthenticatedSupabaseClient();
-      const {
-        data: { user },
-        error: authError,
-      } = await authSupabase.auth.getUser();
-
-      if (authError || !user) {
+      if (!authSupabase) {
         return noStore(
           NextResponse.json({ status: "founder_auth_required" }, { status: 401 }),
         );

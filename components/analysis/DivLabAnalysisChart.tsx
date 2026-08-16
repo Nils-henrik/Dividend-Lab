@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  useCallback,
   useEffect,
   useRef,
   useState,
@@ -33,12 +32,48 @@ type LwcPriceScale = {
   applyOptions(options: Record<string, unknown>): void;
 };
 
+type LwcPane = {
+  getHeight(): number;
+};
+
+type LwcMediaScope = {
+  context: CanvasRenderingContext2D;
+  mediaSize: { width: number; height: number };
+};
+
+type LwcCanvasTarget = {
+  useMediaCoordinateSpace(callback: (scope: LwcMediaScope) => void): void;
+};
+
+type LwcPrimitivePaneRenderer = {
+  draw(target: LwcCanvasTarget): void;
+};
+
+type LwcPrimitivePaneView = {
+  renderer(): LwcPrimitivePaneRenderer;
+  zOrder?(): "bottom" | "normal" | "top";
+};
+
+type LwcPrimitive = {
+  attached?(params: {
+    chart: LwcChart;
+    series: LwcSeries;
+    requestUpdate: () => void;
+  }): void;
+  detached?(): void;
+  updateAllViews?(): void;
+  paneViews?(): readonly LwcPrimitivePaneView[];
+};
+
 type LwcSeries = {
   setData(data: readonly LwcData[]): void;
   priceToCoordinate(price: number): number | null;
   coordinateToPrice(coordinate: number): number | null;
   createPriceLine(options: Record<string, unknown>): unknown;
   priceScale(): LwcPriceScale;
+  getPane(): LwcPane;
+  attachPrimitive(primitive: LwcPrimitive): void;
+  detachPrimitive(primitive: LwcPrimitive): void;
 };
 
 type LwcTimeScale = {
@@ -46,8 +81,6 @@ type LwcTimeScale = {
   coordinateToTime(x: number): LwcTime | null;
   timeToCoordinate(time: LwcTime): number | null;
   width(): number;
-  subscribeVisibleTimeRangeChange(handler: () => void): void;
-  unsubscribeVisibleTimeRangeChange(handler: () => void): void;
 };
 
 type LwcChart = {
@@ -79,19 +112,6 @@ type DomainPoint = {
 type UserDrawing =
   | { id: string; type: "level"; price: number }
   | { id: string; type: "trend" | "zone"; start: DomainPoint; end: DomainPoint };
-
-type ScreenDrawing =
-  | { id: string; type: "level"; y: number }
-  | { id: string; type: "trend"; x1: number; y1: number; x2: number; y2: number }
-  | { id: string; type: "zone"; x: number; y: number; width: number; height: number };
-
-type ScreenZone = {
-  key: string;
-  kind: "support" | "resistance";
-  y: number;
-  height: number;
-  label: string;
-};
 
 let lwcPromise: Promise<LwcNamespace> | null = null;
 
@@ -166,6 +186,133 @@ function toolClass(active: boolean): string {
   }`;
 }
 
+class AnalysisOverlayPrimitive implements LwcPrimitive {
+  private chart: LwcChart | null = null;
+  private series: LwcSeries | null = null;
+  private requestUpdate: (() => void) | null = null;
+  private drawings: UserDrawing[] = [];
+  private readonly renderer: LwcPrimitivePaneRenderer;
+  private readonly view: LwcPrimitivePaneView;
+
+  constructor(private readonly zones: readonly DivLabAnalysisChartZone[]) {
+    this.renderer = { draw: (target) => this.draw(target) };
+    this.view = {
+      renderer: () => this.renderer,
+      zOrder: () => "top",
+    };
+  }
+
+  attached(params: {
+    chart: LwcChart;
+    series: LwcSeries;
+    requestUpdate: () => void;
+  }) {
+    this.chart = params.chart;
+    this.series = params.series;
+    this.requestUpdate = params.requestUpdate;
+  }
+
+  detached() {
+    this.chart = null;
+    this.series = null;
+    this.requestUpdate = null;
+  }
+
+  updateAllViews() {
+    // Coordinates are resolved during every TradingView pane repaint so zoom,
+    // pinch and pan can never leave stale DOM coordinates behind.
+  }
+
+  paneViews(): readonly LwcPrimitivePaneView[] {
+    return [this.view];
+  }
+
+  setDrawings(drawings: readonly UserDrawing[]) {
+    this.drawings = [...drawings];
+    this.requestUpdate?.();
+  }
+
+  private draw(target: LwcCanvasTarget) {
+    const chart = this.chart;
+    const series = this.series;
+    if (!chart || !series) return;
+
+    target.useMediaCoordinateSpace(({ context, mediaSize }) => {
+      const timeScale = chart.timeScale();
+      context.save();
+      context.beginPath();
+      context.rect(0, 0, mediaSize.width, mediaSize.height);
+      context.clip();
+
+      for (const zone of this.zones) {
+        const yUpper = series.priceToCoordinate(zone.upper);
+        const yLower = series.priceToCoordinate(zone.lower);
+        if (!finite(yUpper) || !finite(yLower)) continue;
+
+        const top = Math.min(yUpper, yLower);
+        const bottom = Math.max(yUpper, yLower);
+        const visibleTop = Math.max(0, top);
+        const visibleBottom = Math.min(mediaSize.height, bottom);
+        if (visibleBottom <= visibleTop) continue;
+
+        const support = zone.kind === "support";
+        context.fillStyle = support ? "rgba(34,197,94,0.10)" : "rgba(239,68,68,0.10)";
+        context.strokeStyle = support ? "rgba(34,197,94,0.58)" : "rgba(239,68,68,0.58)";
+        context.lineWidth = 1;
+        context.fillRect(0, visibleTop, mediaSize.width, visibleBottom - visibleTop);
+        context.strokeRect(0.5, visibleTop + 0.5, Math.max(0, mediaSize.width - 1), Math.max(1, visibleBottom - visibleTop - 1));
+
+        const labelY = Math.min(mediaSize.height - 5, Math.max(13, visibleTop + 13));
+        context.fillStyle = support ? "#86efac" : "#fca5a5";
+        context.font = "700 10px ui-sans-serif, system-ui, sans-serif";
+        context.textBaseline = "alphabetic";
+        context.fillText(zoneLabel(zone), 10, labelY, Math.max(20, mediaSize.width - 20));
+      }
+
+      for (const drawing of this.drawings) {
+        context.strokeStyle = "#38bdf8";
+        context.fillStyle = "rgba(56,189,248,0.10)";
+        context.lineWidth = 1.5;
+
+        if (drawing.type === "level") {
+          const y = series.priceToCoordinate(drawing.price);
+          if (!finite(y) || y < 0 || y > mediaSize.height) continue;
+          context.setLineDash([5, 4]);
+          context.beginPath();
+          context.moveTo(0, y);
+          context.lineTo(mediaSize.width, y);
+          context.stroke();
+          context.setLineDash([]);
+          continue;
+        }
+
+        const x1 = timeScale.timeToCoordinate(drawing.start.time);
+        const y1 = series.priceToCoordinate(drawing.start.price);
+        const x2 = timeScale.timeToCoordinate(drawing.end.time);
+        const y2 = series.priceToCoordinate(drawing.end.price);
+        if (![x1, y1, x2, y2].every(finite)) continue;
+
+        if (drawing.type === "trend") {
+          context.beginPath();
+          context.moveTo(x1!, y1!);
+          context.lineTo(x2!, y2!);
+          context.stroke();
+          continue;
+        }
+
+        const left = Math.min(x1!, x2!);
+        const top = Math.min(y1!, y2!);
+        const width = Math.abs(x2! - x1!);
+        const height = Math.abs(y2! - y1!);
+        context.fillRect(left, top, width, height);
+        context.strokeRect(left, top, width, height);
+      }
+
+      context.restore();
+    });
+  }
+}
+
 export function DivLabAnalysisChart({
   model,
   symbol,
@@ -183,66 +330,13 @@ export function DivLabAnalysisChart({
   const interactionRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<LwcChart | null>(null);
   const priceSeriesRef = useRef<LwcSeries | null>(null);
+  const overlayPrimitiveRef = useRef<AnalysisOverlayPrimitive | null>(null);
   const drawStartRef = useRef<DomainPoint | null>(null);
   const drawingsRef = useRef<UserDrawing[]>([]);
   const [mode, setMode] = useState<DrawingMode>("cursor");
-  const [screenDrawings, setScreenDrawings] = useState<ScreenDrawing[]>([]);
-  const [screenZones, setScreenZones] = useState<ScreenZone[]>([]);
-  const [plotWidth, setPlotWidth] = useState(0);
+  const [plotSize, setPlotSize] = useState({ width: 0, height: 0 });
   const [libraryError, setLibraryError] = useState(false);
   const visibleSessions = safeVisibleSessions(requestedVisibleSessions);
-
-  const refreshOverlay = useCallback(() => {
-    const chart = chartRef.current;
-    const series = priceSeriesRef.current;
-    if (!chart || !series) return;
-
-    const width = chart.timeScale().width();
-    setPlotWidth(width);
-
-    const zones = [...model.zones.supports, ...model.zones.resistances]
-      .map((zone, index): ScreenZone | null => {
-        const top = series.priceToCoordinate(zone.upper);
-        const bottom = series.priceToCoordinate(zone.lower);
-        if (!finite(top) || !finite(bottom)) return null;
-        return {
-          key: `${zone.kind}-${zone.center}-${index}`,
-          kind: zone.kind,
-          y: Math.min(top, bottom),
-          height: Math.max(3, Math.abs(bottom - top)),
-          label: zoneLabel(zone),
-        };
-      })
-      .filter((zone): zone is ScreenZone => zone !== null);
-    setScreenZones(zones);
-
-    const timeScale = chart.timeScale();
-    const projected = drawingsRef.current
-      .map((drawing): ScreenDrawing | null => {
-        if (drawing.type === "level") {
-          const y = series.priceToCoordinate(drawing.price);
-          return finite(y) ? { id: drawing.id, type: "level", y } : null;
-        }
-        const x1 = timeScale.timeToCoordinate(drawing.start.time);
-        const y1 = series.priceToCoordinate(drawing.start.price);
-        const x2 = timeScale.timeToCoordinate(drawing.end.time);
-        const y2 = series.priceToCoordinate(drawing.end.price);
-        if (![x1, y1, x2, y2].every(finite)) return null;
-        if (drawing.type === "trend") {
-          return { id: drawing.id, type: "trend", x1: x1!, y1: y1!, x2: x2!, y2: y2! };
-        }
-        return {
-          id: drawing.id,
-          type: "zone",
-          x: Math.min(x1!, x2!),
-          y: Math.min(y1!, y2!),
-          width: Math.max(2, Math.abs(x2! - x1!)),
-          height: Math.max(2, Math.abs(y2! - y1!)),
-        };
-      })
-      .filter((drawing): drawing is ScreenDrawing => drawing !== null);
-    setScreenDrawings(projected);
-  }, [model]);
 
   useEffect(() => {
     const container = chartContainerRef.current;
@@ -312,6 +406,14 @@ export function DivLabAnalysisChart({
         );
         candleSeries.priceScale().applyOptions({ scaleMargins: { top: 0.06, bottom: 0.24 } });
 
+        const overlayPrimitive = new AnalysisOverlayPrimitive([
+          ...model.zones.supports,
+          ...model.zones.resistances,
+        ]);
+        candleSeries.attachPrimitive(overlayPrimitive);
+        overlayPrimitive.setDrawings(drawingsRef.current);
+        overlayPrimitiveRef.current = overlayPrimitive;
+
         const volumeSeries = chart.addSeries(lwc.HistogramSeries, {
           priceScaleId: "",
           priceFormat: { type: "volume" },
@@ -358,18 +460,30 @@ export function DivLabAnalysisChart({
           to: model.bars.length + 4,
         });
 
-        const handleRange = () => window.requestAnimationFrame(refreshOverlay);
-        chart.timeScale().subscribeVisibleTimeRangeChange(handleRange);
-        const resizeObserver = new ResizeObserver(handleRange);
+        const updatePlotSize = () => {
+          if (cancelled) return;
+          const width = chart.timeScale().width();
+          const height = candleSeries.getPane().getHeight();
+          setPlotSize((previous) =>
+            previous.width === width && previous.height === height ? previous : { width, height },
+          );
+        };
+        const handleResize = () => window.requestAnimationFrame(updatePlotSize);
+        const resizeObserver = new ResizeObserver(handleResize);
         resizeObserver.observe(container);
-        window.requestAnimationFrame(refreshOverlay);
+        window.requestAnimationFrame(updatePlotSize);
 
         cleanup = () => {
           resizeObserver.disconnect();
-          chart.timeScale().unsubscribeVisibleTimeRangeChange(handleRange);
+          try {
+            candleSeries.detachPrimitive(overlayPrimitive);
+          } catch {
+            // chart.remove() below is the final cleanup boundary.
+          }
           chart.remove();
           chartRef.current = null;
           priceSeriesRef.current = null;
+          overlayPrimitiveRef.current = null;
         };
       })
       .catch(() => {
@@ -380,7 +494,7 @@ export function DivLabAnalysisChart({
       cancelled = true;
       cleanup?.();
     };
-  }, [currency, model, refreshOverlay, visibleSessions]);
+  }, [currency, model, visibleSessions]);
 
   function pointFromEvent(event: ReactPointerEvent<HTMLDivElement>): DomainPoint | null {
     const chart = chartRef.current;
@@ -396,14 +510,17 @@ export function DivLabAnalysisChart({
     return { time, price };
   }
 
+  function pushDrawings(next: UserDrawing[]) {
+    drawingsRef.current = next;
+    overlayPrimitiveRef.current?.setDrawings(next);
+  }
+
   function addDrawing(drawing: UserDrawing) {
-    drawingsRef.current = [...drawingsRef.current, drawing];
-    window.requestAnimationFrame(refreshOverlay);
+    pushDrawings([...drawingsRef.current, drawing]);
   }
 
   function clearDrawings() {
-    drawingsRef.current = [];
-    window.requestAnimationFrame(refreshOverlay);
+    pushDrawings([]);
   }
 
   function handlePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
@@ -461,59 +578,16 @@ export function DivLabAnalysisChart({
           </div>
         </div>
 
-        <div className="relative h-[500px] w-full sm:h-[620px]">
+        <div className="relative h-[500px] w-full overflow-hidden sm:h-[620px]">
           <div ref={chartContainerRef} className="absolute inset-0" />
-
-          <svg className="pointer-events-none absolute inset-0 z-10 h-full w-full overflow-visible" aria-hidden="true">
-            {screenZones.map((zone) => (
-              <g key={zone.key}>
-                <rect
-                  x={0}
-                  y={zone.y}
-                  width={plotWidth}
-                  height={zone.height}
-                  fill={zone.kind === "support" ? "rgba(34,197,94,0.10)" : "rgba(239,68,68,0.10)"}
-                  stroke={zone.kind === "support" ? "rgba(34,197,94,0.58)" : "rgba(239,68,68,0.58)"}
-                  strokeWidth={1}
-                />
-                <text
-                  x={10}
-                  y={Math.max(14, zone.y + 14)}
-                  fill={zone.kind === "support" ? "#86efac" : "#fca5a5"}
-                  fontSize={10}
-                  fontWeight={700}
-                  fontFamily="ui-sans-serif, system-ui, sans-serif"
-                >
-                  {zone.label}
-                </text>
-              </g>
-            ))}
-
-            {screenDrawings.map((drawing) => {
-              if (drawing.type === "level") {
-                return <line key={drawing.id} x1={0} x2={plotWidth} y1={drawing.y} y2={drawing.y} stroke="#38bdf8" strokeWidth={1.4} strokeDasharray="5 4" />;
-              }
-              if (drawing.type === "trend") {
-                return <line key={drawing.id} x1={drawing.x1} y1={drawing.y1} x2={drawing.x2} y2={drawing.y2} stroke="#38bdf8" strokeWidth={1.6} />;
-              }
-              return (
-                <rect
-                  key={drawing.id}
-                  x={drawing.x}
-                  y={drawing.y}
-                  width={drawing.width}
-                  height={drawing.height}
-                  fill="rgba(56,189,248,0.10)"
-                  stroke="#38bdf8"
-                  strokeWidth={1.2}
-                />
-              );
-            })}
-          </svg>
 
           <div
             ref={interactionRef}
-            className={`absolute inset-0 z-20 ${mode === "cursor" ? "pointer-events-none" : "cursor-crosshair touch-none"}`}
+            className={`absolute left-0 top-0 z-20 ${mode === "cursor" ? "pointer-events-none" : "cursor-crosshair touch-none"}`}
+            style={{
+              width: plotSize.width || undefined,
+              height: plotSize.height || undefined,
+            }}
             onPointerDown={handlePointerDown}
             onPointerUp={handlePointerUp}
             onPointerCancel={() => {
@@ -530,7 +604,7 @@ export function DivLabAnalysisChart({
         </div>
 
         <figcaption className="flex flex-col gap-1 border-t border-white/10 py-3 text-[11px] leading-5 text-slate-600 sm:flex-row sm:items-center sm:justify-between">
-          <span>DivLab-AI ritar stöd och motstånd från verifierad pris- och volymdata. Egna ritningar gäller den aktuella visningen.</span>
+          <span>DivLab-AI ritar stöd och motstånd direkt i TradingViews chart-pane så nivåerna följer zoom och pan. Egna ritningar gäller den aktuella visningen.</span>
           <a href="https://www.tradingview.com/" target="_blank" rel="noreferrer" className="shrink-0 text-slate-500 hover:text-slate-300">
             Grafmotor: TradingView Lightweight Charts™
           </a>
