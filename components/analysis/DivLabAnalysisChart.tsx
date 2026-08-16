@@ -54,14 +54,14 @@ function zoneStyle(zone: DivLabAnalysisChartZone): {
 } {
   if (zone.kind === "support") {
     return {
-      fill: "rgba(34,197,94,0.12)",
-      stroke: "rgba(34,197,94,0.72)",
+      fill: "rgba(34,197,94,0.10)",
+      stroke: "rgba(34,197,94,0.62)",
       text: "#86efac",
     };
   }
   return {
-    fill: "rgba(239,68,68,0.12)",
-    stroke: "rgba(239,68,68,0.72)",
+    fill: "rgba(239,68,68,0.10)",
+    stroke: "rgba(239,68,68,0.62)",
     text: "#fca5a5",
   };
 }
@@ -85,7 +85,7 @@ function pathForSeries(input: {
 }
 
 function zoneLabel(zone: DivLabAnalysisChartZone): string {
-  const prefix = zone.kind === "support" ? "Stöd" : "Motstånd";
+  const prefix = zone.kind === "support" ? "STÖD" : "MOTSTÅND";
   if (Math.abs(zone.upper - zone.lower) < 0.005) {
     return `${prefix} ${priceLabel(zone.center)}`;
   }
@@ -110,9 +110,7 @@ export function DivLabAnalysisChart({
 
   if (bars.length < 2) {
     return (
-      <div
-        className={`rounded-2xl border border-white/10 bg-[#0b0f14] p-6 text-sm text-slate-400 ${className}`}
-      >
+      <div className={`border-y border-white/10 bg-[#090d12] px-0 py-8 text-sm text-slate-500 ${className}`}>
         För lite verifierad prisdata för att rita analysgrafen.
       </div>
     );
@@ -182,25 +180,23 @@ export function DivLabAnalysisChart({
   );
 
   const zones = [...model.zones.supports, ...model.zones.resistances];
-  const chartTitle = [symbol?.trim().toUpperCase(), "DivLab teknisk analys"]
+  const chartTitle = [symbol?.trim().toUpperCase(), "TEKNISK ANALYS"]
     .filter(Boolean)
     .join(" · ");
 
   return (
-    <figure
-      className={`overflow-hidden rounded-2xl border border-white/10 bg-[#0b0f14] shadow-sm ${className}`}
-    >
-      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-white/10 px-4 py-3 sm:px-5">
+    <figure className={`border-y border-white/12 bg-[#090d12] ${className}`}>
+      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-white/10 py-4">
         <div>
-          <div className="text-sm font-semibold text-slate-100">{chartTitle}</div>
-          <div className="mt-1 text-xs text-slate-500">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-300">{chartTitle}</div>
+          <div className="mt-1 text-[11px] text-slate-600">
             Data t.o.m. {model.asOf ?? "okänt datum"} · {model.sessions} verifierade handelssessioner
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-slate-400">
-          <span><span className="mr-1 inline-block h-0.5 w-4 bg-slate-300 align-middle" />MA20</span>
-          <span><span className="mr-1 inline-block h-0.5 w-4 bg-blue-400 align-middle" />MA50</span>
-          <span><span className="mr-1 inline-block h-0.5 w-4 bg-amber-400 align-middle" />MA200</span>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] uppercase tracking-[0.11em] text-slate-500">
+          <span><span className="mr-1 inline-block h-px w-4 bg-slate-300 align-middle" />MA20</span>
+          <span><span className="mr-1 inline-block h-px w-4 bg-blue-400 align-middle" />MA50</span>
+          <span><span className="mr-1 inline-block h-px w-4 bg-amber-400 align-middle" />MA200</span>
           <span className="text-emerald-300">■ stöd</span>
           <span className="text-red-300">■ motstånd</span>
         </div>
@@ -212,11 +208,11 @@ export function DivLabAnalysisChart({
         role="img"
         aria-label={`${chartTitle}. Candlestickgraf med volym, glidande medelvärden och automatiskt identifierade stöd- och motståndszoner.`}
       >
-        <rect width={VIEWBOX_WIDTH} height={VIEWBOX_HEIGHT} fill="#0b0f14" />
+        <rect width={VIEWBOX_WIDTH} height={VIEWBOX_HEIGHT} fill="#090d12" />
 
         {priceTicks.map((tick) => (
           <g key={tick.y}>
-            <line x1={PLOT_LEFT} x2={PLOT_RIGHT} y1={tick.y} y2={tick.y} stroke="#1f2937" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+            <line x1={PLOT_LEFT} x2={PLOT_RIGHT} y1={tick.y} y2={tick.y} stroke="#1b2430" strokeWidth="1" vectorEffect="non-scaling-stroke" />
             <text x={AXIS_LABEL_X} y={tick.y + 4} fill="#64748b" fontSize="12" fontFamily="ui-sans-serif, system-ui, sans-serif">
               {priceLabel(tick.price)}
             </text>
@@ -242,8 +238,8 @@ export function DivLabAnalysisChart({
                 strokeDasharray={zone.strength === "weak" ? "5 5" : undefined}
                 vectorEffect="non-scaling-stroke"
               />
-              <text x={PLOT_LEFT + 10} y={Math.max(PRICE_TOP + 13, y + 14)} fill={style.text} fontSize="11" fontWeight="600" fontFamily="ui-sans-serif, system-ui, sans-serif">
-                {zoneLabel(zone)} · {zone.touches} test{zone.touches === 1 ? "" : "er"}
+              <text x={PLOT_LEFT + 10} y={Math.max(PRICE_TOP + 13, y + 14)} fill={style.text} fontSize="11" fontWeight="700" fontFamily="ui-sans-serif, system-ui, sans-serif">
+                {zoneLabel(zone)} · {zone.touches} TEST{zone.touches === 1 ? "" : "ER"}
               </text>
             </g>
           );
@@ -271,14 +267,14 @@ export function DivLabAnalysisChart({
         {finite(model.currentPrice) ? (
           <g>
             <line x1={PLOT_LEFT} x2={PLOT_RIGHT} y1={yForPrice(model.currentPrice)} y2={yForPrice(model.currentPrice)} stroke="#e2e8f0" strokeWidth="1" strokeDasharray="3 4" opacity="0.7" vectorEffect="non-scaling-stroke" />
-            <rect x={PLOT_RIGHT + 5} y={yForPrice(model.currentPrice) - 10} width="84" height="20" rx="4" fill="#e2e8f0" />
+            <rect x={PLOT_RIGHT + 5} y={yForPrice(model.currentPrice) - 10} width="84" height="20" fill="#e2e8f0" />
             <text x={PLOT_RIGHT + 47} y={yForPrice(model.currentPrice) + 4} textAnchor="middle" fill="#0f172a" fontSize="11" fontWeight="700" fontFamily="ui-sans-serif, system-ui, sans-serif">
               {priceLabel(model.currentPrice)}{currency ? ` ${currency}` : ""}
             </text>
           </g>
         ) : null}
 
-        <line x1={PLOT_LEFT} x2={PLOT_RIGHT} y1={VOLUME_TOP - 14} y2={VOLUME_TOP - 14} stroke="#1f2937" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+        <line x1={PLOT_LEFT} x2={PLOT_RIGHT} y1={VOLUME_TOP - 14} y2={VOLUME_TOP - 14} stroke="#1b2430" strokeWidth="1" vectorEffect="non-scaling-stroke" />
         <text x={PLOT_LEFT} y={VOLUME_TOP - 22} fill="#64748b" fontSize="11" fontFamily="ui-sans-serif, system-ui, sans-serif">
           Volym · max {compactVolume(maxVolume)}
         </text>
@@ -305,7 +301,7 @@ export function DivLabAnalysisChart({
         })}
       </svg>
 
-      <figcaption className="border-t border-white/10 px-4 py-3 text-[11px] leading-5 text-slate-500 sm:px-5">
+      <figcaption className="border-t border-white/10 py-3 text-[11px] leading-5 text-slate-600">
         DivLab ritar nivåerna från verifierad historisk pris- och volymdata. Zonerna är analysområden, inte garanterade vändpunkter eller personlig investeringsrådgivning.
       </figcaption>
     </figure>

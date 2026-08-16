@@ -115,7 +115,7 @@ export default async function AnalysisPage({ params }: Props) {
           ]}
         />
       ) : null}
-      <div className="mx-auto flex w-full max-w-6xl justify-end px-4 pt-5 sm:px-6 lg:px-8">
+      <div className="mx-auto flex w-full max-w-5xl justify-end px-4 pt-5 sm:px-6 lg:px-8">
         <AnalysisShareActions
           companyName={analysis.packet.instrument.name}
           symbol={analysis.packet.instrument.symbol}

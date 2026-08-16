@@ -42,22 +42,22 @@ export default function AnalysisShareActions({
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2" aria-label="Dela analys">
+    <div className="flex flex-wrap items-center gap-0 border-y border-white/10" aria-label="Dela analys">
       <button
         type="button"
         onClick={shareOnX}
-        className="rounded-lg border border-white/15 bg-white/[0.035] px-3.5 py-2 text-xs font-semibold text-slate-200 transition hover:border-white/25 hover:bg-white/[0.06] hover:text-white"
+        className="border-r border-white/10 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.13em] text-slate-300 transition hover:bg-white/[0.04] hover:text-white"
       >
         Dela på X
       </button>
       <button
         type="button"
         onClick={copyLink}
-        className="rounded-lg border border-white/10 px-3.5 py-2 text-xs font-semibold text-slate-400 transition hover:border-white/20 hover:text-slate-200"
+        className="border-r border-white/10 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.13em] text-slate-500 transition hover:bg-white/[0.04] hover:text-slate-200"
       >
         {copied ? "Länk kopierad" : "Kopiera länk"}
       </button>
-      <span className="text-[11px] text-slate-600">X använder analysens 1200×630-kort automatiskt.</span>
+      <span className="hidden px-4 py-2.5 text-[10px] uppercase tracking-[0.11em] text-slate-700 sm:block">1200×630 X-kort</span>
     </div>
   );
 }
