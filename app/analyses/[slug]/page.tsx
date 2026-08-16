@@ -2,6 +2,10 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import DivLabAnalysisArticle from "@/components/analysis/DivLabAnalysisArticle";
 import AnalysisShareActions from "@/components/analysis/AnalysisShareActions";
+import {
+  AnalysisClientProvider,
+  type AnalysisClientPayload,
+} from "@/components/analysis/AnalysisClientContext";
 import PublicContentShell from "@/components/layout/PublicContentShell";
 import JsonLdScript from "@/components/seo/JsonLd";
 import { getPublishedDivLabAnalysis } from "@/lib/analysis/public-read";
@@ -49,6 +53,58 @@ function analysisJsonLd(input: Awaited<ReturnType<typeof getPublishedDivLabAnaly
       tickerSymbol: packet.instrument.symbol,
     },
     image: getCanonicalUrl(`${path}/opengraph-image`),
+  };
+}
+
+function buildClientPayload(
+  analysis: NonNullable<Awaited<ReturnType<typeof getPublishedDivLabAnalysis>>>,
+): AnalysisClientPayload {
+  const technical = analysis.packet.technical.snapshot;
+  const baseScenario = analysis.packet.valuation.scenarios.find((scenario) => scenario.name === "base");
+  const mapLevel = (level: (typeof analysis.packet.technical.levels.supports)[number]) => ({
+    lower: level.lower,
+    upper: level.upper,
+    center: level.center,
+    distancePct: level.distancePct,
+    touches: level.touches,
+    strength: level.strength,
+  });
+  const mapClaim = (claim: { text: string; sourceIds: readonly string[] }) => ({
+    text: claim.text,
+    sourceIds: [...claim.sourceIds],
+  });
+
+  return {
+    instrument: {
+      name: analysis.packet.instrument.name,
+      symbol: analysis.packet.instrument.symbol,
+      currency: analysis.packet.instrument.currency,
+      currentPrice: analysis.packet.instrument.currentPrice,
+    },
+    technical: {
+      trendRegime: technical.trend.regime,
+      rsi14: technical.momentum.rsi14,
+      priceVsSma50Pct: technical.trend.priceVsSma50Pct,
+      volumeRatio20: technical.volume.volumeRatio20,
+      supports: analysis.packet.technical.levels.supports.map(mapLevel),
+      resistances: analysis.packet.technical.levels.resistances.map(mapLevel),
+    },
+    view: analysis.draft.view,
+    riskLevel: analysis.draft.riskLevel,
+    confidence: analysis.draft.confidence,
+    fundamentalScore: analysis.packet.fundamental.scorecard.overall,
+    baseScenario: baseScenario
+      ? {
+          valuePerShare: baseScenario.valuePerShare,
+          upsideDownsidePct: baseScenario.upsideDownsidePct,
+        }
+      : null,
+    investmentCase: analysis.draft.investmentCase.map(mapClaim),
+    fundamentalInterpretation: analysis.draft.fundamentalInterpretation.map(mapClaim),
+    valuationInterpretation: analysis.draft.valuationInterpretation.map(mapClaim),
+    catalysts: analysis.draft.catalysts.map(mapClaim),
+    risks: analysis.draft.risks.map(mapClaim),
+    sources: analysis.packet.sources.map((source, index) => ({ id: source.id, number: index + 1 })),
   };
 }
 
@@ -100,6 +156,7 @@ export default async function AnalysisPage({ params }: Props) {
 
   const path = `/analyses/${analysis.slug}`;
   const structured = analysisJsonLd(analysis);
+  const clientPayload = buildClientPayload(analysis);
 
   return (
     <PublicContentShell publicContentClassName="bg-[#080b10] text-slate-100">
@@ -122,7 +179,9 @@ export default async function AnalysisPage({ params }: Props) {
           view={analysis.draft.view}
         />
       </div>
-      <DivLabAnalysisArticle analysis={analysis} />
+      <AnalysisClientProvider analysis={clientPayload}>
+        <DivLabAnalysisArticle analysis={analysis} />
+      </AnalysisClientProvider>
     </PublicContentShell>
   );
 }

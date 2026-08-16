@@ -25,7 +25,7 @@ function supabaseConnectSources(): string[] {
 
 /**
  * Production-safe security headers.
- * CSP accounts for Next.js, Supabase Auth, Vercel Analytics and TradingView widgets.
+ * CSP accounts for Next.js, Supabase Auth, Vercel Analytics and TradingView charts/widgets.
  */
 const ContentSecurityPolicy = [
   "default-src 'self'",
@@ -36,8 +36,8 @@ const ContentSecurityPolicy = [
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
   "style-src 'self' 'unsafe-inline'",
-  // Next.js and some third-party embeds still require inline/eval in practice.
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://s3.tradingview.com https://www.tradingview.com",
+  // Next.js and the TradingView standalone chart loader still require script allowance.
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://s3.tradingview.com https://www.tradingview.com https://unpkg.com",
   [
     "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
     ...supabaseConnectSources(),
