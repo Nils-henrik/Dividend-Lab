@@ -91,7 +91,7 @@ export default function AppearanceSetting() {
             aria-checked={isDark}
             aria-label={`Byt till ${isDark ? "ljust" : "mörkt"} tema`}
             onClick={toggleTheme}
-            className={`relative h-12 w-[92px] rounded-full border p-1 transition-[background-color,border-color,box-shadow] duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/45 focus-visible:ring-offset-2 focus-visible:ring-offset-divlab-bg ${
+            className={`relative h-12 w-[92px] rounded-full border p-1 transition-[background-color,border-color,box-shadow] duration-300 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/45 focus-visible:ring-offset-2 focus-visible:ring-offset-divlab-bg ${
               isDark
                 ? "border-white/10 bg-[#24272c] shadow-inner"
                 : "divlab-border-neutral bg-divlab-elevated shadow-inner"
@@ -99,7 +99,7 @@ export default function AppearanceSetting() {
           >
             <span
               aria-hidden="true"
-              className={`absolute top-1/2 z-0 -translate-y-1/2 transition-all duration-300 ${
+              className={`absolute top-1/2 z-0 -translate-y-1/2 transition-all duration-300 motion-reduce:transition-none ${
                 isDark
                   ? "left-4 text-slate-300 opacity-100"
                   : "right-4 text-divlab-text-muted opacity-100"
@@ -109,7 +109,7 @@ export default function AppearanceSetting() {
             </span>
             <span
               aria-hidden="true"
-              className={`absolute left-1 top-1 h-10 w-10 rounded-full border shadow-md transition-transform duration-300 ease-out ${
+              className={`absolute left-1 top-1 h-10 w-10 rounded-full border shadow-md transition-transform duration-300 ease-out motion-reduce:transition-none ${
                 isDark
                   ? "translate-x-10 border-white/10 bg-[#3a3d43]"
                   : "translate-x-0 divlab-border-neutral bg-white"
