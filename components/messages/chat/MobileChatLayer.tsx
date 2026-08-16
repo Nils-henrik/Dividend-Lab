@@ -70,6 +70,7 @@ export default function MobileChatLayer({
   const panelRef = useRef<HTMLDivElement | null>(null);
   const backButtonRef = useRef<HTMLButtonElement | null>(null);
   const [keyboardOffset, setKeyboardOffset] = useState(0);
+  const [composeMode, setComposeMode] = useState(false);
   const conversation = conversationId ? threads[conversationId] : undefined;
   const other = conversation?.otherParticipant;
   const presence = other ? presenceByUserId[other.id] : null;
@@ -77,6 +78,12 @@ export default function MobileChatLayer({
   useEffect(() => {
     backButtonRef.current?.focus();
   }, [layer, conversationId]);
+
+  useEffect(() => {
+    if (layer === "conversation") {
+      setComposeMode(false);
+    }
+  }, [layer]);
 
   useEffect(() => {
     const viewport = window.visualViewport;
@@ -101,12 +108,41 @@ export default function MobileChatLayer({
     };
   }, []);
 
+  function handleCompose() {
+    setComposeMode(true);
+    onCompose();
+  }
+
+  function handleBack() {
+    if (layer === "inbox" && composeMode) {
+      setComposeMode(false);
+      onQueryChange("");
+      return;
+    }
+
+    onBack();
+  }
+
+  function handleOpenContact(userId: string) {
+    setComposeMode(false);
+    onQueryChange("");
+    onOpenContact(userId);
+  }
+
+  function handleOpenConversation(id: string) {
+    setComposeMode(false);
+    onQueryChange("");
+    onOpenConversation(id);
+  }
+
+  const inboxTitle = composeMode ? "Nytt meddelande" : "Chattar";
+
   return (
     <div
       ref={panelRef}
       role="dialog"
       aria-modal="true"
-      aria-label={layer === "inbox" ? "Chattar" : "Konversation"}
+      aria-label={layer === "inbox" ? inboxTitle : "Konversation"}
       className="fixed inset-0 z-[60] flex flex-col bg-divlab-bg lg:hidden"
       style={{
         height: "100dvh",
@@ -118,8 +154,14 @@ export default function MobileChatLayer({
         <button
           ref={backButtonRef}
           type="button"
-          onClick={onBack}
-          aria-label={layer === "conversation" ? "Tillbaka till chattar" : "Stäng chattar"}
+          onClick={handleBack}
+          aria-label={
+            layer === "conversation"
+              ? "Tillbaka till chattar"
+              : composeMode
+                ? "Avbryt nytt meddelande"
+                : "Stäng chattar"
+          }
           className="flex h-10 w-10 items-center justify-center rounded-xl text-divlab-text-secondary transition hover:bg-white/[0.05] hover:text-divlab-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/40"
         >
           <AppIcon name="chevronLeft" className="h-5 w-5" />
@@ -143,16 +185,18 @@ export default function MobileChatLayer({
         ) : (
           <>
             <h2 className="flex-1 text-lg font-semibold tracking-[-0.03em] text-divlab-text">
-              Chattar
+              {inboxTitle}
             </h2>
-            <button
-              type="button"
-              onClick={onCompose}
-              aria-label="Nytt meddelande"
-              className="flex h-10 w-10 items-center justify-center rounded-xl text-divlab-text-secondary transition hover:bg-white/[0.05] hover:text-divlab-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/40"
-            >
-              <AppIcon name="compose" />
-            </button>
+            {!composeMode ? (
+              <button
+                type="button"
+                onClick={handleCompose}
+                aria-label="Nytt meddelande"
+                className="flex h-10 w-10 items-center justify-center rounded-xl text-divlab-text-secondary transition hover:bg-white/[0.05] hover:text-divlab-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/40"
+              >
+                <AppIcon name="compose" />
+              </button>
+            ) : null}
           </>
         )}
       </header>
@@ -189,10 +233,11 @@ export default function MobileChatLayer({
           chats={chats}
           requests={requests}
           presenceByUserId={presenceByUserId}
-          onOpenContact={onOpenContact}
-          onOpenConversation={onOpenConversation}
+          onOpenContact={handleOpenContact}
+          onOpenConversation={handleOpenConversation}
           onShowRequests={onShowRequests}
           showingRequests={showingRequests}
+          composeMode={composeMode}
         />
       )}
     </div>
