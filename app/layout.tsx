@@ -22,7 +22,7 @@ const themeBootstrapScript = `
     var stored = localStorage.getItem("divlab-theme");
     var preference = stored === "light" || stored === "dark" || stored === "system"
       ? stored
-      : "dark";
+      : "light";
     var resolved = preference === "system"
       ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
       : preference;
@@ -31,9 +31,9 @@ const themeBootstrapScript = `
     root.dataset.themePreference = preference;
     root.style.colorScheme = resolved;
   } catch (_) {
-    document.documentElement.dataset.theme = "dark";
-    document.documentElement.dataset.themePreference = "dark";
-    document.documentElement.style.colorScheme = "dark";
+    document.documentElement.dataset.theme = "light";
+    document.documentElement.dataset.themePreference = "light";
+    document.documentElement.style.colorScheme = "light";
   }
 })();
 `;
