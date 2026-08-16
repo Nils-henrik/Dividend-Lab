@@ -47,7 +47,7 @@ function subscribeToThemePreference(onStoreChange: () => void) {
 }
 
 function getServerThemePreference(): ThemePreference {
-  return "system";
+  return "dark";
 }
 
 export default function AppearanceSetting() {
