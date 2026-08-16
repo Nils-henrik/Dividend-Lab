@@ -17,7 +17,7 @@ type Props = {
   className?: string;
 };
 
-const CHART_BLUE = "#0A84FF";
+const CHART_BLUE = "var(--divlab-blue)";
 
 const data = [
   { month: "Jan", value: 42000 },
@@ -116,13 +116,13 @@ export default function DividendChart({
 
             <XAxis
               dataKey="month"
-              tick={{ fill: "#71717A", fontSize: 12 }}
+              tick={{ fill: "var(--divlab-chart-axis)", fontSize: 12 }}
               axisLine={false}
               tickLine={false}
             />
 
             <YAxis
-              tick={{ fill: "#71717A", fontSize: 12 }}
+              tick={{ fill: "var(--divlab-chart-axis)", fontSize: 12 }}
               axisLine={false}
               tickLine={false}
             />
@@ -148,7 +148,7 @@ export default function DividendChart({
               activeDot={{
                 r: 5,
                 fill: CHART_BLUE,
-                stroke: "#12161C",
+                stroke: "var(--divlab-surface)",
                 strokeWidth: 2,
               }}
             />
