@@ -1,6 +1,7 @@
 import { getAuthenticatedUser } from "@/lib/auth/session";
 import { getOwnShareActiveStatus } from "@/lib/messages/chat-bootstrap";
 import ActiveStatusSetting from "./ActiveStatusSetting";
+import AppearanceSetting from "./AppearanceSetting";
 import ChangePasswordForm from "./ChangePasswordForm";
 
 export default async function SettingsPageContent() {
@@ -17,10 +18,11 @@ export default async function SettingsPageContent() {
           Inställningar
         </h2>
         <p className="mt-4 max-w-3xl text-base leading-7 text-divlab-text-secondary">
-          Kontoinställningar
+          Hantera utseende, integritet och kontosäkerhet.
         </p>
       </section>
 
+      <AppearanceSetting />
       <ActiveStatusSetting initialEnabled={shareActiveStatus} />
       <ChangePasswordForm />
     </div>

@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import { Geist, Geist_Mono } from "next/font/google";
+import ThemeSync from "@/components/theme/ThemeSync";
 import { PRODUCTION_SITE_ORIGIN } from "@/lib/seo/site";
 import "./globals.css";
+import "./theme-compat.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,6 +15,28 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
+
+const themeBootstrapScript = `
+(function () {
+  try {
+    var stored = localStorage.getItem("divlab-theme");
+    var preference = stored === "light" || stored === "dark" || stored === "system"
+      ? stored
+      : "light";
+    var resolved = preference === "system"
+      ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
+      : preference;
+    var root = document.documentElement;
+    root.dataset.theme = resolved;
+    root.dataset.themePreference = preference;
+    root.style.colorScheme = resolved;
+  } catch (_) {
+    document.documentElement.dataset.theme = "light";
+    document.documentElement.dataset.themePreference = "light";
+    document.documentElement.style.colorScheme = "light";
+  }
+})();
+`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(PRODUCTION_SITE_ORIGIN),
@@ -50,8 +74,13 @@ export default function RootLayout({
     <html
       lang="sv"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
+      </head>
       <body className="min-h-full flex flex-col">
+        <ThemeSync />
         {children}
         <Analytics />
       </body>
