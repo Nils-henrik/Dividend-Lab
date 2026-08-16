@@ -35,6 +35,17 @@ describe("global chat shell wiring", () => {
     assert.match(read("app/messages/actions.ts"), /redirect\(`\/messages\/\$\{conversationId\}`\)/);
   });
 
+  it("does not clear unread state just because a restored thread is preloaded", () => {
+    const actions = read("app/messages/actions.ts");
+    const provider = read("components/messages/chat/ChatProvider.tsx");
+    assert.match(
+      actions,
+      /loadChatThreadAction[\s\S]*loadConversationThreadMutation\(conversationId, \{ markRead: false \}\)/,
+    );
+    assert.match(provider, /markLocalRead\(conversationId\)/);
+    assert.match(provider, /markChatConversationReadAction\(conversationId\)/);
+  });
+
   it("exposes the active-status setting in Swedish", () => {
     const settings = read("components/settings/ActiveStatusSetting.tsx");
     assert.match(settings, /Visa när jag är aktiv/);
