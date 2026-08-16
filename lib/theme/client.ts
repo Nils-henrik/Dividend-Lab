@@ -9,11 +9,11 @@ export function isThemePreference(value: string | null): value is ThemePreferenc
 
 export function getStoredThemePreference(): ThemePreference {
   if (typeof window === "undefined") {
-    return "dark";
+    return "light";
   }
 
   const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
-  return isThemePreference(stored) ? stored : "dark";
+  return isThemePreference(stored) ? stored : "light";
 }
 
 export function resolveTheme(preference: ThemePreference): ResolvedTheme {
@@ -22,7 +22,7 @@ export function resolveTheme(preference: ThemePreference): ResolvedTheme {
   }
 
   if (typeof window === "undefined") {
-    return "dark";
+    return "light";
   }
 
   return window.matchMedia("(prefers-color-scheme: dark)").matches
