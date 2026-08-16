@@ -32,6 +32,22 @@ function parseReliableDate(value: string | undefined): Date | undefined {
   return parsed;
 }
 
+function latestReliableDate(values: Array<Date | undefined>): Date | undefined {
+  let latest: Date | undefined;
+
+  for (const value of values) {
+    if (!value) {
+      continue;
+    }
+
+    if (!latest || value.getTime() > latest.getTime()) {
+      latest = value;
+    }
+  }
+
+  return latest;
+}
+
 function absoluteAssetUrl(value: string | null | undefined): string | undefined {
   if (!value?.trim()) {
     return undefined;
@@ -84,8 +100,20 @@ async function loadDynamicPublicEntries(): Promise<SitemapEntry[]> {
 
 /** Build the canonical public sitemap entry list for production. */
 export async function buildSitemapEntries(): Promise<SitemapEntry[]> {
+  const newsArticles = getNewsArticlesWithSlug();
+  const latestNewsModified = latestReliableDate(
+    newsArticles.map(
+      (article) =>
+        parseReliableDate(article.updatedAt) ??
+        parseReliableDate(article.publishedAt),
+    ),
+  );
+
   const staticEntries: SitemapEntry[] = STATIC_PUBLIC_PATHS.map((path) => ({
     url: absoluteUrl(path),
+    ...(path === "/news" && latestNewsModified
+      ? { lastModified: latestNewsModified }
+      : {}),
   }));
 
   const forumCategoryEntries: SitemapEntry[] = forumCategories.map(
@@ -94,25 +122,23 @@ export async function buildSitemapEntries(): Promise<SitemapEntry[]> {
     }),
   );
 
-  const newsEntries: SitemapEntry[] = getNewsArticlesWithSlug().flatMap(
-    (article) => {
-      if (!article.slug) {
-        return [];
-      }
+  const newsEntries: SitemapEntry[] = newsArticles.flatMap((article) => {
+    if (!article.slug) {
+      return [];
+    }
 
-      const imageUrl = absoluteAssetUrl(article.imageUrl);
+    const imageUrl = absoluteAssetUrl(article.imageUrl);
 
-      return [
-        {
-          url: absoluteUrl(`/news/${article.slug}`),
-          lastModified:
-            parseReliableDate(article.updatedAt) ??
-            parseReliableDate(article.publishedAt),
-          ...(imageUrl ? { images: [imageUrl] } : {}),
-        },
-      ];
-    },
-  );
+    return [
+      {
+        url: absoluteUrl(`/news/${article.slug}`),
+        lastModified:
+          parseReliableDate(article.updatedAt) ??
+          parseReliableDate(article.publishedAt),
+        ...(imageUrl ? { images: [imageUrl] } : {}),
+      },
+    ];
+  });
 
   const learningEntries: SitemapEntry[] = learningArticles.map((article) => {
     const imageUrl = absoluteAssetUrl(article.coverImage);
