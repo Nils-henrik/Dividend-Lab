@@ -41,7 +41,7 @@ export default function ChatComposer({
       shouldSubmitChatComposerKey({
         key: event.key,
         shiftKey: event.shiftKey,
-        isComposing: event.nativeEvent.isComposing || event.isComposing,
+        isComposing: event.nativeEvent.isComposing,
         keyCode: event.keyCode,
       })
     ) {
