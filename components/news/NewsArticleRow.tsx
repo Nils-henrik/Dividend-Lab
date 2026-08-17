@@ -21,10 +21,6 @@ export default function NewsArticleRow({
   const href = getNewsArticleHref(article);
   const listImageUrl = article.thumbnailImageUrl ?? article.imageUrl;
   const isInternalHref = Boolean(href && isInternalNewsArticleHref(href));
-  const isNordenIcentrum = article.slug?.startsWith("norden-i-centrum-");
-  const mobileThumbnailObjectPosition = isNordenIcentrum
-    ? "center 35%"
-    : article.mobileThumbnailObjectPosition;
   const titleContent =
     href && isInternalHref ? (
       <Link
@@ -58,7 +54,7 @@ export default function NewsArticleRow({
             imageUrl={listImageUrl}
             variant="row"
             objectPosition={article.thumbnailObjectPosition}
-            mobileObjectPosition={mobileThumbnailObjectPosition}
+            mobileObjectPosition={article.mobileThumbnailObjectPosition}
           />
         )}
 
