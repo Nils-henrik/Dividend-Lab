@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { notifyModelPortfolioFollowersOfTransaction } from "../follower-email";
 import { fetchFxRateToSek } from "./fx-adapter";
 import { currencyForExchange, type FxRateQuote } from "./fx";
 import type { ModelPortfolioStrategyKey } from "./policy";
@@ -126,6 +127,26 @@ export async function settleModelPortfolioDecision(
 
   if (!payload.ok || !payload.transaction_id) {
     return { ok: false, reason: payload.reason ?? "settlement_rejected" };
+  }
+
+  try {
+    const notification = await notifyModelPortfolioFollowersOfTransaction({
+      supabase,
+      transactionId: payload.transaction_id,
+    });
+
+    if (notification.status === "failed") {
+      console.error("[model-portfolios] follower trade email dispatch failed", {
+        transactionId: payload.transaction_id,
+        reason: notification.reason,
+        failed: notification.failed,
+      });
+    }
+  } catch (error) {
+    console.error("[model-portfolios] follower trade email dispatch crashed", {
+      transactionId: payload.transaction_id,
+      reason: error instanceof Error ? error.message : "unknown",
+    });
   }
 
   return {
