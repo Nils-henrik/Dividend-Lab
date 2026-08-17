@@ -52,6 +52,11 @@ export const RESEARCH_BUDGET = {
 
 const MIN_MARKET_CAP_SEK = 750_000_000;
 const MIN_DAILY_TURNOVER_SEK = 5_000_000;
+// Preference shares, D shares and explicitly classified dividend ETFs often
+// trade less than ordinary large-cap shares. Keep a real liquidity floor, but
+// do not let the generic 5 MSEK gate erase the income instruments that the
+// Dividend mandate is explicitly designed to compare.
+const MIN_DIVIDEND_PRIORITY_DAILY_TURNOVER_SEK = 1_000_000;
 
 function clamp01(value: number, fallback = 0): number {
   if (!Number.isFinite(value)) return fallback;
@@ -382,9 +387,14 @@ export function rankResearchUniverse(
     const marketCapOk =
       !Number.isFinite(candidate.marketCapSek) ||
       (candidate.marketCapSek as number) >= MIN_MARKET_CAP_SEK;
+    const incomeProfile = strategy === "dividend" ? classifyDividendInstrument(candidate) : null;
+    const liquidityFloor =
+      strategy === "dividend" && incomeProfile
+        ? MIN_DIVIDEND_PRIORITY_DAILY_TURNOVER_SEK
+        : MIN_DAILY_TURNOVER_SEK;
     const liquidityOk =
       !Number.isFinite(candidate.avgDailyTurnoverSek) ||
-      (candidate.avgDailyTurnoverSek as number) >= MIN_DAILY_TURNOVER_SEK;
+      (candidate.avgDailyTurnoverSek as number) >= liquidityFloor;
     const mandateOk = strategy !== "dividend" || isDividendResearchCandidate(candidate);
     return Boolean(
       candidate.symbol.trim() &&
