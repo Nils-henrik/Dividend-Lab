@@ -10,6 +10,7 @@ import premiepension from "./articles/ta-kontroll-over-premiepensionen";
 import rantaPaRanta from "./articles/ranta-pa-ranta";
 import sparande from "./articles/sparande-i-borjan";
 import sparkvot from "./articles/sparkvot-budgetera-lonen-i-procent";
+import tekniskAnalys from "./articles/teknisk-analys-for-nyborjare";
 import tidTillFrihet from "./articles/tid-till-ekonomisk-frihet";
 import vadArEnAktie from "./articles/vad-ar-en-aktie";
 import vadArEnIndexfond from "./articles/vad-ar-en-indexfond";
@@ -31,6 +32,7 @@ export {
 } from "./reading-time";
 
 const rawArticles: LearningArticle[] = [
+  tekniskAnalys,
   levaPaUtdelningar,
   {
     ...hurMycketSparatEfterAlder,
