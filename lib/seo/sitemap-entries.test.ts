@@ -232,11 +232,12 @@ describe("Next.js metadata routes", () => {
     );
   });
 
-  it("robots() allows public crawling and references both production sitemaps", () => {
+  it("robots() allows public crawling and references all production sitemaps", () => {
     const config = robots();
     assert.deepEqual(config.sitemap, [
       "https://divlab.se/sitemap.xml",
       "https://divlab.se/news-sitemap.xml",
+      "https://divlab.se/learning-sitemap.xml",
     ]);
     assert.equal(config.host, "https://divlab.se");
 
