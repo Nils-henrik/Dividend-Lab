@@ -24,7 +24,7 @@ function formatSek(minor: number): string {
   return new Intl.NumberFormat("sv-SE", { style: "currency", currency: "SEK", maximumFractionDigits: 0 }).format(minor / 100);
 }
 function formatNumber(value: number): string { return new Intl.NumberFormat("sv-SE", { maximumFractionDigits: 4 }).format(value); }
-function formatDate(value: string): string { return new Intl.DateTimeFormat("sv-SE", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(value)); }
+function formatDate(value: string): string { return new Intl.DateTimeFormat("sv-SE", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Stockholm" }).format(new Date(value)); }
 function statusLabel(status: ModelPortfolioOverview["status"]): string { if (status === "active") return "Aktiv"; if (status === "paused") return "Pausad"; return "Förbereds"; }
 function transactionLabel(type: ModelPortfolioTransaction["transactionType"]): string { if (type === "buy") return "Köp"; if (type === "sell") return "Sälj"; if (type === "dividend") return "Utdelning"; return "Avgift"; }
 
