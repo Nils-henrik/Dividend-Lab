@@ -552,6 +552,8 @@ export async function runAllModelPortfoliosDryRun(
         portfolioId: portfolio.id,
         strategyKey: portfolio.strategy_key,
         decision,
+        generatedDecision: result.generatedDecision,
+        evidenceValidation: result.evidenceValidation,
         evidence: decisionInputs.evidence,
         rankedCandidates: result.rankedCandidates,
         modelName: result.model,
