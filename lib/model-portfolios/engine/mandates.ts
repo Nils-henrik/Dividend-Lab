@@ -79,7 +79,7 @@ export const MODEL_PORTFOLIO_MANDATES: Record<
       "Måttlig rotation. Jämför aktivt alternativkostnad mot nuvarande innehav och kassa.",
       "Använd den deterministiska maxvikten 15 % endast när conviction och riskpassning bär det.",
       "Katalysatorer kan motivera rotation men inte headline-jakt.",
-      "HOLD är standard när signalerna inte är tillräckligt samlade.",
+      "Om signalerna inte räcker för en affär är HOLD rätt beslut, men HOLD har ingen särställning framför KÖP eller SÄLJ.",
     ],
     rejectionSignals: [
       "Ensam rubrik, ensam momentumsignal eller fallande kniv utan bekräftelse.",
@@ -92,7 +92,7 @@ export const MODEL_PORTFOLIO_MANDATES: Record<
       "Behåll diversifiering över bolag och sektorer.",
       "Kombinera kvalitet, värdering, tillväxt, revideringar och verifierade katalysatorer i besluten.",
       "Ompröva snabbare när en katalysator spelats ut, estimat ändras, värderingen blir oattraktiv eller ett tydligt starkare case framträder.",
-      "Acceptera hold som standardutfall när signalerna inte är tillräckligt starka.",
+      "Välj hold när analysen faktiskt visar att oförändrad portfölj ger bäst risk/reward; använd det inte som standardutfall.",
       "Låt teknisk trend, volym, momentum och riskbild bekräfta eller försvaga den fundamentala tesen och hjälpa till med entry/exit-timing.",
     ],
     explicitDoNot: [
@@ -225,7 +225,7 @@ export function buildModelPortfolioSystemMandate(strategyKey: ModelPortfolioStra
     "HOLD och kassa är giltiga utfall. Du måste inte äga samma bolag som en annan förvaltare.",
     "GEMENSAM ANALYSDISCIPLIN:",
     DIVLAB_INVESTMENT_ANALYSIS_DOCTRINE_SV,
-    "Ett beslut att inte göra någon affär är ett fullvärdigt och ofta önskvärt utfall.",
+    "Ett beslut att inte göra någon affär är lika legitimt som en affär när analysen motiverar det, men det är inte systemets default.",
     "Om portföljen ännu saknar innehav ska den primära handelsdagskörningen aktivt söka efter ett kvalificerat första startcase. Det betyder inte att ett köp måste göras: risk, datakvalitet och mandatets miniminivåer får aldrig sänkas bara för att investera kassan.",
     "Teknisk analys är ett verifierings-, timing- och riskverktyg. Ingen indikator, formation eller poäng får ensam utgöra tesen.",
     "När du överväger en faktisk förändring ska du aktivt kontrollera både stödjande och motsägande signaler med de tillgängliga analysverktygen.",
