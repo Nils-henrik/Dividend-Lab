@@ -19,6 +19,7 @@ function formatDate(value: string): string {
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: "Europe/Stockholm",
   }).format(new Date(value));
 }
 
@@ -46,7 +47,7 @@ export default function PortfolioHoldingsOverview({
         <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-divlab-text-muted">Aktuella innehav</p>
         <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-divlab-text">Portföljöversikt</h2>
         <p className="mt-1 max-w-4xl text-xs leading-5 text-divlab-text-muted">
-          Inköp visar nuvarande innehavs kostnadsbas inklusive simulerat köpcourtage. Värdet mark-to-market-uppdateras i de fyra ordinarie AI-passen per handelsdag. Loggad visar när innehavets värdering senast sparades.
+          Inköp visar nuvarande innehavs kostnadsbas inklusive simulerat köpcourtage. Värdet mark-to-market-uppdateras i de fyra ordinarie AI-passen per handelsdag. Senast värderad visar när innehavets värdering senast sparades.
         </p>
       </div>
 
@@ -61,7 +62,7 @@ export default function PortfolioHoldingsOverview({
               <th className="py-3 pr-4 font-medium">Värde</th>
               <th className="py-3 pr-4 font-medium">Utveckling</th>
               <th className="py-3 pr-4 font-medium">Utdelningar</th>
-              <th className="py-3 font-medium">Loggad</th>
+              <th className="py-3 font-medium">Senast värderad</th>
             </tr>
           </thead>
           <tbody>
