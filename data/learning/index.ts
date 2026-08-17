@@ -44,7 +44,10 @@ const rawArticles: LearningArticle[] = [
       "Mörkt skrivbord med laptop, miniräknare och anteckningar om sparande vid 25, 35, 45 och 65 år.",
     thumbnailObjectPosition: "center",
   },
-  iskEllerKapitalforsakring,
+  {
+    ...iskEllerKapitalforsakring,
+    thumbnailObjectPosition: "left center",
+  },
   rantaPaRanta,
   peTal,
   etf,
