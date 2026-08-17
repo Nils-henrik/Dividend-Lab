@@ -5,7 +5,7 @@ import { PRODUCTION_SITE_ORIGIN } from "@/lib/seo/site";
 
 /**
  * Allow public crawling while blocking authenticated, private and non-indexable areas.
- * Advertise both the canonical sitemap and the rolling Google News sitemap.
+ * Advertise the canonical sitemap plus dedicated News and Learning sitemaps.
  */
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -17,6 +17,7 @@ export default function robots(): MetadataRoute.Robots {
     sitemap: [
       `${PRODUCTION_SITE_ORIGIN}/sitemap.xml`,
       `${PRODUCTION_SITE_ORIGIN}/news-sitemap.xml`,
+      `${PRODUCTION_SITE_ORIGIN}/learning-sitemap.xml`,
     ],
     host: PRODUCTION_SITE_ORIGIN,
   };
