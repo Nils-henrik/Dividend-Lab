@@ -152,18 +152,32 @@ function compactEvidence(evidence: readonly ModelPortfolioEvidence[]): string {
     .join("\n\n");
 }
 
-export function buildDecisionSchemaForEvidence(evidence: readonly ModelPortfolioEvidence[]) {
+export function buildDecisionSchemaForEvidence(
+  evidence: readonly ModelPortfolioEvidence[],
+  candidates: readonly Pick<RankedResearchCandidate, "symbol" | "exchange">[] = [],
+) {
   const ids = [...new Set(evidence.map((item) => item.id).filter(Boolean))];
   const [first, ...rest] = ids;
-  if (!first) return modelPortfolioDecisionSchema;
+  const evidenceConstrainedSchema = first
+    ? modelPortfolioDecisionSchema.extend({
+        evidenceIds: z.array(z.enum([first, ...rest] as [string, ...string[]])).min(1).max(12),
+        disconfirmingEvidenceIds: z.array(z.enum([first, ...rest] as [string, ...string[]])).max(8),
+      })
+    : modelPortfolioDecisionSchema;
 
-  // Constrain structured output to IDs that were actually supplied to the model.
-  // This prevents a semantically correct trade from becoming a false HOLD merely
-  // because the model shortened or reformatted a generated evidence identifier.
-  const evidenceIdSchema = z.enum([first, ...rest] as [string, ...string[]]);
-  return modelPortfolioDecisionSchema.extend({
-    evidenceIds: z.array(evidenceIdSchema).min(1).max(12),
-    disconfirmingEvidenceIds: z.array(evidenceIdSchema).max(8),
+  const symbols = [...new Set(candidates.map((candidate) => candidate.symbol.trim()).filter(Boolean))];
+  const exchanges = [...new Set(candidates.map((candidate) => candidate.exchange.trim()).filter(Boolean))];
+  const [firstSymbol, ...restSymbols] = symbols;
+  const [firstExchange, ...restExchanges] = exchanges;
+  if (!firstSymbol || !firstExchange) return evidenceConstrainedSchema;
+
+  // Trade identity must use the exact canonical symbol/exchange pair components
+  // supplied by the deterministic shortlist. This prevents harmless display
+  // variants such as AKER.OL + OL or DNB.OL + "Oslo Børs" from being rejected
+  // later as an unknown candidate or missing quote.
+  return evidenceConstrainedSchema.extend({
+    symbol: z.enum([firstSymbol, ...restSymbols] as [string, ...string[]]).nullable(),
+    exchange: z.enum([firstExchange, ...restExchanges] as [string, ...string[]]).nullable(),
   });
 }
 
@@ -371,13 +385,14 @@ export async function generatePortfolioAiDecision(
     "Om du överväger BUY/SELL/TRIM/REBALANCE ska du använda relevanta verktyg för att kontrollera teknisk bild och nedsiderisk innan slutbeslutet. En enskild indikator får aldrig ensam avgöra affären.",
     "Använd högst två verktygssteg och lämna därefter alltid slutbeslutet; fastna aldrig i upprepade verktygsanrop.",
     "Verktygen kan bara läsa redan hämtad verifierad data; null betyder okänt och får inte fyllas i med antaganden.",
+    "För BUY/SELL/TRIM/REBALANCE måste symbol och exchange exakt kopieras från kandidatlistans separata fält. Lägg inte börssuffix i symbol om kandidatens symbol saknar det och skriv inte börsens visningsnamn i exchange.",
     "Lämna exakt ett strukturerat beslut enligt schemat. KÖP, HOLD och SÄLJ är likvärdiga aktiva val; välj det som bäst följer mandatet och evidensen. HOLD ska inte användas som default bara för att informationen inte är perfekt.",
   ].join("\n\n");
 
   const result = await generateText({
     model,
     output: Output.object({
-      schema: buildDecisionSchemaForEvidence(request.evidence),
+      schema: buildDecisionSchemaForEvidence(request.evidence, request.candidates),
       name: "model_portfolio_decision",
       description: "One auditable DivLab model-portfolio decision after optional bounded tool inspection.",
     }),
