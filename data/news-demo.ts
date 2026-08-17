@@ -1,4 +1,5 @@
 import type { NewsArticle } from "@/types/news";
+import { BORSSVERIGE_LUNCH_17_AUGUSTI_2026_ARTICLE } from "@/data/news-articles/borssverige-lunch-17-augusti-2026";
 import { BORSSVERIGE_17_AUGUSTI_2026_ARTICLE } from "@/data/news-articles/borssverige-17-augusti-2026";
 import { NORDEN_I_CENTRUM_17_AUGUSTI_2026_ARTICLE } from "@/data/news-articles/norden-i-centrum-17-augusti-2026";
 import { BORSVECKA_34_OMXS30_VOLVO_SEB_INWIDO_ARTICLE } from "@/data/news-articles/borsvecka-34-omxs30-volvo-seb-inwido";
@@ -40,6 +41,7 @@ import { applyNewsSearchSeo } from "@/lib/seo/editorial-content";
  * Image assets currently live under /public/news-demo/ for historical path stability.
  */
 const PUBLISHED_NEWS_ARTICLES: NewsArticle[] = [
+  BORSSVERIGE_LUNCH_17_AUGUSTI_2026_ARTICLE,
   BORSSVERIGE_17_AUGUSTI_2026_ARTICLE,
   NORDEN_I_CENTRUM_17_AUGUSTI_2026_ARTICLE,
   BORSVECKA_34_OMXS30_VOLVO_SEB_INWIDO_ARTICLE,
