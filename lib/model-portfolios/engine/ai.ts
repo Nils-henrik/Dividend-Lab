@@ -152,6 +152,21 @@ function compactEvidence(evidence: readonly ModelPortfolioEvidence[]): string {
     .join("\n\n");
 }
 
+export function buildDecisionSchemaForEvidence(evidence: readonly ModelPortfolioEvidence[]) {
+  const ids = [...new Set(evidence.map((item) => item.id).filter(Boolean))];
+  const [first, ...rest] = ids;
+  if (!first) return modelPortfolioDecisionSchema;
+
+  // Constrain structured output to IDs that were actually supplied to the model.
+  // This prevents a semantically correct trade from becoming a false HOLD merely
+  // because the model shortened or reformatted a generated evidence identifier.
+  const evidenceIdSchema = z.enum([first, ...rest] as [string, ...string[]]);
+  return modelPortfolioDecisionSchema.extend({
+    evidenceIds: z.array(evidenceIdSchema).min(1).max(12),
+    disconfirmingEvidenceIds: z.array(evidenceIdSchema).max(8),
+  });
+}
+
 function candidateKey(candidate: Pick<RankedResearchCandidate, "symbol" | "exchange">): string {
   return `${candidate.symbol}.${candidate.exchange}`.toUpperCase();
 }
@@ -356,13 +371,13 @@ export async function generatePortfolioAiDecision(
     "Om du överväger BUY/SELL/TRIM/REBALANCE ska du använda relevanta verktyg för att kontrollera teknisk bild och nedsiderisk innan slutbeslutet. En enskild indikator får aldrig ensam avgöra affären.",
     "Använd högst två verktygssteg och lämna därefter alltid slutbeslutet; fastna aldrig i upprepade verktygsanrop.",
     "Verktygen kan bara läsa redan hämtad verifierad data; null betyder okänt och får inte fyllas i med antaganden.",
-    "Lämna exakt ett strukturerat beslut enligt schemat. Om underlaget inte tydligt motiverar en förändring: välj HOLD.",
+    "Lämna exakt ett strukturerat beslut enligt schemat. KÖP, HOLD och SÄLJ är likvärdiga aktiva val; välj det som bäst följer mandatet och evidensen. HOLD ska inte användas som default bara för att informationen inte är perfekt.",
   ].join("\n\n");
 
   const result = await generateText({
     model,
     output: Output.object({
-      schema: modelPortfolioDecisionSchema,
+      schema: buildDecisionSchemaForEvidence(request.evidence),
       name: "model_portfolio_decision",
       description: "One auditable DivLab model-portfolio decision after optional bounded tool inspection.",
     }),
