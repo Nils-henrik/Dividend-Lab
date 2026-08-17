@@ -22,14 +22,14 @@ export default function NewsArticleThumbnail({
   priority = false,
 }: Props) {
   const isFeatured = variant === "featured";
-  const fallbackDesktop = isFeatured ? "center 40%" : "center";
+  const fallbackDesktop = isFeatured ? "center 40%" : "center 50%";
 
   return (
     <div
       className={`relative shrink-0 overflow-hidden rounded-lg border divlab-border-neutral bg-divlab-surface ${
         isFeatured
           ? "aspect-video w-full md:w-[288px]"
-          : "h-[96px] w-full md:h-[96px] md:w-[156px]"
+          : "aspect-video w-full md:w-[176px]"
       }`}
     >
       <Image
@@ -40,7 +40,7 @@ export default function NewsArticleThumbnail({
         sizes={
           isFeatured
             ? "(max-width: 768px) 100vw, 288px"
-            : "(max-width: 768px) 100vw, 156px"
+            : "(max-width: 768px) 100vw, 176px"
         }
         className={`object-cover ${RESPONSIVE_THUMBNAIL_POSITION_CLASS}`}
         style={getResponsiveThumbnailPositionStyle({
