@@ -2,6 +2,7 @@ import { buyBrokerageFeeMinor, SIMULATED_BUY_BROKERAGE_FEE_MINOR } from "./fees"
 import { convertNativeMinorToSek, currencyForExchange, type FxRateQuote } from "./fx";
 import { MODEL_PORTFOLIO_TURNOVER_POLICY, type ModelPortfolioStrategyKey } from "./policy";
 import { validateModelPortfolioBuyRisk, type ModelPortfolioRiskRules } from "./risk";
+import { evaluateWholeShareBuyEligibility } from "./whole-share-eligibility";
 
 export const SIMULATED_FILL_LABEL = "SIMULATED" as const;
 /** Delayed SIMULATED fills may be older than realtime quotes; reject only when clearly stale. */
@@ -152,8 +153,37 @@ export function planSimulatedSettlement(input: SettlementPlanInput): SettlementP
     const affordableGross = input.cashMinor - feeSekMinor;
     if (affordableGross <= 0) return { ok: false, reason: "insufficient_cash" };
 
+    const policy = MODEL_PORTFOLIO_TURNOVER_POLICY[input.strategyKey];
+    const minTradeGrossMinor = Math.ceil(
+      (input.portfolioValueMinor * policy.minTradePctOfPortfolio) / 100,
+    );
+    if (desiredGrossMinor < minTradeGrossMinor && !input.materialThesisBreak) {
+      return { ok: false, reason: "trade_too_small" };
+    }
+
     const grossBudget = Math.min(desiredGrossMinor, affordableGross);
-    const quantity = wholeShares(grossBudget / priceSekMinor);
+    let quantity = wholeShares(grossBudget / priceSekMinor);
+
+    // The pre-AI eligibility gate intentionally uses ceil() for the minimum
+    // meaningful whole-share trade. Settlement previously used floor() only,
+    // so a valid 10% target could become 9.x% (or zero shares) and be rejected
+    // as trade_too_small. When the AI has requested at least the policy minimum,
+    // round up only to the smallest whole-share quantity that reaches that
+    // minimum and only when that quantity still fits all deterministic caps.
+    if (!input.materialThesisBreak && quantity * priceSekMinor < minTradeGrossMinor) {
+      const eligibility = evaluateWholeShareBuyEligibility({
+        strategyKey: input.strategyKey,
+        rules: input.rules,
+        cashMinor: input.cashMinor,
+        portfolioValueMinor: input.portfolioValueMinor,
+        investedMinor: input.investedMinor,
+        currentPositionValueMinor,
+        priceSekMinor,
+      });
+      if (!eligibility.eligible) return { ok: false, reason: "trade_too_small" };
+      quantity = eligibility.minWholeShares;
+    }
+
     if (quantity <= 0) return { ok: false, reason: "trade_too_small" };
 
     const grossAmountSekMinor = quantity * priceSekMinor;
@@ -162,7 +192,6 @@ export function planSimulatedSettlement(input: SettlementPlanInput): SettlementP
       return { ok: false, reason: "insufficient_cash" };
     }
 
-    const policy = MODEL_PORTFOLIO_TURNOVER_POLICY[input.strategyKey];
     const tradePct = (grossAmountSekMinor / input.portfolioValueMinor) * 100;
     if (tradePct < policy.minTradePctOfPortfolio && !input.materialThesisBreak) {
       return { ok: false, reason: "trade_too_small" };
