@@ -33,6 +33,17 @@ export type ModelPortfolioEvidence = {
   summary: string;
 };
 
+export type EvidenceReferenceRepair = {
+  from: string;
+  to: string;
+};
+
+export type EvidenceReferenceNormalization = {
+  decision: ModelPortfolioDecision;
+  repaired: EvidenceReferenceRepair[];
+  unknownEvidenceIds: string[];
+};
+
 const PROFILE_FOCUS: Record<ModelPortfolioStrategyKey, readonly string[]> = {
   conservative: [
     "balansräkning och finansieringsrisk",
@@ -74,7 +85,7 @@ export function buildDecisionFramework(strategyKey: ModelPortfolioStrategyKey): 
   const maxPositionPct = START_PHASE_MAX_POSITION_PCT[strategyKey];
   return [
     "INVESTERINGSRAMVERK:",
-    "1. Börja alltid med frågan: finns det tillräckligt stark evidens för att INTE välja HOLD?",
+    "1. KÖP, HOLD och SÄLJ är likvärdiga aktiva beslut. HOLD är inte ett standardläge och ska inte väljas bara för att informationen inte är perfekt; välj det beslut som bäst följer mandatet och den verifierade evidensen.",
     "2. Skilj fakta från tolkning. Använd endast evidens som finns i det givna underlaget.",
     "3. En enskild rubrik, kursrörelse eller social signal får aldrig ensam motivera en affär.",
     "4. Sök aktivt efter information som motsäger huvudtesen innan conviction sätts. Om ingen separat motbeviskälla finns i underlaget ska du inte hitta på en eller återanvända en stödkälla bara för att fylla disconfirmingEvidenceIds.",
@@ -82,8 +93,9 @@ export function buildDecisionFramework(strategyKey: ModelPortfolioStrategyKey): 
     "6. Köp kräver positiv tes, rimlig värderingsbild, identifierad katalysator eller uthållig compounding-tes samt tydlig nedsidesanalys.",
     "7. Sälj kräver i första hand tesbrott, kraftigt försämrad risk/reward, bättre kapitalallokering eller regelstyrd riskreduktion. Kursfall i sig är inte ett säljargument.",
     "8. Kursuppgång i sig är inte ett säljargument. Vinsthemtagning måste kunna motiveras av värdering, koncentration eller försämrad framtida risk/reward.",
-    "9. Om datan är motsägelsefull, gammal eller otillräcklig: HOLD och sänk conviction.",
-    "10. Motiveringen ska vara kort, konkret och begriplig för en vanlig DivLab-användare.",
+    "9. Om datan är materiellt otillräcklig för ett specifikt KÖP eller SÄLJ ska du välja HOLD och sänka conviction, men normal marknadsosäkerhet eller ofullständig information är inte i sig skäl att avstå från ett välunderbyggt case.",
+    "10. Kräv inte perfekt information. En riktig förvaltare fattar beslut under osäkerhet; styrkan i tes, risk/reward och mandatpassning ska avgöra om tillgänglig evidens räcker.",
+    "11. Motiveringen ska vara kort, konkret och begriplig för en vanlig DivLab-användare.",
     "AKTIV STARTFAS-SIZING 2026-08-14:",
     `- Minsta meningsfulla affär är 10 % av portföljvärdet. Absolut maxvikt för en enskild position i denna startfas är ${maxPositionPct} %.`,
     "- Maxvikten är endast ett tekniskt tak för en liten portfölj med handel i hela aktier. Den är INTE en målposition och INTE en uppmaning att använda hela utrymmet.",
@@ -96,10 +108,74 @@ export function buildDecisionFramework(strategyKey: ModelPortfolioStrategyKey): 
     "- action måste vara hold, buy, sell, trim eller rebalance.",
     "- convictionScore är styrkan i beslutet, inte säkerheten i framtida avkastning.",
     "- materialThesisBreak får endast vara true när verifierad ny information faktiskt bryter en central del av tidigare tes.",
-    "- evidenceIds måste peka på givna evidensposter. Hitta aldrig på källor, priser, rapporttal eller händelser.",
+    "- evidenceIds måste exakt kopiera ID-strängar från de givna evidensposterna, inklusive suffix och tidsstämpel när sådan finns. Förkorta, omskriv eller hitta aldrig på ett evidens-ID.",
+    "- Hitta aldrig på källor, priser, rapporttal eller händelser.",
     "- disconfirmingEvidenceIds får endast innehålla verkliga givna evidensposter som faktiskt motsäger eller försvagar tesen. Lämna listan tom om den aktiva motbeviskontrollen inte hittar en separat sådan post.",
     "- proposedPortfolioPct är önskad målviktsförändring före deterministisk riskvalidering och är aldrig ett exekveringskommando.",
   ].join("\n");
+}
+
+function cleanEvidenceReference(value: string): string {
+  return value
+    .trim()
+    .replace(/^[\[\]()`'"\s]+/, "")
+    .replace(/[\[\]()`'"\s,.;]+$/, "")
+    .trim();
+}
+
+function resolveEvidenceReference(
+  reference: string,
+  evidence: readonly ModelPortfolioEvidence[],
+): string | null {
+  const cleaned = cleanEvidenceReference(reference);
+  if (!cleaned) return null;
+
+  const exact = evidence.find((item) => item.id === cleaned);
+  if (exact) return exact.id;
+
+  const lower = cleaned.toLowerCase();
+  const caseInsensitive = evidence.filter((item) => item.id.toLowerCase() === lower);
+  if (caseInsensitive.length === 1) return caseInsensitive[0]!.id;
+
+  // Structured-output models occasionally omit only the generated timestamp
+  // suffix from an otherwise exact research ID. Repair that benign formatting
+  // error only when it maps to one and only one supplied evidence item.
+  if (cleaned.includes(":")) {
+    const prefixMatches = evidence.filter((item) =>
+      item.id.toLowerCase().startsWith(`${lower}:`),
+    );
+    if (prefixMatches.length === 1) return prefixMatches[0]!.id;
+  }
+
+  return null;
+}
+
+export function normalizeDecisionEvidenceReferences(
+  decision: ModelPortfolioDecision,
+  evidence: readonly ModelPortfolioEvidence[],
+): EvidenceReferenceNormalization {
+  const repaired: EvidenceReferenceRepair[] = [];
+  const unknownEvidenceIds: string[] = [];
+
+  const normalizeList = (references: readonly string[]) => references.map((reference) => {
+    const resolved = resolveEvidenceReference(reference, evidence);
+    if (!resolved) {
+      unknownEvidenceIds.push(reference);
+      return reference;
+    }
+    if (resolved !== reference) repaired.push({ from: reference, to: resolved });
+    return resolved;
+  });
+
+  return {
+    decision: {
+      ...decision,
+      evidenceIds: normalizeList(decision.evidenceIds),
+      disconfirmingEvidenceIds: normalizeList(decision.disconfirmingEvidenceIds),
+    },
+    repaired,
+    unknownEvidenceIds,
+  };
 }
 
 export function validateEvidenceReferences(

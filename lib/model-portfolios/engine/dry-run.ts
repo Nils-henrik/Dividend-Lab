@@ -11,7 +11,13 @@ import {
   MODEL_PORTFOLIO_AI_PROVIDER,
   type ModelPortfolioAiUsage,
 } from "./ai-usage";
-import { validateEvidenceReferences, type ModelPortfolioDecision, type ModelPortfolioEvidence } from "./decision";
+import {
+  normalizeDecisionEvidenceReferences,
+  validateEvidenceReferences,
+  type EvidenceReferenceRepair,
+  type ModelPortfolioDecision,
+  type ModelPortfolioEvidence,
+} from "./decision";
 import type { ModelPortfolioStrategyKey } from "./policy";
 import type { ResearchCandidate } from "./research";
 import {
@@ -36,10 +42,19 @@ export type PortfolioDryRunRequest = {
   heldInstruments?: readonly HeldInstrumentRef[];
 };
 
+export type PortfolioEvidenceValidationDiagnostics = {
+  ok: boolean;
+  reason: "unknown_evidence" | null;
+  repairedReferences: EvidenceReferenceRepair[];
+  unknownEvidenceIds: string[];
+};
+
 export type PortfolioDryRunResult =
   | {
       ok: true;
       decision: ModelPortfolioDecision;
+      generatedDecision: ModelPortfolioDecision;
+      evidenceValidation: PortfolioEvidenceValidationDiagnostics;
       rankedCandidates: AttentionCandidate[];
       model: string;
       estimatedCostUsdMicros: number;
@@ -169,6 +184,11 @@ export function guardBuyAgainstHeldMonitoring(input: {
   if (isFreshBuyEligible(target, newEntryEligible)) return input.decision;
   return {
     ...failClosedHold(input.evidence),
+    thesis:
+      "AI:n föreslog ett köp i ett bolag som endast fanns med som befintligt innehav för bevakning och inte klarade portföljens nya entry-grind.",
+    bearCase:
+      "Att låta innehavsstatus kringgå entry-reglerna skulle kunna öka en position trots att den inte längre kvalificerar som ny köpkandidat.",
+    valuationView: input.decision.valuationView,
     rationale:
       "KÖP stoppades. Innehavsstatus får inte göra ett bolag till en ny köpkandidat när det inte klarar mandatets entry-grind. Befintliga innehav kan bevakas för HOLD/SÄLJ/MINSKA.",
   };
@@ -250,9 +270,17 @@ export async function runPortfolioDryRun(request: PortfolioDryRunRequest): Promi
     rankedCandidates.some((candidate) => evidenceMatchesCandidate(item, candidate)),
   );
   if (!rankedCandidates.length) {
+    const decision = noExecutableCandidatesHold();
     return {
       ok: true,
-      decision: noExecutableCandidatesHold(),
+      decision,
+      generatedDecision: decision,
+      evidenceValidation: {
+        ok: true,
+        reason: null,
+        repairedReferences: [],
+        unknownEvidenceIds: [],
+      },
       rankedCandidates,
       model: "deterministic/no-executable-candidates",
       estimatedCostUsdMicros: 0,
@@ -281,9 +309,10 @@ export async function runPortfolioDryRun(request: PortfolioDryRunRequest): Promi
     runId: request.runId ?? null,
   });
 
-  const evidenceValidation = validateEvidenceReferences(generated.decision, evidence);
+  const normalization = normalizeDecisionEvidenceReferences(generated.decision, evidence);
+  const evidenceValidation = validateEvidenceReferences(normalization.decision, evidence);
   const validated = evidenceValidation.ok
-    ? generated.decision
+    ? normalization.decision
     : failClosedHold(evidence);
   const decision = guardBuyAgainstHeldMonitoring({
     decision: validated,
@@ -295,6 +324,13 @@ export async function runPortfolioDryRun(request: PortfolioDryRunRequest): Promi
   return {
     ok: true,
     decision,
+    generatedDecision: generated.decision,
+    evidenceValidation: {
+      ok: evidenceValidation.ok,
+      reason: evidenceValidation.ok ? null : evidenceValidation.reason,
+      repairedReferences: normalization.repaired,
+      unknownEvidenceIds: normalization.unknownEvidenceIds,
+    },
     rankedCandidates,
     model: generated.model,
     estimatedCostUsdMicros: generated.estimatedCostUsdMicros,
