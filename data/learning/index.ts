@@ -32,7 +32,10 @@ export {
 } from "./reading-time";
 
 const rawArticles: LearningArticle[] = [
-  tekniskAnalys,
+  {
+    ...tekniskAnalys,
+    thumbnailObjectPosition: "left center",
+  },
   levaPaUtdelningar,
   {
     ...hurMycketSparatEfterAlder,
