@@ -12,6 +12,7 @@ import {
 import {
   acceptChatRequestAction,
   declineChatRequestAction,
+  hydrateChatMessageAttachmentsAction,
   ignoreChatRequestAction,
   loadChatThreadAction,
   markChatConversationReadAction,
@@ -46,8 +47,10 @@ import {
 import {
   applyMessageToSummaries,
   mapRealtimeMessageRow,
+  mergeMessageAttachments,
   mergeRealtimeMessage,
 } from "@/lib/messages/realtime-messages";
+import { formatChatMessagePreview } from "@/lib/messages/attachments";
 import { createClient } from "@/lib/supabase/client";
 import type {
   ChatContact,
@@ -96,7 +99,11 @@ type ChatContextValue = {
   setMobileQuery: (value: string) => void;
   setShowingRequests: (value: boolean) => void;
   beginMobileCompose: () => void;
-  sendMessage: (conversationId: string, body: string) => Promise<boolean>;
+  sendMessage: (
+    conversationId: string,
+    body: string,
+    attachmentIds?: string[],
+  ) => Promise<boolean>;
   acceptRequest: (conversationId: string) => void;
   ignoreRequest: (conversationId: string) => void;
   declineRequest: (conversationId: string) => void;
@@ -633,6 +640,34 @@ export default function ChatProvider({ bootstrap, children }: Props) {
               };
             });
 
+            if (message.hasAttachments) {
+              void hydrateChatMessageAttachmentsAction(
+                message.conversationId,
+                message.id,
+              ).then((result) => {
+                if (result.status !== "success" || !result.data) {
+                  return;
+                }
+                setThreads((current) => {
+                  const existing = current[message.conversationId];
+                  if (!existing) {
+                    return current;
+                  }
+                  return {
+                    ...current,
+                    [message.conversationId]: {
+                      ...existing,
+                      messages: mergeMessageAttachments(
+                        existing.messages,
+                        message.id,
+                        result.data!,
+                      ),
+                    },
+                  };
+                });
+              });
+            }
+
             setChats((current) =>
               applyMessageToSummaries(current, message, {
                 currentUserId: bootstrap.currentUserId,
@@ -698,7 +733,8 @@ export default function ChatProvider({ bootstrap, children }: Props) {
                   initiatedBy: thread.initiatedBy,
                   updatedAt: message.createdAt,
                   otherParticipant: thread.otherParticipant,
-                  lastMessagePreview: message.body,
+                  lastMessagePreview:
+                    formatChatMessagePreview(message) || message.body,
                   lastMessageAt: message.createdAt,
                   hasUnread: message.senderId !== bootstrap.currentUserId,
                 };
@@ -769,14 +805,22 @@ export default function ChatProvider({ bootstrap, children }: Props) {
   }, []);
 
   const sendMessage = useCallback(
-    async (conversationId: string, body: string) => {
+    async (
+      conversationId: string,
+      body: string,
+      attachmentIds: string[] = [],
+    ) => {
       setPendingConversationId(conversationId);
       setSendErrorById((current) => {
         const next = { ...current };
         delete next[conversationId];
         return next;
       });
-      const result = await sendChatMessageAction(conversationId, body);
+      const result = await sendChatMessageAction(
+        conversationId,
+        body,
+        attachmentIds,
+      );
       setPendingConversationId(null);
 
       if (result.status === "error" || !result.data) {
@@ -843,8 +887,13 @@ export default function ChatProvider({ bootstrap, children }: Props) {
               updatedAt: new Date().toISOString(),
               otherParticipant: thread.otherParticipant,
               lastMessagePreview:
-                thread.messages[thread.messages.length - 1]?.body ??
-                "Inga meddelanden än",
+                formatChatMessagePreview(
+                  thread.messages[thread.messages.length - 1] ?? {
+                    body: "",
+                    attachments: [],
+                    hasAttachments: false,
+                  },
+                ) || "Inga meddelanden än",
               lastMessageAt:
                 thread.messages[thread.messages.length - 1]?.createdAt ?? null,
               hasUnread: false,

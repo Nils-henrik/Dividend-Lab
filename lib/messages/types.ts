@@ -1,3 +1,5 @@
+import type { ConversationMessageAttachment } from "./attachments";
+
 export const MESSAGE_BODY_MAX_LENGTH = 2000;
 export const MESSAGE_SUBJECT_MAX_LENGTH = 120;
 
@@ -33,6 +35,8 @@ export type ConversationMessage = {
   senderId: string;
   body: string;
   createdAt: string;
+  hasAttachments: boolean;
+  attachments: ConversationMessageAttachment[];
 };
 
 export type ConversationThread = {

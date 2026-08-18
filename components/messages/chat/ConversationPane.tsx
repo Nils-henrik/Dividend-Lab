@@ -18,7 +18,11 @@ type Props = {
   sendError?: string | null;
   requestError?: string | null;
   pendingRequestAction?: "accept" | "ignore" | "decline" | null;
-  onSend: (conversationId: string, body: string) => Promise<boolean>;
+  onSend: (
+    conversationId: string,
+    body: string,
+    attachmentIds: string[],
+  ) => Promise<boolean>;
   onAcceptRequest: (conversationId: string) => void;
   onIgnoreRequest: (conversationId: string) => void;
   onDeclineRequest: (conversationId: string) => void;
@@ -80,6 +84,7 @@ export default function ConversationPane({
           />
         ) : conversation.canSend ? (
           <ChatComposer
+            key={conversation.id}
             conversationId={conversation.id}
             pending={pending}
             errorMessage={sendError}

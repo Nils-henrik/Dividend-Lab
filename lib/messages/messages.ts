@@ -1,8 +1,14 @@
+import {
+  formatChatMessagePreview,
+  isChatAttachmentMimeType,
+  toConversationMessageAttachment,
+  type ConversationMessageAttachment,
+} from "./attachments";
+import { mapConversationMessage } from "./realtime-messages";
 import { DIVLAB_MEMBER_LABEL } from "@/lib/site/brand";
 import { getAvatarPublicUrl } from "@/lib/profiles/identity";
 import { createClient } from "@/lib/supabase/server";
 import type {
-  ConversationMessage,
   ConversationStatus,
   ConversationSummary,
   ConversationThread,
@@ -29,6 +35,17 @@ type MessageRow = {
   conversation_id: string;
   sender_id: string;
   body: string;
+  created_at: string;
+  has_attachments?: boolean | null;
+};
+
+type AttachmentRow = {
+  id: string;
+  conversation_id: string;
+  message_id: string | null;
+  original_filename: string;
+  mime_type: string;
+  byte_size: number;
   created_at: string;
 };
 
@@ -94,6 +111,57 @@ async function getProfilesByUserId(userIds: string[]) {
   }
 
   return new Map((data ?? []).map((profile) => [profile.id, profile]));
+}
+
+function mapAttachmentRow(row: AttachmentRow): ConversationMessageAttachment | null {
+  if (!row.message_id || !isChatAttachmentMimeType(row.mime_type)) {
+    return null;
+  }
+
+  return toConversationMessageAttachment({
+    id: row.id,
+    filename: row.original_filename,
+    mimeType: row.mime_type,
+    byteSize: row.byte_size,
+  });
+}
+
+async function getAttachmentsByMessageId(
+  conversationId: string,
+  messageIds: string[],
+) {
+  const attachmentsByMessageId = new Map<string, ConversationMessageAttachment[]>();
+  if (messageIds.length === 0) {
+    return attachmentsByMessageId;
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("message_attachments")
+    .select(
+      "id, conversation_id, message_id, original_filename, mime_type, byte_size, created_at",
+    )
+    .eq("conversation_id", conversationId)
+    .in("message_id", messageIds)
+    .eq("status", "ready")
+    .order("created_at", { ascending: true })
+    .returns<AttachmentRow[]>();
+
+  if (error) {
+    return attachmentsByMessageId;
+  }
+
+  for (const row of data ?? []) {
+    const mapped = mapAttachmentRow(row);
+    if (!mapped || !row.message_id) {
+      continue;
+    }
+    const list = attachmentsByMessageId.get(row.message_id) ?? [];
+    list.push(mapped);
+    attachmentsByMessageId.set(row.message_id, list);
+  }
+
+  return attachmentsByMessageId;
 }
 
 export async function getProfileByUserId(userId: string) {
@@ -207,7 +275,7 @@ async function buildConversationSummaries(
       .returns<ParticipantRow[]>(),
     supabase
       .from("messages")
-      .select("id, conversation_id, sender_id, body, created_at")
+      .select("id, conversation_id, sender_id, body, created_at, has_attachments")
       .in("conversation_id", conversationIds)
       .order("created_at", { ascending: false })
       .returns<MessageRow[]>(),
@@ -296,7 +364,11 @@ async function buildConversationSummaries(
               otherParticipant.user_id,
             )
           : null,
-        lastMessagePreview: lastMessage?.body ?? "Inga meddelanden än",
+        lastMessagePreview:
+          formatChatMessagePreview({
+            body: lastMessage?.body ?? "",
+            hasAttachments: Boolean(lastMessage?.has_attachments),
+          }) || "Inga meddelanden än",
         lastMessageAt: lastMessage?.created_at ?? null,
         hasUnread,
       } satisfies ConversationSummary;
@@ -448,7 +520,7 @@ export async function getConversationThread(
 
   const { data: messages, error: messagesError } = await supabase
     .from("messages")
-    .select("id, conversation_id, sender_id, body, created_at")
+    .select("id, conversation_id, sender_id, body, created_at, has_attachments")
     .eq("conversation_id", conversationId)
     .order("created_at", { ascending: true })
     .returns<MessageRow[]>();
@@ -472,6 +544,11 @@ export async function getConversationThread(
       status === "declined") &&
     conversation.initiated_by === userId;
   const canSend = status === "active";
+  const messageRows = messages ?? [];
+  const attachmentsByMessageId = await getAttachmentsByMessageId(
+    conversationId,
+    messageRows.map((message) => message.id),
+  );
 
   return {
     id: conversationId,
@@ -484,16 +561,18 @@ export async function getConversationThread(
           otherParticipant.user_id,
         )
       : null,
-    messages: (messages ?? []).map(
-      (message) =>
-        ({
-          id: message.id,
-          conversationId: message.conversation_id,
-          senderId: message.sender_id,
-          body: message.body,
-          createdAt: message.created_at,
-        }) satisfies ConversationMessage,
-    ),
+    messages: messageRows.map((message) => {
+      const attachments = attachmentsByMessageId.get(message.id) ?? [];
+      return mapConversationMessage({
+        id: message.id,
+        conversationId: message.conversation_id,
+        senderId: message.sender_id,
+        body: message.body,
+        createdAt: message.created_at,
+        hasAttachments: Boolean(message.has_attachments) || attachments.length > 0,
+        attachments,
+      });
+    }),
     canSend,
     isMessageRequestRecipient,
     isPendingRequestSender,

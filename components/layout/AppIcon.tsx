@@ -21,6 +21,7 @@ export type AppIconName =
   | "minus"
   | "news"
   | "pieChart"
+  | "paperclip"
   | "portfolio"
   | "rocket"
   | "search"
@@ -66,6 +67,8 @@ const icons: Record<AppIconName, string> = {
   rocket: "M5 19l4-1 9-9 1-5-5 1-9 9-1 5Zm8-8 2 2M9 15l-2 4m6-2 4-2",
   search: "m21 21-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z",
   send: "M4.5 12 19 4.5 14 19l-2.2-6.3L4.5 12Z",
+  paperclip:
+    "M8 12.5V7a4 4 0 0 1 8 0v9.5a5.5 5.5 0 1 1-11 0V8",
   settings:
     "M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Zm0-12v3m0 11v3m8.5-8.5h-3m-11 0h-3m14.6-6.1-2.1 2.1M7.5 16.5l-2.1 2.1m0-12.7 2.1 2.1m9 8.5 2.1 2.1",
   shield: "M12 3l7 3v5c0 4-3 8-7 10-4-2-7-6-7-10V6l7-3",

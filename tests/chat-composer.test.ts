@@ -113,6 +113,12 @@ describe("chat composer emoji insertion", () => {
       false,
     );
   });
+
+  it("keeps the 2,000-character body limit when attachments are present", () => {
+    const tooLong = "x".repeat(MESSAGE_BODY_MAX_LENGTH + 1);
+    assert.ok(validateMessageBody(tooLong, { required: false }).error);
+    assert.equal(validateMessageBody("", { required: false }).error, null);
+  });
 });
 
 describe("chat emoji picker dismiss contract", () => {

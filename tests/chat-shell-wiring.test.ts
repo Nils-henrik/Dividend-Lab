@@ -105,14 +105,19 @@ describe("global chat shell wiring", () => {
     assert.doesNotMatch(state, /sessionStorage\.setItem\([^\)]*body/);
   });
 
-  it("keeps the composer native with emoji insertion and no fake media controls", () => {
+  it("keeps the composer native with emoji insertion and a compact private attachment action", () => {
     const composer = read("components/messages/chat/ChatComposer.tsx");
     const picker = read("components/messages/chat/ChatEmojiPicker.tsx");
     const helper = read("lib/messages/chat-composer.ts");
+    const transcript = read("components/messages/chat/ChatTranscript.tsx");
 
     assert.match(composer, /Öppna emoji/);
     assert.match(composer, /insertComposerText/);
     assert.match(composer, /aria-label="Skicka"/);
+    assert.match(composer, /CHAT_ATTACHMENT_COPY_SV\.attachLabel/);
+    assert.match(composer, /paperclip/);
+    assert.match(read("lib/messages/attachments.ts"), /Bifoga fil/);
+    assert.match(transcript, /ChatMessageAttachments/);
     assert.match(picker, /CHAT_COMPOSER_EMOJIS/);
     assert.match(picker, /role="dialog"/);
     assert.doesNotMatch(picker, /aria-modal/);
@@ -122,7 +127,7 @@ describe("global chat shell wiring", () => {
     assert.match(composer, /shouldRestoreComposerFocusAfterEmojiPickerDismiss/);
     assert.match(composer, /data-chat-emoji-trigger/);
     assert.match(helper, /insertComposerText/);
-    assert.doesNotMatch(composer, /GIF|video|telefon|file upload|paperclip/i);
+    assert.doesNotMatch(composer, /video|telefon|giphy|tenor/i);
     assert.doesNotMatch(picker, /facebook|messenger|meta/i);
     assert.doesNotMatch(composer, /facebook|messenger|meta/i);
   });

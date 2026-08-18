@@ -4,6 +4,7 @@ import { formatMessageTimestamp } from "@/lib/messages/format";
 import { DIVLAB_MEMBER_LABEL } from "@/lib/site/brand";
 import type { ConversationMessage, MessageParticipant } from "@/lib/messages/types";
 import MessageListAutoScroll from "../MessageListAutoScroll";
+import ChatMessageAttachments from "./ChatMessageAttachments";
 
 type Props = {
   messages: ConversationMessage[];
@@ -73,9 +74,15 @@ export default function ChatTranscript({
                   {formatMessageTimestamp(message.createdAt)}
                 </p>
               </div>
-              <p className="whitespace-pre-wrap break-words text-sm leading-6 text-divlab-text">
-                {message.body}
-              </p>
+              {message.body ? (
+                <p className="whitespace-pre-wrap break-words text-sm leading-6 text-divlab-text">
+                  {message.body}
+                </p>
+              ) : null}
+              <ChatMessageAttachments
+                attachments={message.attachments}
+                compact={compact}
+              />
             </article>
           </div>
         );
