@@ -1,4 +1,5 @@
 import type { NewsArticle } from "@/types/news";
+import { BAHNHOF_Q2_2026_VAXER_MARGINALEN_PRESSAS_ARTICLE } from "@/data/news-articles/bahnhof-q2-2026-vaxer-marginalen-pressas";
 import { BORSSVERIGE_18_AUGUSTI_2026_ARTICLE } from "@/data/news-articles/borssverige-18-augusti-2026";
 import { NORDEN_I_CENTRUM_18_AUGUSTI_2026_ARTICLE } from "@/data/news-articles/norden-i-centrum-18-augusti-2026";
 import { BORSSVERIGE_LUNCH_17_AUGUSTI_2026_ARTICLE } from "@/data/news-articles/borssverige-lunch-17-augusti-2026";
@@ -43,6 +44,7 @@ import { applyNewsSearchSeo } from "@/lib/seo/editorial-content";
  * Image assets currently live under /public/news-demo/ for historical path stability.
  */
 const PUBLISHED_NEWS_ARTICLES: NewsArticle[] = [
+  BAHNHOF_Q2_2026_VAXER_MARGINALEN_PRESSAS_ARTICLE,
   BORSSVERIGE_18_AUGUSTI_2026_ARTICLE,
   NORDEN_I_CENTRUM_18_AUGUSTI_2026_ARTICLE,
   BORSSVERIGE_LUNCH_17_AUGUSTI_2026_ARTICLE,
