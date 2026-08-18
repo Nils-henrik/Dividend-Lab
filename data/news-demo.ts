@@ -1,4 +1,5 @@
 import type { NewsArticle } from "@/types/news";
+import { TECHFROSSA_WALL_STREET_NVIDIA_LANGRANTAN_18_AUGUSTI_2026_ARTICLE } from "@/data/news-articles/techfrossa-wall-street-nvidia-langrantan-18-augusti-2026";
 import { HEMNET_RUSAR_JP_MORGAN_18_AUGUSTI_2026_ARTICLE } from "@/data/news-articles/hemnet-rusar-jp-morgan-18-augusti-2026";
 import { BAHNHOF_Q2_2026_VAXER_MARGINALEN_PRESSAS_ARTICLE } from "@/data/news-articles/bahnhof-q2-2026-vaxer-marginalen-pressas";
 import { BORSSVERIGE_18_AUGUSTI_2026_ARTICLE } from "@/data/news-articles/borssverige-18-augusti-2026";
@@ -45,6 +46,7 @@ import { applyNewsSearchSeo } from "@/lib/seo/editorial-content";
  * Image assets currently live under /public/news-demo/ for historical path stability.
  */
 const PUBLISHED_NEWS_ARTICLES: NewsArticle[] = [
+  TECHFROSSA_WALL_STREET_NVIDIA_LANGRANTAN_18_AUGUSTI_2026_ARTICLE,
   HEMNET_RUSAR_JP_MORGAN_18_AUGUSTI_2026_ARTICLE,
   BAHNHOF_Q2_2026_VAXER_MARGINALEN_PRESSAS_ARTICLE,
   BORSSVERIGE_18_AUGUSTI_2026_ARTICLE,
