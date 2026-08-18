@@ -36,8 +36,6 @@ describe("editorial search SEO", () => {
   it("normalizes the full Learning library with search copy, author and internal links", () => {
     const publishedSlugs = new Set(learningArticles.map((article) => article.slug));
 
-    assert.equal(Object.keys(LEARNING_SEO_OVERRIDES).length, learningArticles.length);
-
     for (const article of learningArticles) {
       assert.ok(article.seoTitle?.trim(), `missing seoTitle: ${article.slug}`);
       assert.ok(article.description.trim(), `missing description: ${article.slug}`);
@@ -55,6 +53,10 @@ describe("editorial search SEO", () => {
         );
       }
     }
+
+    // Overrides remain supported for legacy articles, but an article may also
+    // carry complete, approved SEO metadata and related links natively.
+    assert.ok(Object.keys(LEARNING_SEO_OVERRIDES).length <= learningArticles.length);
   });
 
   it("uses search-intent language for the two daily market series", () => {
