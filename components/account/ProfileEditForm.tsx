@@ -132,7 +132,7 @@ export default function ProfileEditForm({
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
                   onChange={handleAvatarChange}
-                  className="divlab-input w-full px-4 py-3 text-sm text-gray-300 file:mr-4 file:rounded-lg file:border-0 file:bg-divlab-blue file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white"
+                  className="divlab-input w-full px-4 py-3 text-sm text-divlab-text file:mr-4 file:rounded-lg file:border file:border-divlab-blue/25 file:bg-divlab-blue/10 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-divlab-blue-muted"
                 />
                 <span className="mt-2 block text-xs leading-5 text-gray-600">
                   JPEG, PNG eller WebP upp till 10 MB. Du placerar och beskär

@@ -18,6 +18,8 @@ function getCategoryLabel(type: UserNotificationType | "message_summary") {
       return "Kontaktförfrågan";
     case "forum_reply":
       return "Forumsvar";
+    case "moderation_decision":
+      return "Moderering";
     case "message_summary":
       return "Meddelande";
     default:
@@ -57,6 +59,15 @@ export function formatForumReplyNotificationBody(
   return `${handle} svarade i din tråd “${title}”.`;
 }
 
+export function formatModerationDecisionNotificationBody(
+  payload: UserNotificationPayload,
+) {
+  const scope = payload.scopeDescription?.trim();
+  return scope
+    ? `DivLab har fattat ett modereringsbeslut som berör dig. ${scope}`
+    : "DivLab har fattat ett modereringsbeslut som berör ditt innehåll eller din profil. Öppna notisen för skäl och möjlighet till omprövning.";
+}
+
 export function formatUnreadBadgeLabel(count: number) {
   const displayCount = count > 9 ? "9+" : String(count);
   return count === 1
@@ -82,7 +93,9 @@ export function mapUserNotificationToFeedItem(
   const body =
     notification.type === "contact_request"
       ? formatContactRequestNotificationBody(actorUsername)
-      : formatForumReplyNotificationBody(actorUsername, notification.payload);
+      : notification.type === "forum_reply"
+        ? formatForumReplyNotificationBody(actorUsername, notification.payload)
+        : formatModerationDecisionNotificationBody(notification.payload);
 
   return {
     id: notification.id,
@@ -92,12 +105,18 @@ export function mapUserNotificationToFeedItem(
     body,
     createdAt: notification.createdAt,
     isUnread: notification.readAt == null,
-    actorUsername,
-    actorAvatarUrl: getAvatarPublicUrl(
-      notification.actorAvatarPath,
-      notification.actorProfileUpdatedAt,
-    ),
-    actorInitials: getActorInitials(actorUsername),
+    actorUsername: notification.type === "moderation_decision" ? null : actorUsername,
+    actorAvatarUrl:
+      notification.type === "moderation_decision"
+        ? null
+        : getAvatarPublicUrl(
+            notification.actorAvatarPath,
+            notification.actorProfileUpdatedAt,
+          ),
+    actorInitials:
+      notification.type === "moderation_decision"
+        ? "DL"
+        : getActorInitials(actorUsername),
   };
 }
 

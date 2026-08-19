@@ -16,13 +16,13 @@ export const LEGAL_ACCEPTANCE_VALIDATION_MESSAGE =
  */
 export const LEGAL_PUBLISHED_VERSIONS = {
   terms: {
-    version: "1.0",
-    effectiveDateLabel: "13 juli 2026",
-    effectiveDateIso: "2026-07-13",
+    version: "1.1",
+    effectiveDateLabel: "19 augusti 2026",
+    effectiveDateIso: "2026-08-19",
   },
   privacy: {
-    version: "1.0",
-    effectiveDateLabel: "13 juli 2026",
-    effectiveDateIso: "2026-07-13",
+    version: "1.1",
+    effectiveDateLabel: "19 augusti 2026",
+    effectiveDateIso: "2026-08-19",
   },
 } as const;

@@ -38,6 +38,7 @@ export default function PrivacyPageContent() {
             "forumtrådar, svar, reaktioner och aggregerad reputation",
             "privata meddelanden och konversationsämnen",
             "kommentarer på utbildningsartiklar",
+            "anmälningar om innehåll och modereringsärenden, inklusive lämnade kontaktuppgifter, motivering, exakt innehållslänk, snapshot av anmält innehåll, ärendereferens, modereringsbeslut, omprövningar och status för modereringsrelaterad e-postleverans",
             "läst/oläst-status i meddelanden",
             "sessions- och säkerhetsrelaterad teknisk data",
             "server- och felsökningsloggar hos driftleverantör",
@@ -51,8 +52,9 @@ export default function PrivacyPageContent() {
       <LegalSection title="Hur uppgifterna samlas in">
         <p>
           Uppgifter samlas in när du registrerar konto, loggar in, redigerar profil, deltar i
-          forum, skickar meddelanden, kommenterar artiklar eller använder andra funktioner som
-          kräver konto. Vissa tekniska uppgifter skapas automatiskt vid användning, till exempel
+          forum, skickar meddelanden, kommenterar artiklar, rapporterar innehåll, begär omprövning
+          av ett modereringsbeslut eller använder andra funktioner som kräver eller tar emot
+          uppgifter. Vissa tekniska uppgifter skapas automatiskt vid användning, till exempel
           sessionscookies, loggar och anonymiserad trafikstatistik via Vercel Web Analytics.
         </p>
         <p>
@@ -74,6 +76,8 @@ export default function PrivacyPageContent() {
             "visa offentliga profiler och community-funktioner",
             "möjliggöra privata meddelanden och kommentarer",
             "visa reaktioner och reputation",
+            "ta emot, utreda och dokumentera anmälningar om innehåll samt kommunicera mottagningsbekräftelser och beslut",
+            "genomföra, dokumentera och vid behov ompröva modereringsbeslut samt bevara ett revisionsspår",
             "driva, utveckla och felsöka tjänsten",
             "förstå aggregerad användning av webbplatsen via anonym trafikstatistik",
             "mäta ungefärligt antal unika läsare per börsnyhet och utbildningsartikel utan att skapa en beständig spårningsidentifierare i webbläsaren",
@@ -91,8 +95,8 @@ export default function PrivacyPageContent() {
         <LegalList
           items={[
             "fullgörande av användaravtal — för konto, kärnfunktioner och meddelanden",
-            "berättigat intresse — för säkerhet, drift, missbruksförebyggande, utveckling och integritetsbegränsad mätning av artikelanvändning, i den utsträckning intresset väger tyngre än den registrerades intressen",
-            "rättslig förpliktelse — där tillämplig lag kräver det",
+            "berättigat intresse — för säkerhet, drift, missbruksförebyggande, moderering, dokumentation av säkerhets- och modereringsåtgärder, utveckling och integritetsbegränsad mätning av artikelanvändning, i den utsträckning intresset väger tyngre än den registrerades intressen",
+            "rättslig förpliktelse — där tillämplig lag kräver behandling, dokumentation eller kommunikation",
             "samtycke — endast för valfri teknik där samtycke faktiskt inhämtas och krävs; detta gäller inte valfria cookies i nuläget eftersom mekanism för det saknas",
           ]}
         />
@@ -109,6 +113,12 @@ export default function PrivacyPageContent() {
           avsedda endast för deltagarna i respektive konversation.
         </p>
         <p>
+          Rapporter om innehåll och modereringsärenden är inte avsedda att publiceras öppet.
+          Åtkomsten till rapportdata och revisionsloggar begränsas tekniskt till DivLabs
+          server- och modereringsfunktioner. En publik statusvy visar endast begränsad
+          ärendeinformation när en giltig ärendereferens anges.
+        </p>
+        <p>
           Publicera inte känsliga personuppgifter, konfidentiell information eller uppgifter om
           andra utan tillåtelse.
         </p>
@@ -118,8 +128,9 @@ export default function PrivacyPageContent() {
         <p>Följande externa leverantörer används i den nuvarande tekniska driften:</p>
         <LegalList
           items={[
-            "Supabase — autentisering, databas, fillagring och relaterad infrastruktur; den pseudonymiserade hash som används för DivLabs unika läsarräknare lagras i Supabase",
+            "Supabase — autentisering, databas, fillagring och relaterad infrastruktur; den pseudonymiserade hash som används för DivLabs unika läsarräknare samt rapport- och modereringsdata lagras i Supabase",
             "Vercel — hosting, server-side rendering och Vercel Web Analytics (anonym, aggregerad trafikstatistik utan cookies)",
+            "Resend — leverans av transaktionell e-post, inklusive vissa mottagningsbekräftelser och modereringsbeslut; relevanta e-postadresser och meddelandeinnehåll behandlas för att genomföra leveransen",
             "TradingView — officiell Symbol Overview-widget i inloggad dashboard (skript: " +
               TRADINGVIEW_WIDGET_SCRIPT +
               "). Widgeten initierar nätverkskontakt med TradingView och kan ta emot IP-adress, inbäddande sidas URL, widgettyp, visat marknadssymbol och vanlig begärandemetadata. DivLabs kod sätter inte TradingView-cookies",
@@ -147,6 +158,13 @@ export default function PrivacyPageContent() {
           lag. Fasta lagringsperioder för all behandling är ännu inte angivna i tjänsten.
         </p>
         <p>
+          Rapporter om innehåll, snapshots, modereringsbeslut och omprövningar kan behöva bevaras
+          även efter att det synliga innehållet begränsats eller tagits bort, bland annat för
+          revisionsspår, säkerhet, rättsliga skyldigheter och tvisthantering. Exakta gallrings- och
+          lagringsperioder för modereringsdata ska fastställas i den fortsatta juridiska och
+          operativa genomgången.
+        </p>
+        <p>
           Den saltade hash som används för unika läsare sparas för att samma läsare inte ska
           räknas flera gånger på samma artikel. DivLabs läsarräknare lagrar inte rå IP-adress eller
           user-agent. Lagringstid och eventuell framtida aggregering eller gallring av dessa
@@ -163,8 +181,10 @@ export default function PrivacyPageContent() {
       <LegalSection title="Säkerhet">
         <p>
           {serviceName} använder etablerade tekniska lösningar som åtkomstkontroll, krypterad
-          transport (HTTPS) och databasregler (RLS) där det är implementerat. Ingen metod
-          garanterar absolut säkerhet.
+          transport (HTTPS) och databasregler (RLS) där det är implementerat. Rapport- och
+          modereringsdata skrivs via serverfunktioner och exponeras inte som direkt skrivbara
+          klienttabeller för anonyma eller vanliga inloggade användare. Ingen metod garanterar
+          absolut säkerhet.
         </p>
       </LegalSection>
 

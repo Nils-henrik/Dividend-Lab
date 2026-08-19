@@ -132,9 +132,18 @@ export default function TermsPageContent() {
           ingen garanti för att allt innehåll granskas innan publicering.
         </p>
         <p>
+          Misstänkt olagligt innehåll och innehåll som kan bryta mot DivLabs regler kan anmälas
+          elektroniskt via{" "}
+          <Link href="/report" className="divlab-link font-medium">
+            Rapportera innehåll
+          </Link>
+          . Anmälningar får en ärendereferens och granskas i DivLabs moderationsflöde. När
+          innehåll eller en profil begränsas dokumenteras beslutet och berörd användare kan få
+          information om åtgärdens omfattning, faktiska skäl och den grund som beslutet bygger på.
+        </p>
+        <p>
           Forum- och community-inlägg speglar användarnas egna åsikter och ska inte behandlas
-          som verifierad finansiell information från {serviceName}. Formell rapporteringsfunktion
-          och utökade modereringsverktyg förbereds inför bredare lansering.
+          som verifierad finansiell information från {serviceName}.
         </p>
       </LegalSection>
 

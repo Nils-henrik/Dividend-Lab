@@ -55,6 +55,9 @@ export default function ForumPost({
   const messageHref = `/messages/new?username=${encodeURIComponent(
     normalizedUsername,
   )}`;
+  const reportHref = isDemoContent
+    ? undefined
+    : `/report?targetType=forum_reply&targetId=${encodeURIComponent(post.id)}&url=${encodeURIComponent(`/forum/${threadSlug}#reply-${post.id}`)}`;
   const isSelf = currentUsername?.toLowerCase() === normalizedUsername;
   const canEdit = canEditForumContent({
     isDemoContent,
@@ -176,6 +179,7 @@ export default function ForumPost({
                 onQuote={() => onQuote(post)}
                 canEdit={canEdit}
                 onEdit={() => setIsEditing(true)}
+                reportHref={reportHref}
               />
             </div>
           )}

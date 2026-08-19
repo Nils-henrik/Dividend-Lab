@@ -1,4 +1,7 @@
-export type UserNotificationType = "contact_request" | "forum_reply";
+export type UserNotificationType =
+  | "contact_request"
+  | "forum_reply"
+  | "moderation_decision";
 
 export type UserNotificationPayload = {
   actorUsername?: string;
@@ -8,6 +11,9 @@ export type UserNotificationPayload = {
   threadSlug?: string;
   threadTitle?: string;
   kind?: "thread" | "reply";
+  actionId?: string;
+  actionType?: string;
+  scopeDescription?: string;
 };
 
 export type UserNotificationRecord = {
