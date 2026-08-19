@@ -1,4 +1,5 @@
 import type { NewsArticle } from "@/types/news";
+import { LATOUR_Q2_2026_ORDERINGANGEN_LYFTER_11_PROCENT_ARTICLE } from "@/data/news-articles/latour-q2-2026-orderingangen-lyfter-11-procent";
 import { BORSSVERIGE_19_AUGUSTI_2026_ARTICLE } from "@/data/news-articles/borssverige-19-augusti-2026";
 import { NORDEN_I_CENTRUM_19_AUGUSTI_2026_ARTICLE } from "@/data/news-articles/norden-i-centrum-19-augusti-2026";
 import { TECHFROSSA_WALL_STREET_NVIDIA_LANGRANTAN_18_AUGUSTI_2026_ARTICLE } from "@/data/news-articles/techfrossa-wall-street-nvidia-langrantan-18-augusti-2026";
@@ -48,6 +49,7 @@ import { applyNewsSearchSeo } from "@/lib/seo/editorial-content";
  * Image assets currently live under /public/news-demo/ for historical path stability.
  */
 const PUBLISHED_NEWS_ARTICLES: NewsArticle[] = [
+  LATOUR_Q2_2026_ORDERINGANGEN_LYFTER_11_PROCENT_ARTICLE,
   BORSSVERIGE_19_AUGUSTI_2026_ARTICLE,
   NORDEN_I_CENTRUM_19_AUGUSTI_2026_ARTICLE,
   TECHFROSSA_WALL_STREET_NVIDIA_LANGRANTAN_18_AUGUSTI_2026_ARTICLE,
