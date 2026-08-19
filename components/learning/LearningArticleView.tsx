@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import UniqueReaderCount from "@/components/analytics/UniqueReaderCount";
+import ArticleShareLinks from "@/components/content/ArticleShareLinks";
 import {
   getLearningArticle,
   getRelatedLearningArticles,
@@ -145,6 +146,10 @@ export default function LearningArticleView({
         <h1 className="text-3xl font-semibold tracking-[-0.04em] text-divlab-text sm:text-4xl lg:text-5xl lg:leading-[1.08]">
           {article.title}
         </h1>
+        <ArticleShareLinks
+          path={`/learning/${article.slug}`}
+          title={article.title}
+        />
         <p className="max-w-3xl text-lg leading-8 text-divlab-text-secondary">
           {article.description}
         </p>
