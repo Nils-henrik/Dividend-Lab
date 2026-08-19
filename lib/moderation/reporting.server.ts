@@ -47,7 +47,6 @@ function normalizeDivLabUrl(value: string) {
       return null;
     }
 
-    url.hash = url.hash;
     return url.toString();
   } catch {
     return null;
@@ -300,8 +299,15 @@ export async function submitContentReport(
     };
   }
 
-  const supabase = await createClient();
-  const { data, error } = await supabase
+  const admin = createModerationAdminClient();
+  if (!admin) {
+    return {
+      status: "error",
+      message: "Rapporteringstjänsten är tillfälligt otillgänglig. Kontakta DivLab via kontaktsidan.",
+    };
+  }
+
+  const { data, error } = await admin
     .from("content_reports")
     .insert({
       reporter_user_id: user?.id ?? null,
