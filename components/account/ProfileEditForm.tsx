@@ -157,7 +157,7 @@ export default function ProfileEditForm({
                 type="text"
                 defaultValue={initialValues.displayName}
                 maxLength={PROFILE_LIMITS.displayNameMax}
-                className="divlab-input w-full px-4 py-3 text-white"
+                className="divlab-input w-full px-4 py-3 text-divlab-text"
               />
               <span className="mt-2 block text-xs text-gray-600">
                 Upp till {PROFILE_LIMITS.displayNameMax} tecken.
@@ -176,7 +176,7 @@ export default function ProfileEditForm({
                 maxLength={PROFILE_LIMITS.usernameMax}
                 pattern="[A-Za-z0-9_]{3,20}"
                 required
-                className="divlab-input w-full px-4 py-3 text-white"
+                className="divlab-input w-full px-4 py-3 text-divlab-text"
               />
               <span className="mt-2 block text-xs text-gray-600">
                 Obligatoriskt. Offentliga användarnamn sparas med gemener. Använd{" "}
@@ -195,7 +195,7 @@ export default function ProfileEditForm({
               defaultValue={initialValues.bio}
               maxLength={PROFILE_LIMITS.bioMax}
               rows={5}
-              className="divlab-input w-full resize-none px-4 py-3 text-white"
+              className="divlab-input w-full resize-none px-4 py-3 text-divlab-text"
             />
             <span className="mt-2 block text-xs text-gray-600">
               Upp till {PROFILE_LIMITS.bioMax} tecken.
@@ -212,7 +212,7 @@ export default function ProfileEditForm({
                 type="text"
                 defaultValue={initialValues.favoriteSector}
                 maxLength={PROFILE_LIMITS.favoriteSectorMax}
-                className="divlab-input w-full px-4 py-3 text-white"
+                className="divlab-input w-full px-4 py-3 text-divlab-text"
               />
               <span className="mt-2 block text-xs text-gray-600">
                 Upp till {PROFILE_LIMITS.favoriteSectorMax} tecken.
@@ -228,7 +228,7 @@ export default function ProfileEditForm({
                 type="text"
                 defaultValue={initialValues.investorGoal}
                 maxLength={PROFILE_LIMITS.investorGoalMax}
-                className="divlab-input w-full px-4 py-3 text-white"
+                className="divlab-input w-full px-4 py-3 text-divlab-text"
               />
               <span className="mt-2 block text-xs text-gray-600">
                 Upp till {PROFILE_LIMITS.investorGoalMax} tecken.
