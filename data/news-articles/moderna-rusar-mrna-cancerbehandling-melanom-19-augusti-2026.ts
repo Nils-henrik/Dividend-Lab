@@ -35,8 +35,8 @@ export const MODERNA_RUSAR_MRNA_CANCERBEHANDLING_MELANOM_19_AUGUSTI_2026_ARTICLE
   url: "/news/moderna-rusar-mrna-cancerbehandling-melanom-19-augusti-2026",
   featured: true,
   imageUrl: "/news-demo/moderna-rusar-mrna-cancer-19-augusti-2026.png",
-  thumbnailObjectPosition: "center 50%",
-  mobileThumbnailObjectPosition: "center 50%",
+  thumbnailObjectPosition: "center top",
+  mobileThumbnailObjectPosition: "center top",
   mobileHeadlineFirst: true,
   imageAlt:
     "DivLab-omslag om Moderna som rusar omkring 150 procent efter positiva fas 3-resultat för en mRNA-baserad cancerbehandling.",
