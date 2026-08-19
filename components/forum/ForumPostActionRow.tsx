@@ -9,6 +9,7 @@ type Props = {
   onQuote: () => void;
   canEdit?: boolean;
   onEdit?: () => void;
+  reportHref?: string;
 };
 
 export default function ForumPostActionRow({
@@ -18,6 +19,7 @@ export default function ForumPostActionRow({
   onQuote,
   canEdit = false,
   onEdit,
+  reportHref,
 }: Props) {
   const buttonClassName = "divlab-btn-ghost px-2 py-0.5 text-[11px]";
 
@@ -30,6 +32,11 @@ export default function ForumPostActionRow({
         <Link href={loginHref} className={buttonClassName}>
           Citera
         </Link>
+        {reportHref ? (
+          <Link href={reportHref} className={buttonClassName}>
+            Rapportera
+          </Link>
+        ) : null}
       </div>
     );
   }
@@ -46,6 +53,11 @@ export default function ForumPostActionRow({
         <button type="button" onClick={onEdit} className={buttonClassName}>
           Redigera
         </button>
+      ) : null}
+      {reportHref ? (
+        <Link href={reportHref} className={buttonClassName}>
+          Rapportera
+        </Link>
       ) : null}
     </div>
   );
