@@ -64,13 +64,18 @@ export default function ArticleShareLinks({
 
   return (
     <div
+      role="group"
       aria-label="Dela artikel"
       className={`flex flex-wrap items-center gap-2 ${className}`}
     >
       <span className="mr-0.5 text-[10px] font-medium uppercase tracking-[0.16em] text-divlab-text-subtle">
         Dela
       </span>
-      <button type="button" onClick={handleCopy} className={actionClassName}>
+      <button
+        type="button"
+        onClick={handleCopy}
+        className={`${actionClassName} min-w-[7.5rem] justify-center`}
+      >
         <ShareCopyIcon className="h-3.5 w-3.5" />
         <span>{copied ? "Kopierad" : "Kopiera länken"}</span>
       </button>
