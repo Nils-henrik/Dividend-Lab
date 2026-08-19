@@ -39,7 +39,7 @@ export default function NewConversationForm({
         <input type="hidden" name="targetUserId" value={targetParticipant.id} />
       ) : (
         <label className="block">
-          <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-gray-500">
+          <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-divlab-text-muted">
             Användarnamn
           </span>
           <input
@@ -62,10 +62,10 @@ export default function NewConversationForm({
             textClassName="text-sm"
           />
           <div className="min-w-0">
-            <p className="truncate text-sm font-medium text-white">
+            <p className="truncate text-sm font-medium text-divlab-text">
               {targetParticipant.name}
             </p>
-            <p className="mt-1 truncate text-xs text-gray-500">
+            <p className="mt-1 truncate text-xs text-divlab-text-muted">
               {targetParticipant.username
                 ? `@${targetParticipant.username}`
                 : DIVLAB_MEMBER_LABEL}
@@ -82,7 +82,7 @@ export default function NewConversationForm({
       )}
 
       <label className="block">
-        <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-gray-500">
+        <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-divlab-text-muted">
           Ämne <span className="normal-case tracking-normal">(valfritt)</span>
         </span>
         <input
@@ -94,13 +94,13 @@ export default function NewConversationForm({
           placeholder="Valfritt ämne"
           className="w-full divlab-input px-4 py-3 text-sm text-divlab-text placeholder:text-divlab-text-subtle"
         />
-        <span className="mt-2 block text-xs text-gray-500">
+        <span className="mt-2 block text-xs text-divlab-text-muted">
           {subject.length}/{MESSAGE_SUBJECT_MAX_LENGTH} tecken
         </span>
       </label>
 
       <label className="block">
-        <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-gray-500">
+        <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-divlab-text-muted">
           Meddelande
         </span>
         <textarea
@@ -115,7 +115,7 @@ export default function NewConversationForm({
       </label>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-divlab-text-muted">
           {body.length}/{MESSAGE_BODY_MAX_LENGTH} tecken
         </p>
         <button
@@ -132,7 +132,7 @@ export default function NewConversationForm({
       </div>
 
       {state.status === "error" && (
-        <p className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm leading-6 text-gray-300">
+        <p className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm leading-6 text-divlab-text-secondary">
           {state.message}
         </p>
       )}
