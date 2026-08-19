@@ -30,6 +30,8 @@ function getTypeIconName(type: NotificationFeedItem["type"]) {
       return "contacts" as const;
     case "forum_reply":
       return "forum" as const;
+    case "moderation_decision":
+      return "bell" as const;
     case "message_summary":
     default:
       return "messages" as const;
