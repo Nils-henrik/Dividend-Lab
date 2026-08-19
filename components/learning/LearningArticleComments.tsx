@@ -45,7 +45,8 @@ export default async function LearningArticleComments({
           comments.map((comment) => (
             <article
               key={comment.id}
-              className="rounded-xl border divlab-border-neutral divlab-inset px-4 py-3"
+              id={`comment-${comment.id}`}
+              className="scroll-mt-24 rounded-xl border divlab-border-neutral divlab-inset px-4 py-3"
             >
               <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-divlab-text-muted">
                 <Link
@@ -56,6 +57,13 @@ export default async function LearningArticleComments({
                 </Link>
                 <span className="h-1 w-1 rounded-full bg-divlab-text-subtle" />
                 <span>{formatLearningCommentTimestamp(comment.createdAt)}</span>
+                <span className="h-1 w-1 rounded-full bg-divlab-text-subtle" />
+                <Link
+                  href={`/report?targetType=learning_comment&targetId=${encodeURIComponent(comment.id)}&url=${encodeURIComponent(`/learning/${articleSlug}#comment-${comment.id}`)}`}
+                  className="transition hover:text-divlab-text"
+                >
+                  Rapportera
+                </Link>
               </div>
               <p className="whitespace-pre-wrap text-sm leading-6 text-divlab-text-secondary">
                 {comment.body}
