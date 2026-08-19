@@ -211,6 +211,30 @@ Do not sacrifice accessibility for visual effect.
 
 ---
 
+## Editorial Share Actions
+
+Public editorial article pages should expose a compact, consistent sharing row close to the article title.
+
+This applies to both Börsnyheter and Utbildning articles.
+
+The canonical actions are:
+
+- Kopiera länken
+- X
+- Facebook
+
+Rules:
+
+- always share the canonical `https://divlab.se/...` URL, never a Vercel preview URL
+- keep the controls compact and visually secondary to the headline
+- do not use large social-media panels or attention-grabbing share blocks
+- copying the URL should provide short inline confirmation without causing layout shift
+- external share actions open in a new tab/window with safe `noopener noreferrer` behavior
+- controls must remain keyboard reachable and usable on mobile
+- use the same shared component across editorial article types rather than article-specific implementations
+
+---
+
 ## Final Rule
 
 When in doubt, choose the option that feels calmer, more precise and more trustworthy.
