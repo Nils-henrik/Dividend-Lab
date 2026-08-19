@@ -26,7 +26,7 @@ import type { NewsArticle } from "@/types/news";
 export const MODERNA_RUSAR_MRNA_CANCERBEHANDLING_MELANOM_19_AUGUSTI_2026_ARTICLE: NewsArticle = {
   id: "moderna-rusar-mrna-cancerbehandling-melanom-19-augusti-2026",
   slug: "moderna-rusar-mrna-cancerbehandling-melanom-19-augusti-2026",
-  title: "Moderna rusar omkring 150 procent – mRNA-behandling mot cancer når historisk milstolpe",
+  title: "Moderna rusar 150 procent – mRNA-behandling mot cancer når historisk milstolpe",
   summary:
     "Moderna rusar omkring 150 procent på Wall Street efter positiva fas 3-resultat för en personanpassad mRNA-behandling mot melanom. Beskedet kan bli ett genombrott för bolagets teknik långt bortom covidvaccin.",
   category: "company",
