@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import UniqueReaderCount from "@/components/analytics/UniqueReaderCount";
+import ArticleShareLinks from "@/components/content/ArticleShareLinks";
 import { LearningRichText } from "@/components/learning/LearningRichText";
 import type { NewsArticle } from "@/types/news";
 import { getNewsCategoryLabel } from "@/lib/news/categories";
@@ -119,6 +120,12 @@ export default function NewsArticleView({
         <h1 className="text-3xl font-semibold tracking-[-0.04em] text-divlab-text sm:text-4xl sm:leading-[1.12]">
           {article.title}
         </h1>
+        {article.slug && (
+          <ArticleShareLinks
+            path={`/news/${article.slug}`}
+            title={article.title}
+          />
+        )}
         <p className="max-w-3xl text-lg leading-8 text-divlab-text-secondary">
           {article.summary}
         </p>
