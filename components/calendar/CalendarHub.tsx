@@ -138,10 +138,10 @@ export default function CalendarHub() {
           <p className="divlab-section-label text-[10px] tracking-[0.16em]">
             Förhandsvisning av händelse
           </p>
-          <p className="mt-1.5 text-sm text-white">
+          <p className="mt-1.5 text-sm text-divlab-text">
             {selectedEvent.company} · {selectedEvent.ticker}
           </p>
-          <p className="mt-0.5 text-xs text-gray-500">
+          <p className="mt-0.5 text-xs text-divlab-text-muted">
             Detaljvy kommer i en framtida version.
           </p>
         </section>
