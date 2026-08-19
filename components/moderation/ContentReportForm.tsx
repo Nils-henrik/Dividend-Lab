@@ -2,9 +2,7 @@
 
 import { useActionState, useMemo, useState } from "react";
 import { submitContentReportAction } from "@/app/report/actions";
-import {
-  REPORT_CATEGORY_LABELS,
-} from "@/lib/moderation/config";
+import { REPORT_CATEGORY_LABELS } from "@/lib/moderation/config";
 import type {
   ContentReportActionState,
   ContentReportCategory,
@@ -72,6 +70,7 @@ export default function ContentReportForm({
   );
   const identityMayBeOmitted = category === "child_safety";
   const success = state.status === "success";
+  const targetIsLocked = Boolean(initialTargetId);
 
   function changeReportKind(nextKind: ContentReportKind) {
     setReportKind(nextKind);
@@ -81,6 +80,7 @@ export default function ContentReportForm({
   return (
     <form action={formAction} className="space-y-6">
       <input type="hidden" name="targetId" value={initialTargetId} />
+      {targetIsLocked ? <input type="hidden" name="targetType" value={targetType} /> : null}
 
       {success ? (
         <section className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-5" role="status">
@@ -99,7 +99,7 @@ export default function ContentReportForm({
 
       <fieldset disabled={pending || success} className="space-y-6 disabled:opacity-70">
         <section>
-          <legend className="text-sm font-semibold text-divlab-text">1. Vad gäller anmälan?</legend>
+          <p className="text-sm font-semibold text-divlab-text">1. Vad gäller anmälan?</p>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             <label className="rounded-xl border divlab-border-neutral divlab-inset p-4 text-sm text-divlab-text-secondary">
               <input
@@ -157,10 +157,10 @@ export default function ContentReportForm({
             <label className="text-xs font-medium text-divlab-text-muted">
               Typ
               <select
-                name="targetType"
+                name={targetIsLocked ? undefined : "targetType"}
                 value={targetType}
                 onChange={(event) => setTargetType(event.target.value as ContentReportTargetType)}
-                disabled={Boolean(initialTargetId)}
+                disabled={targetIsLocked}
                 className="divlab-input mt-1.5 w-full px-3 py-2.5 text-sm text-divlab-text"
               >
                 {Object.entries(targetLabels).map(([value, label]) => (
@@ -176,14 +176,14 @@ export default function ContentReportForm({
                 name="targetUrl"
                 type="url"
                 defaultValue={initialTargetUrl}
-                readOnly={Boolean(initialTargetId)}
+                readOnly={targetIsLocked}
                 required={targetType === "other"}
                 placeholder="https://divlab.se/..."
                 className="divlab-input mt-1.5 w-full px-3 py-2.5 text-sm text-divlab-text read-only:opacity-75"
               />
             </label>
           </div>
-          {initialTargetId ? (
+          {targetIsLocked ? (
             <p className="text-xs leading-5 text-divlab-text-muted">
               DivLab verifierar innehållets ID och sparar automatiskt en snapshot av den version som anmäls.
             </p>
