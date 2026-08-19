@@ -17,6 +17,11 @@ New contributors should read these documents first:
 5. `standards/ARCHITECTURE_STANDARD.md` - architecture direction.
 6. `ai/AI_RULES.md` - rules for AI-assisted development.
 
+For DivLab News work, contributors must also read:
+
+- `standards/NEWS_COVER_STANDARD.md` - mandatory cover-image visibility and cropping rules.
+- `standards/NEWS_PUBLISHING_STANDARD.md` - mandatory publication workflow, including X distribution.
+
 After reading these, contributors should understand the product, the design language and the engineering standards well enough to make safe changes.
 
 ---
@@ -34,6 +39,9 @@ docs/
     PROMPT_STANDARD.md
     NAMING_CONVENTION.md
     CODE_REVIEW_STANDARD.md
+    LEARNING_COVER_STANDARD.md
+    NEWS_COVER_STANDARD.md
+    NEWS_PUBLISHING_STANDARD.md
 
   project/
     PROJECT.md
@@ -94,6 +102,9 @@ Current standards:
 - Prompt Standard v1.0
 - Naming Convention v1.0
 - Code Review Standard v1.0
+- Learning Cover Standard
+- News Cover Standard
+- News Publishing Standard v1.0
 
 ---
 
@@ -108,6 +119,11 @@ Every implementation should be checked against:
 - engineering rules in `standards/ENGINEERING_STANDARD.md`
 - architecture rules in `standards/ARCHITECTURE_STANDARD.md`
 - review checklist in `standards/CODE_REVIEW_STANDARD.md`
+
+Every DivLab News publication should additionally be checked against:
+
+- cover requirements in `standards/NEWS_COVER_STANDARD.md`
+- publication and X distribution requirements in `standards/NEWS_PUBLISHING_STANDARD.md`
 
 When standards conflict, prefer the document with the most specific ownership. For example, UI motion questions belong to `standards/UI_UX_STANDARD.md` and `design/DESIGN_SYSTEM.md`; folder ownership questions belong to `standards/ARCHITECTURE_STANDARD.md`.
 
