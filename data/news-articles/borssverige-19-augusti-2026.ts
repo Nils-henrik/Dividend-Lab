@@ -27,7 +27,7 @@ export const BORSSVERIGE_19_AUGUSTI_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-08-19T08:12:00+02:00",
   url: "/news/borssverige-19-augusti-2026",
   featured: true,
-  imageUrl: "/news-demo/file_00000000d078820a93662e7928a9d5cf.png",
+  imageUrl: "/news-demo/file_0000000013e481f49e37dbf50e4ef5b8.png",
   thumbnailObjectPosition: "center 50%",
   mobileThumbnailObjectPosition: "center 50%",
   imageAlt:
