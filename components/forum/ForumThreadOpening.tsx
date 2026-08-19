@@ -62,6 +62,10 @@ export default function ForumThreadOpening({
   const messageHref = `/messages/new?username=${encodeURIComponent(
     normalizedUsername,
   )}`;
+  const reportHref =
+    !isDemoContent && thread.id
+      ? `/report?targetType=forum_thread&targetId=${encodeURIComponent(thread.id)}&url=${encodeURIComponent(`/forum/${threadSlug}`)}`
+      : undefined;
   const isSelf = currentUsername?.toLowerCase() === normalizedUsername;
   const canEdit = canEditForumContent({
     isDemoContent,
@@ -189,6 +193,7 @@ export default function ForumThreadOpening({
                 onQuote={onQuote}
                 canEdit={canEdit}
                 onEdit={() => setIsEditing(true)}
+                reportHref={reportHref}
               />
             </div>
           )}
