@@ -2,6 +2,7 @@ import Link from "next/link";
 import ContactEmailLink from "@/components/marketing/ContactEmailLink";
 
 const legalLinks = [
+  { label: "Rapportera innehåll", href: "/report" },
   { label: "Villkor", href: "/terms" },
   { label: "Integritet", href: "/privacy" },
   { label: "Cookies", href: "/cookies" },
@@ -25,7 +26,7 @@ export default function AppLegalFooter() {
       </p>
       <nav
         className="mt-3 flex flex-wrap gap-x-4 gap-y-1"
-        aria-label="Juridik"
+        aria-label="Juridik och säkerhet"
       >
         {legalLinks.map((link) => (
           <Link
