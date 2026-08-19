@@ -28,6 +28,7 @@ const linkGroups = [
   {
     title: "Juridik",
     links: [
+      { label: "Rapportera innehåll", href: "/report" },
       { label: "Villkor", href: "/terms" },
       { label: "Integritetspolicy", href: "/privacy" },
       { label: "Cookiepolicy", href: "/cookies" },
