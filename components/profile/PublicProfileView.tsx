@@ -74,6 +74,10 @@ export default function PublicProfileView({
   const messageHref = normalizedUsername
     ? `/messages/new?username=${encodeURIComponent(normalizedUsername)}`
     : `/messages/new?userId=${encodeURIComponent(profile.id)}`;
+  const profilePath = normalizedUsername
+    ? `/profile/${encodeURIComponent(normalizedUsername)}`
+    : `/profile/${encodeURIComponent(profile.id)}`;
+  const reportHref = `/report?targetType=profile&targetId=${encodeURIComponent(profile.id)}&url=${encodeURIComponent(profilePath)}`;
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
@@ -108,14 +112,24 @@ export default function PublicProfileView({
             </div>
           </div>
 
-          <ProfileContactActions
-            profileUserId={profile.id}
-            profileUsername={normalizedUsername || null}
-            contactCount={contactCount}
-            contactState={isSelf ? { kind: "self" } : contactState}
-            isAuthenticated={isAuthenticated}
-            messageHref={messageHref}
-          />
+          <div className="flex flex-col items-start gap-2 lg:items-end">
+            <ProfileContactActions
+              profileUserId={profile.id}
+              profileUsername={normalizedUsername || null}
+              contactCount={contactCount}
+              contactState={isSelf ? { kind: "self" } : contactState}
+              isAuthenticated={isAuthenticated}
+              messageHref={messageHref}
+            />
+            {!isSelf ? (
+              <Link
+                href={reportHref}
+                className="text-xs text-divlab-text-muted transition hover:text-divlab-text"
+              >
+                Rapportera profil
+              </Link>
+            ) : null}
+          </div>
         </div>
       </section>
 
