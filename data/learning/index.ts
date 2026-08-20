@@ -1,4 +1,5 @@
 import borjaInvestera from "./articles/borja-investera-pa-borsen";
+import borsensOrdlista from "./articles/borsens-ordlista";
 import direktavkastning from "./articles/direktavkastning-och-utdelningssakerhet";
 import etf from "./articles/vad-ar-en-etf";
 import fireEkonomiskFrihet from "./articles/fire-ekonomisk-frihet";
@@ -32,6 +33,7 @@ export {
 } from "./reading-time";
 
 const rawArticles: LearningArticle[] = [
+  borsensOrdlista,
   {
     ...tekniskAnalys,
     thumbnailObjectPosition: "left center",
