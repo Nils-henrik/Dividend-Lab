@@ -10,6 +10,7 @@ type Props = {
   canEdit?: boolean;
   onEdit?: () => void;
   reportHref?: string;
+  moderateHref?: string;
 };
 
 export default function ForumPostActionRow({
@@ -20,6 +21,7 @@ export default function ForumPostActionRow({
   canEdit = false,
   onEdit,
   reportHref,
+  moderateHref,
 }: Props) {
   const buttonClassName = "divlab-btn-ghost px-2 py-0.5 text-[11px]";
 
@@ -57,6 +59,14 @@ export default function ForumPostActionRow({
       {reportHref ? (
         <Link href={reportHref} className={buttonClassName}>
           Rapportera
+        </Link>
+      ) : null}
+      {moderateHref ? (
+        <Link
+          href={moderateHref}
+          className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-200 transition hover:border-amber-400/45 hover:bg-amber-500/15"
+        >
+          Moderera
         </Link>
       ) : null}
     </div>
