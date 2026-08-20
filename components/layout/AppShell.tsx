@@ -3,6 +3,7 @@ import type { AuthenticatedUser } from "@/lib/auth/user";
 import type { UserDisplayIdentity } from "@/lib/profiles/identity";
 import { getGlobalChatBootstrap } from "@/lib/messages/chat-bootstrap";
 import type { GlobalChatBootstrap } from "@/lib/messages/types";
+import { isModeratorUser } from "@/lib/moderation/access.server";
 import { getNotificationBellData } from "@/lib/notifications/feed";
 import type { NotificationFeedItem } from "@/lib/notifications/types";
 import { getProfileForUser } from "@/lib/profiles/profile";
@@ -70,9 +71,10 @@ export default async function AppShell({
   if (user) {
     const profile = identity ? null : await getProfileForUser(user.id);
     const displayIdentity = identity ?? getUserDisplayIdentity(user, profile);
-    const [bell, chatBootstrap] = await Promise.all([
+    const [bell, chatBootstrap, isModerator] = await Promise.all([
       loadBellData(user.id),
       loadChatBootstrap(user.id),
+      isModeratorUser(user.id),
     ]);
 
     return (
@@ -83,6 +85,7 @@ export default async function AppShell({
         notificationItems={bell.items}
         notificationUserId={bell.userId}
         chatBootstrap={chatBootstrap}
+        isModerator={isModerator}
       >
         {children}
       </AppShellClient>
@@ -93,9 +96,10 @@ export default async function AppShell({
 
   if (authenticatedUser) {
     const session = await requireAuthenticatedUserWithProfile();
-    const [bell, chatBootstrap] = await Promise.all([
+    const [bell, chatBootstrap, isModerator] = await Promise.all([
       loadBellData(session.user.id),
       loadChatBootstrap(session.user.id),
+      isModeratorUser(session.user.id),
     ]);
 
     return (
@@ -106,6 +110,7 @@ export default async function AppShell({
         notificationItems={bell.items}
         notificationUserId={bell.userId}
         chatBootstrap={chatBootstrap}
+        isModerator={isModerator}
       >
         {children}
       </AppShellClient>
@@ -121,6 +126,7 @@ export default async function AppShell({
         notificationItems={[]}
         notificationUserId={null}
         isGuest
+        isModerator={false}
       >
         {children}
       </AppShellClient>
@@ -128,9 +134,10 @@ export default async function AppShell({
   }
 
   const session = await requireAuthenticatedUserWithProfile();
-  const [bell, chatBootstrap] = await Promise.all([
+  const [bell, chatBootstrap, isModerator] = await Promise.all([
     loadBellData(session.user.id),
     loadChatBootstrap(session.user.id),
+    isModeratorUser(session.user.id),
   ]);
 
   return (
@@ -141,6 +148,7 @@ export default async function AppShell({
       notificationItems={bell.items}
       notificationUserId={bell.userId}
       chatBootstrap={chatBootstrap}
+      isModerator={isModerator}
     >
       {children}
     </AppShellClient>
