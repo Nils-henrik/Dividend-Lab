@@ -19,6 +19,7 @@ type Props = {
   onOpenMenu: () => void;
   isMenuOpen?: boolean;
   isGuest?: boolean;
+  isModerator?: boolean;
   unreadNotificationCount: number;
   unreadMessageCount?: number;
   notificationItems: NotificationFeedItem[];
@@ -32,6 +33,7 @@ export default function MobileAppHeader({
   onOpenMenu,
   isMenuOpen = false,
   isGuest = false,
+  isModerator = false,
   unreadNotificationCount,
   unreadMessageCount = 0,
   notificationItems,
@@ -103,6 +105,7 @@ export default function MobileAppHeader({
               onLogout={onLogout}
               isLoggingOut={isLoggingOut}
               isGuest={isGuest}
+              isModerator={isModerator}
             />
           </>
         )}
