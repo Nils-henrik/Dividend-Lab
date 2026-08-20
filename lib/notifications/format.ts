@@ -18,6 +18,8 @@ function getCategoryLabel(type: UserNotificationType | "message_summary") {
       return "Kontaktförfrågan";
     case "forum_reply":
       return "Forumsvar";
+    case "moderation_report":
+      return "Ny rapport";
     case "moderation_decision":
       return "Moderering";
     case "message_summary":
@@ -59,6 +61,17 @@ export function formatForumReplyNotificationBody(
   return `${handle} svarade i din tråd “${title}”.`;
 }
 
+export function formatModerationReportNotificationBody(
+  payload: UserNotificationPayload,
+) {
+  const reference = payload.referenceCode?.trim();
+  const target = payload.targetLabel?.trim();
+  const prefix = payload.urgent ? "PRIORITERAD rapport" : "Ny innehållsrapport";
+  const details = [reference, target].filter(Boolean).join(" · ");
+
+  return details ? `${prefix}: ${details}` : `${prefix} väntar på granskning.`;
+}
+
 export function formatModerationDecisionNotificationBody(
   payload: UserNotificationPayload,
 ) {
@@ -95,7 +108,12 @@ export function mapUserNotificationToFeedItem(
       ? formatContactRequestNotificationBody(actorUsername)
       : notification.type === "forum_reply"
         ? formatForumReplyNotificationBody(actorUsername, notification.payload)
-        : formatModerationDecisionNotificationBody(notification.payload);
+        : notification.type === "moderation_report"
+          ? formatModerationReportNotificationBody(notification.payload)
+          : formatModerationDecisionNotificationBody(notification.payload);
+  const isSystemModeration =
+    notification.type === "moderation_report" ||
+    notification.type === "moderation_decision";
 
   return {
     id: notification.id,
@@ -105,18 +123,14 @@ export function mapUserNotificationToFeedItem(
     body,
     createdAt: notification.createdAt,
     isUnread: notification.readAt == null,
-    actorUsername: notification.type === "moderation_decision" ? null : actorUsername,
-    actorAvatarUrl:
-      notification.type === "moderation_decision"
-        ? null
-        : getAvatarPublicUrl(
-            notification.actorAvatarPath,
-            notification.actorProfileUpdatedAt,
-          ),
-    actorInitials:
-      notification.type === "moderation_decision"
-        ? "DL"
-        : getActorInitials(actorUsername),
+    actorUsername: isSystemModeration ? null : actorUsername,
+    actorAvatarUrl: isSystemModeration
+      ? null
+      : getAvatarPublicUrl(
+          notification.actorAvatarPath,
+          notification.actorProfileUpdatedAt,
+        ),
+    actorInitials: isSystemModeration ? "DL" : getActorInitials(actorUsername),
   };
 }
 
