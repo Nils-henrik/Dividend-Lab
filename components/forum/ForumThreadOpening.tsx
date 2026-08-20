@@ -32,6 +32,7 @@ type Props = {
   loginHref: string;
   currentUsername?: string | null;
   currentUserId?: string | null;
+  isModerator?: boolean;
   isDemoContent?: boolean;
   reactionsDisabled?: boolean;
   onReply: () => void;
@@ -51,6 +52,7 @@ export default function ForumThreadOpening({
   loginHref,
   currentUsername,
   currentUserId = null,
+  isModerator = false,
   isDemoContent = false,
   reactionsDisabled = false,
   onReply,
@@ -67,6 +69,10 @@ export default function ForumThreadOpening({
       ? `/report?targetType=forum_thread&targetId=${encodeURIComponent(thread.id)}&url=${encodeURIComponent(`/forum/${threadSlug}`)}`
       : undefined;
   const isSelf = currentUsername?.toLowerCase() === normalizedUsername;
+  const moderateHref =
+    isModerator && !isDemoContent && !isSelf && thread.id
+      ? `/moderation/direct?targetType=forum_thread&targetId=${encodeURIComponent(thread.id)}`
+      : undefined;
   const canEdit = canEditForumContent({
     isDemoContent,
     isAuthenticated,
@@ -194,6 +200,7 @@ export default function ForumThreadOpening({
                 canEdit={canEdit}
                 onEdit={() => setIsEditing(true)}
                 reportHref={reportHref}
+                moderateHref={moderateHref}
               />
             </div>
           )}

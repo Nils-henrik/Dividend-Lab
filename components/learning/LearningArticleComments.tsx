@@ -5,6 +5,7 @@ import {
   getLearningArticleComments,
 } from "@/lib/learning/queries";
 import type { AuthenticatedUser } from "@/lib/auth/user";
+import { isModeratorUser } from "@/lib/moderation/access.server";
 import type { UserProfile } from "@/lib/profiles/types";
 
 type Props = {
@@ -18,7 +19,10 @@ export default async function LearningArticleComments({
   user,
   profile,
 }: Props) {
-  const comments = await getLearningArticleComments(articleSlug);
+  const [comments, isModerator] = await Promise.all([
+    getLearningArticleComments(articleSlug),
+    user ? isModeratorUser(user.id) : Promise.resolve(false),
+  ]);
   const username = profile?.username?.trim();
   const loginHref = `/login?redirect=${encodeURIComponent(`/learning/${articleSlug}`)}`;
 
@@ -42,34 +46,52 @@ export default async function LearningArticleComments({
             Inga kommentarer ännu. Var den första som delar ett lugnt perspektiv.
           </p>
         ) : (
-          comments.map((comment) => (
-            <article
-              key={comment.id}
-              id={`comment-${comment.id}`}
-              className="scroll-mt-24 rounded-xl border divlab-border-neutral divlab-inset px-4 py-3"
-            >
-              <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-divlab-text-muted">
-                <Link
-                  href={`/profile/${encodeURIComponent(comment.username)}`}
-                  className="font-medium text-divlab-text transition hover:text-divlab-blue-muted"
-                >
-                  @{comment.username}
-                </Link>
-                <span className="h-1 w-1 rounded-full bg-divlab-text-subtle" />
-                <span>{formatLearningCommentTimestamp(comment.createdAt)}</span>
-                <span className="h-1 w-1 rounded-full bg-divlab-text-subtle" />
-                <Link
-                  href={`/report?targetType=learning_comment&targetId=${encodeURIComponent(comment.id)}&url=${encodeURIComponent(`/learning/${articleSlug}#comment-${comment.id}`)}`}
-                  className="transition hover:text-divlab-text"
-                >
-                  Rapportera
-                </Link>
-              </div>
-              <p className="whitespace-pre-wrap text-sm leading-6 text-divlab-text-secondary">
-                {comment.body}
-              </p>
-            </article>
-          ))
+          comments.map((comment) => {
+            const moderateHref =
+              isModerator && user && comment.userId !== user.id
+                ? `/moderation/direct?targetType=learning_comment&targetId=${encodeURIComponent(comment.id)}`
+                : null;
+
+            return (
+              <article
+                key={comment.id}
+                id={`comment-${comment.id}`}
+                className="scroll-mt-24 rounded-xl border divlab-border-neutral divlab-inset px-4 py-3"
+              >
+                <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-divlab-text-muted">
+                  <Link
+                    href={`/profile/${encodeURIComponent(comment.username)}`}
+                    className="font-medium text-divlab-text transition hover:text-divlab-blue-muted"
+                  >
+                    @{comment.username}
+                  </Link>
+                  <span className="h-1 w-1 rounded-full bg-divlab-text-subtle" />
+                  <span>{formatLearningCommentTimestamp(comment.createdAt)}</span>
+                  <span className="h-1 w-1 rounded-full bg-divlab-text-subtle" />
+                  <Link
+                    href={`/report?targetType=learning_comment&targetId=${encodeURIComponent(comment.id)}&url=${encodeURIComponent(`/learning/${articleSlug}#comment-${comment.id}`)}`}
+                    className="transition hover:text-divlab-text"
+                  >
+                    Rapportera
+                  </Link>
+                  {moderateHref ? (
+                    <>
+                      <span className="h-1 w-1 rounded-full bg-divlab-text-subtle" />
+                      <Link
+                        href={moderateHref}
+                        className="font-medium text-amber-300 transition hover:text-amber-200"
+                      >
+                        Moderera
+                      </Link>
+                    </>
+                  ) : null}
+                </div>
+                <p className="whitespace-pre-wrap text-sm leading-6 text-divlab-text-secondary">
+                  {comment.body}
+                </p>
+              </article>
+            );
+          })
         )}
       </div>
 

@@ -27,6 +27,7 @@ type Props = {
   loginHref: string;
   currentUsername?: string | null;
   currentUserId?: string | null;
+  isModerator?: boolean;
   isDemoContent?: boolean;
   onQuote: (post: ForumPostType) => void;
   onReply: (post: ForumPostType) => void;
@@ -42,6 +43,7 @@ export default function ForumPost({
   loginHref,
   currentUsername,
   currentUserId = null,
+  isModerator = false,
   isDemoContent = false,
   onQuote,
   onReply,
@@ -59,6 +61,10 @@ export default function ForumPost({
     ? undefined
     : `/report?targetType=forum_reply&targetId=${encodeURIComponent(post.id)}&url=${encodeURIComponent(`/forum/${threadSlug}#reply-${post.id}`)}`;
   const isSelf = currentUsername?.toLowerCase() === normalizedUsername;
+  const moderateHref =
+    isModerator && !isDemoContent && !isSelf
+      ? `/moderation/direct?targetType=forum_reply&targetId=${encodeURIComponent(post.id)}`
+      : undefined;
   const canEdit = canEditForumContent({
     isDemoContent,
     isAuthenticated,
@@ -180,6 +186,7 @@ export default function ForumPost({
                 canEdit={canEdit}
                 onEdit={() => setIsEditing(true)}
                 reportHref={reportHref}
+                moderateHref={moderateHref}
               />
             </div>
           )}

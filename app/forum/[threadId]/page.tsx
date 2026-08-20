@@ -27,6 +27,7 @@ import {
   mapReplyRecordToForumPost,
   mapThreadRecordToForumThread,
 } from "@/lib/forum/queries";
+import { isModeratorUser } from "@/lib/moderation/access.server";
 import {
   breadcrumbJsonLd,
   discussionForumPostingJsonLd,
@@ -162,6 +163,7 @@ export default async function ForumThreadRoute({ params }: Props) {
 
   if (user) {
     const session = await requireAuthenticatedUserWithProfile();
+    const isModerator = await isModeratorUser(session.user.id);
 
     return (
       <AppShell user={session.user} identity={session.identity}>
@@ -171,6 +173,7 @@ export default async function ForumThreadRoute({ params }: Props) {
           reactionMap={reactionMap}
           isDemoThread={isDemoThread}
           isAuthenticated
+          isModerator={isModerator}
           currentUsername={session.identity.username}
           currentUserId={session.user.id}
           openingAuthorUsername={openingAuthorUsername}

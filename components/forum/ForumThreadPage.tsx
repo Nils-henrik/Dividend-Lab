@@ -24,6 +24,7 @@ type Props = {
   reactionMap: ForumReactionMap;
   isDemoThread?: boolean;
   isAuthenticated?: boolean;
+  isModerator?: boolean;
   currentUsername?: string | null;
   currentUserId?: string | null;
   openingAuthorUsername: string;
@@ -43,6 +44,7 @@ export default function ForumThreadPage({
   reactionMap,
   isDemoThread = false,
   isAuthenticated = false,
+  isModerator = false,
   currentUsername = null,
   currentUserId = null,
   openingAuthorUsername,
@@ -256,6 +258,7 @@ export default function ForumThreadPage({
                 loginHref={loginHref}
                 currentUsername={currentUsername}
                 currentUserId={currentUserId}
+                isModerator={isModerator}
                 isDemoContent={isDemoThread}
                 reactionsDisabled={isOpeningAuthor}
                 onReply={handleReplyToThread}
@@ -278,6 +281,7 @@ export default function ForumThreadPage({
                     loginHref={loginHref}
                     currentUsername={currentUsername}
                     currentUserId={currentUserId}
+                    isModerator={false}
                     isDemoContent
                     onQuote={handleDemoQuote}
                     onReply={() =>
@@ -321,6 +325,7 @@ export default function ForumThreadPage({
                     loginHref={loginHref}
                     currentUsername={currentUsername}
                     currentUserId={currentUserId}
+                    isModerator={isModerator}
                     isDemoContent={isDemoThread}
                     onQuote={handleQuoteFromPost}
                     onReply={handleReplyToPost}

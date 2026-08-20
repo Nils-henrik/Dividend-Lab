@@ -11,6 +11,7 @@ type Props = {
   onLogout: () => void;
   isLoggingOut: boolean;
   isGuest?: boolean;
+  isModerator?: boolean;
 };
 
 export default function ProfileDropdown({
@@ -18,6 +19,7 @@ export default function ProfileDropdown({
   onLogout,
   isLoggingOut,
   isGuest = false,
+  isModerator = false,
 }: Props) {
   const pathname = usePathname();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -64,6 +66,21 @@ export default function ProfileDropdown({
               </p>
             </div>
           </div>
+
+          {isModerator ? (
+            <div className="border-b divlab-border-neutral p-2">
+              <Link
+                href="/moderation"
+                onClick={() => setIsProfileOpen(false)}
+                className="block rounded-xl border border-amber-500/25 bg-amber-500/10 px-3 py-2.5 text-sm font-medium text-amber-200 transition hover:border-amber-400/40 hover:bg-amber-500/15"
+              >
+                Moderering
+                <span className="mt-0.5 block text-[11px] font-normal text-amber-200/70">
+                  Ägarverktyg för rapporter och innehåll
+                </span>
+              </Link>
+            </div>
+          ) : null}
 
           <div className="py-2">
             <Link

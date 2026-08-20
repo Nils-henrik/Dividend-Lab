@@ -26,6 +26,7 @@ type Props = {
   notificationItems: NotificationFeedItem[];
   notificationUserId?: string | null;
   isGuest?: boolean;
+  isModerator?: boolean;
   chatBootstrap?: GlobalChatBootstrap | null;
 };
 
@@ -37,6 +38,7 @@ export default function AppShellClient({
   notificationItems,
   notificationUserId = null,
   isGuest = false,
+  isModerator = false,
   chatBootstrap = null,
 }: Props) {
   const frame = (
@@ -47,6 +49,7 @@ export default function AppShellClient({
       notificationItems={notificationItems}
       notificationUserId={notificationUserId}
       isGuest={isGuest}
+      isModerator={isModerator}
     >
       {children}
     </AppShellFrame>
@@ -67,6 +70,7 @@ function AppShellFrame({
   notificationItems,
   notificationUserId = null,
   isGuest = false,
+  isModerator = false,
 }: Omit<Props, "chatBootstrap">) {
   const router = useRouter();
   const chat = useOptionalChat();
@@ -177,6 +181,7 @@ function AppShellFrame({
         onOpenMenu={() => setIsMobileNavOpen(true)}
         isMenuOpen={isMobileNavOpen}
         isGuest={isGuest}
+        isModerator={isModerator}
         unreadNotificationCount={unreadNotificationCount}
         unreadMessageCount={liveUnreadMessageCount}
         notificationItems={notificationItems}
@@ -197,6 +202,7 @@ function AppShellFrame({
         notificationItems={notificationItems}
         notificationUserId={notificationUserId}
         isGuest={isGuest}
+        isModerator={isModerator}
       />
       {chat ? <ChatExperience /> : null}
       <div

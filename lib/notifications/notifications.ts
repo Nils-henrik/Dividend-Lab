@@ -16,7 +16,7 @@ type NotificationProfileRow = {
 type NotificationRow = {
   id: string;
   recipient_id: string;
-  actor_id: string;
+  actor_id: string | null;
   type: UserNotificationType;
   entity_id: string | null;
   destination_path: string;
@@ -66,8 +66,8 @@ function mapNotificationRow(
   };
 }
 
-async function getActorProfilesByIds(actorIds: string[]) {
-  const uniqueIds = [...new Set(actorIds.filter(Boolean))];
+async function getActorProfilesByIds(actorIds: Array<string | null>) {
+  const uniqueIds = [...new Set(actorIds.filter((id): id is string => Boolean(id)))];
 
   if (uniqueIds.length === 0) {
     return new Map<string, NotificationProfileRow>();
@@ -130,7 +130,10 @@ export async function getUserNotifications(userId: string, limit = 20) {
     const profiles = await getActorProfilesByIds(rows.map((row) => row.actor_id));
 
     return rows.map((row) =>
-      mapNotificationRow(row, profiles.get(row.actor_id) ?? null),
+      mapNotificationRow(
+        row,
+        row.actor_id ? profiles.get(row.actor_id) ?? null : null,
+      ),
     );
   } catch {
     return [] as UserNotificationRecord[];
