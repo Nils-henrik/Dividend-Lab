@@ -1,8 +1,9 @@
 import "server-only";
 
 import { revalidatePath } from "next/cache";
+import { createClient as createServerClient } from "@/lib/supabase/server";
 import { createModerationAdminClient } from "./admin";
-import { requireModeratorUser } from "./access.server";
+import { requireDivLabOwnerUser } from "./access.server";
 import {
   getModerationScopeDescription,
   isActionAllowedForTarget,
@@ -39,17 +40,27 @@ async function resolveDirectTarget(
   targetType: ContentReportTargetType,
   targetId: string,
 ): Promise<DirectTarget | null> {
-  const admin = createModerationAdminClient();
-  if (!admin || !targetId) return null;
+  if (!targetId) return null;
+
+  const supabase = await createServerClient();
 
   if (targetType === "forum_thread") {
-    const { data, error } = await admin
+    const { data, error } = await supabase
       .from("forum_threads")
       .select("id,slug,author_id,category_slug,title,body,created_at,updated_at,moderation_status")
       .eq("id", targetId)
       .maybeSingle();
 
-    if (error || !data) return null;
+    if (error) {
+      console.error("[moderation] direct forum thread lookup failed", {
+        targetId,
+        code: error.code,
+        message: error.message,
+      });
+      return null;
+    }
+
+    if (!data) return null;
 
     return {
       targetId: data.id,
@@ -70,21 +81,40 @@ async function resolveDirectTarget(
   }
 
   if (targetType === "forum_reply") {
-    const { data, error } = await admin
+    const { data, error } = await supabase
       .from("forum_replies")
       .select("id,thread_id,author_id,body,created_at,updated_at,moderation_status")
       .eq("id", targetId)
       .maybeSingle();
 
-    if (error || !data) return null;
+    if (error) {
+      console.error("[moderation] direct forum reply lookup failed", {
+        targetId,
+        code: error.code,
+        message: error.message,
+      });
+      return null;
+    }
 
-    const { data: thread, error: threadError } = await admin
+    if (!data) return null;
+
+    const { data: thread, error: threadError } = await supabase
       .from("forum_threads")
       .select("slug,title")
       .eq("id", data.thread_id)
       .maybeSingle();
 
-    if (threadError || !thread) return null;
+    if (threadError) {
+      console.error("[moderation] direct forum reply thread lookup failed", {
+        targetId,
+        threadId: data.thread_id,
+        code: threadError.code,
+        message: threadError.message,
+      });
+      return null;
+    }
+
+    if (!thread) return null;
 
     return {
       targetId: data.id,
@@ -105,13 +135,22 @@ async function resolveDirectTarget(
   }
 
   if (targetType === "learning_comment") {
-    const { data, error } = await admin
+    const { data, error } = await supabase
       .from("learning_article_comments")
       .select("id,article_slug,user_id,body,created_at,updated_at,moderation_status,is_hidden")
       .eq("id", targetId)
       .maybeSingle();
 
-    if (error || !data) return null;
+    if (error) {
+      console.error("[moderation] direct learning comment lookup failed", {
+        targetId,
+        code: error.code,
+        message: error.message,
+      });
+      return null;
+    }
+
+    if (!data) return null;
 
     return {
       targetId: data.id,
@@ -131,13 +170,22 @@ async function resolveDirectTarget(
   }
 
   if (targetType === "profile" || targetType === "profile_avatar") {
-    const { data, error } = await admin
+    const { data, error } = await supabase
       .from("profiles")
       .select("id,username,display_name,bio,avatar_path,updated_at")
       .eq("id", targetId)
       .maybeSingle();
 
-    if (error || !data || !data.username) return null;
+    if (error) {
+      console.error("[moderation] direct profile lookup failed", {
+        targetId,
+        code: error.code,
+        message: error.message,
+      });
+      return null;
+    }
+
+    if (!data || !data.username) return null;
 
     return {
       targetId: data.id,
@@ -165,7 +213,7 @@ export async function getDirectModerationTarget(
   targetTypeRaw: string,
   targetId: string,
 ) {
-  await requireModeratorUser();
+  await requireDivLabOwnerUser();
 
   if (!isContentReportTargetType(targetTypeRaw) || targetTypeRaw === "other") {
     return null;
@@ -190,7 +238,7 @@ function revalidateDirectTarget(report: ContentReportRecord) {
 export async function moderateTargetDirectly(
   formData: FormData,
 ): Promise<ModerationDecisionActionState> {
-  const moderator = await requireModeratorUser();
+  const moderator = await requireDivLabOwnerUser();
   const targetTypeRaw = getFormString(formData, "targetType");
   const targetId = getFormString(formData, "targetId");
   const actionTypeRaw = getFormString(formData, "actionType");
@@ -227,11 +275,6 @@ export async function moderateTargetDirectly(
     };
   }
 
-  const admin = createModerationAdminClient();
-  if (!admin) {
-    return { status: "error", message: "Moderationsdatabasen är inte konfigurerad." };
-  }
-
   const target = await resolveDirectTarget(targetTypeRaw, targetId);
   if (!target) {
     return { status: "error", message: "Innehållet kunde inte hittas." };
@@ -242,6 +285,11 @@ export async function moderateTargetDirectly(
       status: "error",
       message: "Använd vanliga redigeringsverktyg för ditt eget innehåll i stället för moderatorläget.",
     };
+  }
+
+  const admin = createModerationAdminClient();
+  if (!admin) {
+    return { status: "error", message: "Moderationsdatabasen är inte konfigurerad." };
   }
 
   const { data: reportData, error: reportError } = await admin

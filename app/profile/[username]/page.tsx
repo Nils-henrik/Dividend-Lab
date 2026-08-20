@@ -13,7 +13,7 @@ import {
 import type { ProfileContactState } from "@/lib/contacts/types";
 import { getRecentForumActivityByAuthorId } from "@/lib/forum/queries";
 import { getForumAuthorStats } from "@/lib/forum/forum-status.server";
-import { isModeratorUser } from "@/lib/moderation/access.server";
+import { isDivLabOwnerUser } from "@/lib/moderation/access.server";
 import { getAvatarPublicUrl } from "@/lib/profiles/identity";
 import { getPublicProfileByUsername } from "@/lib/profiles/profile";
 import { getStaffRolesForUser } from "@/lib/profiles/staff-roles.server";
@@ -110,7 +110,7 @@ export default async function PublicProfilePage({ params }: Props) {
     getForumAuthorStats(profile.id),
     getRecentForumActivityByAuthorId(profile.id, 5),
     getStaffRolesForUser(profile.id),
-    currentUser ? isModeratorUser(currentUser.id) : Promise.resolve(false),
+    currentUser ? isDivLabOwnerUser(currentUser.id) : Promise.resolve(false),
   ]);
 
   let contactCount = 0;

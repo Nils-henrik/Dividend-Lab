@@ -5,7 +5,7 @@ import {
   getLearningArticleComments,
 } from "@/lib/learning/queries";
 import type { AuthenticatedUser } from "@/lib/auth/user";
-import { isModeratorUser } from "@/lib/moderation/access.server";
+import { isDivLabOwnerUser } from "@/lib/moderation/access.server";
 import type { UserProfile } from "@/lib/profiles/types";
 
 type Props = {
@@ -21,7 +21,7 @@ export default async function LearningArticleComments({
 }: Props) {
   const [comments, isModerator] = await Promise.all([
     getLearningArticleComments(articleSlug),
-    user ? isModeratorUser(user.id) : Promise.resolve(false),
+    user ? isDivLabOwnerUser(user.id) : Promise.resolve(false),
   ]);
   const username = profile?.username?.trim();
   const loginHref = `/login?redirect=${encodeURIComponent(`/learning/${articleSlug}`)}`;

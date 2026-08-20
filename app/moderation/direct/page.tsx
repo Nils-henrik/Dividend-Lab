@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import AppShell from "@/components/layout/AppShell";
 import DirectModerationForm from "@/components/moderation/DirectModerationForm";
-import { requireModeratorUser } from "@/lib/moderation/access.server";
+import { requireDivLabOwnerUser } from "@/lib/moderation/access.server";
 import { getDirectModerationTarget } from "@/lib/moderation/direct.server";
 import { isContentReportTargetType } from "@/lib/moderation/config";
 
@@ -19,7 +19,7 @@ type Props = {
 };
 
 export default async function DirectModerationPage({ searchParams }: Props) {
-  const user = await requireModeratorUser();
+  const user = await requireDivLabOwnerUser();
   const params = await searchParams;
   const targetType = params.targetType?.trim() ?? "";
   const targetId = params.targetId?.trim() ?? "";
@@ -50,7 +50,7 @@ export default async function DirectModerationPage({ searchParams }: Props) {
             Moderera innehåll direkt
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-divlab-text-secondary">
-            Den här vyn är bara tillgänglig för DivLabs moderator-, admin- och ägarroller. Alla åtgärder skapar ett internt modereringsärende och ett revisionsspår.
+            Den här vyn är exklusiv för DivLabs ägarkonto @divlab. Alla åtgärder skapar ett internt modereringsärende och ett revisionsspår.
           </p>
         </section>
 
