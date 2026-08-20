@@ -193,7 +193,7 @@ export default function DirectModerationForm({
         <button
           type="submit"
           disabled={isPending}
-          className="rounded-xl border border-amber-500/35 bg-amber-500/15 px-4 py-2 text-sm font-semibold text-amber-100 transition hover:bg-amber-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded-xl border border-red-700 bg-red-600 px-4 py-2 text-sm font-semibold text-black transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isPending ? "Genomför..." : "Genomför moderering"}
         </button>
