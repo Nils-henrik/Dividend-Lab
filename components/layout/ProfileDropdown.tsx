@@ -72,10 +72,10 @@ export default function ProfileDropdown({
               <Link
                 href="/moderation"
                 onClick={() => setIsProfileOpen(false)}
-                className="block rounded-xl border border-amber-500/25 bg-amber-500/10 px-3 py-2.5 text-sm font-medium text-amber-200 transition hover:border-amber-400/40 hover:bg-amber-500/15"
+                className="block rounded-xl border border-amber-500/25 bg-amber-500/10 px-3 py-2.5 text-sm font-medium text-divlab-text transition hover:border-amber-400/40 hover:bg-amber-500/15"
               >
                 Moderering
-                <span className="mt-0.5 block text-[11px] font-normal text-amber-200/70">
+                <span className="mt-0.5 block text-[11px] font-normal text-divlab-text opacity-70">
                   Ägarverktyg för rapporter och innehåll
                 </span>
               </Link>
