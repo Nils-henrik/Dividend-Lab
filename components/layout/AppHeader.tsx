@@ -21,6 +21,7 @@ type Props = {
   notificationItems: NotificationFeedItem[];
   notificationUserId?: string | null;
   isGuest?: boolean;
+  isModerator?: boolean;
 };
 
 export default function AppHeader({
@@ -33,6 +34,7 @@ export default function AppHeader({
   notificationItems,
   notificationUserId = null,
   isGuest = false,
+  isModerator = false,
 }: Props) {
   const pathname = usePathname();
   const pageTitle = getPageTitle(pathname);
@@ -74,6 +76,7 @@ export default function AppHeader({
             onLogout={onLogout}
             isLoggingOut={isLoggingOut}
             isGuest={isGuest}
+            isModerator={isModerator}
           />
         </div>
       </div>
