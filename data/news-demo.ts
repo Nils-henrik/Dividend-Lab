@@ -1,4 +1,5 @@
 import type { NewsArticle } from "@/types/news";
+import { NORDEN_I_CENTRUM_20_AUGUSTI_2026_ARTICLE } from "@/data/news-articles/norden-i-centrum-20-augusti-2026";
 import { MODERNA_RUSAR_MRNA_CANCERBEHANDLING_MELANOM_19_AUGUSTI_2026_ARTICLE } from "@/data/news-articles/moderna-rusar-mrna-cancerbehandling-melanom-19-augusti-2026";
 import { AI_FROSSA_WALL_STREET_CHIPJATTAR_19_AUGUSTI_2026_ARTICLE } from "@/data/news-articles/ai-frossa-wall-street-chipjattar-19-augusti-2026";
 import { BORSSVERIGE_LUNCH_19_AUGUSTI_2026_ARTICLE } from "@/data/news-articles/borssverige-lunch-19-augusti-2026";
@@ -52,6 +53,7 @@ import { applyNewsSearchSeo } from "@/lib/seo/editorial-content";
  * Image assets currently live under /public/news-demo/ for historical path stability.
  */
 const PUBLISHED_NEWS_ARTICLES: NewsArticle[] = [
+  NORDEN_I_CENTRUM_20_AUGUSTI_2026_ARTICLE,
   MODERNA_RUSAR_MRNA_CANCERBEHANDLING_MELANOM_19_AUGUSTI_2026_ARTICLE,
   AI_FROSSA_WALL_STREET_CHIPJATTAR_19_AUGUSTI_2026_ARTICLE,
   BORSSVERIGE_LUNCH_19_AUGUSTI_2026_ARTICLE,
