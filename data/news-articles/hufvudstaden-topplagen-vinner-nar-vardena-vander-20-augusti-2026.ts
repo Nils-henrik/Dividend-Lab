@@ -12,7 +12,7 @@ import type { NewsArticle } from "@/types/news";
  * - Finwire/Placera reporting on the Q2 figures and property valuation.
  *
  * Cover uploaded by the editor:
- * public/news-demo/file_000000000f5882469e2a3cae693861e1.png
+ * public/news-demo/file_000000009ea081f48c7e6ea2a35c5003.png
  */
 export const HUFVUDSTADEN_TOPPLAGEN_VINNER_NAR_VARDENA_VANDER_20_AUGUSTI_2026_ARTICLE: NewsArticle = {
   id: "hufvudstaden-topplagen-vinner-nar-vardena-vander-20-augusti-2026",
@@ -25,7 +25,7 @@ export const HUFVUDSTADEN_TOPPLAGEN_VINNER_NAR_VARDENA_VANDER_20_AUGUSTI_2026_AR
   publishedAt: "2026-08-20T17:10:00+02:00",
   url: "/news/hufvudstaden-topplagen-vinner-nar-vardena-vander-20-augusti-2026",
   featured: true,
-  imageUrl: "/news-demo/file_000000000f5882469e2a3cae693861e1.png",
+  imageUrl: "/news-demo/file_000000009ea081f48c7e6ea2a35c5003.png",
   thumbnailObjectPosition: "center center",
   mobileThumbnailObjectPosition: "center center",
   imageAlt:
