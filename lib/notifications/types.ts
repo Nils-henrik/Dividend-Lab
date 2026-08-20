@@ -1,6 +1,7 @@
 export type UserNotificationType =
   | "contact_request"
   | "forum_reply"
+  | "moderation_report"
   | "moderation_decision";
 
 export type UserNotificationPayload = {
@@ -14,12 +15,16 @@ export type UserNotificationPayload = {
   actionId?: string;
   actionType?: string;
   scopeDescription?: string;
+  referenceCode?: string;
+  reportCategory?: string;
+  targetLabel?: string;
+  urgent?: boolean;
 };
 
 export type UserNotificationRecord = {
   id: string;
   recipientId: string;
-  actorId: string;
+  actorId: string | null;
   type: UserNotificationType;
   entityId: string | null;
   destinationPath: string;
