@@ -27,7 +27,7 @@ import {
   mapReplyRecordToForumPost,
   mapThreadRecordToForumThread,
 } from "@/lib/forum/queries";
-import { isModeratorUser } from "@/lib/moderation/access.server";
+import { isDivLabOwnerUser } from "@/lib/moderation/access.server";
 import {
   breadcrumbJsonLd,
   discussionForumPostingJsonLd,
@@ -163,7 +163,7 @@ export default async function ForumThreadRoute({ params }: Props) {
 
   if (user) {
     const session = await requireAuthenticatedUserWithProfile();
-    const isModerator = await isModeratorUser(session.user.id);
+    const isModerator = await isDivLabOwnerUser(session.user.id);
 
     return (
       <AppShell user={session.user} identity={session.identity}>
