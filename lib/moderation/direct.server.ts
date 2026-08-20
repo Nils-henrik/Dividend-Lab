@@ -195,6 +195,7 @@ export async function moderateTargetDirectly(
   const targetId = getFormString(formData, "targetId");
   const actionTypeRaw = getFormString(formData, "actionType");
   const factualReason = getFormString(formData, "factualReason");
+  const confirmed = formData.get("confirm") === "on";
 
   if (!isContentReportTargetType(targetTypeRaw) || targetTypeRaw === "other") {
     return { status: "error", message: "Målet kan inte modereras direkt." };
@@ -210,6 +211,10 @@ export async function moderateTargetDirectly(
 
   if (!isActionAllowedForTarget(actionTypeRaw, targetTypeRaw)) {
     return { status: "error", message: "Åtgärden kan inte användas på den här typen av innehåll." };
+  }
+
+  if (!confirmed) {
+    return { status: "error", message: "Bekräfta modereringsbeslutet innan det genomförs." };
   }
 
   if (
@@ -230,6 +235,13 @@ export async function moderateTargetDirectly(
   const target = await resolveDirectTarget(targetTypeRaw, targetId);
   if (!target) {
     return { status: "error", message: "Innehållet kunde inte hittas." };
+  }
+
+  if (target.targetOwnerUserId === moderator.id) {
+    return {
+      status: "error",
+      message: "Använd vanliga redigeringsverktyg för ditt eget innehåll i stället för moderatorläget.",
+    };
   }
 
   const { data: reportData, error: reportError } = await admin
