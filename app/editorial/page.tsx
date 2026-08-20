@@ -22,31 +22,62 @@ export default function EditorialPage() {
           Redaktionella riktlinjer
         </h1>
         <p className="mt-5 text-lg leading-8 text-divlab-text-secondary">
-          DivLab publicerar informationellt och redaktionellt material för att
-          hjälpa svenska sparare förstå marknaden, privatekonomi och långsiktigt
-          sparande.
+          DivLab publicerar redaktionellt och informationellt innehåll om börsen,
+          marknaden, privatekonomi och långsiktigt sparande. Målet är att göra
+          ekonomisk information tydligare, mer begriplig och mer tillgänglig.
         </p>
 
         <div className="mt-12 space-y-10 text-base leading-7 text-divlab-text-secondary">
           <section className="space-y-3">
             <h2 className="text-xl font-semibold text-divlab-text">
-              Syfte
+              Vårt syfte
             </h2>
             <p>
-              Vårt syfte är att erbjuda tydlig, lugn och saklig information —
-              inte personlig finansiell rådgivning och inte individuella
-              investeringsrekommendationer.
+              DivLab ska hjälpa läsaren att förstå vad som händer på marknaden
+              och varför det är relevant.
+            </p>
+            <p>
+              Vi strävar efter ett sakligt och lättbegripligt innehåll där
+              fakta, sammanhang och förklaringar står i centrum. Komplicerade
+              ekonomiska händelser ska kunna förstås även av den som inte
+              arbetar professionellt med finans.
             </p>
           </section>
 
           <section className="space-y-3">
             <h2 className="text-xl font-semibold text-divlab-text">
-              Information är inte rådgivning
+              Redaktionellt ansvar
             </h2>
             <p>
-              Artiklar, guider, forumdiskussioner och verktyg som Frihetsmaskinen
-              är avsedda för allmän kunskap och reflektion. Marknadsinformation
-              kan förändras efter publicering. Du ansvarar själv för dina beslut.
+              DivLab ansvarar för det innehåll som publiceras på plattformen.
+            </p>
+            <p>
+              Inför publicering strävar vi efter att kontrollera centrala
+              fakta, siffror, datum och andra uppgifter mot tillgängliga och
+              relevanta källor. Vid osäkra eller snabbt föränderliga händelser
+              försöker vi tydligt skilja mellan bekräftade uppgifter och sådant
+              som ännu inte är fastställt.
+            </p>
+            <p>Vi publicerar inte rykten som fakta.</p>
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="text-xl font-semibold text-divlab-text">
+              Information – inte personlig rådgivning
+            </h2>
+            <p>
+              Innehållet på DivLab är avsett för allmän information, utbildning
+              och analys.
+            </p>
+            <p>
+              Artiklar, guider, marknadsdata, forumdiskussioner och verktyg är
+              inte personlig finansiell rådgivning och ska inte betraktas som
+              individuella rekommendationer att köpa, sälja eller behålla ett
+              visst finansiellt instrument.
+            </p>
+            <p>
+              Alla investeringar innebär risk och varje användare ansvarar själv
+              för sina ekonomiska beslut.
             </p>
           </section>
 
@@ -55,9 +86,18 @@ export default function EditorialPage() {
               Källor
             </h2>
             <p>
-              När vi använder externa uppgifter strävar vi efter att ange källa
-              eller länk där det är relevant. Kursuppgifter och marknadsdata är
-              ögonblicksbilder och kan vara försenade eller ofullständiga.
+              DivLab använder offentligt tillgänglig information från exempelvis
+              bolag, myndigheter, börser, rapporter, pressmeddelanden,
+              nyhetskällor och marknadsdatatjänster.
+            </p>
+            <p>
+              När externa uppgifter är centrala för en artikel strävar vi efter
+              att ange källa eller hänvisa till den ursprungliga informationen
+              där det är relevant.
+            </p>
+            <p>
+              Kursuppgifter och annan marknadsdata kan vara fördröjda,
+              preliminära eller förändras efter publicering.
             </p>
           </section>
 
@@ -65,10 +105,17 @@ export default function EditorialPage() {
             <h2 className="text-xl font-semibold text-divlab-text">
               Publicering och uppdateringar
             </h2>
+            <p>Artiklar visar publiceringsdatum.</p>
             <p>
-              Artiklar visar publiceringsdatum. När innehåll väsentligt
-              uppdateras strävar vi efter att visa ett uppdateringsdatum.
-              Mindre språkliga rättelser behöver inte alltid anges.
+              När ny information tillkommer kan en artikel uppdateras för att
+              bättre spegla det aktuella läget. Vid större eller betydelsefulla
+              förändringar strävar vi efter att även visa när artikeln senast
+              uppdaterades.
+            </p>
+            <p>
+              Mindre språkliga rättelser, formateringsändringar eller
+              korrigeringar som inte förändrar artikelns innebörd behöver inte
+              alltid markeras separat.
             </p>
           </section>
 
@@ -76,26 +123,35 @@ export default function EditorialPage() {
             <h2 className="text-xl font-semibold text-divlab-text">
               Rättelser
             </h2>
+            <p>Korrekt information är viktigt för DivLab.</p>
             <p>
-              Om du upptäcker ett sakfel, kontakta oss via{" "}
+              Om vi upptäcker ett sakfel rättar vi det så snart det är praktiskt
+              möjligt. Om du som läsare upptäcker något som verkar fel får du
+              gärna kontakta oss via{" "}
               <Link href="/contact" className="divlab-link font-medium">
                 kontaktsidan
               </Link>
-              . Vi granskar rapporterade fel och uppdaterar innehållet när det
-              är motiverat.
+              .
+            </p>
+            <p>
+              Rapporterade fel granskas och innehållet uppdateras när det finns
+              anledning till det.
             </p>
           </section>
 
           <section className="space-y-3">
             <h2 className="text-xl font-semibold text-divlab-text">
-              AI-stöd
+              Marknaden förändras
             </h2>
             <p>
-              DivLab kan använda AI-verktyg som stöd i research, struktur och
-              språklig bearbetning. Redaktionellt ansvar och publiceringsbeslut
-              ligger hos DivLab. AI-genererat material publiceras inte som
-              oberoende faktakälla utan mänsklig granskning i den mån processen
-              kräver det för respektive innehållstyp.
+              Finansiella marknader rör sig snabbt. En artikel beskriver därför
+              situationen utifrån den information som var tillgänglig vid
+              publiceringen eller den senaste uppdateringen.
+            </p>
+            <p>
+              Nya rapporter, kursrörelser, myndighetsbeslut eller andra
+              händelser kan innebära att förutsättningarna förändras efter att
+              en artikel publicerats.
             </p>
           </section>
 
@@ -117,6 +173,11 @@ export default function EditorialPage() {
               <li>
                 <Link href="/terms" className="divlab-link">
                   Användarvillkor
+                </Link>
+              </li>
+              <li>
+                <Link href="/contact" className="divlab-link">
+                  Kontakt
                 </Link>
               </li>
             </ul>
