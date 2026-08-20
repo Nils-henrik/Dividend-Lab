@@ -26,6 +26,7 @@ type Props = {
   staffRoles: StaffRole[];
   isSelf: boolean;
   isAuthenticated: boolean;
+  isModerator?: boolean;
   contactCount: number;
   contactState: ProfileContactState;
 };
@@ -64,6 +65,7 @@ export default function PublicProfileView({
   staffRoles,
   isSelf,
   isAuthenticated,
+  isModerator = false,
   contactCount,
   contactState,
 }: Props) {
@@ -78,6 +80,8 @@ export default function PublicProfileView({
     ? `/profile/${encodeURIComponent(normalizedUsername)}`
     : `/profile/${encodeURIComponent(profile.id)}`;
   const reportHref = `/report?targetType=profile&targetId=${encodeURIComponent(profile.id)}&url=${encodeURIComponent(profilePath)}`;
+  const moderateProfileHref = `/moderation/direct?targetType=profile&targetId=${encodeURIComponent(profile.id)}`;
+  const moderateAvatarHref = `/moderation/direct?targetType=profile_avatar&targetId=${encodeURIComponent(profile.id)}`;
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
@@ -122,12 +126,32 @@ export default function PublicProfileView({
               messageHref={messageHref}
             />
             {!isSelf ? (
-              <Link
-                href={reportHref}
-                className="text-xs text-divlab-text-muted transition hover:text-divlab-text"
-              >
-                Rapportera profil
-              </Link>
+              <div className="flex flex-wrap items-center gap-3">
+                <Link
+                  href={reportHref}
+                  className="text-xs text-divlab-text-muted transition hover:text-divlab-text"
+                >
+                  Rapportera profil
+                </Link>
+                {isModerator ? (
+                  <>
+                    <Link
+                      href={moderateProfileHref}
+                      className="text-xs font-medium text-amber-300 transition hover:text-amber-200"
+                    >
+                      Moderera profil
+                    </Link>
+                    {avatarUrl ? (
+                      <Link
+                        href={moderateAvatarHref}
+                        className="text-xs font-medium text-amber-300 transition hover:text-amber-200"
+                      >
+                        Moderera profilbild
+                      </Link>
+                    ) : null}
+                  </>
+                ) : null}
+              </div>
             ) : null}
           </div>
         </div>
