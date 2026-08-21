@@ -37,6 +37,14 @@ export type DivBrainLearningScoredCandidate = {
  */
 const COMPOUND_MATCH_WEIGHT_FACTOR = 0.6;
 
+/**
+ * Longer, specific queries must match more than one distinct user-written term
+ * in strong fields. Otherwise one repeated entity can be counted in several
+ * fields (for example description + heading) and fabricate relevance.
+ */
+const MULTI_TERM_STRONG_COVERAGE_QUERY_LENGTH = 4;
+const MULTI_TERM_MIN_DISTINCT_STRONG_MATCHES = 2;
+
 function fieldScore(
   queryTokens: readonly string[],
   fieldTokens: readonly string[],
@@ -62,6 +70,28 @@ function phraseBonus(normalizedQuery: string, fieldText: string, bonus: number):
   }
   const normalizedField = normalizeDivBrainLearningText(fieldText);
   return normalizedField.includes(normalizedQuery) ? bonus : 0;
+}
+
+function hasSufficientDistinctStrongMatches(
+  originalQueryTokens: readonly string[],
+  record: DivBrainLearningCorpusRecord,
+  section: DivBrainLearningCorpusSection,
+): boolean {
+  if (originalQueryTokens.length < MULTI_TERM_STRONG_COVERAGE_QUERY_LENGTH) {
+    return true;
+  }
+
+  const strongFieldTokens = [
+    ...record.titleTokens,
+    ...record.slugTokens,
+    ...section.headingTokens,
+    ...record.descriptionTokens,
+  ];
+
+  return (
+    matchedUniqueQueryTokens(originalQueryTokens, strongFieldTokens) >=
+    MULTI_TERM_MIN_DISTINCT_STRONG_MATCHES
+  );
 }
 
 /**
@@ -162,7 +192,10 @@ export function scoreDivBrainLearningCorpus(
         synthetic,
         queryTokens,
       );
-      if (meetsRetrievalThreshold(scored)) {
+      if (
+        meetsRetrievalThreshold(scored) &&
+        hasSufficientDistinctStrongMatches(queryTokens, record, synthetic)
+      ) {
         candidates.push(scored);
       }
       continue;
@@ -176,7 +209,10 @@ export function scoreDivBrainLearningCorpus(
         section,
         queryTokens,
       );
-      if (meetsRetrievalThreshold(scored)) {
+      if (
+        meetsRetrievalThreshold(scored) &&
+        hasSufficientDistinctStrongMatches(queryTokens, record, section)
+      ) {
         candidates.push(scored);
       }
     }

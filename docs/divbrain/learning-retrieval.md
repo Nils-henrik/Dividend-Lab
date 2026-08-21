@@ -19,6 +19,7 @@ The retrieval/eval layer is local and deterministic: **no embeddings, provider c
 - Weak/body-only overlap does not qualify.
 - Unrelated queries return zero sources rather than fabricated relevance.
 - Swedish normalization preserves å/ä/ö, removes common function words and applies conservative morphology.
+- Longer multi-term queries must match at least two distinct user-written terms in strong fields before a candidate can qualify; repeating one entity across description/heading must not manufacture relevance.
 
 Key modules:
 
