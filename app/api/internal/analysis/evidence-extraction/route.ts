@@ -99,5 +99,5 @@ export async function GET(request: Request) {
     message: extraction.bundle.qualityGate.ready
       ? "SEC-dokumenten är säkert hämtade och sourceId-spårbar evidens är redo för nästa Research-coverage-gate. Full Deep Research är fortfarande låst."
       : "SEC-dokumenten nådde inte DivLabs evidence-extraction quality gate. Full Deep Research förblir låst.",
-  }), { status: extraction.bundle.qualityGate.ready ? 200 : 422 });
+  }, { status: extraction.bundle.qualityGate.ready ? 200 : 422 }));
 }
