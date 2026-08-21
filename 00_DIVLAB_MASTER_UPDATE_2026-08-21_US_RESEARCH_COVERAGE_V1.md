@@ -1,7 +1,7 @@
 # DivLab Master Update — US Research Coverage v1
 
 Date: 2026-08-21
-Status: ACTIVE_BRANCH / PREVIEW_ONLY
+Status: ACTIVE_PR / PREVIEW_ONLY
 Parent: `agent/global-evidence-extraction-v1` / PR #271
 Branch: `agent/us-research-coverage-v1`
 First verification target: `MSFT`
@@ -159,6 +159,33 @@ The following safety bounds remain unchanged:
 - Evidence quality must still reach 100/100.
 
 A regression test pins the 10 MB bound and verifies that the known 8,585,501-byte MSFT 2026 10-K fits without changing the remaining limits.
+
+## Code/build validation — 2026-08-21
+
+The bounded 10 MB correction and the complete US Research Coverage v1 slice were revalidated after the live MSFT filing-size check.
+
+Validated code head before this documentation-only certification: `6109c21e8d7a52a1be09340f840a07ce33a1ad09`.
+
+Full-quality Preview CI used temporary branch `agent/us-research-coverage-v1-ci` and commit `74d11546356f780be0bac868925e1d72d2d05ad8`; that commit differs from the validated code head only by the validation `buildCommand` in `vercel.json`.
+
+Results:
+
+- lint: **0 errors**, 3 pre-existing unrelated warnings;
+- TypeScript: **green**;
+- core tests: **531/531**;
+- SEO/news/i18n: **49/49**;
+- DivBrain: **518/518**;
+- Cursor bridge: **30/30**;
+- Next.js optimized build: **green**;
+- static pages: **101/101** generated;
+- route table includes `/analyses/internal-preview/sources` and `/api/internal/analysis/us-research-coverage`;
+- ordinary PR Preview build: **READY**;
+- separate full-quality validation Preview: **READY**;
+- no production deployment, production write, persistence, publication or merge occurred.
+
+The stacked diff from PR #271 contained 10 files at the validated code head. CI configuration remained outside the PR diff.
+
+This validation certifies code/build/regression behavior only. It does **not** upgrade the real MSFT runtime acceptance below.
 
 ## Real Preview acceptance — not yet claimed
 
