@@ -3,7 +3,9 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import UniqueReaderCount from "@/components/analytics/UniqueReaderCount";
 import ArticleShareLinks from "@/components/content/ArticleShareLinks";
+import RelatedContent from "@/components/content/RelatedContent";
 import { LearningRichText } from "@/components/learning/LearningRichText";
+import type { RelatedContentLink } from "@/lib/news/internal-links";
 import type { NewsArticle } from "@/types/news";
 import { getNewsCategoryLabel } from "@/lib/news/categories";
 import { newsDisclaimer } from "@/lib/news/disclaimer";
@@ -16,6 +18,7 @@ import {
 type Props = {
   article: NewsArticle;
   initialUniqueReaders?: number;
+  relatedContent?: readonly RelatedContentLink[];
 };
 
 function MetadataIcon({ children }: { children: ReactNode }) {
@@ -60,6 +63,7 @@ function NewsArticleBreadcrumb({ category }: { category: NewsArticle["category"]
 export default function NewsArticleView({
   article,
   initialUniqueReaders = 0,
+  relatedContent = [],
 }: Props) {
   const introParagraphs = article.intro ?? [];
   const sections = article.sections ?? [];
@@ -237,6 +241,8 @@ export default function NewsArticleView({
             ))}
           </section>
         ))}
+
+        <RelatedContent links={relatedContent} />
 
         {sources.length > 0 && (
           <section
