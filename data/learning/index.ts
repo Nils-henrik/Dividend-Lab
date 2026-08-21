@@ -9,6 +9,7 @@ import levaPaUtdelningar from "./articles/leva-pa-utdelningar-kapital";
 import peTal from "./articles/pe-tal-vad-betyder-det";
 import premiepension from "./articles/ta-kontroll-over-premiepensionen";
 import rantaPaRanta from "./articles/ranta-pa-ranta";
+import kvartalsrapport from "./articles/sa-laser-du-en-kvartalsrapport";
 import sparande from "./articles/sparande-i-borjan";
 import sparkvot from "./articles/sparkvot-budgetera-lonen-i-procent";
 import tekniskAnalys from "./articles/teknisk-analys-for-nyborjare";
@@ -33,6 +34,7 @@ export {
 } from "./reading-time";
 
 const rawArticles: LearningArticle[] = [
+  kvartalsrapport,
   borsensOrdlista,
   {
     ...tekniskAnalys,
