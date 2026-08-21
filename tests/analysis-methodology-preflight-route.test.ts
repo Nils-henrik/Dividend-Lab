@@ -11,10 +11,17 @@ describe("analysis methodology preflight route contract", () => {
     assert.match(source, /founder_role_required/);
   });
 
-  it("verifies an exact Nordic equity before checking company methodology", () => {
+  it("can verify an exact global equity before checking company methodology", () => {
+    assert.match(source, /resolveGlobalEquityAnalysisTarget/);
     assert.match(source, /resolveNordicEquityAnalysisTarget/);
     assert.match(source, /fetchYahooCompanyProfilePreflight/);
     assert.match(source, /methodology\.status === "supported"/);
+  });
+
+  it("keeps research coverage separate from methodology support", () => {
+    assert.match(source, /researchCoverageReady/);
+    assert.match(source, /methodologySupported/);
+    assert.match(source, /global primärkälle- och webbresearch/);
   });
 
   it("fails closed when methodology verification is unavailable", () => {
