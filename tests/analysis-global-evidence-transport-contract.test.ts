@@ -23,6 +23,15 @@ describe("Global Evidence transport contract", () => {
     assert.match(extraction, /\.slice\(0, GLOBAL_EVIDENCE_BOUNDS\.maxDocuments\)/);
   });
 
+  it("declares DivLab according to SEC Fair Access guidance", async () => {
+    const extraction = await source("lib/analysis/global-evidence-extraction.ts");
+
+    assert.match(extraction, /const USER_AGENT = "DivLab kontakt@divlab\.se"/);
+    assert.match(extraction, /"Accept-Encoding": "gzip, deflate"/);
+    assert.match(extraction, /"User-Agent": USER_AGENT/);
+    assert.doesNotMatch(extraction, /\+https:\/\/divlab\.se\/contact/);
+  });
+
   it("keeps the Research Coverage endpoint fail-closed while exposing transport diagnostics", async () => {
     const route = await source("app/api/internal/analysis/us-research-coverage/route.ts");
 
