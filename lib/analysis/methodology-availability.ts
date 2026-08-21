@@ -21,15 +21,17 @@ function engineReadyMessage(engine: DivLabAnalysisEngine): string {
 function specializedMessage(companyType: DivLabCompanyType): string {
   switch (companyType) {
     case "insurance":
-      return "Bolaget är ett försäkringsbolag och kräver en separat solvens- och försäkringsmetodik innan analysen kan publiceras.";
+      return "Bolaget är ett försäkringsbolag och kräver en separat försäkringsmetodik med solvensmått innan analysen kan publiceras.";
     case "real_estate":
       return "Bolaget är ett fastighetsbolag och kräver en separat fastighetsmetodik med bland annat LTV, räntetäckning och NAV innan analysen kan publiceras.";
     case "financial_other":
-      return "Finansbolagets exakta metodik kan inte verifieras säkert ännu. DivLab startar ingen analys förrän rätt specialistmotor har identifierats.";
+      return "Finansbolag kan omfatta exempelvis investmentbolag där NAV/substansvärde är centralt. DivLab måste verifiera rätt specialistmetodik innan analysen kan publiceras och startar ingen analys genom en generisk bolagsmodell.";
     case "bank":
+      return "Bolaget är en bank och kräver DivLabs verifierade bankmetodik med CET1, kreditkvalitet, funding, ROE och P/B innan analysen kan publiceras.";
     case "investment_company":
+      return "Bolaget är ett investmentbolag och kräver specialistmetodik baserad på NAV/substansvärde, portfölj och rabatt/premie innan analysen kan publiceras.";
     case "asset_manager":
-      return "Specialistmotorn är inte tillgänglig i den här körningen.";
+      return "Bolaget är en kapitalförvaltare och kräver specialistmetodik baserad på AUM, fee-generating AUM, avgiftsintjäning och relevant värderingsbas innan analysen kan publiceras.";
     default:
       return "Bolagstypen kräver en separat fundamental metodik innan analysen kan publiceras.";
   }
