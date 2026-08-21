@@ -1,3 +1,5 @@
+export const GLOBAL_SOURCE_DISCOVERY_VERSION = "global-source-discovery-v1" as const;
+
 export type GlobalSourceKind =
   | "regulatory_annual_filing"
   | "regulatory_interim_filing"
@@ -13,6 +15,21 @@ export type GlobalPrimarySource = {
   verifiedAt: string;
   primary: boolean;
   form: string | null;
+};
+
+export type GlobalSourceDiscoveryResult = {
+  version: typeof GLOBAL_SOURCE_DISCOVERY_VERSION;
+  yahooSymbol: string;
+  symbol: string;
+  exchange: string;
+  companyName: string;
+  sources: GlobalPrimarySource[];
+  primarySourceCount: number;
+  annualPrimaryCount: number;
+  interimPrimaryCount: number;
+  readyForEvidenceExtraction: boolean;
+  status: "verified_primary" | "candidate_only" | "unavailable";
+  reason: string;
 };
 
 type SecTickerRow = {
@@ -172,4 +189,51 @@ export function parseSecPrimarySources(input: {
   }
 
   return sources;
+}
+
+export function summarizeGlobalSourceDiscovery(input: {
+  yahooSymbol: string;
+  symbol: string;
+  exchange: string;
+  companyName: string;
+  sources: GlobalPrimarySource[];
+}): GlobalSourceDiscoveryResult {
+  const yahooSymbol = normalizedSymbol(input.yahooSymbol);
+  const symbol = normalizedSymbol(input.symbol);
+  const exchange = normalizedSymbol(input.exchange);
+  const companyName = input.companyName.trim();
+  const sources = [...input.sources];
+  const primarySources = sources.filter((source) => source.primary);
+  const annualPrimaryCount = primarySources.filter(
+    (source) => source.kind === "regulatory_annual_filing",
+  ).length;
+  const interimPrimaryCount = primarySources.filter(
+    (source) => source.kind === "regulatory_interim_filing",
+  ).length;
+  const readyForEvidenceExtraction = annualPrimaryCount >= 1 && interimPrimaryCount >= 1;
+  const status = readyForEvidenceExtraction
+    ? "verified_primary"
+    : sources.length > 0
+      ? "candidate_only"
+      : "unavailable";
+  const reason = readyForEvidenceExtraction
+    ? "SEC har verifierat minst en årsfiling och en interimfiling. Källorna kan gå vidare till en separat, bounded evidence-extraction gate."
+    : sources.length > 0
+      ? "Bolagets källdomän eller en del av primärkällorna hittades, men DivLab saknar ännu komplett verifierad års- och interimtäckning för denna marknad."
+      : "Ingen verifierad global primärkälla hittades. Full Deep Research förblir låst.";
+
+  return {
+    version: GLOBAL_SOURCE_DISCOVERY_VERSION,
+    yahooSymbol,
+    symbol,
+    exchange,
+    companyName,
+    sources,
+    primarySourceCount: primarySources.length,
+    annualPrimaryCount,
+    interimPrimaryCount,
+    readyForEvidenceExtraction,
+    status,
+    reason,
+  };
 }
