@@ -24,6 +24,18 @@ export type NewsArticleSection = {
   paragraphs: string[];
 };
 
+/**
+ * Optional editorial signals for DivLab's internal linking engine.
+ * Existing articles remain valid without this metadata.
+ */
+export type NewsArticleInternalLinking = {
+  topics?: string[];
+  companies?: string[];
+  tickers?: string[];
+  relatedNewsSlugs?: string[];
+  relatedLearningSlugs?: string[];
+};
+
 export interface NewsArticle {
   id: string;
   title: string;
@@ -80,6 +92,7 @@ export interface NewsArticle {
   seoTitle?: string;
   seoDescription?: string;
   seoKeywords?: string[];
+  internalLinking?: NewsArticleInternalLinking;
   sections?: NewsArticleSection[];
   sources?: NewsArticleSource[];
   showDisclaimer?: boolean;
