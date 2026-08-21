@@ -285,14 +285,36 @@ function scoreNewsCandidate(
 
   const candidateSignals = newsSignals(candidate);
   const explicit = current.internalLinking?.relatedNewsSlugs?.includes(candidate.slug) ?? false;
+  const tickerOverlap = overlapCount(currentSignals.tickers, candidateSignals.tickers);
+  const companyOverlap = overlapCount(currentSignals.companies, candidateSignals.companies);
+  const editorialTopicOverlap = overlapCount(
+    currentSignals.editorialTopics,
+    candidateSignals.editorialTopics,
+  );
+  const phraseOverlap = overlapCount(currentSignals.phrases, candidateSignals.phrases);
+  const canonicalTopicOverlap = overlapCount(
+    currentSignals.canonicalTopics,
+    candidateSignals.canonicalTopics,
+  );
+  const tokenScore = sharedTokenScore(currentSignals.tokens, candidateSignals.tokens);
+  const hasStrongAutomaticEvidence =
+    tickerOverlap > 0 ||
+    companyOverlap > 0 ||
+    editorialTopicOverlap > 0 ||
+    phraseOverlap > 0 ||
+    tokenScore >= 24;
+
+  if (!explicit && !hasStrongAutomaticEvidence) {
+    return 0;
+  }
 
   let score = explicit ? 1_000 : 0;
-  score += overlapCount(currentSignals.tickers, candidateSignals.tickers) * 180;
-  score += overlapCount(currentSignals.companies, candidateSignals.companies) * 160;
-  score += overlapCount(currentSignals.editorialTopics, candidateSignals.editorialTopics) * 70;
-  score += overlapCount(currentSignals.phrases, candidateSignals.phrases) * 30;
-  score += overlapCount(currentSignals.canonicalTopics, candidateSignals.canonicalTopics) * 18;
-  score += sharedTokenScore(currentSignals.tokens, candidateSignals.tokens);
+  score += tickerOverlap * 180;
+  score += companyOverlap * 160;
+  score += editorialTopicOverlap * 70;
+  score += phraseOverlap * 30;
+  score += canonicalTopicOverlap * 18;
+  score += tokenScore;
 
   if (current.category === candidate.category && score >= 20) {
     score += 6;
