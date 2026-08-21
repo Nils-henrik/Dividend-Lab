@@ -45,10 +45,47 @@ type DiscoveryResponse = {
   } | null;
 };
 
+type EvidenceResponse = {
+  status?: string;
+  evidenceQualityReady?: boolean;
+  researchCoverageReady?: boolean;
+  message?: string;
+  extraction?: {
+    bundle: {
+      qualityGate: {
+        ready: boolean;
+        score: number;
+        blockers: string[];
+      };
+      evidence: Array<{
+        id: string;
+        sourceId: string;
+        title: string;
+        documentType: string | null;
+        documentExcerpt?: string | null;
+      }>;
+      documents: Array<{
+        sourceId: string;
+        bytes: number;
+        contentType: string;
+        truncated: boolean;
+      }>;
+    };
+    failures: Array<{ sourceId: string; reason: string }>;
+  } | null;
+};
+
 function statusLabel(item: SourceItem): string {
   if (item.primary) return item.form ? `Primärkälla · ${item.form}` : "Primärkälla";
   if (item.kind === "issuer_ir_candidate") return "IR-kandidat";
   return "Bolagsdomän";
+}
+
+function formatBytes(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes < 0) return "—";
+  if (bytes < 1_000) return `${Math.round(bytes)} B`;
+  if (bytes < 1_000_000) return `${Math.round(bytes / 1_000)} kB`;
+  return `${(bytes / 1_000_000).toFixed(1)} MB`;
 }
 
 export default function AnalysisSourceDiscoveryOperator() {
@@ -58,6 +95,8 @@ export default function AnalysisSourceDiscoveryOperator() {
   const [selected, setSelected] = useState<SearchResult | null>(null);
   const [discovering, setDiscovering] = useState(false);
   const [discovery, setDiscovery] = useState<DiscoveryResponse | null>(null);
+  const [extracting, setExtracting] = useState(false);
+  const [evidence, setEvidence] = useState<EvidenceResponse | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
   async function search(event: FormEvent<HTMLFormElement>) {
@@ -68,6 +107,7 @@ export default function AnalysisSourceDiscoveryOperator() {
     setResults([]);
     setSelected(null);
     setDiscovery(null);
+    setEvidence(null);
     setMessage(null);
     try {
       const response = await fetch(`/api/internal/analysis/search?q=${encodeURIComponent(trimmed)}`, {
@@ -88,9 +128,10 @@ export default function AnalysisSourceDiscoveryOperator() {
   }
 
   async function discover(target: SearchResult) {
-    if (discovering) return;
+    if (discovering || extracting) return;
     setSelected(target);
     setDiscovery(null);
+    setEvidence(null);
     setMessage(null);
     setDiscovering(true);
     try {
@@ -108,14 +149,34 @@ export default function AnalysisSourceDiscoveryOperator() {
     }
   }
 
+  async function extractEvidence() {
+    if (!selected || extracting || !discovery?.evidenceExtractionReady) return;
+    setExtracting(true);
+    setEvidence(null);
+    setMessage(null);
+    try {
+      const response = await fetch(
+        `/api/internal/analysis/evidence-extraction?yahooSymbol=${encodeURIComponent(selected.yahooSymbol)}`,
+        { cache: "no-store" },
+      );
+      const payload = (await response.json().catch(() => ({}))) as EvidenceResponse;
+      setEvidence(payload);
+      if (!response.ok) setMessage(payload.message ?? "Evidence extraction nådde inte quality gate.");
+    } catch {
+      setMessage("SEC-dokumenten kunde inte extraheras säkert.");
+    } finally {
+      setExtracting(false);
+    }
+  }
+
   return (
     <div className="border border-white/10 bg-white/[0.025] p-5 sm:p-7">
       <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-        Global Source Discovery v1
+        Global Source Discovery + Evidence v1
       </div>
-      <h2 className="mt-2 text-xl font-semibold text-white">Verifiera primärkällor före Research</h2>
+      <h2 className="mt-2 text-xl font-semibold text-white">Verifiera och läs primärkällor före Research</h2>
       <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">
-        USA verifieras mot SEC EDGAR. Övriga marknader får bara källkandidater tills en officiell regulator-/börskedja är implementerad. Den här grinden kan aldrig publicera eller starta Deep Research.
+        USA verifieras mot SEC EDGAR. Ett separat steg hämtar högst två verifierade SEC-filings och gör bounded, sourceId-spårbar evidens. Inte ens en 100/100 evidence-gate startar Deep Research automatiskt.
       </p>
 
       <form onSubmit={search} className="mt-5 flex gap-2">
@@ -144,7 +205,7 @@ export default function AnalysisSourceDiscoveryOperator() {
               key={item.yahooSymbol}
               type="button"
               onClick={() => void discover(item)}
-              disabled={discovering}
+              disabled={discovering || extracting}
               className={`grid w-full gap-2 px-4 py-3 text-left sm:grid-cols-[1fr_auto] sm:items-center ${
                 selected?.yahooSymbol === item.yahooSymbol
                   ? "bg-blue-400/10"
@@ -222,10 +283,73 @@ export default function AnalysisSourceDiscoveryOperator() {
           ) : null}
 
           {discovery.evidenceExtractionReady && !discovery.researchCoverageReady ? (
-            <div className="mt-4 border border-emerald-400/20 bg-emerald-400/[0.05] p-3 text-xs leading-5 text-emerald-100">
-              Källorna är redo för nästa gate: bounded evidence extraction. Det öppnar fortfarande inte Deep Research automatiskt.
+            <div className="mt-4 border border-emerald-400/20 bg-emerald-400/[0.05] p-4">
+              <p className="text-xs leading-5 text-emerald-100">
+                Källorna är redo för bounded evidence extraction. Det öppnar fortfarande inte Deep Research automatiskt.
+              </p>
+              <button
+                type="button"
+                onClick={() => void extractEvidence()}
+                disabled={extracting}
+                className="mt-3 border border-emerald-300/30 bg-emerald-300/10 px-4 py-2 text-xs font-semibold text-emerald-100 hover:bg-emerald-300/15 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {extracting ? "Läser SEC-filings…" : "Extrahera verifierad evidens"}
+              </button>
             </div>
           ) : null}
+        </div>
+      ) : null}
+
+      {evidence ? (
+        <div className="mt-6 border border-white/10 bg-black/30 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Evidence extraction</div>
+              <div className="mt-1 text-lg font-semibold text-white">
+                {evidence.extraction?.bundle.qualityGate.score ?? 0}/100
+              </div>
+            </div>
+            <div className={`text-sm font-semibold ${evidence.evidenceQualityReady ? "text-emerald-300" : "text-amber-300"}`}>
+              {evidence.evidenceQualityReady ? "Evidence redo för nästa gate" : "Evidence blockerad"}
+            </div>
+          </div>
+
+          <p className="mt-3 text-sm leading-6 text-slate-400">{evidence.message}</p>
+
+          {evidence.extraction?.bundle.qualityGate.blockers?.length ? (
+            <div className="mt-4 border border-amber-400/20 bg-amber-400/[0.05] p-3 text-xs leading-5 text-amber-100">
+              {evidence.extraction.bundle.qualityGate.blockers.map((blocker) => (
+                <div key={blocker}>• {blocker}</div>
+              ))}
+            </div>
+          ) : null}
+
+          {evidence.extraction?.bundle.evidence?.length ? (
+            <div className="mt-4 divide-y divide-white/10 border border-white/10">
+              {evidence.extraction.bundle.evidence.map((item) => {
+                const document = evidence.extraction?.bundle.documents.find((candidate) => candidate.sourceId === item.sourceId);
+                return (
+                  <div key={item.id} className="p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="font-medium text-slate-200">{item.title}</div>
+                      <div className="text-xs text-slate-500">
+                        {item.documentType ?? "SEC"}
+                        {document ? ` · ${formatBytes(document.bytes)}${document.truncated ? " · avkortad" : ""}` : ""}
+                      </div>
+                    </div>
+                    <p className="mt-3 whitespace-pre-wrap text-xs leading-5 text-slate-500">
+                      {(item.documentExcerpt ?? "").slice(0, 700)}
+                      {(item.documentExcerpt?.length ?? 0) > 700 ? "…" : ""}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          ) : null}
+
+          <div className="mt-4 border-t border-white/10 pt-3 text-xs leading-5 text-slate-500">
+            Full Research: {evidence.researchCoverageReady ? "redo" : "fortsatt låst"}. Evidence-gaten bevisar dokumenthämtning och proveniens, inte komplett fundamental Research-täckning.
+          </div>
         </div>
       ) : null}
     </div>
