@@ -3,17 +3,19 @@ import { notFound } from "next/navigation";
 import PublicContentShell from "@/components/layout/PublicContentShell";
 import NewsArticleView from "@/components/news/NewsArticleView";
 import JsonLdScript from "@/components/seo/JsonLd";
+import { learningArticles } from "@/data/learning";
 import { getContentReaderCount } from "@/lib/content-readers/server";
+import { getNewsCategoryLabel } from "@/lib/news/categories";
 import {
   getNewsArticleBySlug,
   getNewsArticlesWithSlug,
 } from "@/lib/news/get-articles";
+import { getRelatedContentForNewsArticle } from "@/lib/news/internal-links";
 import { getCanonicalUrl } from "@/lib/seo/canonical";
 import {
   breadcrumbJsonLd,
   newsArticleJsonLd,
 } from "@/lib/seo/json-ld";
-import { getNewsCategoryLabel } from "@/lib/news/categories";
 
 type Props = {
   params: Promise<{
@@ -93,6 +95,10 @@ export default async function NewsArticlePage({ params }: Props) {
   }
 
   const path = `/news/${article.slug}`;
+  const relatedContent = getRelatedContentForNewsArticle(article, {
+    newsArticles: getNewsArticlesWithSlug(),
+    learningArticles,
+  });
   const uniqueReaders = await getContentReaderCount("news", article.slug);
 
   return (
@@ -119,7 +125,11 @@ export default async function NewsArticlePage({ params }: Props) {
           ]),
         ]}
       />
-      <NewsArticleView article={article} initialUniqueReaders={uniqueReaders} />
+      <NewsArticleView
+        article={article}
+        initialUniqueReaders={uniqueReaders}
+        relatedContent={relatedContent}
+      />
     </PublicContentShell>
   );
 }
