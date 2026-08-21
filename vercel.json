@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npm run lint && npm run typecheck && npm test && npm run test:seo && npm run test:divbrain && npm run test:cursor-bridge && npm run build",
   "git": {
     "deploymentEnabled": {
       "cursor/issue-*": false
