@@ -9,7 +9,7 @@
     "lint": "eslint",
     "test": "tsx --test \"tests/*.test.ts\"",
     "test:seo": "tsx --test \"lib/seo/**/*.test.ts\" \"lib/news/**/*.test.ts\" \"lib/i18n/**/*.test.ts\"",
-    "test:divbrain": "node --import ./tests/shims/register-server-only.mjs --import tsx --test \"lib/divbrain/server/learning/**/*.test.ts\"",
+    "test:divbrain": "node --import ./tests/shims/register-server-only.mjs --import tsx --test \"lib/divbrain/server/learning/context-assembler.test.ts\" \"lib/divbrain/server/learning/intelligence-v1.test.ts\"",
     "test:divbrain:context": "node --import ./tests/shims/register-server-only.mjs --import tsx --test \"lib/divbrain/server/context/**/*.test.ts\"",
     "test:cursor-bridge": "tsx --test \"lib/cursor-bridge/**/*.test.ts\"",
     "test:db": "node --experimental-strip-types --test tests/database/*.db.test.ts",
