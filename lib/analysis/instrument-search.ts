@@ -4,9 +4,15 @@ export type AnalysisInstrumentSearchResult = {
   yahooSymbol: string;
   symbol: string;
   exchange: string;
+  exchangeLabel: string | null;
   name: string;
   kind: AnalysisInstrumentKind;
   currency: string | null;
+  /** True when DivLab can safely send the instrument into methodology preflight. */
+  canPreflight: boolean;
+  /** True only when the current research stack has publication-grade source coverage. */
+  canRunAnalysis: boolean;
+  /** Backward-compatible alias for canRunAnalysis. */
   supported: boolean;
   unsupportedReason: string | null;
 };
@@ -33,6 +39,16 @@ const NORDIC_SUFFIXES = {
   ".HE": "HE",
   ".OL": "OL",
 } as const;
+const US_EXCHANGES = new Set([
+  "NMS",
+  "NGM",
+  "NCM",
+  "NYQ",
+  "ASE",
+  "PCX",
+  "NASDAQ",
+  "NYSE",
+]);
 
 function text(value: unknown): string | null {
   return typeof value === "string" && value.trim() ? value.trim() : null;
@@ -59,6 +75,33 @@ function nordicIdentity(yahooSymbol: string): { symbol: string; exchange: string
   return null;
 }
 
+function globalIdentity(
+  quote: YahooSearchQuote,
+  yahooSymbol: string,
+): { symbol: string; exchange: string; canRunAnalysis: boolean } {
+  const nordic = nordicIdentity(yahooSymbol);
+  if (nordic) {
+    return { ...nordic, canRunAnalysis: true };
+  }
+
+  const providerExchange = text(quote.exchange)?.toUpperCase() ?? "YAHOO";
+  if (US_EXCHANGES.has(providerExchange)) {
+    return {
+      symbol: yahooSymbol,
+      exchange: "US",
+      canRunAnalysis: false,
+    };
+  }
+
+  return {
+    // Keeping Yahoo's exact transport symbol is intentional for markets such as
+    // Tokyo/London/Frankfurt where the suffix is part of provider identity.
+    symbol: yahooSymbol,
+    exchange: providerExchange,
+    canRunAnalysis: false,
+  };
+}
+
 function normalizedName(quote: YahooSearchQuote, yahooSymbol: string): string {
   return text(quote.longname) ?? text(quote.shortname) ?? yahooSymbol;
 }
@@ -67,9 +110,9 @@ function normalizedCurrency(quote: YahooSearchQuote): string | null {
   return text(quote.currency)?.toUpperCase() ?? null;
 }
 
-function unsupportedReasonFor(input: {
+function executionMessage(input: {
   kind: AnalysisInstrumentKind;
-  identity: { symbol: string; exchange: string } | null;
+  canRunAnalysis: boolean;
 }): string | null {
   if (input.kind === "index") {
     return "Index hittas, men DivLabs separata indexmetodik måste vara klar innan index kan publiceras med bolagsmotorns 100/100-grindar.";
@@ -80,8 +123,8 @@ function unsupportedReasonFor(input: {
   if (input.kind !== "equity") {
     return "Instrumenttypen stöds ännu inte av DivLabs publiceringsmotor.";
   }
-  if (!input.identity) {
-    return "Just nu kan nya bolagsanalyser skapas för nordiska aktier på Stockholm, Köpenhamn, Helsingfors och Oslo.";
+  if (!input.canRunAnalysis) {
+    return "Aktien hittades globalt och kan metodik-verifieras, men full analys är låst tills global primärkälle- och webbresearch är inkopplad till 100/100-grindarna.";
   }
   return null;
 }
@@ -98,17 +141,22 @@ export function normalizeYahooSearchQuotes(
     seen.add(yahooSymbol);
 
     const kind = kindFromQuoteType(quote.quoteType);
-    const identity = nordicIdentity(yahooSymbol);
-    const unsupportedReason = unsupportedReasonFor({ kind, identity });
+    const identity = globalIdentity(quote, yahooSymbol);
+    const canPreflight = kind === "equity";
+    const canRunAnalysis = canPreflight && identity.canRunAnalysis;
+    const unsupportedReason = executionMessage({ kind, canRunAnalysis });
 
     output.push({
       yahooSymbol,
-      symbol: identity?.symbol ?? yahooSymbol,
-      exchange: identity?.exchange ?? (text(quote.exchange)?.toUpperCase() ?? "INDEX"),
+      symbol: identity.symbol,
+      exchange: identity.exchange,
+      exchangeLabel: text(quote.exchDisp) ?? text(quote.exchange),
       name: normalizedName(quote, yahooSymbol),
       kind,
       currency: normalizedCurrency(quote),
-      supported: unsupportedReason === null,
+      canPreflight,
+      canRunAnalysis,
+      supported: canRunAnalysis,
       unsupportedReason,
     });
   }
@@ -123,9 +171,12 @@ function omxs30Fallback(query: string): AnalysisInstrumentSearchResult | null {
     yahooSymbol: "^OMX",
     symbol: "^OMX",
     exchange: "INDEX",
+    exchangeLabel: "Stockholm",
     name: "OMX Stockholm 30 Index",
     kind: "index",
     currency: "SEK",
+    canPreflight: false,
+    canRunAnalysis: false,
     supported: false,
     unsupportedReason:
       "OMXS30 hittas korrekt. Index kräver en egen teknisk/makro-metodik och får inte köras genom bolagsmotorns årsrapport- och värderingsgrindar.",
@@ -183,6 +234,43 @@ function yahooSymbolForNordicEquity(symbol: string, exchange: string): string | 
   return suffix ? `${normalizedSymbol}${suffix}` : null;
 }
 
+export async function resolveGlobalEquityAnalysisTarget(input: {
+  yahooSymbol: string;
+  fetchImpl?: typeof fetch;
+}): Promise<{
+  symbol: string;
+  exchange: string;
+  name: string;
+  yahooSymbol: string;
+  currency: string | null;
+  canRunAnalysis: boolean;
+} | null> {
+  const expectedYahooSymbol = input.yahooSymbol.trim().toUpperCase();
+  if (!expectedYahooSymbol) return null;
+
+  const matches = await searchAnalysisInstruments({
+    query: expectedYahooSymbol,
+    fetchImpl: input.fetchImpl,
+    limit: 12,
+  });
+  const exact = matches.find(
+    (candidate) =>
+      candidate.canPreflight &&
+      candidate.kind === "equity" &&
+      candidate.yahooSymbol === expectedYahooSymbol,
+  );
+  if (!exact) return null;
+
+  return {
+    symbol: exact.symbol,
+    exchange: exact.exchange,
+    name: exact.name,
+    yahooSymbol: exact.yahooSymbol,
+    currency: exact.currency,
+    canRunAnalysis: exact.canRunAnalysis,
+  };
+}
+
 export async function resolveNordicEquityAnalysisTarget(input: {
   symbol: string;
   exchange: string;
@@ -196,23 +284,16 @@ export async function resolveNordicEquityAnalysisTarget(input: {
   const expectedYahooSymbol = yahooSymbolForNordicEquity(input.symbol, input.exchange);
   if (!expectedYahooSymbol) return null;
 
-  const matches = await searchAnalysisInstruments({
-    query: expectedYahooSymbol,
+  const resolved = await resolveGlobalEquityAnalysisTarget({
+    yahooSymbol: expectedYahooSymbol,
     fetchImpl: input.fetchImpl,
-    limit: 10,
   });
-  const exact = matches.find(
-    (candidate) =>
-      candidate.supported &&
-      candidate.kind === "equity" &&
-      candidate.yahooSymbol === expectedYahooSymbol,
-  );
-  if (!exact) return null;
+  if (!resolved?.canRunAnalysis) return null;
 
   return {
-    symbol: exact.symbol,
-    exchange: exact.exchange,
-    name: exact.name,
-    yahooSymbol: exact.yahooSymbol,
+    symbol: resolved.symbol,
+    exchange: resolved.exchange,
+    name: resolved.name,
+    yahooSymbol: resolved.yahooSymbol,
   };
 }
