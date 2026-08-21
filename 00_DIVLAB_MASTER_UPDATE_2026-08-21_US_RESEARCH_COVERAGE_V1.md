@@ -160,36 +160,107 @@ The following safety bounds remain unchanged:
 
 A regression test pins the 10 MB bound and verifies that the known 8,585,501-byte MSFT 2026 10-K fits without changing the remaining limits.
 
-## Code/build validation — 2026-08-21
+## Live Yahoo/Vercel runtime correction — 2026-08-21
 
-The bounded 10 MB correction and the complete US Research Coverage v1 slice were revalidated after the live MSFT filing-size check.
+A separate read-only Vercel live-data probe was used to exercise the current product code against real MSFT sources without AI, persistence, publication or production writes.
 
-Validated code head before this documentation-only certification: `6109c21e8d7a52a1be09340f840a07ce33a1ad09`.
+The first probe proved:
 
-Full-quality Preview CI used temporary branch `agent/us-research-coverage-v1-ci` and commit `74d11546356f780be0bac868925e1d72d2d05ad8`; that commit differs from the validated code head only by the validation `buildCommand` in `vercel.json`.
+- target resolution was correct for `MSFT` / `US`;
+- SEC source discovery was ready with one current `10-K` and one current `10-Q`;
+- Global Evidence Extraction reached **100/100** with no blockers;
+- Yahoo chart/history worked with **376 sessions** and explicit `USD` currency;
+- the financial research loader still failed closed as `financial_statements_unavailable` because the existing Yahoo crumb session could not be established in Vercel.
+
+Staged diagnostics then proved the failure occurred before the crumb request: a server-side request to the legacy `https://finance.yahoo.com/` session-home endpoint threw `TypeError` in the Vercel Preview runtime, so no usable cookie could be established.
+
+A separate bounded test of Yahoo's current cookie bootstrap proved that `https://fc.yahoo.com/` behaves correctly for this server-side flow:
+
+- intentional response status: **404**;
+- allowed session cookie returned: **A3**;
+- subsequent Yahoo crumb request: **200**;
+- crumb format: valid.
+
+The production code correction is deliberately narrow and lives only in `lib/analysis/yahoo-financials.ts`:
+
+- the shared `getYahooCrumbSession` contract is unchanged;
+- model-portfolio Yahoo behavior is unchanged;
+- only the exact legacy session-home request inside the DivLab Analys financial loader is rewritten to `https://fc.yahoo.com/`;
+- the actual `quoteSummary` request still uses the original fetch implementation unchanged;
+- no fallback data provider, retry loop or quality-gate relaxation was added.
+
+Regression coverage is locked in `tests/divlab-yahoo-financial-session-contract.test.ts`.
+
+## Live product-code MSFT research proof — 2026-08-21
+
+After the Yahoo correction, the same read-only Vercel live-data probe successfully ran the current product chain through real MSFT data:
+
+- target: `MSFT`, exchange `US`;
+- Global Source Discovery: ready;
+- SEC primary sources: **2** (`10-K` + `10-Q`);
+- Global Evidence quality: **100/100**;
+- evidence blockers/failures: none;
+- Yahoo research loader: **OK**;
+- market/reporting/EPS currency: **USD**;
+- market-history sessions loaded: **376**;
+- technical sessions used by the canonical packet: **320**;
+- normalized historical financial periods: **4**;
+- years covered: **3**;
+- company type: `operating_company`;
+- methodology status: supported;
+- merged canonical source count: **4**;
+- merged primary source count: **2**;
+- merged evidence count: **2**.
+
+The dedicated US Research Coverage gate reached **100/100**, with all nine deterministic checks green:
+
+1. `usOperatingCompanyTarget = true`
+2. `methodologyCoverage = true`
+3. `currentFinancialCoverage = true`
+4. `multiYearFinancialCoverage = true`
+5. `currencyCoverage = true`
+6. `marketAndTechnicalHistoryCoverage = true`
+7. `classificationProvenance = true`
+8. `valuationInputProvenance = true`
+9. `freshPrimaryEvidenceCoverage = true`
+
+The ordinary facts-only Research packet scored **91/100** and remained non-publishable solely because `valuationScenarioCoverage` is deliberately deferred to the later Analyst stage. This is the intended fail-closed behavior and must not be altered by inventing Bear/Base/Bull scenarios during facts loading.
+
+This result is the first real Vercel live-data proof that the existing generalized product code can take MSFT through source discovery -> SEC evidence -> financial/history loading -> canonical packet -> US Research Coverage **100/100**.
+
+It is **not** the formal founder-authenticated endpoint acceptance, because the proof was executed through a separate read-only Vercel probe rather than the signed-in `/api/internal/analysis/us-research-coverage` route. The founder/CEO/admin and Preview-protection boundaries remain intact and were not bypassed.
+
+## Superseding code/build validation — 2026-08-21
+
+The previous 531-test certification remains useful history, but the current Yahoo-corrected code head was fully revalidated.
+
+Validated product-code head: `a350b59c21dad9a4826aaf88268a01a32095771d`.
+
+Full-quality Preview CI used temporary branch `agent/us-research-coverage-v1-ci` and CI commit `2c5f5de678ce3c1dfbb550bd3e63efb85b70a4f5`. The CI-only commit differs from the validated product code only by the temporary full validation `buildCommand` in `vercel.json`.
 
 Results:
 
-- lint: **0 errors**, 3 pre-existing unrelated warnings;
+- lint: **0 errors**, exactly 3 pre-existing unrelated warnings;
 - TypeScript: **green**;
-- core tests: **531/531**;
-- SEO/news/i18n: **49/49**;
-- DivBrain: **518/518**;
-- Cursor bridge: **30/30**;
-- Next.js optimized build: **green**;
+- core tests: **532/532**, 129 suites;
+- SEO/news/i18n step: **passed**;
+- DivBrain: **518/518**, 115 suites;
+- Cursor bridge: **30/30**, 10 suites;
+- optimized Next.js build: **green**;
 - static pages: **101/101** generated;
-- route table includes `/analyses/internal-preview/sources` and `/api/internal/analysis/us-research-coverage`;
-- ordinary PR Preview build: **READY**;
-- separate full-quality validation Preview: **READY**;
+- route table includes `/api/internal/analysis/us-research-coverage`;
+- full-quality Preview validation deployment `dpl_42qbJE8SMBwesUZoSoW4b25o3ovr`: **READY**;
+- ordinary PR Preview for the product-code head: **READY**;
+- final read-only live-data probe deployment `dpl_E39S3w1cETWb9nV4SBApT6rsRE8L`: **READY**;
 - no production deployment, production write, persistence, publication or merge occurred.
 
-The stacked diff from PR #271 contained 10 files at the validated code head. CI configuration remained outside the PR diff.
+The regression suite includes the new Yahoo financial-session bootstrap contract test in addition to the existing Global Evidence and US Research Coverage tests.
 
-This validation certifies code/build/regression behavior only. It does **not** upgrade the real MSFT runtime acceptance below.
+Any documentation-only commits after `a350b59c21dad9a4826aaf88268a01a32095771d` do not change this code-validation result.
 
 ## Real Preview acceptance — not yet claimed
 
-A founder-authenticated Preview run against real `MSFT` must prove the following before this phase can be called runtime-verified:
+A founder-authenticated Preview run against real `MSFT` must still prove the following before this phase can be called formally runtime-verified:
 
 - exact `MSFT` resolves as `US`;
 - real SEC annual + 10-Q discovery remains green;
@@ -200,14 +271,18 @@ A founder-authenticated Preview run against real `MSFT` must prove the following
 - technical history reaches the existing threshold;
 - company classification is `operating_company` with source provenance;
 - deterministic valuation provenance is traceable;
-- US Research Coverage = 100/100, or exact real blockers are recorded;
+- US Research Coverage = 100/100;
 - `analysisExecutionEnabled` remains false regardless of readiness;
 - no persistence/publication occurs.
 
-Do not claim these runtime points until the signed-in Preview endpoint has actually been exercised.
+The separate live-data proof above gives strong evidence that the generalized data chain is now capable of reaching these values, but it does not replace the required signed-in founder endpoint run.
+
+Do not enable global `canRunAnalysis`, do not open production execution and do not claim formal founder acceptance until the actual protected Preview endpoint has been exercised.
 
 ## Next phase after verified 100/100
 
-If and only if the real MSFT Preview reaches US Research Coverage 100/100, the next slice may evaluate **US Preview Deep Research Execution v1**.
+If and only if the real founder-authenticated MSFT Preview endpoint reaches US Research Coverage 100/100, the next slice may evaluate **US Preview Deep Research Execution v1**.
 
-That later slice must remain Preview-only initially and must explicitly decide how one allowlisted US target may enter the existing Analyst/final quality sequence. It must not be folded silently into this readiness PR.
+That later slice must remain Preview-only initially and must explicitly decide how one allowlisted US target may enter the existing Analyst/final quality sequence. It must also preserve the newly locked global product direction: the same canonical engine will ultimately power both **Light Analysis** and **Deep Analysis**, with Deep Analysis carrying the full Research + Analyst + scenario/outlook depth.
+
+It must not be folded silently into this readiness PR.
