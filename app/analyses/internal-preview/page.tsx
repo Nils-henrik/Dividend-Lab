@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import AnalysisPreviewOperator from "@/components/analysis/AnalysisPreviewOperator";
 import PublicContentShell from "@/components/layout/PublicContentShell";
@@ -26,6 +27,12 @@ export default function AnalysisInternalPreviewPage() {
           <p className="mt-5 text-base leading-7 text-slate-400 sm:text-lg sm:leading-8">
             Här kör vi en riktig bolagsanalys genom Deep Research, Analyst, quality gates och DEV-publicering. Sidan finns aldrig i produktion och ingen analys kan passera om research- eller Analyst-kvaliteten faller under publiceringskraven.
           </p>
+          <Link
+            href="/analyses/internal-preview/sources"
+            className="mt-5 inline-flex border border-blue-400/30 bg-blue-400/[0.06] px-4 py-2 text-sm font-semibold text-blue-200 hover:bg-blue-400/[0.1]"
+          >
+            Öppna Global Source Discovery →
+          </Link>
         </div>
 
         <div className="mt-9">
