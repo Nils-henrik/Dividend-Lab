@@ -12,7 +12,7 @@ describe("Global Evidence transport contract", () => {
 
     assert.match(extraction, /MAX_FETCH_ATTEMPTS_PER_DOCUMENT = 2/);
     assert.match(extraction, /TRANSIENT_RETRY_DELAY_MS = 750/);
-    assert.match(extraction, /status === 403/);
+    assert.doesNotMatch(extraction, /status === 403/);
     assert.match(extraction, /status === 408/);
     assert.match(extraction, /status === 425/);
     assert.match(extraction, /status === 429/);
