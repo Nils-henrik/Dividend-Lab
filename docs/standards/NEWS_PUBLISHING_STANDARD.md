@@ -1,7 +1,7 @@
 # DivLab News Publishing Standard
 
 Status: Active
-Version: 1.1
+Version: 1.2
 
 This standard applies to editorial publication on `https://divlab.se/news`.
 
@@ -49,3 +49,32 @@ For each new article:
 - never add a link only to satisfy a link-count target
 
 The automated related-content block is deliberately fail-closed. It may use existing SEO metadata and explicit editorial signals, but weak generic relationships must produce no link rather than an irrelevant fallback. Existing published article bodies must not be rewritten automatically to insert links.
+
+### Internal Linking v1 production status
+
+**Completed and live in production on 2026-08-21 via PR #264.**
+
+Internal Linking v1 is now part of DivLab's production baseline. The related-content engine and article block must be treated as an ongoing editorial capability, not as a one-time implementation task.
+
+The production implementation:
+
+- renders crawlable server-side internal links on News article pages when relevance is strong enough
+- can connect News to other News articles and relevant Learning content
+- rejects weak, duplicate, invalid and self-referential relationships
+- keeps existing article URLs, canonical metadata, sitemap behavior and published article bodies unchanged
+- uses a responsive related-content layout that remains part of the standard article experience
+
+### Ongoing internal-linking workflow
+
+Internal linking must continue as DivLab publishes new material.
+
+For future editorial work:
+
+- consider relevant internal links as part of every new article before publication is considered complete
+- add descriptive contextual links inside the article when an existing DivLab page directly improves the reader's understanding
+- add or strengthen `internalLinking` metadata when company, ticker, topic, report, market or Learning relationships are important but not obvious from generic metadata
+- verify the rendered `Relaterat på DivLab` block after publication and confirm that every surfaced destination is published and relevant
+- when a new article materially continues, supersedes or deepens an older article, create the relationship deliberately when useful so the internal graph improves over time
+- revisit strategically important evergreen or high-traffic articles when new relevant DivLab content is published, but make those body-link changes editorially rather than through automatic rewrites
+
+The goal is a growing, accurate internal content graph where readers and search engines can move naturally between related DivLab material without overlinking or artificial SEO patterns.
