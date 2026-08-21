@@ -47,7 +47,7 @@ export type GlobalEvidenceExtractionResult = {
 };
 
 function isRetryableHttpStatus(status: number): boolean {
-  return status === 403 || status === 408 || status === 425 || status === 429 || status >= 500;
+  return status === 408 || status === 425 || status === 429 || status >= 500;
 }
 
 async function waitBeforeRetry(attempt: number): Promise<void> {
