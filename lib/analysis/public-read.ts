@@ -45,9 +45,12 @@ async function loadPublishedAnalysisBySlug(slug: string): Promise<PublishedAnyDi
 
   if (content.schema_version === DIVLAB_ANALYST_SCHEMA_VERSION && content.analyst_quality_gate_version === DIVLAB_ANALYST_QUALITY_GATE_VERSION) {
     let packet: DivLabResearchPacket; try { packet = buildVersionedResearchPacketFromRow({ row: version }).packet; } catch { return null; }
-    const parsed = divLabAnalystDraftSchema.safeParse(content.analyst_draft); if (!parsed.success) return null;
-    const analystQualityGate = evaluateAnalystContentQuality({ packet, draft: parsed.data }); if (!analystQualityGate.publishable || analystQualityGate.score !== 100) return null;
-    return { ...base, kind: "operating_company", packet, draft: parsed.data, analystQualityGate };
+    if (packet.chart.version !== "analysis-chart-v1") return null;
+    let draft: DivLabAnalystDraft; try { draft = divLabAnalystDraftSchema.parse(content.analyst_draft); } catch { return null; }
+    const analystQualityGate = evaluateAnalystContentQuality({ packet, draft });
+    if (!analystQualityGate.publishable) return null;
+    if (analystQualityGate.score !== 100) return null;
+    return { ...base, kind: "operating_company", packet, draft, analystQualityGate };
   }
   if (content.schema_version === DIVLAB_BANK_ANALYST_SCHEMA_VERSION && content.analyst_quality_gate_version === DIVLAB_BANK_ANALYST_QUALITY_GATE_VERSION && validImmutablePacket(version.research_packet, "deep-research-v3-bank")) {
     const packet = version.research_packet as unknown as DivLabBankResearchPacket; const parsed = divLabBankAnalystDraftSchema.safeParse(content.analyst_draft);
