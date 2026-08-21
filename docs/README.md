@@ -104,7 +104,7 @@ Current standards:
 - Code Review Standard v1.0
 - Learning Cover Standard
 - News Cover Standard
-- News Publishing Standard v1.1
+- News Publishing Standard v1.2
 
 ---
 
