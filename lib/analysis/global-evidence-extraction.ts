@@ -11,7 +11,10 @@ import {
 } from "./global-evidence-contract";
 import type { GlobalPrimarySource } from "./global-primary-source-contract";
 
-const USER_AGENT = "DivLab/1.0 (+https://divlab.se/contact) global-evidence-extraction";
+// SEC Fair Access asks automated clients to identify the organization and a
+// monitored contact address. Keep this explicit in the filing-fetch path so
+// SEC does not have to classify DivLab as an undeclared automated tool.
+const USER_AGENT = "DivLab kontakt@divlab.se";
 const MAX_FETCH_ATTEMPTS_PER_DOCUMENT = 2;
 const TRANSIENT_RETRY_DELAY_MS = 750;
 
@@ -124,6 +127,7 @@ async function fetchOneSecFilingAttempt(input: {
         signal: controller.signal,
         headers: {
           Accept: "text/html,application/xhtml+xml,text/plain,application/xml,text/xml;q=0.9,*/*;q=0.1",
+          "Accept-Encoding": "gzip, deflate",
           "User-Agent": USER_AGENT,
         },
       });
