@@ -133,6 +133,33 @@ Tests must prove at minimum:
 - route cannot call AI, persist or publish;
 - facts packet is built with an empty scenario list, not invented assumptions.
 
+## Live MSFT source-compatibility correction — 2026-08-21
+
+Before the founder-authenticated Preview acceptance, the current canonical SEC filings were independently checked against the hard fetch bounds.
+
+Verified SEC filing sizes:
+
+- Microsoft FY2026 `10-K`, filed 2026-07-29: primary HTML document `msft-20260630.htm` = **8,585,501 bytes**.
+- Microsoft Q3 FY2026 `10-Q`, filed 2026-04-29: primary HTML document `msft-20260331.htm` = **7,731,948 bytes**.
+
+The Global Evidence Extraction v1 byte cap of `8_000_000` would therefore correctly fail closed on the real current MSFT 10-K as `oversized`, even though the canonical filing is otherwise valid.
+
+US Research Coverage v1 adjusts only the hard document byte cap to `10_000_000` so the verified MSFT filing can be read. This is a bounded transport-capacity correction, not a quality-gate relaxation.
+
+The following safety bounds remain unchanged:
+
+- maximum 2 SEC documents;
+- exact SEC archive host/path allowlist;
+- sequential fetching;
+- 12-second timeout;
+- maximum 1 redirect, revalidated against the same allowlist;
+- text-like SEC content types only;
+- extracted evidence still capped at 12,000 characters;
+- minimum meaningful evidence text remains 800 characters;
+- Evidence quality must still reach 100/100.
+
+A regression test pins the 10 MB bound and verifies that the known 8,585,501-byte MSFT 2026 10-K fits without changing the remaining limits.
+
 ## Real Preview acceptance — not yet claimed
 
 A founder-authenticated Preview run against real `MSFT` must prove the following before this phase can be called runtime-verified:
