@@ -1,5 +1,10 @@
 import "server-only";
 
+import {
+  buildPortfolioDeepResearchDispatchPlan,
+  type PortfolioDeepResearchDispatchPlan,
+  type PortfolioDeepResearchManagerSelection,
+} from "@/lib/analysis/portfolio-deep-research-dispatch";
 import { createModelPortfolioAdminClient } from "../admin";
 import { aggregatePortfolioAiUsage, type ModelPortfolioAiUsage, type ModelPortfolioBatchAiUsage } from "./ai-usage";
 import { buildDecisionAuditRow, persistDecisionAuditBatch, type DecisionAuditRow } from "./decision-audit";
@@ -68,6 +73,12 @@ export type DryRunOrchestrationResult = {
   researchSummary: string;
   eodhdBudget: EodhdCallBudgetSnapshot;
   candidates: ResearchCandidateDiagnostic[];
+  /**
+   * Strategy-specific, whole-share/risk-eligible Deep Research trigger plan.
+   * Planning is automatic; execution is deliberately separate and cannot alter
+   * this run's already-generated portfolio decisions.
+   */
+  deepResearchDispatch: PortfolioDeepResearchDispatchPlan;
   portfolios: Array<{
     id: string;
     slug: string;
@@ -458,6 +469,7 @@ export async function runAllModelPortfoliosDryRun(
 
   const portfolioResults: DryRunOrchestrationResult["portfolios"] = [];
   const auditRows: DecisionAuditRow[] = [];
+  const deepResearchManagerSelections: PortfolioDeepResearchManagerSelection[] = [];
   let spentTodayUsdMicros = 0;
 
   for (const portfolio of portfolios) {
@@ -492,6 +504,16 @@ export async function runAllModelPortfoliosDryRun(
     const summarySnapshot = assembled.snapshot.filter((candidate) =>
       snapshotKeys.has(instrumentKey(candidate.symbol, candidate.exchange)),
     );
+
+    // Automatic shortlist -> Deep Research trigger planning. Only candidates
+    // that survived the normal manager attention + whole-share/risk eligibility
+    // path are included. The dispatch plan is persisted with this run's source
+    // snapshot, but expensive execution remains a separate controlled phase.
+    deepResearchManagerSelections.push({
+      strategyKey: portfolio.strategy_key,
+      candidates: summarySnapshot,
+    });
+
     const portfolioResearchSummary = buildPortfolioResearchSummary({
       pass: researchPass,
       strategyKey: portfolio.strategy_key,
@@ -566,6 +588,14 @@ export async function runAllModelPortfoliosDryRun(
       }));
     }
   }
+
+  const deepResearchDispatch = buildPortfolioDeepResearchDispatchPlan({
+    runKey: audit?.runId ?? `adhoc:${researchPass}:${now.toISOString()}`,
+    asOf: now.toISOString(),
+    researchPass,
+    managerSelections: deepResearchManagerSelections,
+    names: research.names,
+  });
 
   let auditPersisted = false;
   if (audit) {
@@ -689,6 +719,7 @@ export async function runAllModelPortfoliosDryRun(
     researchSummary: research.summary,
     eodhdBudget: research.eodhdBudget,
     candidates: research.diagnostics,
+    deepResearchDispatch,
     portfolios: portfolioResults,
     totalEstimatedAiCostUsdMicros: spentTodayUsdMicros,
     aiUsage,

@@ -25,7 +25,14 @@ export type ModelPortfolioDecision = z.infer<typeof modelPortfolioDecisionSchema
 
 export type ModelPortfolioEvidence = {
   id: string;
-  kind: "market_data" | "company_report" | "company_release" | "regulatory" | "news" | "macro";
+  kind:
+    | "market_data"
+    | "company_report"
+    | "company_release"
+    | "regulatory"
+    | "news"
+    | "macro"
+    | "deep_research";
   publisher: string;
   publishedAt: string;
   verifiedAt: string;
