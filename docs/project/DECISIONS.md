@@ -38,7 +38,7 @@ Documentation grew organically at the `docs/` root. Multiple documents overlappe
 
 Reorganize documentation into four responsibilities:
 
-- `project/` — what Dividend Lab is and where it is going
+- `project/` — what Dividend Lab is and where the product is going
 - `design/` — how it should feel and look
 - `standards/` — how it should be built and reviewed
 - `ai/` — how AI-assisted development and Dividend Brain should behave
@@ -180,10 +180,19 @@ Introduce a deterministic, fail-closed internal-linking layer for Börsnyheter.
 - Existing article URLs, canonical metadata, sitemap behavior and article bodies remain unchanged.
 - Contextual links inside article prose continue to use the existing internal rich-text link syntax when editors deliberately add them.
 
+### Implementation status
+
+Completed and deployed to production on 2026-08-21 through PR #264.
+
+The production release verified that the related-content block is server-rendered, crawlable and can connect News articles to both relevant News and Learning pages without changing existing URLs or canonical behavior. Internal Linking v1 is therefore considered delivered and is now part of the normal DivLab editorial baseline.
+
 ### Consequences
 
 - New articles can participate without requiring new mandatory fields.
 - Editors can strengthen important relationships without changing the relevance engine.
+- Internal-link consideration is now a standing requirement in future News publishing work, not a one-time implementation task.
+- New relevant content should strengthen the existing internal graph over time through contextual links and deliberate `internalLinking` metadata where useful.
 - Invalid, duplicate and self-referential related slugs must never surface to readers.
 - Relevance changes require deterministic tests, including guardrails against generic period/category matches such as unrelated Q2 articles.
+- Existing published article bodies must not be rewritten automatically to manufacture links; retroactive body links remain an editorial action.
 - The same approach may later expand to other published DivLab surfaces, but only through explicit product work rather than broad automatic rewriting.
