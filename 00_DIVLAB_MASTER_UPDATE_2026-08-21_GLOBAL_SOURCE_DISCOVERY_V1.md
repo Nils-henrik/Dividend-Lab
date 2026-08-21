@@ -53,11 +53,12 @@ For an exact US ticker, DivLab shall:
 3. fetch the company's official submissions JSON;
 4. identify at most the latest usable annual filing and latest usable interim filing;
 5. accept annual forms only from the allowlist `10-K`, `10-K/A`, `20-F`, `20-F/A`, `40-F`, `40-F/A`;
-6. accept interim forms only from the allowlist `10-Q`, `10-Q/A`, `6-K`, `6-K/A`;
-7. construct filing URLs only from numeric SEC accession identifiers and safe primary-document filenames;
-8. preserve filing form, filing date, publisher and verification timestamp;
-9. mark those SEC filing documents as primary sources;
-10. never infer financial facts from filing metadata alone.
+6. accept interim forms only from the allowlist `10-Q`, `10-Q/A`;
+7. treat `6-K` / `6-K/A` as unclassified current foreign-issuer filings until document-level evidence extraction verifies that a specific filing is genuinely an interim financial report;
+8. construct filing URLs only from exact SEC accession identifiers and safe primary-document filenames;
+9. preserve filing form, filing date, publisher and verification timestamp;
+10. mark only the classified SEC filing documents as primary sources;
+11. never infer financial facts from filing metadata alone.
 
 A valid annual + interim pair makes the source set ready for the **next evidence-extraction gate**, not for Deep Research itself.
 
@@ -115,7 +116,8 @@ Global source discovery must:
 - use HTTPS only;
 - reject credential-bearing URLs;
 - derive SEC archive paths only from allowlisted metadata shapes;
-- reject path traversal and unsafe primary-document names;
+- require the standard SEC accession shape `##########-##-######` before an archive URL is constructed;
+- reject path traversal, consecutive-dot traversal attempts and unsafe primary-document names;
 - use exact ticker matching for SEC CIK resolution;
 - keep the SEC discovery pass bounded to the ticker directory plus one submissions request for a US target;
 - fail to an empty/unavailable result on network, parsing or identity errors;
@@ -149,13 +151,14 @@ This slice may leave ACTIVE_PR only after:
 4. production build passes;
 5. SEC ticker matching is exact and deterministic;
 6. SEC filing extraction accepts only allowlisted annual/interim forms;
-7. unsafe accession/document paths fail closed;
-8. a mocked US company reaches `verified_primary` only with annual + interim filing coverage;
-9. a non-US market without a regulator adapter remains locked;
-10. Preview endpoint remains founder/CEO/admin + Preview-only;
-11. Preview UI clearly separates source readiness from full Research readiness;
-12. existing Nordic analysis execution remains unchanged;
-13. no production write/deployment occurs during validation.
+7. generic `6-K` filings do not satisfy interim coverage before document-level classification;
+8. unsafe accession/document paths fail closed;
+9. a deterministic US fixture reaches `verified_primary` only with annual + interim filing coverage;
+10. a non-US market without a regulator adapter remains locked;
+11. Preview endpoint remains founder/CEO/admin + Preview-only;
+12. Preview UI clearly separates source readiness from full Research readiness;
+13. existing Nordic analysis execution remains unchanged;
+14. no production write/deployment occurs during validation.
 
 ## Real Preview acceptance targets
 
@@ -175,6 +178,7 @@ Build **Global Evidence Extraction v1** on top of verified source discovery:
 - map filing excerpts into the existing `AnalysisEvidence` model;
 - preserve source IDs and filing provenance end-to-end;
 - verify financial period/document type;
+- classify foreign-issuer `6-K` content only after reading the filing rather than from form metadata alone;
 - run deterministic source/evidence quality checks;
 - only then consider enabling the existing Deep Research engine for a US operating-company Preview target.
 
