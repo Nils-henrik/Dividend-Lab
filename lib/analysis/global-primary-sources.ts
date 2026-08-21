@@ -20,7 +20,7 @@ export type {
 const SEC_TICKER_ENDPOINT = "https://www.sec.gov/files/company_tickers.json";
 const SEC_SUBMISSIONS_ENDPOINT = "https://data.sec.gov/submissions";
 const YAHOO_SUMMARY_ENDPOINT = "https://query1.finance.yahoo.com/v10/finance/quoteSummary";
-const SEC_USER_AGENT = "DivLab/1.0 (+https://divlab.se/contact)";
+const SEC_USER_AGENT = "DivLab kontakt@divlab.se";
 const YAHOO_USER_AGENT =
   "Mozilla/5.0 (compatible; DivLab/1.0; +https://divlab.se) AppleWebKit/537.36 Chrome/124.0.0.0 Safari/537.36";
 
@@ -132,7 +132,11 @@ async function fetchUsSecSources(input: {
 }): Promise<{ companyName: string | null; sources: GlobalPrimarySource[] }> {
   try {
     const tickerResponse = await input.fetchImpl(SEC_TICKER_ENDPOINT, {
-      headers: { Accept: "application/json", "User-Agent": SEC_USER_AGENT },
+      headers: {
+        Accept: "application/json",
+        "Accept-Encoding": "gzip, deflate",
+        "User-Agent": SEC_USER_AGENT,
+      },
       next: { revalidate: 86_400 },
     });
     if (!tickerResponse.ok) return { companyName: null, sources: [] };
@@ -143,7 +147,11 @@ async function fetchUsSecSources(input: {
     const submissionsResponse = await input.fetchImpl(
       `${SEC_SUBMISSIONS_ENDPOINT}/CIK${cik10(directory.cik)}.json`,
       {
-        headers: { Accept: "application/json", "User-Agent": SEC_USER_AGENT },
+        headers: {
+          Accept: "application/json",
+          "Accept-Encoding": "gzip, deflate",
+          "User-Agent": SEC_USER_AGENT,
+        },
         next: { revalidate: 3_600 },
       },
     );
