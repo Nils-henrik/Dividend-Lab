@@ -9,7 +9,9 @@ export const GLOBAL_EVIDENCE_EXTRACTION_VERSION = "global-evidence-extraction-v1
 
 export const GLOBAL_EVIDENCE_BOUNDS = {
   maxDocuments: 2,
-  maxDocumentBytes: 8_000_000,
+  // Modern inline-XBRL filings can exceed 8 MB. Keep a hard 10 MB byte cap;
+  // extracted evidence remains independently capped at 12,000 characters.
+  maxDocumentBytes: 10_000_000,
   maxTextChars: 12_000,
   minMeaningfulTextChars: 800,
   timeoutMs: 12_000,
