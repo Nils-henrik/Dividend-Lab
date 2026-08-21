@@ -1,4 +1,5 @@
 import type { NewsArticle } from "@/types/news";
+import { NORDEN_I_CENTRUM_21_AUGUSTI_2026_ARTICLE } from "@/data/news-articles/norden-i-centrum-21-augusti-2026";
 import { HUFVUDSTADEN_TOPPLAGEN_VINNER_NAR_VARDENA_VANDER_20_AUGUSTI_2026_ARTICLE } from "@/data/news-articles/hufvudstaden-topplagen-vinner-nar-vardena-vander-20-augusti-2026";
 import { BORSSVERIGE_LUNCH_20_AUGUSTI_2026_ARTICLE } from "@/data/news-articles/borssverige-lunch-20-augusti-2026";
 import { BORSSVERIGE_HOLMEN_RIKSBANKEN_20_AUGUSTI_2026_ARTICLE } from "@/data/news-articles/borssverige-holmen-riksbanken-20-augusti-2026";
@@ -56,6 +57,7 @@ import { applyNewsSearchSeo } from "@/lib/seo/editorial-content";
  * Image assets currently live under /public/news-demo/ for historical path stability.
  */
 const PUBLISHED_NEWS_ARTICLES: NewsArticle[] = [
+  NORDEN_I_CENTRUM_21_AUGUSTI_2026_ARTICLE,
   HUFVUDSTADEN_TOPPLAGEN_VINNER_NAR_VARDENA_VANDER_20_AUGUSTI_2026_ARTICLE,
   BORSSVERIGE_LUNCH_20_AUGUSTI_2026_ARTICLE,
   BORSSVERIGE_HOLMEN_RIKSBANKEN_20_AUGUSTI_2026_ARTICLE,
