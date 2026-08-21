@@ -90,11 +90,20 @@ export async function GET(request: Request) {
     sources: discovery.sources,
   });
   if (!extraction.bundle.qualityGate.ready) {
+    const failureReasons = [...new Set(extraction.failures.map((failure) => failure.reason))];
+    const transportSuffix = failureReasons.length
+      ? ` Transportfel: ${failureReasons.join(", ")}.`
+      : "";
     return failed(
       "evidence_quality_failed",
-      "SEC-evidensen nådde inte 100/100. Research Coverage förblir låst.",
+      `SEC-evidensen nådde inte 100/100. Research Coverage förblir låst.${transportSuffix}`,
       422,
-      { target: resolved, discovery, evidenceQualityGate: extraction.bundle.qualityGate },
+      {
+        target: resolved,
+        discovery,
+        evidenceQualityGate: extraction.bundle.qualityGate,
+        evidenceFailures: extraction.failures,
+      },
     );
   }
 
