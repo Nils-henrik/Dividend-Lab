@@ -156,3 +156,34 @@ Composition is centralized in `createEventCore()` with `runtime.ts` exporting th
 - Database-backed repositories implement `EventRepositoryContract` without service changes
 - Dividend Brain consumes `CompanyEvent` directly — no additional transformation layer
 - `data/calendar.ts` is deprecated; calendar data flows through Event Core services
+
+---
+
+## ADR-006: Editorial Internal Linking v1
+
+Date: 2026-08-21
+Status: Accepted
+
+### Context
+
+DivLab News and Learning now contain enough published material that articles can strengthen discovery, reader navigation and topical structure by linking to other genuinely relevant DivLab pages. The feature must not require URL migrations, database changes or automated rewriting of published article bodies.
+
+### Decision
+
+Introduce a deterministic, fail-closed internal-linking layer for Börsnyheter.
+
+- Related links are computed in `lib/news/internal-links.ts` from existing published News and Learning metadata.
+- Existing SEO metadata can provide relevance signals immediately; news articles may additionally provide optional editorial `internalLinking` metadata for topics, companies, tickers and explicit related slugs.
+- Explicit editorial relationships outrank automatic matches.
+- Weak or generic matches are rejected. There is no fallback to arbitrary recent content.
+- The article page renders at most a small bounded set of crawlable Next.js links through the shared related-content component.
+- Existing article URLs, canonical metadata, sitemap behavior and article bodies remain unchanged.
+- Contextual links inside article prose continue to use the existing internal rich-text link syntax when editors deliberately add them.
+
+### Consequences
+
+- New articles can participate without requiring new mandatory fields.
+- Editors can strengthen important relationships without changing the relevance engine.
+- Invalid, duplicate and self-referential related slugs must never surface to readers.
+- Relevance changes require deterministic tests, including guardrails against generic period/category matches such as unrelated Q2 articles.
+- The same approach may later expand to other published DivLab surfaces, but only through explicit product work rather than broad automatic rewriting.

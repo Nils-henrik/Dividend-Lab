@@ -20,7 +20,7 @@ New contributors should read these documents first:
 For DivLab News work, contributors must also read:
 
 - `standards/NEWS_COVER_STANDARD.md` - mandatory cover-image visibility and cropping rules.
-- `standards/NEWS_PUBLISHING_STANDARD.md` - mandatory publication workflow, including X distribution.
+- `standards/NEWS_PUBLISHING_STANDARD.md` - mandatory publication workflow, including internal linking and X distribution.
 
 After reading these, contributors should understand the product, the design language and the engineering standards well enough to make safe changes.
 
@@ -104,7 +104,7 @@ Current standards:
 - Code Review Standard v1.0
 - Learning Cover Standard
 - News Cover Standard
-- News Publishing Standard v1.0
+- News Publishing Standard v1.1
 
 ---
 
@@ -123,7 +123,7 @@ Every implementation should be checked against:
 Every DivLab News publication should additionally be checked against:
 
 - cover requirements in `standards/NEWS_COVER_STANDARD.md`
-- publication and X distribution requirements in `standards/NEWS_PUBLISHING_STANDARD.md`
+- publication, internal-linking and X distribution requirements in `standards/NEWS_PUBLISHING_STANDARD.md`
 
 When standards conflict, prefer the document with the most specific ownership. For example, UI motion questions belong to `standards/UI_UX_STANDARD.md` and `design/DESIGN_SYSTEM.md`; folder ownership questions belong to `standards/ARCHITECTURE_STANDARD.md`.
 

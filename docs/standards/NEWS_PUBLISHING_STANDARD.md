@@ -1,7 +1,7 @@
 # DivLab News Publishing Standard
 
 Status: Active
-Version: 1.0
+Version: 1.1
 
 This standard applies to editorial publication on `https://divlab.se/news`.
 
@@ -23,7 +23,8 @@ Publishing the article on DivLab without completing the X distribution step mean
 1. Publish and verify the article on `https://divlab.se/news`.
 2. Verify that the article URL, metadata and cover image are correct.
 3. Verify the cover according to `NEWS_COVER_STANDARD.md`.
-4. Publish the article on DivLab's official X account with the DivLab article link.
+4. Verify that relevant internal DivLab links resolve to published pages and that no forced or misleading relationship was introduced.
+5. Publish the article on DivLab's official X account with the DivLab article link.
 
 ## 3. Visual requirement for social distribution
 
@@ -34,3 +35,17 @@ Do not use a cropped or altered social version where the headline or DivLab logo
 ## 4. Editorial integrity
 
 X is a distribution channel for DivLab journalism, not a separate source of claims. The social post must remain faithful to the published article and should drive readers back to the full article on DivLab.
+
+## 5. Internal linking
+
+Internal links are part of the normal DivLab editorial workflow when they genuinely help the reader understand or continue exploring the subject.
+
+For each new article:
+
+- use contextual internal links in the prose when a published DivLab page is directly relevant; the existing `[beskrivande länktext](/intern/sökväg)` syntax should be used rather than generic labels such as "Läs mer"
+- use optional `internalLinking` metadata when the article has important company, ticker, topic or explicit News/Learning relationships that should be understood by the related-content engine
+- prefer links to the most specific useful DivLab page rather than adding many loosely related links
+- never invent a slug or link to unpublished content
+- never add a link only to satisfy a link-count target
+
+The automated related-content block is deliberately fail-closed. It may use existing SEO metadata and explicit editorial signals, but weak generic relationships must produce no link rather than an irrelevant fallback. Existing published article bodies must not be rewritten automatically to insert links.
