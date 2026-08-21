@@ -33,6 +33,12 @@ function safeFailure(stage: string, reason: string, extra: Record<string, unknow
   return noStore(NextResponse.json({ status: `${stage}_failed`, stage, reason, ...extra }, { status: 422 }));
 }
 
+function failedCheckNames(checks: Record<string, boolean>): string[] {
+  return Object.entries(checks)
+    .filter(([, passed]) => !passed)
+    .map(([name]) => name);
+}
+
 export async function POST(request: Request) {
   if (process.env.VERCEL_ENV?.trim().toLowerCase() !== "preview") return new NextResponse(null, { status: 404 });
   const body = (await request.json().catch(() => ({}))) as Body;
@@ -99,15 +105,21 @@ export async function POST(request: Request) {
           researchQuality: result.finalPacket.qualityGate.score,
           analystQuality: result.analystQualityGate.score,
           blockers: result.analystQualityGate.blockers,
+          failedChecks: failedCheckNames(result.analystQualityGate.checks),
           researchBlockers: result.finalPacket.qualityGate.blockers,
+          researchFailedChecks: failedCheckNames(result.finalPacket.qualityGate.checks),
         });
       }
       if (!result.finalPacket.qualityGate.publishable) {
-        return safeFailure("research_quality", "research_quality_gate_failed", {
+        return noStore(NextResponse.json({
+          status: "research_quality_failed",
+          stage: "research_quality",
+          reason: "research_quality_gate_failed",
           researchQuality: result.finalPacket.qualityGate.score,
           analystQuality: result.analystQualityGate.score,
           researchBlockers: result.finalPacket.qualityGate.blockers,
-        });
+          researchFailedChecks: failedCheckNames(result.finalPacket.qualityGate.checks),
+        }, { status: 422 }));
       }
       let publication = null;
       let persistence = result.persistence;
