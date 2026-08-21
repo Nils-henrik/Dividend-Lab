@@ -1,0 +1,36 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import { describe, it } from "node:test";
+
+async function source(path: string): Promise<string> {
+  return readFile(new URL(`../${path}`, import.meta.url), "utf8");
+}
+
+describe("Global Evidence transport contract", () => {
+  it("keeps SEC retries bounded and transient-only", async () => {
+    const extraction = await source("lib/analysis/global-evidence-extraction.ts");
+
+    assert.match(extraction, /MAX_FETCH_ATTEMPTS_PER_DOCUMENT = 2/);
+    assert.match(extraction, /TRANSIENT_RETRY_DELAY_MS = 750/);
+    assert.match(extraction, /status === 403/);
+    assert.match(extraction, /status === 408/);
+    assert.match(extraction, /status === 425/);
+    assert.match(extraction, /status === 429/);
+    assert.match(extraction, /status >= 500/);
+    assert.match(extraction, /retryable: false/);
+    assert.match(extraction, /retryable: true/);
+    assert.match(extraction, /if \(!result\.retryable \|\| attempt >= MAX_FETCH_ATTEMPTS_PER_DOCUMENT\)/);
+    assert.match(extraction, /\.slice\(0, GLOBAL_EVIDENCE_BOUNDS\.maxDocuments\)/);
+  });
+
+  it("keeps the Research Coverage endpoint fail-closed while exposing transport diagnostics", async () => {
+    const route = await source("app/api/internal/analysis/us-research-coverage/route.ts");
+
+    assert.match(route, /if \(!extraction\.bundle\.qualityGate\.ready\)/);
+    assert.match(route, /evidenceFailures: extraction\.failures/);
+    assert.match(route, /Transportfel:/);
+    assert.match(route, /analysisExecutionEnabled:\s*false/);
+    assert.doesNotMatch(route, /createDivLabAiAnalysis/);
+    assert.doesNotMatch(route, /persistDivLabAnalysis/);
+  });
+});
