@@ -1,7 +1,7 @@
 # DIVLAB MASTER UPDATE — Analysis Monster Patches v1
 
 Datum: 2026-08-22
-Status: ACTIVE_PATCH_PHASE
+Status: ACTIVE_PATCH_RETRY
 Branch: `agent/analysis-monster-patches-v1`
 Parent observation: `agent/analysis-monster-coverage-pass-v1` / PR #277
 Frozen benchmark: commit `1db2a373d0db650c4fbee5d9d64a820fb0a1a1e5`
@@ -37,9 +37,20 @@ Patchfasen får endast reparera konkreta luckor som observerades i det frysta 27
 
 ## Vercel-disciplin
 
-Vercel är runtime/release-verifiering, inte vanlig edit-test-loop. Denna patch samlas därför i ett enda Git-träd/commit innan branch-refen flyttas. Det ska utlösa en enda motiverad Preview-build för hela patchklustret. Små diagnostik-, regex- eller loggändringar ska inte pushas var för sig.
+Vercel är runtime/release-verifiering, inte vanlig edit-test-loop. Patchar ska samlas i ett Git-träd/commit innan branch-refen flyttas. Små diagnostik-, regex- eller loggändringar ska inte pushas var för sig.
 
 Första Preview-verifieringen ska köra ordinarie lint/typecheck/core/SEO/DivBrain/Cursor/build samt den befintliga fokuserade patchdiagnostiken för SEB, Investor, EQT, XOM och Avanza. Den fulla 27-måls-monsterkörningen återaktiveras först när patchklustret är grönt eller när återstående blockers är exakt dokumenterade.
+
+## Preview-verifiering 1 — stoppad av stale testkontrakt
+
+Commit `b805eec99e7a87d1947cf8624ee0df861d47972e` gav Preview deployment `dpl_GJvBYSB4VfuKgbuTNrCpEtLQcKRZ`.
+
+- Lint och TypeScript passerade fram till core-testfasen.
+- Core: 556 av 557 tester passerade.
+- Enda felet var `tests/divlab-qualitative-primary-research-contract.test.ts`, som fortfarande krävde den gamla implementationens exakta rad `symbol: annualDiscoverySymbol(input.symbol)`.
+- Den nya implementationen reserverar samma 3 current + 2 annual budget via `annualDiscoverySeeds(...)` och en request per seed. Testets gamla implementation-detalj är därför stale; själva budget-/säkerhetskontraktet ska uppdateras, inte quality gate eller produktlogik.
+- Eftersom buildkedjan stoppade i core-test kördes varken SEO/DivBrain/Cursor/build eller fokuserad live-diagnostik i denna deployment. Inga slutsatser om SEB/Investor/EQT/XOM readiness får därför markeras som verifierade ännu.
+- Nästa push får endast innehålla den samlade kontraktstestkorrigeringen (och andra fel från samma körning om sådana fanns). Denna körning visade inga andra testfel.
 
 ## Success criteria för första patchklustret
 
@@ -54,4 +65,4 @@ Första Preview-verifieringen ska köra ordinarie lint/typecheck/core/SEO/DivBra
 
 ## Nästa beslutspunkt
 
-Efter den samlade Preview-diagnostiken klassas varje mål som READY, kvarvarande P1 eller INFO. Först därefter görs nästa samlade patch eller den fulla 27-måls regressionen. Observationer får inte skrivas om i efterhand för att få ett bättre resultat.
+Kör en samlad Preview-retry efter stale testkontraktet. Om hela byggkedjan och fokuserad diagnostik passerar klassas varje mål som READY, kvarvarande P1 eller INFO. Först därefter görs nästa samlade patch eller den fulla 27-måls regressionen. Observationer får inte skrivas om i efterhand för att få ett bättre resultat.
