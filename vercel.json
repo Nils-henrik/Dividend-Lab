@@ -5,6 +5,7 @@
       "cursor/issue-*": false
     }
   },
+  "buildCommand": "npm run lint && npm run typecheck && npm test && npm run test:seo && npm run test:divbrain && npm run test:cursor-bridge && npm run build",
   "env": {
     "MODEL_PORTFOLIO_DRY_RUN_ENABLED": "true",
     "MODEL_PORTFOLIO_EXECUTION_ENABLED": "true"
