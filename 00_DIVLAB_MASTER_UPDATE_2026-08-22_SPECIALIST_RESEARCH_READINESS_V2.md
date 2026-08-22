@@ -122,6 +122,7 @@ This record is evidence of implementation progress only. It is **not** an accept
 - The parser covers both flattened and observed PDF text-layer shapes, including alternating quarter/year lines and one numeric cell per following line. It remains section-bounded at `Own funds requirement, Basel III` and fails closed on incomplete/misaligned rows.
 - Supported projected current-quarter facts remain only Net ECL level, Cost/income ratio, LCR and NSFR. No other metric is inferred.
 - Existing SEB release evidence continues to supply source-bound ROE, CET1 and capital-buffer context separately from Fact Book provenance.
+- A deterministic full `buildBankResearch` regression now intentionally orders the Fact Book newer than the release and feeds the observed SEB release narrative. `research_ready` is allowed only when CET1/ROE/capital buffer retain the release `sourceId`, ECL/C-I/LCR/NSFR retain the Fact Book `sourceId`, and P/B remains traceable. This directly guards the split-source shape expected by the Preview canary.
 
 ### Investor
 
@@ -142,6 +143,8 @@ This record is evidence of implementation progress only. It is **not** an accept
 - Canary-operator head `3602054c2fca44c27ab0c03fc6cf60ea5679b0ea` subsequently completed a full Vercel build and reached `READY`; the Preview page returned HTTP 200 with the specialist canary route present.
 - Three attempted specialist canary requests on that deployment returned HTTP 401 before Research started because the new Preview hostname had no active DivLab session. This is an authentication precondition result, not a SEB/Investor/EQT Research result; persistence/publication remained off.
 - Source inspection after that build identified one remaining deterministic SEB integration risk: capital context still read only the first primary report even though the accepted design intentionally splits Fact Book metrics from release-based CET1/ROE/capital-buffer evidence. Commit `16490c8987e5ea843749d28bc733490ea57df95b` hardens that path with multi-source provenance and fail-closed ambiguity handling plus regression coverage.
+- Follow-up regression work through commit `4faa09facaff2b8ebefef4ebad6f9c667b780dc2` adds a full deterministic SEB multi-source `research_ready` contract using the real release-narrative shape and a newer Fact Book to prove the entire Research assembler preserves source provenance.
+- Vercel currently rejects newer exact-head Preview builds with the project build-rate-limit status. This is not accepted as a code-validation result and is not worked around by weakening the build/canary contract.
 - The current exact head must therefore receive its own repository build before founder-authenticated SEB/Investor/EQT canary evidence can count as acceptance.
 - This slice remains `ACTIVE_PR / PREVIEW_CANARY_ONLY`. No exact-head acceptance is claimed, the PR remains draft, and no parent/main/production merge is authorized until the required exact build and bounded SEB/Investor/EQT Preview canary have completed.
 
