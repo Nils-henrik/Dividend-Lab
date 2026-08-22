@@ -57,6 +57,46 @@ const REQUEST_SELECT = [
   "status",
 ].join(",");
 
+const REQUEST_STATUSES = new Set<StoredRequest["status"]>([
+  "pending_entitlement",
+  "queued",
+  "running",
+  "completed",
+  "failed",
+]);
+
+function storedRequest(value: unknown): StoredRequest | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const row = value as Record<string, unknown>;
+
+  if (
+    typeof row.id !== "string" ||
+    (row.user_id !== null && typeof row.user_id !== "string") ||
+    typeof row.idempotency_key !== "string" ||
+    typeof row.instrument_symbol !== "string" ||
+    typeof row.exchange !== "string" ||
+    typeof row.instrument_name !== "string" ||
+    typeof row.yahoo_symbol !== "string" ||
+    (row.analysis_depth !== "light" && row.analysis_depth !== "deep") ||
+    typeof row.status !== "string" ||
+    !REQUEST_STATUSES.has(row.status as StoredRequest["status"])
+  ) {
+    return null;
+  }
+
+  return {
+    id: row.id,
+    user_id: row.user_id,
+    idempotency_key: row.idempotency_key,
+    instrument_symbol: row.instrument_symbol,
+    exchange: row.exchange,
+    instrument_name: row.instrument_name,
+    yahoo_symbol: row.yahoo_symbol,
+    analysis_depth: row.analysis_depth,
+    status: row.status as StoredRequest["status"],
+  };
+}
+
 function sameRequestIdentity(input: {
   row: StoredRequest;
   target: DivLabAnalysisRequestTarget;
@@ -148,7 +188,11 @@ export async function createOrQueueDivLabAnalysisRequest(input: {
     return { ok: false, status: "storage_unavailable" };
   }
 
-  const row = data as StoredRequest;
+  const row = storedRequest(data);
+  if (!row) {
+    return { ok: false, status: "storage_unavailable" };
+  }
+
   if (!sameRequestIdentity({
     row,
     target: input.target,
