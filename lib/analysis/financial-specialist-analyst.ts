@@ -22,12 +22,15 @@ import {
   type DivLabFinancialSpecialistAnalystDraft,
 } from "./financial-specialist-schema";
 
-const MAX_EVIDENCE_CHARS = 18_000;
-const MAX_OUTPUT_TOKENS = 9_000;
-const RETRY_OUTPUT_TOKENS = 12_000;
+export const DIVLAB_FINANCIAL_SPECIALIST_ANALYST_AI_BUDGET = {
+  maxEvidenceChars: 18_000,
+  maxOutputTokens: 9_000,
+  retryMaxOutputTokens: 12_000,
+  maxPromptChars: 64_000,
+} as const;
 
 function boundedEvidence(packet: DivLabResearchPacket) {
-  let remaining = MAX_EVIDENCE_CHARS;
+  let remaining = DIVLAB_FINANCIAL_SPECIALIST_ANALYST_AI_BUDGET.maxEvidenceChars;
   return [...packet.evidence]
     .sort((a, b) => Number(b.primary) - Number(a.primary) || b.publishedAt.localeCompare(a.publishedAt))
     .map((item) => {
@@ -87,7 +90,7 @@ function prompt(input: {
     sources: input.packet.sources,
     evidence: boundedEvidence(input.packet),
   };
-  return [
+  const value = [
     "VERIFIERAT UNDERLAG:",
     JSON.stringify(facts),
     "KRAV:",
@@ -98,6 +101,10 @@ function prompt(input: {
     "Ta aktivt upp motargument, risker och vad som bryter tesen.",
     `Schema-version: ${DIVLAB_FINANCIAL_SPECIALIST_ANALYST_SCHEMA_VERSION}.`,
   ].join("\n\n");
+  if (value.length > DIVLAB_FINANCIAL_SPECIALIST_ANALYST_AI_BUDGET.maxPromptChars) {
+    throw new Error("financial_specialist_analyst_prompt_too_large");
+  }
+  return value;
 }
 
 function usage(model: ModelPortfolioAiModel, value: unknown): DivLabAnalystUsage {
@@ -206,7 +213,7 @@ export async function generateDivLabFinancialSpecialistAnalystDraft(input: {
       packet: input.packet,
       research: input.research,
       model: primary,
-      maxOutputTokens: MAX_OUTPUT_TOKENS,
+      maxOutputTokens: DIVLAB_FINANCIAL_SPECIALIST_ANALYST_AI_BUDGET.maxOutputTokens,
     });
     return { ...first, model: primary };
   } catch (error) {
@@ -217,7 +224,7 @@ export async function generateDivLabFinancialSpecialistAnalystDraft(input: {
       packet: input.packet,
       research: input.research,
       model: config.escalationModel,
-      maxOutputTokens: RETRY_OUTPUT_TOKENS,
+      maxOutputTokens: DIVLAB_FINANCIAL_SPECIALIST_ANALYST_AI_BUDGET.retryMaxOutputTokens,
     });
     return { ...repaired, model: config.escalationModel };
   }
