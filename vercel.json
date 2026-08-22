@@ -5,7 +5,7 @@
       "cursor/issue-*": false
     }
   },
-  "buildCommand": "npm run lint && npm run typecheck && npm test && npm run test:seo && npm run test:divbrain && npm run test:cursor-bridge && npm run build && node --import ./tests/shims/register-server-only.mjs --import tsx scripts/analysis-us-research-live-probe.ts && node --import ./tests/shims/register-server-only.mjs --import tsx scripts/analysis-monster-coverage-pass.ts",
+  "buildCommand": "npm run lint && npm run typecheck && npm test && npm run test:seo && npm run test:divbrain && npm run test:cursor-bridge && npm run build && npm run test:analysis-live && npm run test:analysis-monster",
   "env": {
     "MODEL_PORTFOLIO_DRY_RUN_ENABLED": "true",
     "MODEL_PORTFOLIO_EXECUTION_ENABLED": "true"
