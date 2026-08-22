@@ -81,7 +81,8 @@ async function bankDiagnostic() {
       sourceId: metric.sourceId,
     }])),
     valuationStatus: research.valuation.status,
-    valuationBlockers: research.valuation.blockers,
+    valuationPriceToBook: research.valuation.priceToBook,
+    valuationProvenance: research.valuation.provenance,
   });
 }
 
