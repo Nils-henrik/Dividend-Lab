@@ -116,6 +116,7 @@ This record is evidence of implementation progress only. It is **not** an accept
 ### SEB
 
 - The bank metric and funding extractors now combine multiple verified primary report excerpts metric-by-metric while retaining each metric's own `sourceId`. An explicitly ambiguous newer row still blocks stale fallback.
+- Bank capital context now follows the same source-bound multi-document rule: a Fact Book that lacks a capital reference may fall through to the verified issuer release for the capital buffer/regulatory-requirement fact, while an explicitly ambiguous newer capital fact blocks stale fallback. Every confirmed capital reference retains its own `sourceId`.
 - The existing Nasdaq/CNS hit may select SEB's already-trusted Fact Book attachment only in dedicated multi-document Deep Research. The ordinary model-portfolio one-document path retains its prior first-PDF behavior.
 - Fact Book projection is deterministic and issuer-specific. It requires the exact `Key figures - SEB Group, nine quarters` section, a contiguous nine-quarter header, the requested report period as the unique final column, and exact supported row labels.
 - The parser covers both flattened and observed PDF text-layer shapes, including alternating quarter/year lines and one numeric cell per following line. It remains section-bounded at `Own funds requirement, Basel III` and fails closed on incomplete/misaligned rows.
@@ -133,13 +134,16 @@ This record is evidence of implementation progress only. It is **not** an accept
 
 - EQT's explicit EUR + scale AUM/FAUM regression remains covered and must remain `research_ready`.
 - Unsupported company families remain fail-closed in analysis-engine dispatch.
-- A dedicated safety regression asserts that this evidence/readiness slice has no Supabase/dev-admin/publication dependency and that the existing Preview operator keeps persistence/publication explicit opt-ins with publication requiring persistence and founder authorization.
+- A dedicated safety regression asserts that this evidence/readiness slice, including bank capital extraction, has no Supabase/dev-admin/publication dependency and that the existing Preview operator keeps persistence/publication explicit opt-ins with publication requiring persistence and founder authorization.
 
 ### Validation state
 
 - An earlier branch commit (`3e1913069797d4c752fd95abbff581730bf8d7de`) completed a full Vercel Next.js build, including TypeScript, successfully.
-- Subsequent source-shape hardening commits have not yet received the required exact-head build because the Vercel project hit its daily deployment-rate ceiling.
-- Therefore this slice remains `ACTIVE_PR / PREVIEW_CANARY_ONLY`. No exact-head acceptance is claimed, the PR remains draft, and no parent/main/production merge is authorized until the required exact build and bounded SEB/Investor/EQT Preview canary have completed.
+- Canary-operator head `3602054c2fca44c27ab0c03fc6cf60ea5679b0ea` subsequently completed a full Vercel build and reached `READY`; the Preview page returned HTTP 200 with the specialist canary route present.
+- Three attempted specialist canary requests on that deployment returned HTTP 401 before Research started because the new Preview hostname had no active DivLab session. This is an authentication precondition result, not a SEB/Investor/EQT Research result; persistence/publication remained off.
+- Source inspection after that build identified one remaining deterministic SEB integration risk: capital context still read only the first primary report even though the accepted design intentionally splits Fact Book metrics from release-based CET1/ROE/capital-buffer evidence. Commit `16490c8987e5ea843749d28bc733490ea57df95b` hardens that path with multi-source provenance and fail-closed ambiguity handling plus regression coverage.
+- The current exact head must therefore receive its own repository build before founder-authenticated SEB/Investor/EQT canary evidence can count as acceptance.
+- This slice remains `ACTIVE_PR / PREVIEW_CANARY_ONLY`. No exact-head acceptance is claimed, the PR remains draft, and no parent/main/production merge is authorized until the required exact build and bounded SEB/Investor/EQT Preview canary have completed.
 
 ### Dedicated Preview canary operator prepared
 
