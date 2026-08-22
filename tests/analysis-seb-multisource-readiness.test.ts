@@ -124,5 +124,7 @@ describe("SEB specialist multi-source Research readiness", () => {
 
     assert.equal(result.valuation.status, "traceable");
     assert.equal(result.valuation.provenance.traceable, true);
+    assert.ok(result.valuation.provenance.sourceIds.includes(MARKET_ID));
+    assert.ok(result.valuation.provenance.sourceIds.includes(FUNDAMENTAL_ID));
   });
 });
