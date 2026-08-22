@@ -8,18 +8,23 @@ function file(path: string): string {
 }
 
 describe("dedicated Nordic Deep Research report discovery", () => {
-  it("opts Deep Research into report-aware terms without increasing hard search/result bounds", () => {
+  it("opts Deep Research into report-aware terms without increasing requests or portfolio defaults", () => {
     const engine = file("lib/model-portfolios/engine/nordic-primary-sources.ts");
     const analysis = file("lib/analysis/nordic-primary-sources.ts");
 
     assert.match(engine, /const HARD_MAX_SEARCH_TERMS = 5/);
-    assert.match(engine, /const HARD_MAX_QUERY_COUNT = 20/);
+    assert.match(engine, /const DEFAULT_QUERY_COUNT = 5/);
+    assert.match(engine, /const HARD_MAX_QUERY_COUNT = 100/);
     assert.match(engine, /const HARD_MAX_HITS = 12/);
     assert.match(engine, /preferFinancialReports\?: boolean/);
     assert.match(engine, /terms\.add\(`\$\{ticker\} report`\)/);
     assert.match(engine, /return \[\.\.\.terms\]\.slice\(0, HARD_MAX_SEARCH_TERMS\)/);
+    assert.match(analysis, /currentReport:\s*3/);
+    assert.match(analysis, /annualReport:\s*2/);
+    assert.match(analysis, /ordinaryTerm:\s*20/);
+    assert.match(analysis, /periodOnlyTerm:\s*100/);
     assert.match(analysis, /maxHits:\s*12/);
-    assert.match(analysis, /queryCount:\s*20/);
+    assert.match(analysis, /queryCount:\s*isPeriodOnlyReportTerm\(term\)/);
     assert.match(analysis, /preferFinancialReports:\s*true/);
   });
 
@@ -41,7 +46,7 @@ describe("dedicated Nordic Deep Research report discovery", () => {
     );
     assert.match(engine, /if \(!input\.preferFinancialReports\) return aliases/);
     assert.doesNotMatch(engine, /DEFAULT_MAX_HITS\s*=\s*12/);
-    assert.doesNotMatch(engine, /DEFAULT_QUERY_COUNT\s*=\s*20/);
+    assert.doesNotMatch(engine, /DEFAULT_QUERY_COUNT\s*=\s*(?:20|100)/);
   });
 
   it("retains issuer matching and the official attachment allowlist", () => {

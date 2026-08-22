@@ -10,6 +10,7 @@ import {
   type GlobalPrimarySource,
   type GlobalSourceDiscoveryResult,
 } from "./global-primary-source-contract";
+import { resolveSecDomesticSuccessorContinuity } from "./sec-successor-continuity";
 
 export type {
   GlobalPrimarySource,
@@ -125,6 +126,48 @@ async function fetchYahooIssuerWebsiteCandidate(input: {
   }
 }
 
+function newestRegulatorySource(
+  sources: readonly GlobalPrimarySource[],
+  kind: "regulatory_annual_filing" | "regulatory_interim_filing",
+): GlobalPrimarySource | null {
+  return sources
+    .filter((source) => source.primary && source.kind === kind && source.publishedAt)
+    .sort((a, b) => (b.publishedAt ?? "").localeCompare(a.publishedAt ?? ""))[0] ?? null;
+}
+
+function boundedRegulatoryPair(sources: readonly GlobalPrimarySource[]): GlobalPrimarySource[] {
+  const interim = newestRegulatorySource(sources, "regulatory_interim_filing");
+  const annual = newestRegulatorySource(sources, "regulatory_annual_filing");
+  const seen = new Set<string>();
+  return [interim, annual].filter((source): source is GlobalPrimarySource => {
+    if (!source || seen.has(source.id)) return false;
+    seen.add(source.id);
+    return true;
+  });
+}
+
+async function fetchSecSubmissions(input: {
+  cik: number;
+  fetchImpl: typeof fetch;
+}): Promise<unknown | null> {
+  try {
+    const response = await input.fetchImpl(
+      `${SEC_SUBMISSIONS_ENDPOINT}/CIK${cik10(input.cik)}.json`,
+      {
+        headers: {
+          Accept: "application/json",
+          "Accept-Encoding": "gzip, deflate",
+          "User-Agent": SEC_USER_AGENT,
+        },
+        next: { revalidate: 3_600 },
+      },
+    );
+    return response.ok ? await response.json() : null;
+  } catch {
+    return null;
+  }
+}
+
 async function fetchUsSecSources(input: {
   ticker: string;
   fetchImpl: typeof fetch;
@@ -144,35 +187,60 @@ async function fetchUsSecSources(input: {
     const directory = parseSecTickerDirectory(await tickerResponse.json(), input.ticker);
     if (!directory) return { companyName: null, sources: [] };
 
-    const submissionsResponse = await input.fetchImpl(
-      `${SEC_SUBMISSIONS_ENDPOINT}/CIK${cik10(directory.cik)}.json`,
-      {
-        headers: {
-          Accept: "application/json",
-          "Accept-Encoding": "gzip, deflate",
-          "User-Agent": SEC_USER_AGENT,
-        },
-        next: { revalidate: 3_600 },
-      },
-    );
-    if (!submissionsResponse.ok) return { companyName: directory.title, sources: [] };
+    const submissions = await fetchSecSubmissions({
+      cik: directory.cik,
+      fetchImpl: input.fetchImpl,
+    });
+    if (!submissions) return { companyName: directory.title, sources: [] };
 
-    const submissions = await submissionsResponse.json();
+    const currentRegulatory = parseSecPrimarySources({
+      payload: submissions,
+      cik: directory.cik,
+      ticker: directory.ticker,
+      now: input.now,
+    });
+    const currentPair = boundedRegulatoryPair(currentRegulatory);
+    const needsContinuity =
+      !currentPair.some((source) => source.kind === "regulatory_annual_filing") ||
+      !currentPair.some((source) => source.kind === "regulatory_interim_filing");
+    let predecessorRegulatory: GlobalPrimarySource[] = [];
+
+    if (needsContinuity) {
+      const continuity = resolveSecDomesticSuccessorContinuity({
+        ticker: directory.ticker,
+        currentCik: directory.cik,
+      });
+      if (continuity) {
+        // Exactly one curated predecessor fetch. The registry is source-bound to
+        // a specific SEC successor filing and refuses ticker/CIK drift.
+        const predecessorPayload = await fetchSecSubmissions({
+          cik: continuity.predecessorCik,
+          fetchImpl: input.fetchImpl,
+        });
+        if (predecessorPayload) {
+          predecessorRegulatory = parseSecPrimarySources({
+            payload: predecessorPayload,
+            cik: continuity.predecessorCik,
+            ticker: directory.ticker,
+            now: input.now,
+          });
+        }
+      }
+    }
+
+    const regulatory = boundedRegulatoryPair([
+      ...currentRegulatory,
+      ...predecessorRegulatory,
+    ]);
+    const issuerCandidates = issuerCandidatesFromSec({
+      payload: submissions,
+      ticker: directory.ticker,
+      now: input.now,
+    });
+
     return {
       companyName: text((submissions as SecSubmissions).name) ?? directory.title,
-      sources: [
-        ...parseSecPrimarySources({
-          payload: submissions,
-          cik: directory.cik,
-          ticker: directory.ticker,
-          now: input.now,
-        }),
-        ...issuerCandidatesFromSec({
-          payload: submissions,
-          ticker: directory.ticker,
-          now: input.now,
-        }),
-      ],
+      sources: [...regulatory, ...issuerCandidates],
     };
   } catch {
     return { companyName: null, sources: [] };
