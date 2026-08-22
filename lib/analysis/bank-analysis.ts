@@ -39,6 +39,12 @@ type MetricSpec = {
   allowBasisPoints?: boolean;
 };
 
+type MetricCandidate = {
+  valuePct: number;
+  rawToken: string;
+  context: string;
+};
+
 const METRICS: readonly MetricSpec[] = [
   {
     name: "cet1Ratio",
@@ -177,10 +183,8 @@ function metricFromExcerpt(input: {
   sourceId: string;
   spec: MetricSpec;
 }): DivLabBankMetric {
-  const matches = new Map<
-    string,
-    { valuePct: number; rawToken: string; context: string }
-  >();
+  const matches = new Map<string, MetricCandidate>();
+  let ambiguousLineSeen = false;
   const lines = input.excerpt
     .split(/\r?\n/)
     .map((line) => line.trim())
@@ -193,6 +197,7 @@ function metricFromExcerpt(input: {
     if (!labelMatch || labelMatch.index === undefined) continue;
     const afterLabel = line.slice(labelMatch.index + labelMatch[0].length);
     const valueScope = metricValueScope(afterLabel);
+    const lineMatches = new Map<string, MetricCandidate>();
 
     for (const token of percentTokens(valueScope)) {
       if (token.scale === 0.01 && !input.spec.allowBasisPoints) continue;
@@ -200,12 +205,24 @@ function metricFromExcerpt(input: {
         const valuePct = candidate * token.scale;
         if (valuePct < input.spec.minPct || valuePct > input.spec.maxPct) continue;
         const key = valuePct.toFixed(6);
-        matches.set(key, {
+        lineMatches.set(key, {
           valuePct,
           rawToken: `${token.raw}${token.scale === 0.01 ? " bp" : "%"}`,
           context: cleanContext(line),
         });
       }
+    }
+
+    const lineValues = [...lineMatches.values()];
+    if (lineValues.length === 1) {
+      const value = lineValues[0]!;
+      matches.set(value.valuePct.toFixed(6), value);
+    } else if (lineValues.length > 1) {
+      // A multi-period table row remains ambiguous on its own. If the same
+      // official release also contains a separate one-value narrative clause,
+      // that explicit clause may confirm the metric without guessing a table
+      // column. Different one-value clauses still conflict below.
+      ambiguousLineSeen = true;
     }
   }
 
@@ -213,7 +230,7 @@ function metricFromExcerpt(input: {
   if (values.length === 0) {
     return {
       name: input.spec.name,
-      status: "not_found",
+      status: ambiguousLineSeen ? "ambiguous" : "not_found",
       valuePct: null,
       rawToken: null,
       context: null,
