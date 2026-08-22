@@ -22,9 +22,12 @@ import {
   buildDivLabResearchPacket,
   type DivLabResearchPacket,
 } from "./deep-research";
+import type { AnalysisEvidence } from "./evidence";
 import type { FundamentalMethodologyStatus } from "./fundamental-methodology";
+import type { AnalysisSource } from "./quality-gate";
 import {
   loadDivLabResearchInputs,
+  type DivLabResearchInputs,
   type DivLabResearchLoadResult,
 } from "./research-loader";
 
@@ -94,60 +97,50 @@ function safeRepairFailure(error: unknown): string {
   return message.replace(/[^a-zA-Z0-9_.:-]+/g, "_").slice(0, 180);
 }
 
+function dedupeSources(sources: readonly AnalysisSource[]): AnalysisSource[] {
+  const byId = new Map<string, AnalysisSource>();
+  for (const source of sources) {
+    if (!byId.has(source.id)) byId.set(source.id, { ...source });
+  }
+  return [...byId.values()];
+}
+
+function dedupeEvidence(evidence: readonly AnalysisEvidence[]): AnalysisEvidence[] {
+  const byId = new Map<string, AnalysisEvidence>();
+  for (const item of evidence) {
+    if (!byId.has(item.id)) byId.set(item.id, { ...item });
+  }
+  return [...byId.values()];
+}
+
 /**
- * Internal two-stage DivLab analysis flow.
+ * Execute the established operating-company Analyst/final-quality sequence from
+ * already verified canonical Research inputs.
  *
- * 1. Load and normalize facts/evidence + source-grounded company classification.
- * 2. Build a company-type-aware facts packet with no manufactured valuation scenarios.
- * 3. Fail before any model call if the company type requires a specialized
- *    fundamental methodology that DivLab has not implemented yet.
- * 4. Ask the analyst model for qualitative interpretation + explicit scenario
- *    assumptions only when the deterministic methodology is supported.
- * 5. Re-run deterministic valuation math with those assumptions.
- * 6. Re-run the full research publication quality gate.
- * 7. Run a separate deterministic quality gate over the analyst content.
- * 8. If that post-valuation gate fails, allow exactly one bounded escalation-model
- *    quality repair with the concrete blockers and deterministic scenario result.
- * 9. Rebuild valuation and re-run the exact same quality gate; requirements are
- *    never lowered and a second failure remains fail-closed.
- * 10. Only a content-quality-passing draft may reach persistence.
- * 11. When a service-role Supabase client is supplied, atomically persist the
- *    final research version, analyst content and its quality certification.
- *
- * The transient facts packet is never persisted as an additional version.
- * If Gateway authentication is unavailable, the function fails closed at the
- * analyst stage but returns the already verified facts packet for observability
- * and a later retry. A thin/self-contradictory analyst result returns an
- * analyst_quality failure and is not persisted. Other analyst/schema failures
- * still throw so code defects cannot be silently downgraded.
+ * This is intentionally market-agnostic. Callers may attach additional verified
+ * primary sources/evidence (for example regulator filings) before the facts packet
+ * is built. Existing callers that do not supply additions retain the exact normal
+ * Research -> Analyst behavior.
  */
-export async function createDivLabAiAnalysis(input: {
-  symbol: string;
-  exchange: string;
-  name: string;
-  fetchImpl?: typeof fetch;
+export async function createDivLabAiAnalysisFromResearchInputs(input: {
+  research: DivLabResearchInputs;
+  additionalSources?: readonly AnalysisSource[];
+  additionalEvidence?: readonly AnalysisEvidence[];
   now?: Date;
   useEscalationModel?: boolean;
   supabase?: SupabaseClient;
   slug?: string;
 }): Promise<CreateDivLabAiAnalysisResult> {
   const now = input.now ?? new Date();
-  const loaded = await loadDivLabResearchInputs({
-    symbol: input.symbol,
-    exchange: input.exchange,
-    name: input.name,
-    fetchImpl: input.fetchImpl,
-    now,
-  });
-  if (!loaded.ok) {
-    return {
-      ok: false,
-      stage: "research",
-      reason: loaded.reason,
-    };
-  }
-
-  const research = loaded.value;
+  const research = input.research;
+  const sources = dedupeSources([
+    ...research.sources,
+    ...(input.additionalSources ?? []),
+  ]);
+  const evidence = dedupeEvidence([
+    ...research.evidence,
+    ...(input.additionalEvidence ?? []),
+  ]);
   const common = {
     symbol: research.instrument.symbol,
     exchange: research.instrument.exchange,
@@ -158,8 +151,8 @@ export async function createDivLabAiAnalysis(input: {
     fundamentals: research.fundamentals,
     companyClassification: research.companyClassification,
     fxConversion: research.fxConversion,
-    sources: research.sources,
-    evidence: research.evidence,
+    sources,
+    evidence,
     now,
   };
 
@@ -287,4 +280,48 @@ export async function createDivLabAiAnalysis(input: {
     usage: analystUsage,
     persistence,
   };
+}
+
+/**
+ * Internal two-stage DivLab analysis flow.
+ *
+ * 1. Load and normalize facts/evidence + source-grounded company classification.
+ * 2. Delegate the already loaded canonical Research inputs to the shared Analyst
+ *    sequence above.
+ * 3. Existing Nordic primary-source loading and optional persistence behavior are
+ *    preserved because this wrapper still owns the ordinary Research loader.
+ */
+export async function createDivLabAiAnalysis(input: {
+  symbol: string;
+  exchange: string;
+  name: string;
+  fetchImpl?: typeof fetch;
+  now?: Date;
+  useEscalationModel?: boolean;
+  supabase?: SupabaseClient;
+  slug?: string;
+}): Promise<CreateDivLabAiAnalysisResult> {
+  const now = input.now ?? new Date();
+  const loaded = await loadDivLabResearchInputs({
+    symbol: input.symbol,
+    exchange: input.exchange,
+    name: input.name,
+    fetchImpl: input.fetchImpl,
+    now,
+  });
+  if (!loaded.ok) {
+    return {
+      ok: false,
+      stage: "research",
+      reason: loaded.reason,
+    };
+  }
+
+  return createDivLabAiAnalysisFromResearchInputs({
+    research: loaded.value,
+    now,
+    useEscalationModel: input.useEscalationModel,
+    ...(input.supabase ? { supabase: input.supabase } : {}),
+    ...(input.slug ? { slug: input.slug } : {}),
+  });
 }
