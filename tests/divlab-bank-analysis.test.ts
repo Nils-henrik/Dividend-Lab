@@ -5,15 +5,19 @@ import type { AnalysisEvidence } from "../lib/analysis/evidence";
 
 const SOURCE_ID = "bank-report:q2";
 
-function reportEvidence(excerpt: string): AnalysisEvidence {
+function reportEvidence(
+  excerpt: string,
+  sourceId = SOURCE_ID,
+  publishedAt = "2026-07-18T06:00:00.000Z",
+): AnalysisEvidence {
   return {
-    id: "evidence:bank-q2",
-    sourceId: SOURCE_ID,
+    id: `evidence:${sourceId}`,
+    sourceId,
     kind: "official_report_excerpt",
     title: "Bank Q2 report",
     content: "Verifierat rapportutdrag.",
     documentExcerpt: excerpt,
-    publishedAt: "2026-07-18T06:00:00.000Z",
+    publishedAt,
     primary: true,
     documentRetrieved: true,
     reportPeriod: "Q2",
@@ -89,6 +93,45 @@ describe("DivLab bank analysis v1", () => {
     assert.equal(result.metrics.cet1Ratio.valuePct, 17.4);
     assert.equal(result.metrics.returnOnEquity.valuePct, 14.2);
     assert.equal(result.metrics.creditLossRatio.valuePct, 0.06);
+  });
+
+  it("combines source-bound bank metrics across verified current report and Fact Book evidence", () => {
+    const current = reportEvidence(
+      "CET1 ratio 17.2%\nReturn on equity 15.7%",
+      "primary:seb-q2",
+      "2026-07-15T06:30:00.000Z",
+    );
+    const factBook = reportEvidence(
+      "Net ECL level, % 0.04\nCost/income ratio 40.0%",
+      "primary:seb-q2-factbook",
+      "2026-07-15T06:29:00.000Z",
+    );
+
+    const result = extractBankReportMetrics([factBook, current]);
+    assert.equal(result.status, "evidence_ready");
+    assert.equal(result.sourceId, "primary:seb-q2");
+    assert.equal(result.metrics.cet1Ratio.sourceId, "primary:seb-q2");
+    assert.equal(result.metrics.returnOnEquity.sourceId, "primary:seb-q2");
+    assert.equal(result.metrics.creditLossRatio.valuePct, 0.04);
+    assert.equal(result.metrics.creditLossRatio.sourceId, "primary:seb-q2-factbook");
+    assert.equal(result.metrics.costIncomeRatio.sourceId, "primary:seb-q2-factbook");
+  });
+
+  it("does not bypass an ambiguous newer metric by falling back to an older clean value", () => {
+    const current = reportEvidence(
+      "CET1 ratio 17.2%\nReturn on equity 15.7%\nNet ECL level, % 0.04 0.03",
+      "primary:seb-q2",
+      "2026-07-15T06:30:00.000Z",
+    );
+    const older = reportEvidence(
+      "Net ECL level, % 0.04",
+      "primary:seb-q1",
+      "2026-04-29T06:30:00.000Z",
+    );
+
+    const result = extractBankReportMetrics([older, current]);
+    assert.equal(result.metrics.creditLossRatio.status, "ambiguous");
+    assert.equal(result.metrics.creditLossRatio.sourceId, "primary:seb-q2");
   });
 
   it("refuses ambiguous current/prior values instead of guessing which column is current", () => {

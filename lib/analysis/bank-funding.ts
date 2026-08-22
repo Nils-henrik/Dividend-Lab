@@ -155,17 +155,46 @@ function emptyMetric(name: DivLabBankFundingMetricName): DivLabBankFundingMetric
   return { name, status: "not_found", valuePct: null, context: null, sourceId: null };
 }
 
+function usableReports(evidence: readonly AnalysisEvidence[]): AnalysisEvidence[] {
+  return [...evidence]
+    .filter(
+      (item) =>
+        item.primary &&
+        item.documentRetrieved &&
+        item.kind === "official_report_excerpt" &&
+        Boolean(item.documentExcerpt?.trim()),
+    )
+    .sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
+}
+
+/**
+ * Search newest verified evidence first for one funding metric. An explicitly
+ * ambiguous newer row blocks fallback to an older value; only a true miss may
+ * continue to another verified report or Fact Book.
+ */
+function metricAcrossReports(input: {
+  reports: readonly AnalysisEvidence[];
+  spec: MetricSpec;
+}): DivLabBankFundingMetric {
+  for (const report of input.reports) {
+    const excerpt = report.documentExcerpt?.trim();
+    if (!excerpt) continue;
+    const result = extractMetric({
+      excerpt,
+      sourceId: report.sourceId,
+      spec: input.spec,
+    });
+    if (result.status !== "not_found") return result;
+  }
+  return emptyMetric(input.spec.name);
+}
+
 export function extractBankFundingContext(
   evidence: readonly AnalysisEvidence[],
 ): DivLabBankFundingContext {
-  const report = evidence.find(
-    (item) =>
-      item.primary &&
-      item.documentRetrieved &&
-      item.kind === "official_report_excerpt" &&
-      Boolean(item.documentExcerpt?.trim()),
-  );
-  if (!report?.documentExcerpt?.trim()) {
+  const reports = usableReports(evidence);
+  const anchorReport = reports[0] ?? null;
+  if (!anchorReport) {
     return {
       version: DIVLAB_BANK_FUNDING_VERSION,
       status: "not_applicable",
@@ -182,7 +211,7 @@ export function extractBankFundingContext(
   }
 
   const extracted = SPECS.map((spec) =>
-    extractMetric({ excerpt: report.documentExcerpt!, sourceId: report.sourceId, spec }),
+    metricAcrossReports({ reports, spec }),
   );
   const metrics = Object.fromEntries(
     extracted.map((metric) => [metric.name, metric]),
@@ -203,11 +232,11 @@ export function extractBankFundingContext(
         : confirmedMetrics > 0
           ? "partial"
           : "insufficient",
-    sourceId: report.sourceId,
+    sourceId: anchorReport.sourceId,
     confirmedMetrics,
     metrics,
     notes: [
-      "LCR/NSFR och rapporterade tillväxttal är kontextfakta. Ett tillväxttal saknar automatisk tidsperiodstolkning om rapporttexten inte uttryckligen anger den.",
+      "LCR/NSFR och rapporterade tillväxttal är source-bound kontextfakta och kan komma från flera verifierade primärrapporter; varje mått behåller sitt eget sourceId. Ett tillväxttal saknar automatisk tidsperiodstolkning om rapporttexten inte uttryckligen anger den.",
     ],
   };
 }

@@ -5,15 +5,19 @@ import type { AnalysisEvidence } from "../lib/analysis/evidence";
 
 const SOURCE_ID = "bank-report:q2";
 
-function report(excerpt: string): AnalysisEvidence {
+function report(
+  excerpt: string,
+  sourceId = SOURCE_ID,
+  publishedAt = "2026-07-15T06:00:00.000Z",
+): AnalysisEvidence {
   return {
-    id: "evidence:funding",
-    sourceId: SOURCE_ID,
+    id: `evidence:${sourceId}`,
+    sourceId,
     kind: "official_report_excerpt",
     title: "Bank funding report",
     content: "Verifierat rapportutdrag.",
     documentExcerpt: excerpt,
-    publishedAt: "2026-07-15T06:00:00.000Z",
+    publishedAt,
     primary: true,
     documentRetrieved: true,
     reportPeriod: "Q2",
@@ -38,6 +42,46 @@ describe("DivLab bank funding v1", () => {
     ]);
     assert.equal(result.status, "evidence_ready");
     assert.equal(result.metrics.netStableFundingRatio.valuePct, 121.5);
+  });
+
+  it("combines regulatory liquidity metrics from separate verified report excerpts", () => {
+    const current = report(
+      "Lending growth 4.3%\nDeposit growth 5.1%",
+      "primary:seb-q2",
+      "2026-07-15T06:30:00.000Z",
+    );
+    const factBook = report(
+      "Liquidity Coverage Ratio (LCR), % 145\nNet Stable Funding Ratio (NSFR), % 121.5",
+      "primary:seb-q2-factbook",
+      "2026-07-15T06:29:00.000Z",
+    );
+
+    const result = extractBankFundingContext([factBook, current]);
+    assert.equal(result.status, "evidence_ready");
+    assert.equal(result.sourceId, "primary:seb-q2");
+    assert.equal(result.metrics.liquidityCoverageRatio.valuePct, 145);
+    assert.equal(result.metrics.liquidityCoverageRatio.sourceId, "primary:seb-q2-factbook");
+    assert.equal(result.metrics.netStableFundingRatio.valuePct, 121.5);
+    assert.equal(result.metrics.netStableFundingRatio.sourceId, "primary:seb-q2-factbook");
+    assert.equal(result.metrics.lendingGrowthReported.sourceId, "primary:seb-q2");
+    assert.equal(result.metrics.depositGrowthReported.sourceId, "primary:seb-q2");
+  });
+
+  it("does not use an older clean liquidity row when the newer verified row is ambiguous", () => {
+    const current = report(
+      "LCR, % 145 151 160",
+      "primary:seb-q2",
+      "2026-07-15T06:30:00.000Z",
+    );
+    const older = report(
+      "Liquidity Coverage Ratio 140%",
+      "primary:seb-q1",
+      "2026-04-29T06:30:00.000Z",
+    );
+
+    const result = extractBankFundingContext([older, current]);
+    assert.equal(result.metrics.liquidityCoverageRatio.status, "ambiguous");
+    assert.equal(result.metrics.liquidityCoverageRatio.sourceId, "primary:seb-q2");
   });
 
   it("accepts lending and deposit growth together as bounded funding context", () => {

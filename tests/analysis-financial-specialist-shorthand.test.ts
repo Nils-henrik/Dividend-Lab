@@ -31,6 +31,33 @@ function packetWithExcerpt(excerpt: string): DivLabResearchPacket {
   } as unknown as DivLabResearchPacket;
 }
 
+function investorPacketWithExcerpt(excerpt: string): DivLabResearchPacket {
+  const evidence: AnalysisEvidence = {
+    id: "evidence:investor-q2",
+    sourceId: "nordic-release:INVE-B:2026-07-16T08:15:37.000Z",
+    kind: "official_report_excerpt",
+    title: "Interim report January-June 2026",
+    content: "Official Nasdaq issuer release.",
+    documentExcerpt: excerpt,
+    publishedAt: "2026-07-16T08:15:37.000Z",
+    primary: true,
+    documentRetrieved: true,
+    reportPeriod: "H1",
+    reportYear: 2026,
+    documentType: "half_year_report",
+  };
+
+  return {
+    companyClassification: { type: "investment_company" },
+    evidence: [evidence],
+    instrument: { currency: "SEK", currentPrice: 330 },
+    valuation: { trailing: { pe: null } },
+    valuationProvenance: {
+      measures: { pe: { sourceIds: [] } },
+    },
+  } as unknown as DivLabResearchPacket;
+}
+
 describe("DivLab financial-specialist issuer shorthand", () => {
   it("extracts source-bound EQT FAUM and total AUM shorthand with explicit EUR units", () => {
     const research = buildFinancialSpecialistResearch({
@@ -69,5 +96,35 @@ describe("DivLab financial-specialist issuer shorthand", () => {
     assert.equal(research.status, "insufficient");
     assert.equal(research.metrics.feeGeneratingAumEurBn.status, "missing");
     assert.equal(research.metrics.totalAumEurBn.status, "missing");
+  });
+
+  it("extracts Investor adjusted NAV per share from the verified issuer-release wording and derives discount deterministically", () => {
+    const research = buildFinancialSpecialistResearch({
+      basePacket: investorPacketWithExcerpt(
+        "Adjusted net asset value (NAV) was SEK 1,214.7bn (SEK 397 per share) on June 30, 2026.",
+      ),
+    });
+
+    assert.equal(research.status, "research_ready");
+    assert.equal(research.metrics.navPerShare.value, 397);
+    assert.deepEqual(research.metrics.navPerShare.sourceIds, [
+      "nordic-release:INVE-B:2026-07-16T08:15:37.000Z",
+    ]);
+    assert.ok(Math.abs((research.metrics.discountToNavPct.value ?? 0) - 16.8765743) < 0.0001);
+    assert.deepEqual(research.metrics.discountToNavPct.sourceIds, research.metrics.navPerShare.sourceIds);
+    assert.deepEqual(research.blockers, []);
+  });
+
+  it("does not infer Investor NAV per share from unrelated equity or market-cap values", () => {
+    const research = buildFinancialSpecialistResearch({
+      basePacket: investorPacketWithExcerpt(
+        "Total equity was SEK 397bn. Market capitalization was SEK 1,010bn. Earnings per share were SEK 12.4.",
+      ),
+    });
+
+    assert.equal(research.status, "insufficient");
+    assert.equal(research.metrics.navPerShare.status, "missing");
+    assert.equal(research.metrics.discountToNavPct.status, "missing");
+    assert.ok(research.blockers.includes("investment_company_nav_per_share_missing"));
   });
 });
