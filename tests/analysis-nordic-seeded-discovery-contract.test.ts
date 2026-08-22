@@ -33,11 +33,12 @@ describe("Dedicated Nordic period-aware report discovery contract", () => {
     assert.match(analysisSource, /status:\s*429/);
   });
 
-  it("uses period-aware terms and a Q2 period-only fallback without weakening issuer filtering", () => {
+  it("uses issuer-bound period-aware terms without weakening issuer filtering", () => {
     assert.match(analysisSource, /export function nordicCurrentReportIntentTerms/);
     assert.match(analysisSource, /quarter:\s*"Q2"/);
     assert.match(analysisSource, /phrase:\s*"half-year"/);
     assert.match(analysisSource, /periodOnlyPhrase:\s*`interim report January-June \$\{year\}`/);
+    assert.match(analysisSource, /`\$\{issuer\} \$\{intent\.periodOnlyPhrase\}`/);
     assert.match(analysisSource, /url\.searchParams\.set\("freeText", freeText\)/);
     assert.match(analysisSource, /companyName:\s*input\.companyName/);
     assert.match(analysisSource, /symbol:\s*input\.symbol/);

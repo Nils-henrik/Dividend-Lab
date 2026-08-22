@@ -221,7 +221,7 @@ export function nordicCurrentReportIntentTerms(input: {
   return uniqueTerms([
     `${ticker} ${intent.quarter}`,
     `${issuer} ${intent.phrase}`,
-    intent.periodOnlyPhrase,
+    `${issuer} ${intent.periodOnlyPhrase}`,
   ]).slice(0, DEEP_RESEARCH_CNS_REQUEST_BUDGET.currentReport);
 }
 
