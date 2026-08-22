@@ -100,6 +100,55 @@ async function specialistDiagnostic(symbol: string, name: string) {
   });
 }
 
+async function xomRawSecDiagnostic() {
+  try {
+    const response = await fetch("https://data.sec.gov/submissions/CIK0000034088.json", {
+      headers: {
+        Accept: "application/json",
+        "Accept-Encoding": "gzip, deflate",
+        "User-Agent": "DivLab kontakt@divlab.se",
+      },
+      cache: "no-store",
+    });
+    if (!response.ok) {
+      emit("xom-sec-raw", { ok: false, status: response.status });
+      return;
+    }
+    const body = await response.json() as {
+      filings?: {
+        recent?: {
+          form?: unknown;
+          accessionNumber?: unknown;
+          filingDate?: unknown;
+          primaryDocument?: unknown;
+        };
+      };
+    };
+    const recent = body.filings?.recent;
+    const forms = Array.isArray(recent?.form) ? recent.form : [];
+    const accessions = Array.isArray(recent?.accessionNumber) ? recent.accessionNumber : [];
+    const dates = Array.isArray(recent?.filingDate) ? recent.filingDate : [];
+    const documents = Array.isArray(recent?.primaryDocument) ? recent.primaryDocument : [];
+    const rows: Array<Record<string, unknown>> = [];
+    const length = Math.min(forms.length, accessions.length, dates.length, documents.length);
+    for (let index = 0; index < length; index += 1) {
+      const form = typeof forms[index] === "string" ? forms[index] : "";
+      if (!["10-K", "10-K/A", "10-Q", "10-Q/A"].includes(form.trim().toUpperCase())) continue;
+      rows.push({
+        index,
+        form,
+        accessionNumber: accessions[index],
+        filingDate: dates[index],
+        primaryDocument: documents[index],
+      });
+      if (rows.length >= 8) break;
+    }
+    emit("xom-sec-raw", { ok: true, rows });
+  } catch (error) {
+    emit("xom-sec-raw", { ok: false, error: error instanceof Error ? error.message.slice(0, 120) : "unknown" });
+  }
+}
+
 async function xomDiagnostic() {
   const discovery = await discoverGlobalPrimarySources({
     yahooSymbol: "XOM",
@@ -141,5 +190,6 @@ async function avanzaDiagnostic() {
 await bankDiagnostic();
 await specialistDiagnostic("INVE-B", "Investor AB");
 await specialistDiagnostic("EQT", "EQT AB");
+await xomRawSecDiagnostic();
 await xomDiagnostic();
 await avanzaDiagnostic();
