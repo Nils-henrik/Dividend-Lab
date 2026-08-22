@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import AnalysisSourceDiscoveryOperator from "@/components/analysis/AnalysisSourceDiscoveryOperator";
+import AnalysisSpecialistResearchReadinessOperator from "@/components/analysis/AnalysisSpecialistResearchReadinessOperator";
 import AnalysisUsDeepResearchExecutionOperator from "@/components/analysis/AnalysisUsDeepResearchExecutionOperator";
 import AnalysisUsResearchCoverageOperator from "@/components/analysis/AnalysisUsResearchCoverageOperator";
 import PublicContentShell from "@/components/layout/PublicContentShell";
@@ -50,8 +51,12 @@ export default function AnalysisSourceDiscoveryPreviewPage() {
           <AnalysisUsDeepResearchExecutionOperator />
         </div>
 
+        <div className="mt-6">
+          <AnalysisSpecialistResearchReadinessOperator />
+        </div>
+
         <div className="mt-6 border border-amber-400/15 bg-amber-400/[0.04] p-4 text-xs leading-5 text-slate-500">
-          SEC EDGAR används som första regulatoriska globalvertikal. MSFT är första och enda tillåtna amerikanska execution-target i v1. Deep Research-knappen får anropa den befintliga Analyst-motorn först efter US Research Coverage 100/100, men persistence, publicering och generell global analyskörning är fortsatt avstängda.
+          SEC EDGAR används som första regulatoriska globalvertikal. MSFT är första och enda tillåtna amerikanska execution-target i v1. Specialist-canaryn är separat låst till SEB-A.ST, INVE-B.ST och EQT.ST och kör endast deterministisk Research. Persistence, publicering och generell global analyskörning är fortsatt avstängda i dessa canaryflöden.
         </div>
       </main>
     </PublicContentShell>
