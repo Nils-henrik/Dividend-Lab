@@ -115,6 +115,19 @@ describe("DivLab financial-specialist issuer shorthand", () => {
     assert.deepEqual(research.blockers, []);
   });
 
+  it("does not reinterpret Investor's total NAV amount as NAV per share when the per-share token is absent", () => {
+    const research = buildFinancialSpecialistResearch({
+      basePacket: investorPacketWithExcerpt(
+        "Adjusted net asset value (NAV) was SEK 1,214.7bn on June 30, 2026.",
+      ),
+    });
+
+    assert.equal(research.status, "insufficient");
+    assert.equal(research.metrics.navPerShare.status, "missing");
+    assert.equal(research.metrics.navPerShare.value, null);
+    assert.equal(research.metrics.discountToNavPct.status, "missing");
+  });
+
   it("does not infer Investor NAV per share from unrelated equity or market-cap values", () => {
     const research = buildFinancialSpecialistResearch({
       basePacket: investorPacketWithExcerpt(
