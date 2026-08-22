@@ -27,7 +27,9 @@ describe("US Preview Deep Research runtime repair contract", () => {
 
     assert.match(repair, /intern faktor-för-faktor-audit av samtliga 11 qualityFactors/);
     assert.match(repair, /Markera aldrig en faktor som känd bara för att nå kvalitetsgränsen/);
-    assert.match(repair, /SEC-\/primärkälleevidens kan legitimt stödja/);
+    assert.match(repair, /factorEvidenceHints/);
+    assert.match(repair, /sourceId måste tas från samma hint\/evidence/);
+    assert.match(repair, /En riskfaktor får bedömas neutral eller weak när primärkällan explicit visar relevant exponering\/risk/);
     assert.match(repair, /reasoningEffort: "medium"/);
     assert.doesNotMatch(repair, /knownQualityFactors\s*>?=\s*5/);
   });
