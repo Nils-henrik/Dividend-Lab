@@ -10,6 +10,8 @@ import type { FundamentalSnapshot } from "./fundamental-analysis";
 import { parseYahooFinancialStatements } from "./financial-statement-normalizer";
 
 const YAHOO_SUMMARY_ENDPOINT = "https://query1.finance.yahoo.com/v10/finance/quoteSummary";
+const YAHOO_LEGACY_SESSION_HOME = "https://finance.yahoo.com/";
+const YAHOO_COOKIE_BOOTSTRAP = "https://fc.yahoo.com/";
 const USER_AGENT =
   "Mozilla/5.0 (compatible; DivLab/1.0; +https://divlab.se) AppleWebKit/537.36 Chrome/124.0.0.0 Safari/537.36";
 
@@ -20,6 +22,15 @@ export type YahooFinancialStatementResearch = {
   sourceUrl: string;
   fetchedAt: string;
 };
+
+function financialSessionFetch(fetchImpl: typeof fetch): typeof fetch {
+  return ((input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]) => {
+    const rewritten = typeof input === "string" && input === YAHOO_LEGACY_SESSION_HOME
+      ? YAHOO_COOKIE_BOOTSTRAP
+      : input;
+    return fetchImpl(rewritten, init);
+  }) as typeof fetch;
+}
 
 export async function fetchYahooFinancialStatements(input: {
   yahooSymbol: string;
@@ -33,7 +44,12 @@ export async function fetchYahooFinancialStatements(input: {
   const symbol = input.yahooSymbol.trim();
   if (!symbol || !Number.isFinite(input.currentPrice) || input.currentPrice <= 0) return null;
 
-  const session = await getYahooCrumbSession(fetchImpl, now);
+  // Vercel Preview runtime cannot fetch finance.yahoo.com for session bootstrap,
+  // while fc.yahoo.com intentionally returns a cookie-bearing response that can
+  // be exchanged for the same Yahoo crumb. Keep this rewrite local to DivLab
+  // Analys; the shared session parser, cookie allowlist and fail-closed behavior
+  // remain unchanged.
+  const session = await getYahooCrumbSession(financialSessionFetch(fetchImpl), now);
   if (!session) return null;
 
   const url = new URL(`${YAHOO_SUMMARY_ENDPOINT}/${encodeURIComponent(symbol)}`);

@@ -11,7 +11,12 @@ import {
 } from "./global-evidence-contract";
 import type { GlobalPrimarySource } from "./global-primary-source-contract";
 
-const USER_AGENT = "DivLab/1.0 (+https://divlab.se/contact) global-evidence-extraction";
+// SEC Fair Access asks automated clients to identify the organization and a
+// monitored contact address. Keep this explicit in the filing-fetch path so
+// SEC does not have to classify DivLab as an undeclared automated tool.
+const USER_AGENT = "DivLab kontakt@divlab.se";
+const MAX_FETCH_ATTEMPTS_PER_DOCUMENT = 2;
+const TRANSIENT_RETRY_DELAY_MS = 750;
 
 type FetchFailureReason =
   | "invalid_url"
@@ -32,10 +37,24 @@ type FetchDocumentResult =
   | { ok: true; document: SecFilingDocument }
   | { ok: false; sourceId: string; reason: FetchFailureReason };
 
+type FetchAttemptResult =
+  | { ok: true; document: SecFilingDocument }
+  | { ok: false; sourceId: string; reason: FetchFailureReason; retryable: boolean };
+
 export type GlobalEvidenceExtractionResult = {
   bundle: GlobalEvidenceBundle;
   failures: Array<{ sourceId: string; reason: FetchFailureReason }>;
 };
+
+function isRetryableHttpStatus(status: number): boolean {
+  return status === 408 || status === 425 || status === 429 || status >= 500;
+}
+
+async function waitBeforeRetry(attempt: number): Promise<void> {
+  await new Promise<void>((resolve) => {
+    setTimeout(resolve, TRANSIENT_RETRY_DELAY_MS * attempt);
+  });
+}
 
 async function readBoundedTextBody(
   response: Response,
@@ -82,12 +101,19 @@ async function readBoundedTextBody(
   return { ok: true, bytes: merged };
 }
 
-async function fetchOneSecFiling(input: {
+async function fetchOneSecFilingAttempt(input: {
   source: GlobalPrimarySource;
   fetchImpl: typeof fetch;
-}): Promise<FetchDocumentResult> {
+}): Promise<FetchAttemptResult> {
   const initial = validateSecArchiveUrl(input.source.url);
-  if (!initial.ok) return { ok: false, sourceId: input.source.id, reason: initial.reason };
+  if (!initial.ok) {
+    return {
+      ok: false,
+      sourceId: input.source.id,
+      reason: initial.reason,
+      retryable: false,
+    };
+  }
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), GLOBAL_EVIDENCE_BOUNDS.timeoutMs);
@@ -101,45 +127,101 @@ async function fetchOneSecFiling(input: {
         signal: controller.signal,
         headers: {
           Accept: "text/html,application/xhtml+xml,text/plain,application/xml,text/xml;q=0.9,*/*;q=0.1",
+          "Accept-Encoding": "gzip, deflate",
           "User-Agent": USER_AGENT,
         },
       });
 
       if ([301, 302, 303, 307, 308].includes(response.status)) {
         if (redirectCount >= GLOBAL_EVIDENCE_BOUNDS.maxRedirects) {
-          return { ok: false, sourceId: input.source.id, reason: "redirect_not_allowed" };
+          return {
+            ok: false,
+            sourceId: input.source.id,
+            reason: "redirect_not_allowed",
+            retryable: false,
+          };
         }
         const location = response.headers.get("location");
-        if (!location) return { ok: false, sourceId: input.source.id, reason: "redirect_not_allowed" };
+        if (!location) {
+          return {
+            ok: false,
+            sourceId: input.source.id,
+            reason: "redirect_not_allowed",
+            retryable: false,
+          };
+        }
         let nextUrl: string;
         try {
           nextUrl = new URL(location, current).toString();
         } catch {
-          return { ok: false, sourceId: input.source.id, reason: "redirect_not_allowed" };
+          return {
+            ok: false,
+            sourceId: input.source.id,
+            reason: "redirect_not_allowed",
+            retryable: false,
+          };
         }
         const next = validateSecArchiveUrl(nextUrl);
-        if (!next.ok) return { ok: false, sourceId: input.source.id, reason: "redirect_not_allowed" };
+        if (!next.ok) {
+          return {
+            ok: false,
+            sourceId: input.source.id,
+            reason: "redirect_not_allowed",
+            retryable: false,
+          };
+        }
         current = next.url;
         continue;
       }
 
-      if (!response.ok) return { ok: false, sourceId: input.source.id, reason: "http_error" };
+      if (!response.ok) {
+        return {
+          ok: false,
+          sourceId: input.source.id,
+          reason: "http_error",
+          retryable: isRetryableHttpStatus(response.status),
+        };
+      }
       const contentType = response.headers.get("content-type");
       if (!isAllowedSecTextContentType(contentType)) {
-        return { ok: false, sourceId: input.source.id, reason: "content_type_mismatch" };
+        return {
+          ok: false,
+          sourceId: input.source.id,
+          reason: "content_type_mismatch",
+          retryable: false,
+        };
       }
 
       const body = await readBoundedTextBody(response, GLOBAL_EVIDENCE_BOUNDS.maxDocumentBytes);
-      if (!body.ok) return { ok: false, sourceId: input.source.id, reason: body.reason };
+      if (!body.ok) {
+        return {
+          ok: false,
+          sourceId: input.source.id,
+          reason: body.reason,
+          retryable: false,
+        };
+      }
 
       let decoded: string;
       try {
         decoded = new TextDecoder("utf-8", { fatal: false }).decode(body.bytes);
       } catch {
-        return { ok: false, sourceId: input.source.id, reason: "decode_failed" };
+        return {
+          ok: false,
+          sourceId: input.source.id,
+          reason: "decode_failed",
+          retryable: false,
+        };
       }
       const extracted = extractBoundedSecFilingText({ document: decoded });
-      if (!extracted.ok) return { ok: false, sourceId: input.source.id, reason: "empty_text" };
+      if (!extracted.ok) {
+        return {
+          ok: false,
+          sourceId: input.source.id,
+          reason: "empty_text",
+          retryable: false,
+        };
+      }
 
       return {
         ok: true,
@@ -155,12 +237,47 @@ async function fetchOneSecFiling(input: {
     }
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
-      return { ok: false, sourceId: input.source.id, reason: "timeout" };
+      return {
+        ok: false,
+        sourceId: input.source.id,
+        reason: "timeout",
+        retryable: true,
+      };
     }
-    return { ok: false, sourceId: input.source.id, reason: "fetch_failed" };
+    return {
+      ok: false,
+      sourceId: input.source.id,
+      reason: "fetch_failed",
+      retryable: true,
+    };
   } finally {
     clearTimeout(timer);
   }
+}
+
+async function fetchOneSecFiling(input: {
+  source: GlobalPrimarySource;
+  fetchImpl: typeof fetch;
+}): Promise<FetchDocumentResult> {
+  let lastFailure: Extract<FetchAttemptResult, { ok: false }> | null = null;
+
+  for (let attempt = 1; attempt <= MAX_FETCH_ATTEMPTS_PER_DOCUMENT; attempt += 1) {
+    const result = await fetchOneSecFilingAttempt(input);
+    if (result.ok) return result;
+    lastFailure = result;
+
+    if (!result.retryable || attempt >= MAX_FETCH_ATTEMPTS_PER_DOCUMENT) {
+      return { ok: false, sourceId: result.sourceId, reason: result.reason };
+    }
+
+    await waitBeforeRetry(attempt);
+  }
+
+  return {
+    ok: false,
+    sourceId: input.source.id,
+    reason: lastFailure?.reason ?? "fetch_failed",
+  };
 }
 
 export async function extractGlobalSecEvidence(input: {
@@ -179,8 +296,9 @@ export async function extractGlobalSecEvidence(input: {
   const documents: SecFilingDocument[] = [];
   const failures: Array<{ sourceId: string; reason: FetchFailureReason }> = [];
 
-  // Sequential on purpose: the entire global evidence pass is bounded to two
-  // official SEC documents and never fans out arbitrary outbound requests.
+  // Sequential on purpose: the pass is still bounded to two official SEC
+  // documents. Each document gets at most one additional attempt, and only for
+  // transient transport/rate-limit failures; validation/content failures never retry.
   for (const source of filingSources) {
     const result = await fetchOneSecFiling({ source, fetchImpl });
     if (result.ok) documents.push(result.document);
