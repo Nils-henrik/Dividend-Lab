@@ -25,6 +25,11 @@ const DEEP_RESEARCH_CNS_REQUEST_BUDGET = {
   total: 5,
 } as const;
 
+const DEEP_RESEARCH_CNS_ROW_BUDGET = {
+  ordinaryTerm: 20,
+  periodOnlyTerm: 100,
+} as const;
+
 function analysisKind(input: {
   sourceType: "official_company_report" | "company_release" | "regulatory_filing";
   documentType: string;
@@ -232,6 +237,12 @@ export function nordicAnnualReportIntentTerms(input: {
   ]).slice(0, DEEP_RESEARCH_CNS_REQUEST_BUDGET.annualReport);
 }
 
+function isPeriodOnlyReportTerm(term: string): boolean {
+  return /^(?:year-end report \d{4}|interim report January-(?:March|June|September) \d{4})$/i.test(
+    term.trim(),
+  );
+}
+
 function requestUrl(input: RequestInfo | URL): URL | null {
   try {
     if (input instanceof URL) return new URL(input.toString());
@@ -287,7 +298,9 @@ async function fetchTermedNordicHits(input: {
       fetchImpl: exactFreeTextFetch(input.fetchImpl, term),
       now: input.now,
       maxHits: input.maxHits,
-      queryCount: 20,
+      queryCount: isPeriodOnlyReportTerm(term)
+        ? DEEP_RESEARCH_CNS_ROW_BUDGET.periodOnlyTerm
+        : DEEP_RESEARCH_CNS_ROW_BUDGET.ordinaryTerm,
       preferFinancialReports: true,
     }));
   }
