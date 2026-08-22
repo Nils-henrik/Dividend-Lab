@@ -176,4 +176,5 @@ Light requests must remain rejected by the worker until a separate Light engine 
 - No live AI call is required.
 - Run one normal Vercel Preview build after the source contract is complete.
 - The static contract test must pin current call counts, output caps, the specialist prompt bound and the 100k local-text envelope.
+- Final release evidence must reference the exact final Git head; deployments from superseded or temporary commits do not count.
 - Do not merge independently.
