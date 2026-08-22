@@ -36,11 +36,8 @@ function evidence(): AnalysisEvidence[] {
       kind: "official_report_excerpt",
       title: "SEB's results for the second quarter 2026",
       content: "Officiell Nasdaq-release.",
-      documentExcerpt: [
-        "Return on equity 15.7%",
-        "CET1 capital ratio 17.2%",
-        "The bank reported a capital buffer of 250 basis points.",
-      ].join("\n"),
+      documentExcerpt:
+        "SEB's operating profit for the second quarter 2026 amounted to SEK 10.8bn, with a return on equity of 15.7 per cent, a CET1 capital ratio of 17.2 per cent, and a capital buffer of 250 basis points.",
       publishedAt: "2026-07-15T06:30:00.000Z",
       primary: true,
       documentRetrieved: true,
@@ -93,7 +90,7 @@ function sources(): AnalysisSource[] {
 }
 
 describe("SEB specialist multi-source Research readiness", () => {
-  it("assembles a newer Fact Book and release evidence without losing metric provenance", () => {
+  it("assembles a newer Fact Book and the real release narrative without losing metric provenance", () => {
     const result = buildBankResearch({
       evidence: evidence(),
       fundamentals: {
