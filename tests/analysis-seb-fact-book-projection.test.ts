@@ -124,6 +124,75 @@ describe("SEB Fact Book current-quarter projection", () => {
     assert.equal(projection.values.netEclLevelPct, 0.05);
   });
 
+  it("accepts the real PDF-style vertical row shape with one exact value per line", () => {
+    const vertical = [
+      "Key figures - SEB Group, nine quarters",
+      "Q2", "2024",
+      "Q3", "2024",
+      "Q4", "2024",
+      "Q1", "2025",
+      "Q2", "2025",
+      "Q3", "2025",
+      "Q4", "2025",
+      "Q1", "2026",
+      "Q2", "2026",
+      "Cost/income ratio",
+      "0.36", "0.37", "0.43", "0.42", "0.41", "0.42", "0.45", "0.41", "0.40",
+      "Net ECL level, %",
+      "0.01", "0.05", "0.05", "0.09", "0.04", "0.03", "0.05", "0.07", "0.05",
+      "Liquidity Coverage Ratio (LCR) 4), %",
+      "130", "133", "160", "132", "130", "136", "150", "135", "125",
+      "Net Stable Funding Ratio (NSFR) 5), %",
+      "112", "113", "111", "113", "112", "116", "113", "112", "110",
+      "Own funds requirement, Basel III",
+    ].join("\n");
+
+    const projection = projectSebFactBookCurrentPeriod({
+      text: vertical,
+      reportPeriod: "Q2",
+      reportYear: 2026,
+    });
+    assert.ok(projection);
+    assert.deepEqual(projection.values, {
+      netEclLevelPct: 0.05,
+      costIncomeRatioPct: 40,
+      liquidityCoverageRatioPct: 125,
+      netStableFundingRatioPct: 110,
+    });
+  });
+
+  it("refuses an incomplete vertical row instead of shifting into the next label", () => {
+    const brokenVertical = [
+      "Key figures - SEB Group, nine quarters",
+      "Q2", "2024",
+      "Q3", "2024",
+      "Q4", "2024",
+      "Q1", "2025",
+      "Q2", "2025",
+      "Q3", "2025",
+      "Q4", "2025",
+      "Q1", "2026",
+      "Q2", "2026",
+      "Cost/income ratio",
+      "0.36", "0.37", "0.43", "0.42", "0.41", "0.42", "0.45", "0.40",
+      "Net ECL level, %",
+      "0.01", "0.05", "0.05", "0.09", "0.04", "0.03", "0.05", "0.07", "0.05",
+      "Liquidity Coverage Ratio (LCR) 4), %",
+      "130", "133", "160", "132", "130", "136", "150", "135", "125",
+      "Net Stable Funding Ratio (NSFR) 5), %",
+      "112", "113", "111", "113", "112", "116", "113", "112", "110",
+    ].join("\n");
+
+    assert.equal(
+      projectSebFactBookCurrentPeriod({
+        text: brokenVertical,
+        reportPeriod: "Q2",
+        reportYear: 2026,
+      }),
+      null,
+    );
+  });
+
   it("feeds the existing bank extractors with the Fact Book sourceId intact", () => {
     const evidence = projectedEvidence();
     const report = extractBankReportMetrics([evidence]);
