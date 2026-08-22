@@ -15,11 +15,10 @@ describe("DivLab qualitative primary-research expansion", () => {
     assert.match(analysis, /currentReport:\s*3/);
     assert.match(analysis, /annualReport:\s*2/);
     assert.match(analysis, /total:\s*5/);
-    assert.match(analysis, /annualDiscoverySymbol/);
-    assert.match(analysis, /function annualDiscoverySeeds/);
-    assert.match(analysis, /annualDiscoverySymbol\(input\.symbol\)/);
-    assert.match(analysis, /seeds:\s*annualDiscoverySeeds\(input\)/);
-    assert.match(analysis, /boundedFetch\(input\.fetchImpl,\s*1\)/);
+    assert.match(analysis, /function currentDiscoveryTerms/);
+    assert.match(analysis, /function annualDiscoveryTerms/);
+    assert.match(analysis, /function exactFreeTextFetch/);
+    assert.match(analysis, /url\.searchParams\.set\("freeText", freeText\)/);
     assert.match(shared, /const HARD_MAX_SEARCH_TERMS = 5/);
   });
 

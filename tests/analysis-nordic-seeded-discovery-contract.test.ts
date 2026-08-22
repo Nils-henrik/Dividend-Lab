@@ -11,21 +11,33 @@ const sharedSource = readFileSync(
   "utf8",
 );
 
-describe("Dedicated Nordic seeded report discovery contract", () => {
+describe("Dedicated Nordic explicit report discovery contract", () => {
   it("keeps the existing hard 3-current + 2-annual dedicated request ceiling", () => {
     assert.match(analysisSource, /currentReport:\s*3/);
     assert.match(analysisSource, /annualReport:\s*2/);
     assert.match(analysisSource, /total:\s*5/);
-    assert.match(analysisSource, /boundedFetch\(input\.fetchImpl,\s*1\)/);
+    assert.match(analysisSource, /function exactFreeTextFetch/);
+    assert.match(analysisSource, /if \(requestUsed\)/);
+    assert.match(analysisSource, /status:\s*429/);
   });
 
-  it("uses separate ticker and issuer-name seeds so one noisy disclosure query cannot starve report discovery", () => {
-    assert.match(analysisSource, /currentDiscoverySeeds/);
-    assert.match(analysisSource, /input\.symbol/);
-    assert.match(analysisSource, /input\.companyName/);
-    assert.match(analysisSource, /\$\{input\.companyName\} interim/);
-    assert.match(analysisSource, /\$\{input\.companyName\} annual/);
-    assert.match(analysisSource, /dedupeHits\(batches\.flat\(\)\)/);
+  it("uses issuer/ticker report-intent terms without weakening shared issuer filtering", () => {
+    assert.match(analysisSource, /function currentDiscoveryTerms/);
+    assert.match(analysisSource, /function annualDiscoveryTerms/);
+    assert.match(analysisSource, /preferredIssuerSearchName/);
+    assert.match(analysisSource, /`\$\{issuer\} interim`/);
+    assert.match(analysisSource, /`\$\{ticker\} results`/);
+    assert.match(analysisSource, /`\$\{issuer\} annual`/);
+    assert.match(analysisSource, /url\.searchParams\.set\("freeText", freeText\)/);
+    assert.match(analysisSource, /companyName:\s*input\.companyName/);
+    assert.match(analysisSource, /symbol:\s*input\.symbol/);
+  });
+
+  it("fails closed if the dedicated wrapper is asked to rewrite any endpoint except Nasdaq CNS", () => {
+    assert.match(analysisSource, /url\.protocol !== "https:"/);
+    assert.match(analysisSource, /url\.hostname !== "api\.news\.eu\.nasdaq\.com"/);
+    assert.match(analysisSource, /url\.pathname !== "\/news\/query\.action"/);
+    assert.match(analysisSource, /Unexpected Nordic research endpoint/);
   });
 
   it("does not widen the shared portfolio discovery scope or attachment trust boundary", () => {

@@ -48,6 +48,19 @@ describe("DivLab financial-specialist issuer shorthand", () => {
     assert.deepEqual(research.blockers, []);
   });
 
+  it("normalizes invisible Unicode format controls without weakening explicit EUR/scale requirements", () => {
+    const research = buildFinancialSpecialistResearch({
+      basePacket: packetWithExcerpt(
+        "Gross inflows €17.8bn. FAUM amounted to €\u200c\u200b155\u200bbn (€141bn) and Total AUM was €\u200c291\u200bbn (€266bn).",
+      ),
+    });
+
+    assert.equal(research.status, "research_ready");
+    assert.equal(research.metrics.feeGeneratingAumEurBn.value, 155);
+    assert.equal(research.metrics.totalAumEurBn.value, 291);
+    assert.deepEqual(research.blockers, []);
+  });
+
   it("does not accept bare AUM shorthand without explicit currency and scale", () => {
     const research = buildFinancialSpecialistResearch({
       basePacket: packetWithExcerpt("FAUM 155 and total AUM 291."),

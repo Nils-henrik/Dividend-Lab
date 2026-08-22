@@ -40,8 +40,16 @@ function parseNumeric(raw: string): number | null {
   return Number.isFinite(value) ? value : null;
 }
 
+function normalizeEvidenceText(value: string): string {
+  // PDF/text layers can contain invisible Unicode format controls between a
+  // currency symbol, digits and unit. They carry no financial meaning but can
+  // otherwise break an exact source-bound regex. Remove only category Cf;
+  // visible wording, currency, values and scale tokens remain unchanged.
+  return value.replace(/\p{Cf}/gu, "");
+}
+
 function evidenceText(item: AnalysisEvidence): string {
-  return `${item.documentExcerpt ?? ""}\n${item.content}`;
+  return normalizeEvidenceText(`${item.documentExcerpt ?? ""}\n${item.content}`);
 }
 
 function metric(

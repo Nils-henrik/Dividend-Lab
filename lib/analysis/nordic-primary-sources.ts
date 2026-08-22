@@ -1,6 +1,10 @@
 import "server-only";
 
-import { fetchNordicPrimarySourceEvents, type NordicPrimarySourceHit } from "@/lib/model-portfolios/engine/nordic-primary-sources";
+import {
+  fetchNordicPrimarySourceEvents,
+  nordicDisclosureCompanyAliases,
+  type NordicPrimarySourceHit,
+} from "@/lib/model-portfolios/engine/nordic-primary-sources";
 import {
   enrichNordicPrimarySourceHits,
   PRIMARY_SOURCE_ENRICHMENT_BOUNDS,
@@ -130,12 +134,20 @@ function dedupeHits(hits: readonly NordicPrimarySourceHit[]): NordicPrimarySourc
   return output;
 }
 
-function annualDiscoverySymbol(symbol: string): string {
-  const base = symbol.trim().toUpperCase().replace(/-(?:A|B|SDB)$/i, "");
-  return `${base || symbol.trim()} annual`;
+function compactTickerSearchToken(symbol: string): string {
+  const normalized = symbol.trim().toUpperCase();
+  return normalized.replace(/-(?:A|B|SDB)$/i, "") || normalized;
 }
 
-function uniqueSeeds(values: readonly string[]): string[] {
+function preferredIssuerSearchName(companyName: string): string {
+  const aliases = nordicDisclosureCompanyAliases(companyName)
+    .map((value) => value.replace(/\s+/g, " ").trim())
+    .filter(Boolean)
+    .sort((a, b) => a.length - b.length);
+  return aliases[0] ?? companyName.replace(/\s+/g, " ").trim();
+}
+
+function uniqueTerms(values: readonly string[]): string[] {
   const seen = new Set<string>();
   const output: string[] = [];
   for (const value of values) {
@@ -148,52 +160,78 @@ function uniqueSeeds(values: readonly string[]): string[] {
   return output;
 }
 
-function currentDiscoverySeeds(input: { companyName: string; symbol: string }): string[] {
-  return uniqueSeeds([
-    input.symbol,
-    input.companyName,
-    `${input.companyName} interim`,
+function currentDiscoveryTerms(input: { companyName: string; symbol: string }): string[] {
+  const issuer = preferredIssuerSearchName(input.companyName);
+  const ticker = compactTickerSearchToken(input.symbol);
+  return uniqueTerms([
+    `${issuer} interim`,
+    `${ticker} interim`,
+    `${ticker} results`,
   ]).slice(0, DEEP_RESEARCH_CNS_REQUEST_BUDGET.currentReport);
 }
 
-function annualDiscoverySeeds(input: { companyName: string; symbol: string }): string[] {
-  return uniqueSeeds([
-    annualDiscoverySymbol(input.symbol),
-    `${input.companyName} annual`,
+function annualDiscoveryTerms(input: { companyName: string; symbol: string }): string[] {
+  const issuer = preferredIssuerSearchName(input.companyName);
+  const ticker = compactTickerSearchToken(input.symbol);
+  return uniqueTerms([
+    `${issuer} annual`,
+    `${ticker} annual`,
   ]).slice(0, DEEP_RESEARCH_CNS_REQUEST_BUDGET.annualReport);
 }
 
-function boundedFetch(fetchImpl: typeof fetch, maxRequests: number): typeof fetch {
-  let requests = 0;
+function requestUrl(input: RequestInfo | URL): URL | null {
+  try {
+    if (input instanceof URL) return new URL(input.toString());
+    if (typeof input === "string") return new URL(input);
+    return new URL(input.url);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The shared Nasdaq adapter owns endpoint parameters, Main Market scope,
+ * issuer-side filtering and attachment trust. Dedicated Deep Research only
+ * replaces the first generated `freeText` value with one explicit internal
+ * report-intent term and then closes the wrapper after that single request.
+ */
+function exactFreeTextFetch(fetchImpl: typeof fetch, freeText: string): typeof fetch {
+  let requestUsed = false;
   return (async (input: RequestInfo | URL, init?: RequestInit) => {
-    if (requests >= maxRequests) {
+    if (requestUsed) {
       return new Response(null, { status: 429, statusText: "DivLab bounded research budget" });
     }
-    requests += 1;
-    return fetchImpl(input, init);
+    requestUsed = true;
+    const url = requestUrl(input);
+    if (
+      !url
+      || url.protocol !== "https:"
+      || url.hostname !== "api.news.eu.nasdaq.com"
+      || url.pathname !== "/news/query.action"
+    ) {
+      return new Response(null, { status: 400, statusText: "Unexpected Nordic research endpoint" });
+    }
+    url.searchParams.set("freeText", freeText);
+    return fetchImpl(url, init);
   }) as typeof fetch;
 }
 
-async function fetchSeededNordicHits(input: {
+async function fetchTermedNordicHits(input: {
   companyName: string;
-  seeds: readonly string[];
+  symbol: string;
+  terms: readonly string[];
   exchange: string;
   fetchImpl: typeof fetch;
   now: Date;
   maxHits: number;
 }): Promise<NordicPrimarySourceHit[]> {
   const batches: NordicPrimarySourceHit[][] = [];
-  for (const seed of input.seeds) {
-    // One real CNS request is reserved per explicit seed. The shared adapter may
-    // attempt further internal aliases, but its per-seed bounded fetch returns
-    // 429 locally after the first request. This keeps dedicated research at the
-    // same hard 3-current + 2-annual external request ceiling while preventing
-    // one noisy ticker query from starving issuer-name report discovery.
+  for (const term of input.terms) {
     batches.push(await fetchNordicPrimarySourceEvents({
       companyName: input.companyName,
-      symbol: seed,
+      symbol: input.symbol,
       exchange: input.exchange,
-      fetchImpl: boundedFetch(input.fetchImpl, 1),
+      fetchImpl: exactFreeTextFetch(input.fetchImpl, term),
       now: input.now,
       maxHits: input.maxHits,
       queryCount: 20,
@@ -213,9 +251,10 @@ async function fetchEnrichedNordicResearch(input: {
   const now = input.now ?? new Date();
   const fetchImpl = input.fetchImpl ?? fetch;
 
-  const currentHits = await fetchSeededNordicHits({
+  const currentHits = await fetchTermedNordicHits({
     companyName: input.companyName,
-    seeds: currentDiscoverySeeds(input),
+    symbol: input.symbol,
+    terms: currentDiscoveryTerms(input),
     exchange: input.exchange,
     fetchImpl,
     now,
@@ -238,9 +277,10 @@ async function fetchEnrichedNordicResearch(input: {
 
   const annualHits = alreadyHasAnnual
     ? []
-    : await fetchSeededNordicHits({
+    : await fetchTermedNordicHits({
         companyName: input.companyName,
-        seeds: annualDiscoverySeeds(input),
+        symbol: input.symbol,
+        terms: annualDiscoveryTerms(input),
         exchange: input.exchange,
         fetchImpl,
         now,
