@@ -188,9 +188,18 @@ async function avanzaDiagnostic() {
   });
 }
 
-await bankDiagnostic();
-await specialistDiagnostic("INVE-B", "Investor AB");
-await specialistDiagnostic("EQT", "EQT AB");
-await xomRawSecDiagnostic();
-await xomDiagnostic();
-await avanzaDiagnostic();
+async function main() {
+  await bankDiagnostic();
+  await specialistDiagnostic("INVE-B", "Investor AB");
+  await specialistDiagnostic("EQT", "EQT AB");
+  await xomRawSecDiagnostic();
+  await xomDiagnostic();
+  await avanzaDiagnostic();
+}
+
+main().catch((error) => {
+  emit("fatal", {
+    error: error instanceof Error ? `${error.name}:${error.message}`.slice(0, 220) : "unknown_error",
+  });
+  process.exitCode = 1;
+});
