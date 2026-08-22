@@ -52,7 +52,7 @@ function removeExecutableBlocks(value: string): string {
  */
 export function extractNasdaqReleaseVisibleText(
   html: string,
-  maxChars = NASDAQ_RELEASE_TEXT_MAX_CHARS,
+  maxChars: number = NASDAQ_RELEASE_TEXT_MAX_CHARS,
 ): string | null {
   if (!html || !Number.isFinite(maxChars) || maxChars <= 0) return null;
   if (!/<(?:!doctype\s+html|html\b|body\b)/iu.test(html)) return null;
