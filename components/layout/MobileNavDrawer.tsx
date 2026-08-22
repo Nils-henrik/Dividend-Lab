@@ -8,12 +8,14 @@ type Props = {
   isOpen: boolean;
   onClose: () => void;
   unreadMessageCount: number;
+  isOwner?: boolean;
 };
 
 export default function MobileNavDrawer({
   isOpen,
   onClose,
   unreadMessageCount,
+  isOwner = false,
 }: Props) {
   const drawerRef = useRef<HTMLElement | null>(null);
 
@@ -82,6 +84,7 @@ export default function MobileNavDrawer({
             unreadMessageCount={unreadMessageCount}
             onNavigate={onClose}
             navigationSurface="mobile"
+            isOwner={isOwner}
           />
         </div>
       </aside>
