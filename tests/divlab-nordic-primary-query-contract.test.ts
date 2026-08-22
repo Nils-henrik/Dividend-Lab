@@ -17,7 +17,8 @@ describe("Nasdaq Nordic CNS discovery contract", () => {
     assert.match(value, /searchParams\.set\("company", ""\)/);
     assert.match(value, /searchParams\.set\("limit", String\(input\.count\)\)/);
     assert.doesNotMatch(value, /searchParams\.set\("count", String\(input\.count\)\)/);
-    assert.match(value, /const HARD_MAX_QUERY_COUNT = 20/);
+    assert.match(value, /const DEFAULT_QUERY_COUNT = 5/);
+    assert.match(value, /const HARD_MAX_QUERY_COUNT = 100/);
     assert.match(value, /const HARD_MAX_HITS = 12/);
     assert.match(value, /const HARD_MAX_SEARCH_TERMS = 5/);
   });

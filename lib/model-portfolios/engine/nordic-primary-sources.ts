@@ -66,7 +66,11 @@ const USER_AGENT = "DivLab/1.0 nordic-primary-research";
 const DEFAULT_MAX_HITS = 2;
 const DEFAULT_QUERY_COUNT = 5;
 const HARD_MAX_HITS = 12;
-const HARD_MAX_QUERY_COUNT = 20;
+// Model-portfolio callers remain on DEFAULT_QUERY_COUNT=5. The wider hard cap
+// exists only so dedicated Deep Research can inspect more rows from one already
+// budgeted generic period query before issuer-side filtering; it does not add a
+// network request or widen the accepted issuer/market scope.
+const HARD_MAX_QUERY_COUNT = 100;
 const HARD_MAX_SEARCH_TERMS = 5;
 
 function text(value: unknown): string | null {
@@ -255,9 +259,8 @@ async function queryNasdaqCns(input: {
  *
  * The model-portfolio caller keeps the conservative defaults (2 hits / 5 CNS
  * rows per term). Dedicated DivLab Deep Research may explicitly request a
- * wider result window, hard-capped at 12 hits / 20 CNS rows per term, and may
- * prioritize financial-report search terms without increasing the number of
- * CNS requests.
+ * wider result window, hard-capped at 12 issuer hits / 100 returned CNS rows
+ * for one term, without increasing the number of CNS requests.
  */
 export async function fetchNordicPrimarySourceEvents(input: {
   companyName: string;

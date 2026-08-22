@@ -26,6 +26,89 @@ The intended user flow is:
 8. enforce Research 100/100 + Analyst 100/100;
 9. persist/publish only when every gate passes.
 
+## Locked product direction — Light Analysis and Deep Analysis
+
+DivLab Analys shall expose two user-facing analysis depths built on the **same canonical company facts, provenance and methodology contracts**. They are not separate country-specific engines and must not fork into incompatible scoring or data models.
+
+### Light Analysis
+
+The Light Analysis is the fast, lower-cost product for a user who wants a current, structured answer without the full Deep Research sequence.
+
+The target output shall include, when methodology and data support it:
+
+- verified instrument/company identity;
+- current price and market context;
+- compact fundamental snapshot with the most decision-relevant financial data shown to the user;
+- valuation snapshot and historical valuation context where reliable inputs exist;
+- price chart and current technical regime;
+- MA20, MA50 and MA200 where sufficient history exists;
+- deterministic support/resistance areas rather than invented exact levels;
+- trend/momentum context, with RSI and volume context where the technical contract supports them;
+- key strengths, weaknesses and risks;
+- a compact DivLab Outlook using explicit assumptions and scenario language;
+- source/provenance links for material factual claims.
+
+The Light Analysis may perform less external research and less interpretive depth than the Deep Analysis, but it may **never** lower correctness requirements, fabricate unavailable data or convert missing evidence into a confident conclusion.
+
+### Deep Analysis
+
+The Deep Analysis is DivLab's full **superanalysis** of both the company and the listed share.
+
+It shall build on the same canonical facts as Light Analysis and continue through the complete DivLab Research + Analyst sequence. The intended output includes:
+
+- full business-model and competitive-position analysis;
+- multi-period income statement, balance sheet and cash-flow analysis;
+- growth, margins, profitability, capital efficiency and balance-sheet strength;
+- capital allocation and management-relevant evidence where available;
+- company-type-specific methodology rather than a generic template for banks, investment companies, asset managers or future specialist families;
+- historical and current valuation;
+- valuation model(s) appropriate to the company type;
+- explicit Bear / Base / Bull scenarios;
+- estimated fair-value range with assumptions visible;
+- full technical analysis with chart, moving averages, support/resistance, trend, momentum and relevant volume/indicator context;
+- risk analysis and identified invalidation points;
+- scenario probabilities when the Analyst contract can justify them;
+- a probability-weighted expected-return / price-outlook calculation over an explicit horizon;
+- confidence/quality semantics that distinguish data certainty from forecast uncertainty;
+- full source traceability and the existing 100/100 Research + 100/100 Analyst quality gates before publication.
+
+### Forecast semantics
+
+DivLab may present a modelled expected price/return outlook, but it must not pretend that a point forecast is certain.
+
+A valid final presentation should be structurally equivalent to:
+
+- current market price;
+- Bear scenario: price/return and stated assumptions;
+- Base scenario: price/return and stated assumptions;
+- Bull scenario: price/return and stated assumptions;
+- scenario probabilities when justified;
+- probability-weighted expected return;
+- explicit forecast horizon, for example 12 months;
+- confidence/quality context;
+- primary support and resistance areas;
+- a plain-language DivLab assessment such as negative / neutral / positive.
+
+If probabilities or valuation assumptions cannot be justified from the available evidence, the engine must fail closed or omit that output rather than manufacture precision.
+
+### Shared-engine requirement
+
+The engineering target is conceptually:
+
+`market-specific sources -> canonical facts -> company-type methodology -> DivLab analysis`
+
+not separate functions or quality standards for individual companies or countries.
+
+Market adapters are allowed to differ because SEC/US GAAP/USD, Swedish IFRS/SEK and other jurisdictions expose different source structures. Once normalized, the analytical quality standard is shared globally.
+
+Light Analysis should be understood as a bounded execution depth over the shared engine. Deep Analysis should be understood as the complete execution depth over the same engine.
+
+### Commercial hypothesis — not an engineering gate
+
+The current product hypothesis is approximately **10 SEK for a Light Analysis** and **25 SEK for a Deep Analysis**, preferably consumed from prepaid DivLab credits/saldo so that very small card transactions do not dominate payment economics.
+
+These prices are not locked acceptance criteria. Final pricing must be set after DivLab can measure real AI/data/compute cost per completed analysis and after the product/legal presentation has been reviewed. Engineering must therefore expose enough run-level cost/usage telemetry to support later unit-economics decisions without leaking provider secrets to end users.
+
 ## Global discovery is separate from analysis readiness
 
 A globally discovered equity is **not automatically analysis-ready**.
