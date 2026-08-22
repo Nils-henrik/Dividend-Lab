@@ -12,6 +12,12 @@ export type SebFactBookProjection = {
   };
 };
 
+type SebFactBookPeriodHeader = {
+  quarters: SebFactBookQuarter[];
+  years: number[];
+  rowStart: number;
+};
+
 const SEB_ISSUER = /^Skandinaviska\s+Enskilda\s+Banken\s+AB(?:\s*\(publ\))?$/iu;
 const FACT_BOOK_FILE = /\bfact\s*book\b/iu;
 
@@ -55,6 +61,64 @@ function periodsAreContiguous(
   return true;
 }
 
+function combinedPeriodHeader(
+  lines: readonly string[],
+  anchor: number,
+): SebFactBookPeriodHeader | null {
+  for (let index = anchor + 1; index <= Math.min(anchor + 6, lines.length - 1); index += 1) {
+    const found = lines[index]?.match(/\bQ[1-4]\b/g) ?? [];
+    if (found.length !== 9) continue;
+    for (let yearIndex = index + 1; yearIndex <= Math.min(index + 3, lines.length - 1); yearIndex += 1) {
+      const years = (lines[yearIndex]?.match(/\b20\d{2}\b/g) ?? []).map(Number);
+      if (years.length !== 9) continue;
+      return {
+        quarters: found as SebFactBookQuarter[],
+        years,
+        rowStart: yearIndex + 1,
+      };
+    }
+  }
+  return null;
+}
+
+/**
+ * PDF text layers sometimes preserve a table header as Q2/2024/Q3/2024...
+ * instead of two flattened rows. Accept only nine exact adjacent quarter/year
+ * pairs; no loose token harvesting is allowed.
+ */
+function alternatingPeriodHeader(
+  lines: readonly string[],
+  anchor: number,
+): SebFactBookPeriodHeader | null {
+  const lastStart = Math.min(anchor + 8, lines.length - 18);
+  for (let start = anchor + 1; start <= lastStart; start += 1) {
+    const quarters: SebFactBookQuarter[] = [];
+    const years: number[] = [];
+    let valid = true;
+    for (let pair = 0; pair < 9; pair += 1) {
+      const quarter = lines[start + pair * 2] ?? "";
+      const year = lines[start + pair * 2 + 1] ?? "";
+      if (!/^Q[1-4]$/.test(quarter) || !/^20\d{2}$/.test(year)) {
+        valid = false;
+        break;
+      }
+      quarters.push(quarter as SebFactBookQuarter);
+      years.push(Number(year));
+    }
+    if (valid) {
+      return { quarters, years, rowStart: start + 18 };
+    }
+  }
+  return null;
+}
+
+function periodHeader(
+  lines: readonly string[],
+  anchor: number,
+): SebFactBookPeriodHeader | null {
+  return combinedPeriodHeader(lines, anchor) ?? alternatingPeriodHeader(lines, anchor);
+}
+
 function rowValues(input: {
   lines: readonly string[];
   start: number;
@@ -67,8 +131,11 @@ function rowValues(input: {
     input.pattern.lastIndex = 0;
     const match = input.pattern.exec(line);
     input.pattern.lastIndex = 0;
-    if (!match?.[1]) continue;
-    const values = numericValues(match[1]);
+    if (!match) continue;
+    const sameLine = match[1]?.trim() ?? "";
+    const values = sameLine
+      ? numericValues(sameLine)
+      : numericValues(input.lines[index + 1] ?? "");
     if (!values || matchValues) return null;
     matchValues = values;
   }
@@ -118,59 +185,41 @@ export function projectSebFactBookCurrentPeriod(input: {
   );
   if (anchor < 0) return null;
 
-  let headerIndex = -1;
-  let quarters: SebFactBookQuarter[] = [];
-  for (let index = anchor + 1; index <= Math.min(anchor + 6, lines.length - 1); index += 1) {
-    const found = lines[index]?.match(/\bQ[1-4]\b/g) ?? [];
-    if (found.length !== 9) continue;
-    headerIndex = index;
-    quarters = found as SebFactBookQuarter[];
-    break;
-  }
-  if (headerIndex < 0) return null;
+  const header = periodHeader(lines, anchor);
+  if (!header || !periodsAreContiguous(header.quarters, header.years)) return null;
 
-  let years: number[] = [];
-  for (let index = headerIndex + 1; index <= Math.min(headerIndex + 3, lines.length - 1); index += 1) {
-    const found = (lines[index]?.match(/\b20\d{2}\b/g) ?? []).map(Number);
-    if (found.length === 9) {
-      years = found;
-      break;
-    }
-  }
-  if (!periodsAreContiguous(quarters, years)) return null;
-
-  const targetIndexes = quarters
-    .map((quarter, index) => ({ quarter, year: years[index], index }))
+  const targetIndexes = header.quarters
+    .map((quarter, index) => ({ quarter, year: header.years[index], index }))
     .filter(({ quarter, year }) => quarter === reportPeriod && year === reportYear)
     .map(({ index }) => index);
   if (targetIndexes.length !== 1 || targetIndexes[0] !== 8) return null;
   const targetIndex = targetIndexes[0];
 
-  const rowStart = headerIndex + 1;
-  const rowEnd = Math.min(lines.length, headerIndex + 45);
+  const rowStart = header.rowStart;
+  const rowEnd = Math.min(lines.length, rowStart + 45);
   const costIncome = rowValues({
     lines,
     start: rowStart,
     end: rowEnd,
-    pattern: /^Cost\/income ratio\s+(.+)$/iu,
+    pattern: /^Cost\/income ratio(?:\s+(.+))?$/iu,
   });
   const netEcl = rowValues({
     lines,
     start: rowStart,
     end: rowEnd,
-    pattern: /^Net ECL level,\s*%\s+(.+)$/iu,
+    pattern: /^Net ECL level,\s*%(?:\s+(.+))?$/iu,
   });
   const lcr = rowValues({
     lines,
     start: rowStart,
     end: rowEnd,
-    pattern: /^Liquidity Coverage Ratio\s*\(LCR\)\s*(?:\d+\))?,\s*%\s+(.+)$/iu,
+    pattern: /^Liquidity Coverage Ratio\s*\(LCR\)\s*(?:\d+\))?,\s*%(?:\s+(.+))?$/iu,
   });
   const nsfr = rowValues({
     lines,
     start: rowStart,
     end: rowEnd,
-    pattern: /^Net Stable Funding Ratio\s*\(NSFR\)\s*(?:\d+\))?,\s*%\s+(.+)$/iu,
+    pattern: /^Net Stable Funding Ratio\s*\(NSFR\)\s*(?:\d+\))?,\s*%(?:\s+(.+))?$/iu,
   });
   if (!costIncome || !netEcl || !lcr || !nsfr) return null;
 
