@@ -86,6 +86,7 @@ export default async function AppShell({
         notificationUserId={bell.userId}
         chatBootstrap={chatBootstrap}
         isModerator={isOwner}
+        isOwner={isOwner}
       >
         {children}
       </AppShellClient>
@@ -111,6 +112,7 @@ export default async function AppShell({
         notificationUserId={bell.userId}
         chatBootstrap={chatBootstrap}
         isModerator={isOwner}
+        isOwner={isOwner}
       >
         {children}
       </AppShellClient>
@@ -127,6 +129,7 @@ export default async function AppShell({
         notificationUserId={null}
         isGuest
         isModerator={false}
+        isOwner={false}
       >
         {children}
       </AppShellClient>
@@ -149,6 +152,7 @@ export default async function AppShell({
       notificationUserId={bell.userId}
       chatBootstrap={chatBootstrap}
       isModerator={isOwner}
+      isOwner={isOwner}
     >
       {children}
     </AppShellClient>

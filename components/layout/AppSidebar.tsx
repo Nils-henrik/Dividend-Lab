@@ -9,6 +9,7 @@ type Props = {
   onMouseLeave: () => void;
   onExpandSidebar: () => void;
   unreadMessageCount: number;
+  isOwner?: boolean;
 };
 
 export default function AppSidebar({
@@ -17,6 +18,7 @@ export default function AppSidebar({
   onMouseLeave,
   onExpandSidebar,
   unreadMessageCount,
+  isOwner = false,
 }: Props) {
   return (
     <aside
@@ -44,6 +46,7 @@ export default function AppSidebar({
         unreadMessageCount={unreadMessageCount}
         onExpandSidebar={onExpandSidebar}
         className="flex-1 px-3 py-5"
+        isOwner={isOwner}
       />
     </aside>
   );
