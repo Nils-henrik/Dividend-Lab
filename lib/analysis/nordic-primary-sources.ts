@@ -135,6 +135,34 @@ function annualDiscoverySymbol(symbol: string): string {
   return `${base || symbol.trim()} annual`;
 }
 
+function uniqueSeeds(values: readonly string[]): string[] {
+  const seen = new Set<string>();
+  const output: string[] = [];
+  for (const value of values) {
+    const normalized = value.replace(/\s+/g, " ").trim();
+    const key = normalized.toUpperCase();
+    if (!normalized || seen.has(key)) continue;
+    seen.add(key);
+    output.push(normalized);
+  }
+  return output;
+}
+
+function currentDiscoverySeeds(input: { companyName: string; symbol: string }): string[] {
+  return uniqueSeeds([
+    input.symbol,
+    input.companyName,
+    `${input.companyName} interim`,
+  ]).slice(0, DEEP_RESEARCH_CNS_REQUEST_BUDGET.currentReport);
+}
+
+function annualDiscoverySeeds(input: { companyName: string; symbol: string }): string[] {
+  return uniqueSeeds([
+    annualDiscoverySymbol(input.symbol),
+    `${input.companyName} annual`,
+  ]).slice(0, DEEP_RESEARCH_CNS_REQUEST_BUDGET.annualReport);
+}
+
 function boundedFetch(fetchImpl: typeof fetch, maxRequests: number): typeof fetch {
   let requests = 0;
   return (async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -144,6 +172,35 @@ function boundedFetch(fetchImpl: typeof fetch, maxRequests: number): typeof fetc
     requests += 1;
     return fetchImpl(input, init);
   }) as typeof fetch;
+}
+
+async function fetchSeededNordicHits(input: {
+  companyName: string;
+  seeds: readonly string[];
+  exchange: string;
+  fetchImpl: typeof fetch;
+  now: Date;
+  maxHits: number;
+}): Promise<NordicPrimarySourceHit[]> {
+  const batches: NordicPrimarySourceHit[][] = [];
+  for (const seed of input.seeds) {
+    // One real CNS request is reserved per explicit seed. The shared adapter may
+    // attempt further internal aliases, but its per-seed bounded fetch returns
+    // 429 locally after the first request. This keeps dedicated research at the
+    // same hard 3-current + 2-annual external request ceiling while preventing
+    // one noisy ticker query from starving issuer-name report discovery.
+    batches.push(await fetchNordicPrimarySourceEvents({
+      companyName: input.companyName,
+      symbol: seed,
+      exchange: input.exchange,
+      fetchImpl: boundedFetch(input.fetchImpl, 1),
+      now: input.now,
+      maxHits: input.maxHits,
+      queryCount: 20,
+      preferFinancialReports: true,
+    }));
+  }
+  return dedupeHits(batches.flat());
 }
 
 async function fetchEnrichedNordicResearch(input: {
@@ -156,15 +213,13 @@ async function fetchEnrichedNordicResearch(input: {
   const now = input.now ?? new Date();
   const fetchImpl = input.fetchImpl ?? fetch;
 
-  const currentHits = await fetchNordicPrimarySourceEvents({
+  const currentHits = await fetchSeededNordicHits({
     companyName: input.companyName,
-    symbol: input.symbol,
+    seeds: currentDiscoverySeeds(input),
     exchange: input.exchange,
-    fetchImpl: boundedFetch(fetchImpl, DEEP_RESEARCH_CNS_REQUEST_BUDGET.currentReport),
+    fetchImpl,
     now,
     maxHits: 12,
-    queryCount: 20,
-    preferFinancialReports: true,
   });
 
   const alreadyHasAnnual = currentHits.some(({ title, category, attachments }) => {
@@ -183,19 +238,13 @@ async function fetchEnrichedNordicResearch(input: {
 
   const annualHits = alreadyHasAnnual
     ? []
-    : await fetchNordicPrimarySourceEvents({
+    : await fetchSeededNordicHits({
         companyName: input.companyName,
-        // The shared adapter builds its first bounded term from symbol. Appending
-        // "annual" produces e.g. "ATCO annual report" while issuer filtering
-        // still uses the untouched company name. The second call is capped at
-        // two CNS requests, keeping total dedicated discovery at <=5 requests.
-        symbol: annualDiscoverySymbol(input.symbol),
+        seeds: annualDiscoverySeeds(input),
         exchange: input.exchange,
-        fetchImpl: boundedFetch(fetchImpl, DEEP_RESEARCH_CNS_REQUEST_BUDGET.annualReport),
+        fetchImpl,
         now,
         maxHits: 4,
-        queryCount: 20,
-        preferFinancialReports: true,
       });
 
   const hits = dedupeHits([...currentHits, ...annualHits]);

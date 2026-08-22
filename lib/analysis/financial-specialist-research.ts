@@ -115,14 +115,21 @@ const NET_DEBT_RATIO_PATTERNS = [
   /(?:net debt ratio|nettoskuldsättningsgrad)[^\n.]{0,100}?(-?\d{1,2}(?:[.,]\d+)?)\s*(?:%|percent|procent)/i,
 ] as const;
 
+const AUM_UNIT = String.raw`(?:billion|bn|mdr|miljarder?)`;
+const AUM_VALUE = String.raw`(\d{2,4}(?:[.,]\d+)?)`;
+
 const TOTAL_AUM_PATTERNS = [
-  /(?:EUR|€)\s*(\d{2,4}(?:[.,]\d+)?)\s*(?:billion|bn|miljarder?)[^\n.]{0,90}?(?:total )?assets under management/i,
-  /(?:total )?assets under management[^\n.]{0,90}?(?:EUR|€)\s*(\d{2,4}(?:[.,]\d+)?)\s*(?:billion|bn|miljarder?)/i,
+  new RegExp(String.raw`(?:total|totalt)\s+AUM[^\n.]{0,100}?(?:EUR|€)\s*${AUM_VALUE}\s*${AUM_UNIT}`, "i"),
+  new RegExp(String.raw`(?:EUR|€)\s*${AUM_VALUE}\s*${AUM_UNIT}[^\n.]{0,100}?(?:total|totalt)\s+AUM`, "i"),
+  /(?:EUR|€)\s*(\d{2,4}(?:[.,]\d+)?)\s*(?:billion|bn|mdr|miljarder?)[^\n.]{0,90}?(?:total )?assets under management/i,
+  /(?:total )?assets under management[^\n.]{0,90}?(?:EUR|€)\s*(\d{2,4}(?:[.,]\d+)?)\s*(?:billion|bn|mdr|miljarder?)/i,
 ] as const;
 
 const FEE_AUM_PATTERNS = [
-  /(?:EUR|€)\s*(\d{2,4}(?:[.,]\d+)?)\s*(?:billion|bn|miljarder?)\s*(?:in|of)?\s*fee[- ]generating (?:assets under management|AUM)/i,
-  /fee[- ]generating (?:assets under management|AUM)[^\n.]{0,60}?(?:EUR|€)\s*(\d{2,4}(?:[.,]\d+)?)\s*(?:billion|bn|miljarder?)/i,
+  new RegExp(String.raw`\bFAUM\b[^\n.]{0,100}?(?:EUR|€)\s*${AUM_VALUE}\s*${AUM_UNIT}`, "i"),
+  new RegExp(String.raw`(?:EUR|€)\s*${AUM_VALUE}\s*${AUM_UNIT}[^\n.]{0,100}?\bFAUM\b`, "i"),
+  /(?:EUR|€)\s*(\d{2,4}(?:[.,]\d+)?)\s*(?:billion|bn|mdr|miljarder?)\s*(?:in|of)?\s*fee[- ]generating (?:assets under management|AUM)/i,
+  /fee[- ]generating (?:assets under management|AUM)[^\n.]{0,90}?(?:EUR|€)\s*(\d{2,4}(?:[.,]\d+)?)\s*(?:billion|bn|mdr|miljarder?)/i,
 ] as const;
 
 export function buildFinancialSpecialistResearch(input: {
