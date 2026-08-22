@@ -109,6 +109,7 @@ export async function POST(request: Request) {
           failedChecks: failedCheckNames(result.analystQualityGate.checks),
           researchBlockers: result.finalPacket.qualityGate.blockers,
           researchFailedChecks: failedCheckNames(result.finalPacket.qualityGate.checks),
+          usage: result.usage,
         });
       }
       if (!result.finalPacket.qualityGate.publishable) {
@@ -120,6 +121,7 @@ export async function POST(request: Request) {
           analystQuality: result.analystQualityGate.score,
           researchBlockers: result.finalPacket.qualityGate.blockers,
           researchFailedChecks: failedCheckNames(result.finalPacket.qualityGate.checks),
+          usage: result.usage,
         }, { status: 422 }));
       }
       let publication = null;
@@ -140,7 +142,8 @@ export async function POST(request: Request) {
         researchQuality: result.finalPacket.qualityGate.score,
         analystQuality: result.analystQualityGate.score,
         view: result.analystDraft.view, riskLevel: result.analystDraft.riskLevel,
-        confidence: result.analystDraft.confidence, publication, persistence,
+        confidence: result.analystDraft.confidence, usage: result.usage,
+        publication, persistence,
       }));
     }
 
@@ -155,6 +158,7 @@ export async function POST(request: Request) {
           researchQuality: result.packet?.qualityGate.score,
           analystQuality: result.analystQualityGate?.score,
           blockers: result.packet?.qualityGate.blockers ?? result.bankResearch?.blockers ?? [],
+          usage: result.usage,
         });
       }
       let publication = null;
@@ -174,7 +178,8 @@ export async function POST(request: Request) {
         researchQuality: result.packet.qualityGate.score,
         analystQuality: result.analystQualityGate.score,
         view: result.draft.view, riskLevel: result.draft.riskLevel,
-        confidence: result.draft.confidence, publication, persistence: result.persisted,
+        confidence: result.draft.confidence, usage: result.usage,
+        publication, persistence: result.persisted,
       }));
     }
 
@@ -188,6 +193,7 @@ export async function POST(request: Request) {
         researchQuality: result.packet?.qualityGate.score,
         analystQuality: result.analystQualityGate?.score,
         blockers: result.packet?.qualityGate.blockers ?? result.specialistResearch?.blockers ?? [],
+        usage: result.usage,
       });
     }
     let publication = null;
@@ -207,7 +213,8 @@ export async function POST(request: Request) {
       researchQuality: result.packet.qualityGate.score,
       analystQuality: result.analystQualityGate.score,
       view: result.draft.view, riskLevel: result.draft.riskLevel,
-      confidence: result.draft.confidence, publication, persistence: result.persisted,
+      confidence: result.draft.confidence, usage: result.usage,
+      publication, persistence: result.persisted,
     }));
   } catch (error) {
     const message = error instanceof Error ? error.message : "analysis_operator_failed";
