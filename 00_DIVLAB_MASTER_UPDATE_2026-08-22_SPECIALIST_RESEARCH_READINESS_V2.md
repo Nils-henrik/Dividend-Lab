@@ -109,6 +109,38 @@ A legitimate unavailable official metric remains a valid fail-closed result. The
 
 The project is currently constrained by Vercel build-rate limits after the completed stacked acceptance work. Do not use deployments as an edit loop. Perform source inspection and code/test updates first, then use one bounded canary build when the branch is ready.
 
+## Implementation working record — 2026-08-22 late
+
+This record is evidence of implementation progress only. It is **not** an acceptance record and does not change the release boundary below.
+
+### SEB
+
+- The bank metric and funding extractors now combine multiple verified primary report excerpts metric-by-metric while retaining each metric's own `sourceId`. An explicitly ambiguous newer row still blocks stale fallback.
+- The existing Nasdaq/CNS hit may select SEB's already-trusted Fact Book attachment only in dedicated multi-document Deep Research. The ordinary model-portfolio one-document path retains its prior first-PDF behavior.
+- Fact Book projection is deterministic and issuer-specific. It requires the exact `Key figures - SEB Group, nine quarters` section, a contiguous nine-quarter header, the requested report period as the unique final column, and exact supported row labels.
+- The parser covers both flattened and observed PDF text-layer shapes, including alternating quarter/year lines and one numeric cell per following line. It remains section-bounded at `Own funds requirement, Basel III` and fails closed on incomplete/misaligned rows.
+- Supported projected current-quarter facts remain only Net ECL level, Cost/income ratio, LCR and NSFR. No other metric is inferred.
+- Existing SEB release evidence continues to supply source-bound ROE, CET1 and capital-buffer context separately from Fact Book provenance.
+
+### Investor
+
+- Dedicated Nordic discovery restores the already-bounded 100-row period-only report window without increasing the fixed 3-current + 2-annual request ceiling. Shared issuer matching remains mandatory.
+- The financial-specialist extractor accepts the verified Investor issuer-release form only when an explicit NAV-per-share token is present and derives discount/premium deterministically from that source-bound NAV/share plus the current market price.
+- Unrelated equity, market-cap or EPS values remain insufficient and cannot synthesize NAV/share.
+- A dedicated integration regression now exercises period-only CNS discovery -> allowlisted Nasdaq release body -> source-bound NAV/share -> deterministic discount while preserving the five-request CNS ceiling.
+
+### Regression and safety
+
+- EQT's explicit EUR + scale AUM/FAUM regression remains covered and must remain `research_ready`.
+- Unsupported company families remain fail-closed in analysis-engine dispatch.
+- A dedicated safety regression asserts that this evidence/readiness slice has no Supabase/dev-admin/publication dependency and that the existing Preview operator keeps persistence/publication explicit opt-ins with publication requiring persistence and founder authorization.
+
+### Validation state
+
+- An earlier branch commit (`3e1913069797d4c752fd95abbff581730bf8d7de`) completed a full Vercel Next.js build, including TypeScript, successfully.
+- Subsequent source-shape hardening commits have not yet received the required exact-head build because the Vercel project hit its daily deployment-rate ceiling.
+- Therefore this slice remains `ACTIVE_PR / PREVIEW_CANARY_ONLY`. No exact-head acceptance is claimed, the PR remains draft, and no parent/main/production merge is authorized until the required exact build and bounded SEB/Investor/EQT Preview canary have completed.
+
 ## Release boundary
 
 Successful completion of this slice authorizes only a later parent-stack review. It does not authorize production global analysis, a merge to `main`, persistence/publication, or new methodology families.
