@@ -22,6 +22,13 @@ type MethodologyPreflight = {
   message?: string;
 };
 
+type RunUsage = {
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+  estimatedCostUsdMicros: number;
+};
+
 type RunResult = {
   status?: string;
   reason?: string;
@@ -32,6 +39,7 @@ type RunResult = {
   view?: string;
   riskLevel?: string;
   confidence?: string;
+  usage?: RunUsage | null;
 };
 
 function kindLabel(kind: SearchResult["kind"]): string {
@@ -69,6 +77,16 @@ function friendlyRunError(payload: RunResult): string {
     return "Analysen klarade inte DivLabs kvalitetsgrind och publicerades därför inte.";
   }
   return "Analysen stoppades av motorn. Ingen ofullständig analys publicerades.";
+}
+
+function formatTokenCount(value: number): string {
+  return new Intl.NumberFormat("sv-SE", { maximumFractionDigits: 0 }).format(value);
+}
+
+function formatEstimatedAiCost(usdMicros: number): string {
+  const usd = usdMicros / 1_000_000;
+  const decimals = usd > 0 && usd < 0.01 ? 4 : 2;
+  return `$${usd.toFixed(decimals)}`;
 }
 
 export default function AnalysisCreator() {
@@ -315,12 +333,23 @@ export default function AnalysisCreator() {
             </span>
             <span className="text-slate-500">Research {runResult.researchQuality ?? "—"}/100</span>
             <span className="text-slate-500">Analyst {runResult.analystQuality ?? "—"}/100</span>
+            {runResult.usage ? (
+              <>
+                <span className="text-slate-500">Tokens {formatTokenCount(runResult.usage.totalTokens)}</span>
+                <span className="text-slate-500">Est. AI-kostnad {formatEstimatedAiCost(runResult.usage.estimatedCostUsdMicros)}</span>
+              </>
+            ) : null}
             {runResult.publicPath ? (
               <Link href={runResult.publicPath} className="font-semibold text-blue-400 hover:text-blue-300">
                 Öppna publicerad analys →
               </Link>
             ) : null}
           </div>
+          {runResult.usage ? (
+            <p className="mt-2 text-xs leading-5 text-slate-600">
+              Kostnaden är modellens uppskattade AI-kostnad för körningen, inte DivLabs fulla produktkostnad.
+            </p>
+          ) : null}
         </div>
       ) : null}
     </section>
