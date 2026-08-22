@@ -142,9 +142,11 @@ function compactTickerSearchToken(symbol: string): string {
 function preferredIssuerSearchName(companyName: string): string {
   const aliases = nordicDisclosureCompanyAliases(companyName)
     .map((value) => value.replace(/\s+/g, " ").trim())
-    .filter(Boolean)
-    .sort((a, b) => a.length - b.length);
-  return aliases[0] ?? companyName.replace(/\s+/g, " ").trim();
+    .filter(Boolean);
+  const withoutLegalSuffix = aliases.find(
+    (alias) => !/\s(?:AB|ASA|Oyj|A\/S|Plc|PLC|Ltd|Limited|Group)\.?$/i.test(alias),
+  );
+  return withoutLegalSuffix ?? aliases[0] ?? companyName.replace(/\s+/g, " ").trim();
 }
 
 function uniqueTerms(values: readonly string[]): string[] {
@@ -160,22 +162,55 @@ function uniqueTerms(values: readonly string[]): string[] {
   return output;
 }
 
-function currentDiscoveryTerms(input: { companyName: string; symbol: string }): string[] {
+type CurrentReportIntent = {
+  quarter: "Q1" | "Q2" | "Q3" | "Q4";
+  phrase: string;
+  secondaryPhrase: string;
+};
+
+/**
+ * Use the latest normally reportable completed quarter, not the current partial
+ * quarter. This is search intent only; report period/year are still parsed from
+ * the retrieved official source and are never invented from this helper.
+ */
+function currentReportIntent(now: Date): CurrentReportIntent {
+  const month = now.getUTCMonth() + 1;
+  if (month <= 3) {
+    return { quarter: "Q4", phrase: "year-end", secondaryPhrase: "fourth quarter" };
+  }
+  if (month <= 6) {
+    return { quarter: "Q1", phrase: "first quarter", secondaryPhrase: "interim report" };
+  }
+  if (month <= 9) {
+    return { quarter: "Q2", phrase: "half-year", secondaryPhrase: "interim report" };
+  }
+  return { quarter: "Q3", phrase: "third quarter", secondaryPhrase: "interim report" };
+}
+
+export function nordicCurrentReportIntentTerms(input: {
+  companyName: string;
+  symbol: string;
+  now: Date;
+}): string[] {
   const issuer = preferredIssuerSearchName(input.companyName);
   const ticker = compactTickerSearchToken(input.symbol);
+  const intent = currentReportIntent(input.now);
   return uniqueTerms([
-    `${issuer} interim`,
-    `${ticker} interim`,
-    `${ticker} results`,
+    `${ticker} ${intent.quarter}`,
+    `${issuer} ${intent.phrase}`,
+    `${issuer} ${intent.secondaryPhrase}`,
   ]).slice(0, DEEP_RESEARCH_CNS_REQUEST_BUDGET.currentReport);
 }
 
-function annualDiscoveryTerms(input: { companyName: string; symbol: string }): string[] {
+export function nordicAnnualReportIntentTerms(input: {
+  companyName: string;
+  symbol: string;
+}): string[] {
   const issuer = preferredIssuerSearchName(input.companyName);
   const ticker = compactTickerSearchToken(input.symbol);
   return uniqueTerms([
-    `${issuer} annual`,
-    `${ticker} annual`,
+    `${issuer} annual report`,
+    `${ticker} annual report`,
   ]).slice(0, DEEP_RESEARCH_CNS_REQUEST_BUDGET.annualReport);
 }
 
@@ -254,7 +289,11 @@ async function fetchEnrichedNordicResearch(input: {
   const currentHits = await fetchTermedNordicHits({
     companyName: input.companyName,
     symbol: input.symbol,
-    terms: currentDiscoveryTerms(input),
+    terms: nordicCurrentReportIntentTerms({
+      companyName: input.companyName,
+      symbol: input.symbol,
+      now,
+    }),
     exchange: input.exchange,
     fetchImpl,
     now,
@@ -280,7 +319,7 @@ async function fetchEnrichedNordicResearch(input: {
     : await fetchTermedNordicHits({
         companyName: input.companyName,
         symbol: input.symbol,
-        terms: annualDiscoveryTerms(input),
+        terms: nordicAnnualReportIntentTerms(input),
         exchange: input.exchange,
         fetchImpl,
         now,
@@ -294,12 +333,14 @@ async function fetchEnrichedNordicResearch(input: {
 
   // Dedicated product analysis may attempt two official documents: one current
   // report and one annual/year-end report. Portfolio research defaults remain
-  // unchanged at one document attempt.
+  // unchanged at one document attempt and the conservative 4,500-character
+  // excerpt unless that caller explicitly opts in.
   const enriched = await enrichNordicPrimarySourceHits({
     hits: reportFirst,
     fetchImpl,
     maxDocuments: 2,
     maxDocumentBytes: PRIMARY_SOURCE_ENRICHMENT_BOUNDS.maxDocumentBytes,
+    maxDocumentTextChars: PRIMARY_SOURCE_ENRICHMENT_BOUNDS.maxDocumentTextChars,
   });
 
   const sources: AnalysisSource[] = [];
