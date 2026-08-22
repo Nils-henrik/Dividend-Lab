@@ -38,6 +38,8 @@ export const PRIMARY_SOURCE_ENRICHMENT_BOUNDS = {
   maxDocumentTextChars: 12_000,
 } as const;
 
+const SEB_FACT_BOOK_FOCUS_ANCHOR = "Key figures - SEB Group, nine quarters";
+
 export type EnrichedPrimarySourceHit = {
   hit: NordicPrimarySourceHit;
   kind: PrimaryEvidenceKind;
@@ -136,6 +138,10 @@ export async function enrichNordicPrimarySourceHits(input: {
 
   for (const hit of input.hits) {
     const attachment = preferredAttachment({ hit, dedicatedDeepResearch });
+    const selectedSebFactBook =
+      dedicatedDeepResearch
+      && isSebIssuerName(hit.company)
+      && isSebFactBookFileName(attachment?.fileName);
 
     let documentRetrieved = false;
     let documentAttempted = false;
@@ -169,6 +175,11 @@ export async function enrichNordicPrimarySourceHits(input: {
         const extracted = await extractBoundedPdfText({
           bytes: fetched.buffer,
           maxChars: maxDocumentTextChars,
+          // The Fact Book table can occur after enough introductory text that
+          // first-N-character truncation would miss it. Focusing does not read
+          // more pages or return more characters: it selects a literal anchor
+          // inside the same already-bounded six-page extraction window.
+          focusAnchor: selectedSebFactBook ? SEB_FACT_BOOK_FOCUS_ANCHOR : undefined,
         });
         if (!extracted.ok) {
           failureReason = extracted.reason;
@@ -238,10 +249,9 @@ export async function enrichNordicPrimarySourceHits(input: {
 
     let analysisExcerpt = excerpt;
     if (
-      dedicatedDeepResearch
+      selectedSebFactBook
       && documentRetrieved
       && excerpt
-      && isSebIssuerName(hit.company)
       && (isSebFactBookFileName(attachment?.fileName) || isSebFactBookFileName(fileName))
     ) {
       const projection = projectSebFactBookCurrentPeriod({
