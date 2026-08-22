@@ -114,6 +114,11 @@ function findSignedPercent(
 }
 
 const NAV_PATTERNS = [
+  // Investor-style official wording reports total NAV first and the required
+  // per-share value in a parenthetical, e.g. "NAV was SEK 1,214.7bn (SEK 397
+  // per share)". Bind only to the explicitly labelled per-share token; never
+  // reinterpret the preceding total NAV amount as a per-share value.
+  /(?:net asset value|NAV|substansvärde)[^()\n]{0,180}\(\s*(?:SEK|kr)\s*(\d{2,4}(?:[.,]\d+)?)\s*(?:per share|per aktie)\s*\)/i,
   /(?:SEK|kr)\s*(\d{2,4}(?:[.,]\d+)?)\s*(?:per share|per aktie)[^\n.]{0,80}(?:net asset value|NAV|substansvärde)/i,
   /(?:net asset value|NAV|substansvärde)[^\n.]{0,220}?(?:SEK|kr)\s*(\d{2,4}(?:[.,]\d+)?)\s*(?:per share|per aktie)/i,
   /(?:net asset value|substansvärde)[^\n.]{0,220}?(\d{2,4}(?:[.,]\d+)?)\s*(?:SEK|kr)\s*(?:per share|per aktie)/i,
