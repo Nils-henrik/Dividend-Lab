@@ -221,7 +221,11 @@ export function nordicCurrentReportIntentTerms(input: {
   return uniqueTerms([
     `${ticker} ${intent.quarter}`,
     `${issuer} ${intent.phrase}`,
-    `${issuer} ${intent.periodOnlyPhrase}`,
+    // The broad period-only query gets the existing 100-row window and then
+    // relies on the shared adapter's strict issuer-name filter. Prefixing the
+    // issuer here accidentally downgraded it to the 20-row ordinary budget and
+    // could hide valid issuers such as Investor behind newer market releases.
+    intent.periodOnlyPhrase,
   ]).slice(0, DEEP_RESEARCH_CNS_REQUEST_BUDGET.currentReport);
 }
 
