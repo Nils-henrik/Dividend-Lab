@@ -4,6 +4,7 @@ import { describe, it } from "node:test";
 
 const readinessFiles = [
   "../lib/analysis/bank-analysis.ts",
+  "../lib/analysis/bank-capital.ts",
   "../lib/analysis/bank-funding.ts",
   "../lib/analysis/financial-specialist-research.ts",
   "../lib/analysis/nordic-primary-sources.ts",
