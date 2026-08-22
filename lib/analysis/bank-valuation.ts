@@ -15,6 +15,7 @@ export type DivLabBankValuation = {
   /** Raw book value per share before any FX conversion. */
   rawBookValuePerShare: number | null;
   rawBookValueCurrency: string | null;
+  bookValueBasis: "statement_equity_per_share" | "provider_book_value_per_share" | null;
   /** Book value per share normalized into the listed share currency. */
   bookValuePerShare: NormalizedValuationInput;
   priceToBook: number | null;
@@ -49,6 +50,12 @@ function unique(values: readonly string[]): string[] {
 /**
  * Build a bank-appropriate trailing P/B without mutating raw accounting facts.
  *
+ * Statement equity per share remains the preferred basis. When Yahoo cannot
+ * expose usable equity/share statement rows for a bank, its explicit positive
+ * `bookValue` per listed share may be used as a separate provider fact in the
+ * quote currency. We never reconstruct equity by multiplying provider book
+ * value with shares, and we never silently mix the two bases.
+ *
  * This deliberately models reported book value, not tangible book value. A
  * future P/TBV measure requires verified goodwill/intangible adjustments and
  * must not be inferred from this output.
@@ -59,6 +66,8 @@ export function buildBankValuation(input: {
   equity?: number | null;
   sharesOutstanding?: number | null;
   reportingCurrency?: string | null;
+  providerBookValuePerShare?: number | null;
+  providerBookValuePerShareCurrency?: string | null;
   fxConversion?: AnalysisFxConversion | null;
   sources: readonly AnalysisSource[];
 }): DivLabBankValuation {
@@ -68,16 +77,54 @@ export function buildBankValuation(input: {
   const marketCurrency = currency(input.marketCurrency);
   if (!marketCurrency) throw new Error("bank_valuation_market_currency_required");
   const reportingCurrency = currency(input.reportingCurrency);
-  const rawBookValuePerShare =
+  const statementBookValuePerShare =
     finitePositive(input.equity) && finitePositive(input.sharesOutstanding)
       ? input.equity / input.sharesOutstanding
       : null;
-  const bookValuePerShare = normalizeValuationInput({
-    value: rawBookValuePerShare,
+  const statementNormalized = normalizeValuationInput({
+    value: statementBookValuePerShare,
     sourceCurrency: reportingCurrency,
     marketCurrency,
     fxConversion: input.fxConversion,
   });
+
+  const providerBookValuePerShare = finitePositive(input.providerBookValuePerShare)
+    ? input.providerBookValuePerShare
+    : null;
+  const providerBookValueCurrency = currency(input.providerBookValuePerShareCurrency);
+  const providerNormalized = normalizeValuationInput({
+    value: providerBookValuePerShare,
+    sourceCurrency: providerBookValueCurrency,
+    marketCurrency,
+    fxConversion: input.fxConversion,
+  });
+
+  const useStatement = finitePositive(statementNormalized.value);
+  const useProvider = !useStatement && finitePositive(providerNormalized.value);
+  const rawBookValuePerShare = useStatement
+    ? statementBookValuePerShare
+    : useProvider
+      ? providerBookValuePerShare
+      : statementBookValuePerShare ?? providerBookValuePerShare;
+  const rawBookValueCurrency = useStatement
+    ? reportingCurrency
+    : useProvider
+      ? providerBookValueCurrency
+      : statementBookValuePerShare !== null
+        ? reportingCurrency
+        : providerBookValueCurrency;
+  const bookValueBasis = useStatement
+    ? "statement_equity_per_share" as const
+    : useProvider
+      ? "provider_book_value_per_share" as const
+      : null;
+  const bookValuePerShare = useStatement
+    ? statementNormalized
+    : useProvider
+      ? providerNormalized
+      : statementNormalized.value !== null
+        ? statementNormalized
+        : providerNormalized;
   const priceToBook =
     finitePositive(bookValuePerShare.value)
       ? input.currentPrice / bookValuePerShare.value
@@ -108,7 +155,8 @@ export function buildBankValuation(input: {
     currentPrice: round(input.currentPrice, 4)!,
     marketCurrency,
     rawBookValuePerShare: round(rawBookValuePerShare, 6),
-    rawBookValueCurrency: reportingCurrency,
+    rawBookValueCurrency,
+    bookValueBasis,
     bookValuePerShare: {
       ...bookValuePerShare,
       value: round(bookValuePerShare.value, 6),
@@ -122,7 +170,7 @@ export function buildBankValuation(input: {
       fxSourceIds: [...bookValuePerShare.fxSourceIds],
     },
     notes: [
-      "P/B bygger på rapporterat eget kapital per aktie. Det är inte P/TBV och justerar inte för goodwill eller andra immateriella tillgångar.",
+      "P/B bygger på rapporterat eget kapital per aktie eller provider-rapporterat book value per listed share när statement-basen saknas. Det är inte P/TBV och justerar inte för goodwill eller andra immateriella tillgångar.",
     ],
   };
 }

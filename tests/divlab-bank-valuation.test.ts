@@ -70,9 +70,47 @@ describe("DivLab bank valuation v1", () => {
     assert.equal(result.rawBookValuePerShare, 100);
     assert.equal(result.bookValuePerShare.value, 100);
     assert.equal(result.bookValuePerShare.converted, false);
+    assert.equal(result.bookValueBasis, "statement_equity_per_share");
     assert.equal(result.priceToBook, 1.5);
     assert.equal(result.provenance.traceable, true);
     assert.deepEqual(result.provenance.sourceIds, [FUNDAMENTAL_ID, MARKET_ID].sort());
+  });
+
+  it("uses explicit provider book value per listed share when statement equity/share rows are unavailable", () => {
+    const result = buildBankValuation({
+      currentPrice: 180,
+      marketCurrency: "SEK",
+      equity: null,
+      sharesOutstanding: null,
+      reportingCurrency: "SEK",
+      providerBookValuePerShare: 100,
+      providerBookValuePerShareCurrency: "SEK",
+      sources: sources(),
+    });
+
+    assert.equal(result.status, "traceable");
+    assert.equal(result.bookValueBasis, "provider_book_value_per_share");
+    assert.equal(result.rawBookValuePerShare, 100);
+    assert.equal(result.rawBookValueCurrency, "SEK");
+    assert.equal(result.bookValuePerShare.value, 100);
+    assert.equal(result.priceToBook, 1.8);
+  });
+
+  it("keeps statement equity/share as the preferred basis when both bank book-value facts exist", () => {
+    const result = buildBankValuation({
+      currentPrice: 150,
+      marketCurrency: "SEK",
+      equity: 100_000,
+      sharesOutstanding: 1_000,
+      reportingCurrency: "SEK",
+      providerBookValuePerShare: 90,
+      providerBookValuePerShareCurrency: "SEK",
+      sources: sources(),
+    });
+
+    assert.equal(result.bookValueBasis, "statement_equity_per_share");
+    assert.equal(result.bookValuePerShare.value, 100);
+    assert.equal(result.priceToBook, 1.5);
   });
 
   it("normalizes book value per share through the audited FX chain before P/B", () => {
@@ -113,7 +151,7 @@ describe("DivLab bank valuation v1", () => {
     assert.equal(result.provenance.available, false);
   });
 
-  it("does not produce P/B from non-positive equity or missing shares", () => {
+  it("does not produce P/B from non-positive equity or missing shares without an explicit provider fallback", () => {
     const negativeEquity = buildBankValuation({
       currentPrice: 100,
       marketCurrency: "SEK",

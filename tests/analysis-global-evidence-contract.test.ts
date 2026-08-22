@@ -12,6 +12,7 @@ import type { GlobalPrimarySource } from "../lib/analysis/global-primary-source-
 
 const NOW = "2026-08-21T20:00:00.000Z";
 const LONG_TEXT = "Microsoft generated operating income and cash flow from continuing operations during the reporting period. ".repeat(20);
+const MSFT_2026_10K_DOCUMENT_BYTES = 8_585_501;
 
 function sources(): GlobalPrimarySource[] {
   return [
@@ -66,6 +67,15 @@ describe("Global Evidence Extraction v1 contract", () => {
     assert.equal(isAllowedSecTextContentType("application/pdf"), false);
     assert.equal(isAllowedSecTextContentType("application/octet-stream"), false);
     assert.equal(isAllowedSecTextContentType(null), false);
+  });
+
+  it("keeps filing retrieval hard-bounded while accommodating the verified MSFT 2026 10-K", () => {
+    assert.equal(GLOBAL_EVIDENCE_BOUNDS.maxDocuments, 2);
+    assert.equal(GLOBAL_EVIDENCE_BOUNDS.maxDocumentBytes, 10_000_000);
+    assert.ok(MSFT_2026_10K_DOCUMENT_BYTES < GLOBAL_EVIDENCE_BOUNDS.maxDocumentBytes);
+    assert.equal(GLOBAL_EVIDENCE_BOUNDS.maxTextChars, 12_000);
+    assert.equal(GLOBAL_EVIDENCE_BOUNDS.timeoutMs, 12_000);
+    assert.equal(GLOBAL_EVIDENCE_BOUNDS.maxRedirects, 1);
   });
 
   it("extracts bounded plain text without executing or retaining active markup", () => {

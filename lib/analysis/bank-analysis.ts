@@ -77,7 +77,9 @@ const METRICS: readonly MetricSpec[] = [
       /\bcredit\s+impairment\s+ratio\b/iu,
       /\bloan\s+loss\s+ratio\b/iu,
       /\bimpairment\s+(?:loss\s+)?ratio\b/iu,
+      /\bnet\s+ECL\s+level\b/iu,
       /\bkreditf[oö]rlustniv[aå](?=$|[^\p{L}\p{N}_])/iu,
+      /\bnetto\s+(?:ECL|kreditf[oö]rlust)[-\s]?niv[aå]\b/iu,
       /\bkreditf[oö]rlustrelation\b/iu,
     ],
     minPct: -10,
@@ -154,6 +156,22 @@ function percentTokens(value: string): Array<{ raw: string; scale: number }> {
   return tokens;
 }
 
+/**
+ * Narrative release sentences can mention several different ratios on one
+ * physical line after HTML flattening. A metric only owns its immediate clause.
+ * Explicit unit-first table rows are the exception: all period columns remain
+ * visible so multi-period rows still fail ambiguous rather than guessing a
+ * current column.
+ */
+function metricValueScope(afterLabel: string): string {
+  const unitFirstTable =
+    /^\s*[,;:]?\s*(?:%|percent\b|per\s+cent\b|procent\b|bp\b|bps\b|basis\s+points?\b|baspunkter?\b)/iu;
+  if (unitFirstTable.test(afterLabel)) return afterLabel;
+
+  const clauseBoundary = afterLabel.search(/[,;](?=\s|$)|\.(?=\s|$)/u);
+  return clauseBoundary >= 0 ? afterLabel.slice(0, clauseBoundary) : afterLabel;
+}
+
 function metricFromExcerpt(input: {
   excerpt: string;
   sourceId: string;
@@ -174,8 +192,9 @@ function metricFromExcerpt(input: {
     const labelMatch = line.match(label);
     if (!labelMatch || labelMatch.index === undefined) continue;
     const afterLabel = line.slice(labelMatch.index + labelMatch[0].length);
+    const valueScope = metricValueScope(afterLabel);
 
-    for (const token of percentTokens(afterLabel)) {
+    for (const token of percentTokens(valueScope)) {
       if (token.scale === 0.01 && !input.spec.allowBasisPoints) continue;
       for (const candidate of numericCandidates(token.raw)) {
         const valuePct = candidate * token.scale;
