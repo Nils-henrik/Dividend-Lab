@@ -66,13 +66,13 @@ describe("DivLab bank capital v1", () => {
       "Return on equity 18.9%",
     ].join("\n"));
 
-    // The general CET1 metric parser deliberately sees two percentages after
-    // the CET1 label and will not guess the current-period value. The capital
-    // parser can still identify the explicitly labelled regulatory requirement.
-    assert.equal(result.actualCet1Pct, null);
+    // Narrative clause binding can safely separate two explicitly labelled
+    // facts on the same line. This is not a multi-period table: CET1 belongs
+    // to the first clause and the regulatory requirement to the second.
+    assert.equal(result.actualCet1Pct, 19);
     assert.equal(result.regulatoryCet1Requirement.valuePctPoints, 15.6);
-    assert.equal(result.derivedHeadroomPctPoints, null);
-    assert.equal(result.status, "partial");
+    assert.equal(result.derivedHeadroomPctPoints, 3.4);
+    assert.equal(result.status, "evidence_ready");
   });
 
   it("never treats a management CET1 target as the regulatory requirement", () => {

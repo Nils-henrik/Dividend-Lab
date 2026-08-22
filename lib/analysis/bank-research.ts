@@ -1,4 +1,5 @@
 import type { AnalysisEvidence } from "./evidence";
+import type { CurrencyAwareFundamentalSnapshot } from "./financial-statement-normalizer";
 import type { AnalysisFxConversion } from "./fx";
 import type { FundamentalSnapshot } from "./fundamental-analysis";
 import type { AnalysisSource } from "./quality-gate";
@@ -39,7 +40,8 @@ function hasConfirmedOperatingBankContext(metrics: DivLabBankReportMetrics): boo
  */
 export function buildBankResearch(input: {
   evidence: readonly AnalysisEvidence[];
-  fundamentals: Pick<FundamentalSnapshot, "equity" | "sharesOutstanding">;
+  fundamentals: Pick<FundamentalSnapshot, "equity" | "sharesOutstanding"> &
+    Partial<Pick<CurrencyAwareFundamentalSnapshot, "providerBookValuePerShare" | "providerBookValuePerShareCurrency">>;
   currentPrice: number;
   marketCurrency: string;
   reportingCurrency: string | null;
@@ -55,6 +57,8 @@ export function buildBankResearch(input: {
     equity: input.fundamentals.equity,
     sharesOutstanding: input.fundamentals.sharesOutstanding,
     reportingCurrency: input.reportingCurrency,
+    providerBookValuePerShare: input.fundamentals.providerBookValuePerShare,
+    providerBookValuePerShareCurrency: input.fundamentals.providerBookValuePerShareCurrency,
     fxConversion: input.fxConversion,
     sources: input.sources,
   });

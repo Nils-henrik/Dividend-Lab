@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import AnalysisSourceDiscoveryOperator from "@/components/analysis/AnalysisSourceDiscoveryOperator";
+import AnalysisUsDeepResearchExecutionOperator from "@/components/analysis/AnalysisUsDeepResearchExecutionOperator";
+import AnalysisUsResearchCoverageOperator from "@/components/analysis/AnalysisUsResearchCoverageOperator";
 import PublicContentShell from "@/components/layout/PublicContentShell";
 
 export const dynamic = "force-dynamic";
@@ -40,8 +42,16 @@ export default function AnalysisSourceDiscoveryPreviewPage() {
           <AnalysisSourceDiscoveryOperator />
         </div>
 
+        <div className="mt-6">
+          <AnalysisUsResearchCoverageOperator />
+        </div>
+
+        <div className="mt-6">
+          <AnalysisUsDeepResearchExecutionOperator />
+        </div>
+
         <div className="mt-6 border border-amber-400/15 bg-amber-400/[0.04] p-4 text-xs leading-5 text-slate-500">
-          SEC EDGAR används som första regulatoriska globalvertikal. Övriga marknader måste få en separat verifierad regulator-/börskedja innan full Research kan öppnas.
+          SEC EDGAR används som första regulatoriska globalvertikal. MSFT är första och enda tillåtna amerikanska execution-target i v1. Deep Research-knappen får anropa den befintliga Analyst-motorn först efter US Research Coverage 100/100, men persistence, publicering och generell global analyskörning är fortsatt avstängda.
         </div>
       </main>
     </PublicContentShell>

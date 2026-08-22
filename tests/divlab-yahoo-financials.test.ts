@@ -106,6 +106,7 @@ function fixture() {
           defaultKeyStatistics: {
             sharesOutstanding: raw(101),
             trailingEps: raw(4.55),
+            bookValue: raw(83.2),
           },
           price: {
             marketCap: raw(12_000),
@@ -140,6 +141,8 @@ describe("DivLab Yahoo financial statement normalization", () => {
     assert.equal(snapshot.netDebt, 18);
     assert.equal(snapshot.sharesOutstanding, 101);
     assert.equal(snapshot.epsTtm, 4.55);
+    assert.equal(snapshot.providerBookValuePerShare, 83.2);
+    assert.equal(snapshot.providerBookValuePerShareCurrency, "SEK");
     assert.equal(snapshot.operatingMarginTtm, 0.155);
     assert.equal(snapshot.payoutRatio, 0.42);
     assert.ok(Math.abs((snapshot.sharesOutstandingGrowthYoy ?? 0) - (100 / 98 - 1)) < 1e-9);

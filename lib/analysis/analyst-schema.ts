@@ -143,15 +143,17 @@ export const divLabAnalystDraftSchema = z
 /**
  * Provider-facing schema for structured generation.
  *
- * Keep this deliberately structural. DivLab's richer min/max/refinement and
- * provenance rules are applied after generation with divLabAnalystDraftSchema
- * and validateAnalystDraftAgainstPacket. This prevents provider JSON-schema
- * limitations or a single semantic refinement from collapsing into the opaque
- * AI SDK "No object generated" error before our own validation can run.
+ * Keep semantic/refinement and provenance rules in divLabAnalystDraftSchema and
+ * validateAnalystDraftAgainstPacket, but mirror provider-safe primitive and
+ * collection bounds here. This prevents structurally valid provider output from
+ * repeatedly failing DivLab domain validation for avoidable length/count issues.
  */
+const generationShortText = z.string().min(1).max(900);
+const generationSourceIds = z.array(z.string().min(1).max(240)).min(1).max(6);
+
 const generationClaimSchema = z.object({
-  text: z.string(),
-  sourceIds: z.array(z.string()),
+  text: generationShortText,
+  sourceIds: generationSourceIds,
 });
 
 const generationValuationClaimSchema = z.object({
@@ -163,27 +165,27 @@ const generationValuationClaimSchema = z.object({
     "evToEbit",
     "evToEbitda",
   ]),
-  text: z.string(),
-  sourceIds: z.array(z.string()),
+  text: generationShortText,
+  sourceIds: generationSourceIds,
 });
 
 const generationFactorSchema = z.object({
   assessment: z.enum(["strong", "neutral", "weak", "unknown"]),
-  rationale: z.string(),
-  sourceIds: z.array(z.string()),
+  rationale: generationShortText,
+  sourceIds: z.array(z.string().min(1).max(240)).max(6),
 });
 
 const generationScenarioSchema = z.object({
   name: z.enum(["bear", "base", "bull"]),
-  label: z.string(),
-  currency: z.string(),
-  eps: z.number().nullable(),
-  peMultiple: z.number().nullable(),
-  freeCashFlowPerShare: z.number().nullable(),
-  pFcfMultiple: z.number().nullable(),
-  explicitValuePerShare: z.number().nullable(),
-  assumptions: z.array(z.string()),
-  sourceIds: z.array(z.string()),
+  label: z.string().min(1).max(80),
+  currency: z.string().regex(/^[A-Z]{3}$/),
+  eps: z.number().positive().nullable(),
+  peMultiple: z.number().positive().max(100).nullable(),
+  freeCashFlowPerShare: z.number().positive().nullable(),
+  pFcfMultiple: z.number().positive().max(100).nullable(),
+  explicitValuePerShare: z.number().positive().nullable(),
+  assumptions: z.array(z.string().min(1).max(300)).min(1).max(8),
+  sourceIds: generationSourceIds,
 });
 
 export const divLabAnalystGenerationSchema = z.object({
@@ -191,14 +193,14 @@ export const divLabAnalystGenerationSchema = z.object({
   riskLevel: z.enum(["low", "medium", "high"]),
   confidence: z.enum(["low", "medium", "high"]),
   horizonMonths: z.object({
-    min: z.number(),
-    max: z.number(),
+    min: z.number().int().min(1).max(120),
+    max: z.number().int().min(1).max(120),
   }),
-  executiveSummary: z.string(),
-  investmentCase: z.array(generationClaimSchema),
-  latestReport: z.array(generationClaimSchema),
-  fundamentalInterpretation: z.array(generationClaimSchema),
-  valuationInterpretation: z.array(generationValuationClaimSchema),
+  executiveSummary: z.string().min(20).max(1400),
+  investmentCase: z.array(generationClaimSchema).min(2).max(6),
+  latestReport: z.array(generationClaimSchema).min(1).max(6),
+  fundamentalInterpretation: z.array(generationClaimSchema).min(2).max(8),
+  valuationInterpretation: z.array(generationValuationClaimSchema).min(1).max(6),
   qualityFactors: z.object({
     competitiveAdvantage: generationFactorSchema,
     pricingPower: generationFactorSchema,
@@ -212,12 +214,12 @@ export const divLabAnalystGenerationSchema = z.object({
     acquisitionRisk: generationFactorSchema,
     disruptionRisk: generationFactorSchema,
   }),
-  catalysts: z.array(generationClaimSchema),
-  risks: z.array(generationClaimSchema),
-  contradictions: z.array(generationClaimSchema),
-  thesisBreakers: z.array(generationClaimSchema),
-  technicalInterpretation: z.array(generationClaimSchema),
-  valuationScenarios: z.array(generationScenarioSchema),
+  catalysts: z.array(generationClaimSchema).min(1).max(6),
+  risks: z.array(generationClaimSchema).min(2).max(8),
+  contradictions: z.array(generationClaimSchema).min(1).max(6),
+  thesisBreakers: z.array(generationClaimSchema).min(1).max(6),
+  technicalInterpretation: z.array(generationClaimSchema).min(1).max(5),
+  valuationScenarios: z.array(generationScenarioSchema).length(3),
 });
 
 export type DivLabAnalystClaim = z.infer<typeof divLabAnalystClaimSchema>;

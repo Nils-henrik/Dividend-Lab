@@ -24,6 +24,13 @@ export const PRIMARY_SOURCE_ENRICHMENT_BOUNDS = {
    * OFFICIAL_DOCUMENT_BOUNDS.maxBytes (5 MB) unless a caller explicitly opts in.
    */
   maxDocumentBytes: 24_000_000,
+  /**
+   * Dedicated product Deep Research may keep a wider bounded text excerpt so
+   * source-bound specialist facts later in the first six PDF pages are not cut
+   * off by the conservative portfolio default. Shared portfolio callers remain
+   * on OFFICIAL_DOCUMENT_BOUNDS.maxTextChars unless they explicitly opt in.
+   */
+  maxDocumentTextChars: 12_000,
 } as const;
 
 export type EnrichedPrimarySourceHit = {
@@ -63,25 +70,36 @@ function boundedDocumentBytes(value: number | undefined): number {
   );
 }
 
+function boundedDocumentTextChars(value: number | undefined): number {
+  if (value === undefined) return OFFICIAL_DOCUMENT_BOUNDS.maxTextChars;
+  if (!Number.isFinite(value) || value <= 0) return OFFICIAL_DOCUMENT_BOUNDS.maxTextChars;
+  return Math.min(
+    Math.floor(value),
+    PRIMARY_SOURCE_ENRICHMENT_BOUNDS.maxDocumentTextChars,
+  );
+}
+
 /**
  * Enrich CNS primary hits with at most one official PDF *attempt* per
  * company/pass. The bound is consumed before fetch starts, whether or not
  * retrieval/parsing later succeeds. Headlines alone never become company_report.
  *
- * The default PDF byte ceiling remains the conservative portfolio-engine bound.
- * A dedicated deep-research caller may explicitly request a larger ceiling,
- * hard-capped at PRIMARY_SOURCE_ENRICHMENT_BOUNDS.maxDocumentBytes. HTTPS,
- * hostname allowlisting, redirect limits, timeout, content-type/PDF-signature
- * validation and bounded text extraction remain unchanged.
+ * The default PDF byte/text ceilings remain the conservative portfolio-engine
+ * bounds. A dedicated deep-research caller may explicitly request larger
+ * ceilings, hard-capped by PRIMARY_SOURCE_ENRICHMENT_BOUNDS. HTTPS, hostname
+ * allowlisting, redirect limits, timeout, PDF-signature validation, page count
+ * and bounded text extraction remain unchanged.
  */
 export async function enrichNordicPrimarySourceHits(input: {
   hits: readonly NordicPrimarySourceHit[];
   fetchImpl?: typeof fetch;
   maxDocuments?: number;
   maxDocumentBytes?: number;
+  maxDocumentTextChars?: number;
 }): Promise<EnrichedPrimarySourceHit[]> {
   const maxDocuments = input.maxDocuments ?? OFFICIAL_DOCUMENT_BOUNDS.maxDocumentsPerCompanyPass;
   const maxDocumentBytes = boundedDocumentBytes(input.maxDocumentBytes);
+  const maxDocumentTextChars = boundedDocumentTextChars(input.maxDocumentTextChars);
   let documentsAttempted = 0;
   const enriched: EnrichedPrimarySourceHit[] = [];
 
@@ -120,7 +138,10 @@ export async function enrichNordicPrimarySourceHits(input: {
       } else {
         documentUrl = fetched.finalUrl;
         fileName = fetched.fileName ?? fileName;
-        const extracted = await extractBoundedPdfText({ bytes: fetched.buffer });
+        const extracted = await extractBoundedPdfText({
+          bytes: fetched.buffer,
+          maxChars: maxDocumentTextChars,
+        });
         if (!extracted.ok) {
           failureReason = extracted.reason;
         } else {
