@@ -7,6 +7,10 @@ export type CurrencyAwareFundamentalSnapshot = FundamentalSnapshot & {
   reportingCurrency?: string | null;
   /** Currency of epsTtm. Yahoo trailing EPS is quote-currency; derived EPS follows reporting currency. */
   epsTtmCurrency?: string | null;
+  /** Provider book value per listed share from defaultKeyStatistics, kept separate from statement equity. */
+  providerBookValuePerShare?: number | null;
+  /** Yahoo book value per listed share follows the quote/listing currency. */
+  providerBookValuePerShareCurrency?: string | null;
   /** Provider-normalized quarter periods kept separate from annual trend history. */
   quarterlyPeriods?: FundamentalPeriod[];
 };
@@ -256,6 +260,7 @@ export function parseYahooFinancialStatements(input: {
     "shareIssued",
     "commonStockSharesOutstanding",
   ]));
+  const providerBookValuePerShare = positive(keyStats?.bookValue);
 
   const latestAnnualShares = historicalPeriods[0]?.sharesOutstanding ?? null;
   const previousAnnualShares = historicalPeriods[1]?.sharesOutstanding ?? null;
@@ -296,6 +301,8 @@ export function parseYahooFinancialStatements(input: {
     currency: marketCurrency,
     reportingCurrency,
     epsTtmCurrency,
+    providerBookValuePerShare,
+    providerBookValuePerShareCurrency: providerBookValuePerShare !== null ? marketCurrency : null,
     price: input.currentPrice,
     marketCap,
     revenueTtm,

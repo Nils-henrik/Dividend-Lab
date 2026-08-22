@@ -20,7 +20,6 @@
     "test:all": "npm test && npm run test:seo && npm run test:db && npm run test:divbrain && npm run test:cursor-bridge",
     "test:analysis-live": "node --import ./tests/shims/register-server-only.mjs --import tsx scripts/analysis-us-research-live-probe.ts",
     "test:analysis-monster": "node --import ./tests/shims/register-server-only.mjs --import tsx scripts/analysis-monster-coverage-pass.ts",
-    "test:analysis-diagnostics": "node --import ./tests/shims/register-server-only.mjs --import tsx scripts/analysis-monster-patch-diagnostics.ts",
     "typecheck": "tsc --noEmit",
     "divbrain:provider-benchmark:live": "tsx scripts/divbrain-provider-benchmark.mts"
   },

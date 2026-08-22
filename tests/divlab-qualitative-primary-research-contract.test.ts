@@ -15,8 +15,10 @@ describe("DivLab qualitative primary-research expansion", () => {
     assert.match(analysis, /currentReport:\s*3/);
     assert.match(analysis, /annualReport:\s*2/);
     assert.match(analysis, /total:\s*5/);
-    assert.match(analysis, /annualDiscoverySymbol/);
-    assert.match(analysis, /symbol:\s*annualDiscoverySymbol\(input\.symbol\)/);
+    assert.match(analysis, /nordicCurrentReportIntentTerms/);
+    assert.match(analysis, /nordicAnnualReportIntentTerms/);
+    assert.match(analysis, /function exactFreeTextFetch/);
+    assert.match(analysis, /url\.searchParams\.set\("freeText", freeText\)/);
     assert.match(shared, /const HARD_MAX_SEARCH_TERMS = 5/);
   });
 
@@ -29,8 +31,10 @@ describe("DivLab qualitative primary-research expansion", () => {
     assert.match(analysis, /value === "annual_report" \|\| value === "year_end_report"/);
     assert.match(analysis, /maxDocuments:\s*2/);
     assert.match(analysis, /maxDocumentBytes:\s*PRIMARY_SOURCE_ENRICHMENT_BOUNDS\.maxDocumentBytes/);
-    assert.match(enrichment, /const maxDocuments = input\.maxDocuments \?\? OFFICIAL_DOCUMENT_BOUNDS\.maxDocumentsPerCompanyPass/);
+    assert.match(analysis, /maxDocumentTextChars:\s*PRIMARY_SOURCE_ENRICHMENT_BOUNDS\.maxDocumentTextChars/);
+    assert.match(enrichment, /maxDocumentTextChars:\s*12_000/);
     assert.match(document, /maxDocumentsPerCompanyPass:\s*1/);
+    assert.match(document, /maxTextChars:\s*4_500/);
   });
 
   it("does not lower Analyst quality thresholds and exposes independent Research blockers in Preview", () => {
