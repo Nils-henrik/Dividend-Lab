@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useId, useState } from "react";
+import { ANALYSIS_PREVIEW_TESTCENTER_URL } from "@/lib/analysis/preview-links";
 import { appNavigation } from "@/lib/constants/navigation";
 import {
   areNavigationGroupChildrenVisible,
@@ -23,6 +24,7 @@ type Props = {
   onExpandSidebar?: () => void;
   className?: string;
   navigationSurface?: "desktop" | "mobile";
+  isOwner?: boolean;
 };
 
 function getNavigationItems(navigationSurface: "desktop" | "mobile") {
@@ -92,6 +94,42 @@ function NavigationLink({
         </span>
       )}
     </Link>
+  );
+}
+
+function OwnerAnalysisPreviewLink({
+  isCollapsed,
+  onNavigate,
+}: {
+  isCollapsed: boolean;
+  onNavigate?: () => void;
+}) {
+  const label = "Analys-testcenter";
+
+  return (
+    <a
+      href={ANALYSIS_PREVIEW_TESTCENTER_URL}
+      onClick={onNavigate}
+      title={isCollapsed ? label : undefined}
+      aria-label={isCollapsed ? label : undefined}
+      className={`relative flex items-center rounded-xl text-sm font-medium transition divlab-nav-idle ${
+        isCollapsed ? "justify-center px-2 py-2.5" : "gap-3 px-3 py-2.5"
+      }`}
+    >
+      <AppIcon name="brain" />
+      <span
+        className={
+          isCollapsed
+            ? "sr-only"
+            : "flex min-w-0 flex-1 items-center justify-between gap-2"
+        }
+      >
+        <span className="truncate">{label}</span>
+        <span className="shrink-0 text-[10px] font-normal leading-none text-divlab-text-muted">
+          Preview
+        </span>
+      </span>
+    </a>
   );
 }
 
@@ -263,6 +301,7 @@ export default function AppNavigationLinks({
   onExpandSidebar,
   className = "",
   navigationSurface = "desktop",
+  isOwner = false,
 }: Props) {
   const pathname = usePathname();
   const navigationItems = getNavigationItems(navigationSurface);
@@ -285,6 +324,12 @@ export default function AppNavigationLinks({
             onExpandSidebar={onExpandSidebar}
           />
         ))}
+        {isOwner ? (
+          <OwnerAnalysisPreviewLink
+            isCollapsed={isCollapsed}
+            onNavigate={onNavigate}
+          />
+        ) : null}
       </div>
 
       {accountItems.length > 0 ? (
