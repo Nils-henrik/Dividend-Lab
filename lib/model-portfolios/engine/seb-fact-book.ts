@@ -221,7 +221,16 @@ export function projectSebFactBookCurrentPeriod(input: {
   const targetIndex = targetIndexes[0];
 
   const rowStart = header.rowStart;
-  const rowEnd = Math.min(lines.length, rowStart + 90);
+  const nextSection = lines.findIndex(
+    (line, index) => index >= rowStart && /^Own funds requirement,\s*Basel III$/iu.test(line),
+  );
+  // The real PDF text layer often renders one value per line, making this key-
+  // figure block much taller than its visual table. Search only inside the same
+  // named section (or a conservative fallback ceiling), without widening the
+  // already-bounded PDF page/text extraction budgets.
+  const rowEnd = nextSection >= 0
+    ? nextSection
+    : Math.min(lines.length, rowStart + 220);
   const costIncome = rowValues({
     lines,
     start: rowStart,
