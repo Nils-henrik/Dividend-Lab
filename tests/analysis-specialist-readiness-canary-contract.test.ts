@@ -59,10 +59,11 @@ describe("Specialist Research Readiness v2 Preview canary contract", () => {
     assert.match(routeSource, /"Trailing P\/E"/);
   });
 
-  it("surfaces the three locked buttons on the existing noindex Preview operator page", () => {
-    assert.match(componentSource, /Kör SEB-canary/);
-    assert.match(componentSource, /Kör Investor-canary/);
-    assert.match(componentSource, /Kör EQT-canary/);
+  it("surfaces exactly the three locked targets on the existing noindex Preview operator page", () => {
+    assert.match(componentSource, /key: "SEB-A\.ST", label: "SEB"/);
+    assert.match(componentSource, /key: "INVE-B\.ST", label: "Investor"/);
+    assert.match(componentSource, /key: "EQT\.ST", label: "EQT"/);
+    assert.match(componentSource, /`Kör \$\{target\.label\}-canary`/);
     assert.match(componentSource, /\/api\/internal\/analysis\/specialist-research-canary/);
     assert.match(componentSource, /result\.persistence === null \? "AV" : "OVÄNTAD"/);
     assert.match(componentSource, /result\.publication === null \? "AV" : "OVÄNTAD"/);

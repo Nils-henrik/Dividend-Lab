@@ -141,6 +141,17 @@ This record is evidence of implementation progress only. It is **not** an accept
 - Subsequent source-shape hardening commits have not yet received the required exact-head build because the Vercel project hit its daily deployment-rate ceiling.
 - Therefore this slice remains `ACTIVE_PR / PREVIEW_CANARY_ONLY`. No exact-head acceptance is claimed, the PR remains draft, and no parent/main/production merge is authorized until the required exact build and bounded SEB/Investor/EQT Preview canary have completed.
 
+### Dedicated Preview canary operator prepared
+
+- A new Preview-only endpoint, `/api/internal/analysis/specialist-research-canary`, is locked to exactly `SEB-A.ST`, `INVE-B.ST` and `EQT.ST` and requires founder/CEO/admin authentication before any Research fetch starts.
+- The endpoint runs only `loadDivLabResearchInputs` plus deterministic bank/financial-specialist Research builders. It does not call an Analyst model, does not accept `persist`/`publish`, has no analysis service-role/publication dependency and returns `persistence: null` plus `publication: null` on both success and structured failure paths.
+- SEB canary READY requires `research_ready`, expected bank classification, source-bound CET1, ROE, Net ECL, Cost/income, LCR, NSFR and capital buffer, plus traceable P/B provenance.
+- Investor canary READY requires `research_ready`, expected investment-company classification, source-bound NAV/share and deterministic discount plus a traceable market-data source for the current-price input.
+- EQT canary READY requires `research_ready`, expected asset-manager classification and source-bound Total AUM, fee-generating AUM and trailing P/E.
+- The existing noindex `/analyses/internal-preview/sources` page now has three explicit specialist-canary buttons and exposes Research status, provenance, source/evidence counts, metric source IDs, blockers and the enforced persistence/publication-off state.
+- A static contract regression locks the Preview guard, founder auth, target allowlist, deterministic-only builders and absence of write/AI execution paths.
+- This operator preparation is not acceptance. Exact-head repository validation/build and one bounded founder-authenticated run for all three targets are still required before the master status may advance.
+
 ## Release boundary
 
 Successful completion of this slice authorizes only a later parent-stack review. It does not authorize production global analysis, a merge to `main`, persistence/publication, or new methodology families.
