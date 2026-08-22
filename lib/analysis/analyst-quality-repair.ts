@@ -161,6 +161,9 @@ export async function repairDivLabAnalystDraftForQuality(input: {
     "- Alla konkreta påståenden ska vara källbundna. valuationInterpretation måste fortsatt följa valuationProvenance exakt.",
     "- Om en qualityFactor saknar tillräckligt stöd i evidence ska assessment vara unknown med tom sourceIds. Markera aldrig en faktor som känd bara för att nå kvalitetsgränsen.",
     "- DivLab kräver minst 6 legitima kända qualityFactors. Om underlaget faktiskt stöder dem ska du använda rätt källor och bedöma dem; annars ska output förbli ärligt otillräcklig och senare gate får stoppa publicering.",
+    "- Gör före output en intern faktor-för-faktor-audit av samtliga 11 qualityFactors mot evidence och currentDraft. Bevara redan legitimt kända faktorer och granska särskilt de faktorer som nu är unknown efter explicit, direkt stöd i verifierad evidens. Audit-resultatet ska inte skrivas ut separat.",
+    "- För competitiveAdvantage, pricingPower, marketPosition, managementAndCapitalAllocation, reinvestmentRunway, cyclicality, customerConcentration, regulatoryRisk, currencyRisk, acquisitionRisk och disruptionRisk: använd bara en icke-unknown assessment när evidence faktiskt stödjer just den faktorn. Ett generellt bolagspåstående får inte återanvändas som stöd för en annan faktor utan saklig koppling.",
+    "- SEC-/primärkälleevidens kan legitimt stödja exempelvis marknadsposition, kundkoncentration, regleringsrisk, valutarisk, förvärvsrisk eller disruptionsrisk när texten uttryckligen behandlar ämnet; gör ingen automatisk positiv/negativ slutsats enbart från att risken nämns.",
     "- Confidence måste kalibreras mot antalet unknown: high högst 2 unknown, medium högst 5 unknown, low är tillåtet vid större osäkerhet.",
     "- Bear/Base/Bull ska använda samma marknadsvaluta och ge deterministiskt ordnade värden Bear < Base < Bull när DivLabs värderingsmotor räknar på dina scenariofält. Utgå från deterministicScenarioResult för att rätta multiplar/antaganden, inte genom att fabricera en DCF eller explicitValuePerShare.",
     "- Bear/Base/Bull ska ha genuint olika assumptions. Kopiera inte samma antagandetext mellan scenarierna.",
@@ -184,7 +187,7 @@ export async function repairDivLabAnalystDraftForQuality(input: {
       prompt,
       maxOutputTokens: QUALITY_REPAIR_BUDGET.maxOutputTokens,
       providerOptions: {
-        openai: { reasoningEffort: "low" },
+        openai: { reasoningEffort: "medium" },
         gateway: {
           tags: ["divlab", "analysis", "analyst-v2", "quality-repair"],
         },
