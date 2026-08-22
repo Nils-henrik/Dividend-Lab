@@ -1,7 +1,7 @@
 # DivLab Master Update — US Preview Deep Research Execution v1
 
 Date: 2026-08-22
-Status: ACTIVE_PR / PREVIEW_ONLY
+Status: ACCEPTED_PREVIEW_RUNTIME / STACK_READY
 Parent: `agent/us-research-coverage-v1` / PR #272
 Branch: `agent/us-preview-deep-research-execution-v1`
 First and only v1 execution target: `MSFT`
@@ -120,4 +120,34 @@ This slice may be called code-complete only after:
 - persistence/publication remain absent;
 - no production deployment or write is performed.
 
-Only after that runtime proof may a later master update decide whether and how US execution can move from founder Preview testing toward a user-facing Light/Deep Analysis product.
+## Founder runtime acceptance — 2026-08-22
+
+The founder-authenticated MSFT Preview Deep Research execution has now passed the locked gate on the repaired PR #276 Preview stack.
+
+Observed acceptance result:
+
+- Execution gate: `READY`
+- US Research: `100/100`
+- Final Research: `100/100`
+- Analyst: `100/100`
+- Evidence gate: `100/100`
+- SEC source provenance: `BEVARAD`
+- SEC evidence provenance: `BEVARAD`
+- Persistence: `AV` / no persistence performed
+- Publication: `AV` / no publication performed
+- Source packet: 4 sources / 2 evidence items
+- Analyst run completed through the existing canonical engine and bounded quality-repair path without lowering the 6/11 qualitative-factor gate.
+
+The earlier runtime failures were intentionally fail-closed and led to three bounded corrections only: blocked-branch SEC provenance observability, provider/domain schema alignment, and source-linked qualitative factor evidence hints. No Research or Analyst quality threshold was lowered, unsupported factors were not auto-promoted, and no persistence/publication path was introduced.
+
+### Acceptance decision
+
+`US Preview Deep Research Execution v1` is **accepted for Preview runtime**. PR #276 may now leave draft status and the master-guided stacked workflow may proceed to PR #277 and then PR #278. This acceptance does **not** authorize production global execution, persistence, publication, or a global `canRunAnalysis` expansion.
+
+Next stack order remains:
+
+1. PR #276 — accepted Preview execution foundation;
+2. PR #277 — observation-first monster coverage pass;
+3. PR #278 — bounded source/evidence gap repairs and canary certification.
+
+Only after the stack is explicitly reviewed as a unit should merge/release decisions be taken.

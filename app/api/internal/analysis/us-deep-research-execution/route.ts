@@ -182,13 +182,29 @@ export async function POST(request: Request) {
       return failed("analyst_failed", result.reason, 503);
     }
     if (result.stage === "analyst_quality") {
+      const expectedSourceIds = extraction.bundle.analysisSources.map((source) => source.id);
+      const expectedEvidenceIds = extraction.bundle.evidence.map((item) => item.id);
+      const finalSourceIds = result.finalPacket.sources.map((source) => source.id);
+      const finalEvidenceIds = result.finalPacket.evidence.map((item) => item.id);
+      const secSourceProvenancePreserved = idsPreserved(expectedSourceIds, finalSourceIds);
+      const secEvidenceProvenancePreserved = idsPreserved(expectedEvidenceIds, finalEvidenceIds);
+
       return failed(
         "analyst_quality_failed",
         "Analyst quality gate nådde inte 100/100. Ingen output sparades eller publicerades.",
         422,
         {
+          usResearchCoverage: {
+            ready: coverage.ready,
+            score: coverage.score,
+          },
+          evidenceQuality: extraction.bundle.qualityGate.score,
           researchQuality: result.finalPacket.qualityGate.score,
           analystQuality: result.analystQualityGate.score,
+          secSourceProvenancePreserved,
+          secEvidenceProvenancePreserved,
+          sourceCount: result.finalPacket.sources.length,
+          evidenceCount: result.finalPacket.evidence.length,
           analystBlockers: result.analystQualityGate.blockers,
           analystFailedChecks: failedCheckNames(result.analystQualityGate.checks),
           researchBlockers: result.finalPacket.qualityGate.blockers,
