@@ -44,6 +44,31 @@ function numericValues(value: string): number[] | null {
   return values.every((item) => Number.isFinite(item)) ? values : null;
 }
 
+function exactNumericValue(value: string): number | null {
+  if (!/^-?\d+(?:[.,]\d+)?$/.test(value)) return null;
+  const parsed = Number(value.replace(",", "."));
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+/**
+ * SEB's PDF text layer can flatten a nine-quarter row in either of two safe
+ * shapes: all nine values on the label line/next line, or one exact numeric
+ * value per following line. Accept only those exact nine-value shapes. This
+ * keeps column projection deterministic and refuses partial/misaligned rows.
+ */
+function followingRowValues(lines: readonly string[], start: number): number[] | null {
+  const sameNextLine = numericValues(lines[start] ?? "");
+  if (sameNextLine) return sameNextLine;
+
+  const vertical: number[] = [];
+  for (let offset = 0; offset < 9; offset += 1) {
+    const value = exactNumericValue(lines[start + offset] ?? "");
+    if (value === null) return null;
+    vertical.push(value);
+  }
+  return vertical;
+}
+
 function quarterNumber(value: SebFactBookQuarter): number {
   return Number(value.slice(1));
 }
@@ -135,7 +160,7 @@ function rowValues(input: {
     const sameLine = match[1]?.trim() ?? "";
     const values = sameLine
       ? numericValues(sameLine)
-      : numericValues(input.lines[index + 1] ?? "");
+      : followingRowValues(input.lines, index + 1);
     if (!values || matchValues) return null;
     matchValues = values;
   }
@@ -196,7 +221,7 @@ export function projectSebFactBookCurrentPeriod(input: {
   const targetIndex = targetIndexes[0];
 
   const rowStart = header.rowStart;
-  const rowEnd = Math.min(lines.length, rowStart + 45);
+  const rowEnd = Math.min(lines.length, rowStart + 90);
   const costIncome = rowValues({
     lines,
     start: rowStart,
