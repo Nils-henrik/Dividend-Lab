@@ -16,8 +16,9 @@ import type { NewsArticle } from "@/types/news";
  *   SMA 20/50/200, EMA 12/26, MACD, RSI14, ADX14, ATR, Bollinger, volume,
  *   breakout, support/resistance and 52-week range.
  *
- * Editor-uploaded asset:
+ * Editor-uploaded assets:
  * - cover: public/news-demo/file_00000000fcdc82439565f9cc07641119.png
+ * - inline chart: public/news-demo/Skärmbild 2026-08-23 214755.png
  */
 export const TEKNISK_ANALYS_EVOLUTION_NIVAER_23_AUGUSTI_2026_ARTICLE: NewsArticle = {
   id: "teknisk-analys-evolution-nivaer-23-augusti-2026",
@@ -28,7 +29,7 @@ export const TEKNISK_ANALYS_EVOLUTION_NIVAER_23_AUGUSTI_2026_ARTICLE: NewsArticl
   category: "company",
   source: "DivLab",
   publishedAt: "2026-08-23T19:05:00+02:00",
-  updatedAt: "2026-08-23T21:14:00+02:00",
+  updatedAt: "2026-08-23T21:49:00+02:00",
   url: "/news/teknisk-analys-evolution-nivaer-23-augusti-2026",
   featured: true,
   imageUrl: "/news-demo/file_00000000fcdc82439565f9cc07641119.png",
@@ -75,6 +76,12 @@ export const TEKNISK_ANALYS_EVOLUTION_NIVAER_23_AUGUSTI_2026_ARTICLE: NewsArticl
         "Kursen på 820 kronor ligger alltså över samtliga tre nivåer. Det ger en positiv struktur på både kort, medellång och längre sikt. MA20 ligger dessutom ovanför MA50, som i sin tur ligger ovanför MA200 – en ordning som brukar förknippas med en etablerad stigande trend.",
         "Glidande medelvärden är eftersläpande och säger inte vad som händer nästa handelsdag. Men de hjälper till att sätta den senaste uppgången i ett större sammanhang: Evolution handlas inte bara på en enskild stark dag, utan ovanför flera trendnivåer samtidigt.",
       ],
+      inlineImage: {
+        src: "/news-demo/Skärmbild 2026-08-23 214755.png",
+        alt: "TradingView-graf över Evolution med markerade stödområden och motståndsnivåer.",
+        caption:
+          "Evolution (1D) med stödzonen 800–805 kr, nästa stöd kring 790 kr samt motstånd vid 823 och 866 kr. Källa: TradingView. Bearbetning: DivLab.",
+      },
     },
     {
       heading: "RSI över 70 – en varning, inte en automatisk säljsignal",
