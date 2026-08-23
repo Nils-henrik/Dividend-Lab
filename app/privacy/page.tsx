@@ -3,7 +3,7 @@ import PrivacyPageContent from "@/components/marketing/legal/PrivacyPageContent"
 import MarketingPageShell from "@/components/marketing/MarketingPageShell";
 
 export const metadata: Metadata = {
-  title: "Integritetspolicy | DivLab",
+  title: "Integritetspolicy",
   description:
     "Integritetspolicy för DivLab — hur personuppgifter behandlas i den kostnadsfria betan.",
 };
