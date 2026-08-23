@@ -5,7 +5,7 @@ import { getCanonicalUrl } from "@/lib/seo/canonical";
 import { DIVLAB_BRAND_NAME } from "@/lib/site/brand";
 
 export const metadata: Metadata = {
-  title: `Kontakt | ${DIVLAB_BRAND_NAME}`,
+  title: "Kontakt",
   description:
     "Kontakta DivLab — frågor om plattformen, innehåll och redaktionella rättelser.",
   alternates: {
