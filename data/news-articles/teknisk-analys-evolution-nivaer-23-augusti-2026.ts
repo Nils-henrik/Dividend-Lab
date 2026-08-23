@@ -16,9 +16,8 @@ import type { NewsArticle } from "@/types/news";
  *   SMA 20/50/200, EMA 12/26, MACD, RSI14, ADX14, ATR, Bollinger, volume,
  *   breakout, support/resistance and 52-week range.
  *
- * Editor-uploaded assets:
+ * Editor-uploaded asset:
  * - cover: public/news-demo/file_00000000fcdc82439565f9cc07641119.png
- * - inline chart: public/news-demo/file_000000007af882109d2984c1d98c7669.png
  */
 export const TEKNISK_ANALYS_EVOLUTION_NIVAER_23_AUGUSTI_2026_ARTICLE: NewsArticle = {
   id: "teknisk-analys-evolution-nivaer-23-augusti-2026",
@@ -99,18 +98,6 @@ export const TEKNISK_ANALYS_EVOLUTION_NIVAER_23_AUGUSTI_2026_ARTICLE: NewsArticl
         "Om en rekyl stannar i den zonen och kursen åter börjar göra högre bottnar skulle den kortare trendstrukturen fortfarande vara intakt. Ett tydligt brott ned genom området skulle däremot flytta fokus mot nästa nivå runt 790 kronor, ungefär där MA50 också befinner sig.",
         "Stöd ska alltid ses som zoner där köpare tidigare kan ha blivit mer aktiva – inte som golv som måste hålla.",
       ],
-    },
-    {
-      heading: "Nivåerna i en bild",
-      paragraphs: [
-        "Grafiken nedan sammanfattar de nivåer som är mest relevanta i den tekniska bilden just nu: stödzonen 800–805 kronor, nästa stöd kring 790 kronor, fredagens topp vid 823 kronor och 52-veckorshögsta på 866 kronor.",
-      ],
-      inlineImage: {
-        src: "/news-demo/file_000000007af882109d2984c1d98c7669.png",
-        alt: "DivLab-graf för Evolution med röda och gröna candles, RSI-panel samt markerade nivåer vid 790, 800–805, 820, 823 och 866 kronor.",
-        caption:
-          "Grafik: DivLab. Schematisk visualisering av de tekniska nivåerna; inte en exakt återgivning av varje historisk handelsdag.",
-      },
     },
     {
       heading: "823 kronor är det närmaste motståndet",
