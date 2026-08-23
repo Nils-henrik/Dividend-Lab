@@ -1,3 +1,4 @@
+import { EVOLUTION_TRADINGVIEW_23_AUGUSTI_2026_DATA_URI } from "@/data/news-images/evolution-tradingview-23-augusti-2026";
 import type { NewsArticle } from "@/types/news";
 
 /**
@@ -15,6 +16,8 @@ import type { NewsArticle } from "@/types/news";
  * - DivLab's internal ta-v1 toolkit uses the same indicator families, including
  *   SMA 20/50/200, EMA 12/26, MACD, RSI14, ADX14, ATR, Bollinger, volume,
  *   breakout, support/resistance and 52-week range.
+ * - The inline market chart is an actual TradingView capture supplied by the
+ *   editor for Evolution AB · 1D · OMXSTO. It is not AI-generated chart data.
  *
  * Editor-uploaded asset:
  * - cover: public/news-demo/file_00000000fcdc82439565f9cc07641119.png
@@ -28,6 +31,7 @@ export const TEKNISK_ANALYS_EVOLUTION_NIVAER_23_AUGUSTI_2026_ARTICLE: NewsArticl
   category: "company",
   source: "DivLab",
   publishedAt: "2026-08-23T19:05:00+02:00",
+  updatedAt: "2026-08-23T20:52:00+02:00",
   url: "/news/teknisk-analys-evolution-nivaer-23-augusti-2026",
   featured: true,
   imageUrl: "/news-demo/file_00000000fcdc82439565f9cc07641119.png",
@@ -106,6 +110,12 @@ export const TEKNISK_ANALYS_EVOLUTION_NIVAER_23_AUGUSTI_2026_ARTICLE: NewsArticl
         "Ovanför 823 kronor blir 52-veckorshögsta på 866 kronor den tydliga större referenspunkten. Från 820 kronor motsvarar det drygt 5 procents uppgång.",
         "Ett utbrott blir generellt mer intressant om det sker med stigande handelsaktivitet. Fredagens volym var cirka 709 000 aktier, vilket ger en konkret nivå att jämföra med om aktien gör ett nytt försök uppåt.",
       ],
+      inlineImage: {
+        src: EVOLUTION_TRADINGVIEW_23_AUGUSTI_2026_DATA_URI,
+        alt: "TradingView-graf för Evolution AB i 1-dagsvy på OMX Stockholm med kurs 820 kronor den 23 augusti 2026.",
+        caption:
+          "Källa: TradingView. Evolution AB · 1D · OMXSTO. Grafen är en faktisk TradingView-skärmbild från 23 augusti 2026; inga candles har genererats eller ritats om av DivLab.",
+      },
     },
     {
       heading: "Tre tekniska förlopp att följa",
