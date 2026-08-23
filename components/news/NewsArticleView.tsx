@@ -239,6 +239,25 @@ export default function NewsArticleView({
                 <LearningRichText text={paragraph} />
               </p>
             ))}
+            {section.inlineImage && (
+              <figure className="space-y-2 pt-2">
+                <div className="overflow-hidden rounded-xl border divlab-border-neutral bg-divlab-surface">
+                  <Image
+                    src={section.inlineImage.src}
+                    alt={section.inlineImage.alt}
+                    width={1600}
+                    height={1600}
+                    sizes="(max-width: 768px) 100vw, 768px"
+                    className="h-auto w-full"
+                  />
+                </div>
+                {section.inlineImage.caption && (
+                  <figcaption className="text-sm leading-6 text-divlab-text-muted">
+                    {section.inlineImage.caption}
+                  </figcaption>
+                )}
+              </figure>
+            )}
           </section>
         ))}
 
