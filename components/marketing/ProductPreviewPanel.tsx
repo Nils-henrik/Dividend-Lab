@@ -112,7 +112,7 @@ function NewsModule({ article }: { article: NewsArticle | null }) {
         ) : null}
 
         <div className="min-w-0 flex-1">
-          <h3 className="text-[15px] font-semibold leading-snug tracking-[-0.02em] text-divlab-text transition group-hover:text-white">
+          <h3 className="whitespace-normal break-words text-[15px] font-semibold leading-snug tracking-[-0.02em] text-divlab-text transition group-hover:text-white">
             {article.title}
           </h3>
           <p className="mt-2 text-xs text-divlab-text-muted">
@@ -165,9 +165,9 @@ function LearningModule({
 }) {
   if (!article) {
     return (
-      <div className="flex h-full flex-col rounded-lg border divlab-border-neutral bg-white/[0.02] p-3.5">
+      <div className="flex flex-col rounded-lg border divlab-border-neutral bg-white/[0.02] p-3.5">
         <ModuleLabel>Utbildning</ModuleLabel>
-        <p className="mt-2 text-sm leading-5 text-divlab-text-secondary">
+        <p className="mt-2 whitespace-normal break-words text-sm leading-5 text-divlab-text-secondary">
           Sakliga guider om börsen och investeringar.
         </p>
         <Link
@@ -184,13 +184,13 @@ function LearningModule({
     <Link
       href={`/learning/${article.slug}`}
       aria-label={`Läs utbildning: ${article.title}`}
-      className="group flex h-full min-h-[7.5rem] flex-col rounded-lg border divlab-border-neutral bg-white/[0.02] p-3.5 transition hover:border-divlab-border-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/40"
+      className="group flex flex-col rounded-lg border divlab-border-neutral bg-white/[0.02] p-3.5 transition hover:border-divlab-border-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/40"
     >
       <ModuleLabel>Utbildning</ModuleLabel>
-      <h3 className="mt-2 text-sm font-medium leading-5 text-divlab-text transition group-hover:text-white">
+      <h3 className="mt-2 whitespace-normal break-words text-sm font-medium leading-5 text-divlab-text transition group-hover:text-white">
         {article.title}
       </h3>
-      <p className="mt-auto pt-3 text-xs text-divlab-text-muted">
+      <p className="mt-auto whitespace-normal break-words pt-3 text-xs text-divlab-text-muted">
         {article.readingMinutes} min läsning
       </p>
     </Link>
@@ -202,10 +202,10 @@ function FrihetsmaskinenModule() {
     <Link
       href="/frihetsmaskinen"
       aria-label="Öppna Frihetsmaskinen"
-      className="group flex h-full min-h-[7.5rem] flex-col rounded-lg border divlab-border-neutral bg-white/[0.02] p-3.5 transition hover:border-divlab-border-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/40"
+      className="group flex flex-col rounded-lg border divlab-border-neutral bg-white/[0.02] p-3.5 transition hover:border-divlab-border-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/40"
     >
       <ModuleLabel>Frihetsmaskinen</ModuleLabel>
-      <h3 className="mt-2 text-sm font-medium leading-5 text-divlab-text transition group-hover:text-white">
+      <h3 className="mt-2 whitespace-normal break-words text-sm font-medium leading-5 text-divlab-text transition group-hover:text-white">
         Räkna på vägen till ekonomisk frihet.
       </h3>
       <div
@@ -229,13 +229,13 @@ function ForumModule({ thread }: { thread: ForumThread | null }) {
       <Link
         href="/forum"
         aria-label="Öppna Forum"
-        className="group flex h-full min-h-[7.5rem] flex-col rounded-lg border divlab-border-neutral bg-white/[0.02] p-3.5 transition hover:border-divlab-border-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/40"
+        className="group flex flex-col rounded-lg border divlab-border-neutral bg-white/[0.02] p-3.5 transition hover:border-divlab-border-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/40"
       >
         <ModuleLabel>Forum</ModuleLabel>
-        <h3 className="mt-2 text-sm font-medium leading-5 text-divlab-text transition group-hover:text-white">
+        <h3 className="mt-2 whitespace-normal break-words text-sm font-medium leading-5 text-divlab-text transition group-hover:text-white">
           Diskutera marknaden med andra sparintresserade.
         </h3>
-        <p className="mt-auto pt-3 text-xs text-divlab-text-muted">
+        <p className="mt-auto whitespace-normal break-words pt-3 text-xs text-divlab-text-muted">
           Till Forum
         </p>
       </Link>
@@ -246,13 +246,13 @@ function ForumModule({ thread }: { thread: ForumThread | null }) {
     <Link
       href={`/forum/${thread.slug}`}
       aria-label={`Öppna forumtråd: ${thread.title}`}
-      className="group flex h-full min-h-[7.5rem] flex-col rounded-lg border divlab-border-neutral bg-white/[0.02] p-3.5 transition hover:border-divlab-border-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/40"
+      className="group flex flex-col rounded-lg border divlab-border-neutral bg-white/[0.02] p-3.5 transition hover:border-divlab-border-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/40"
     >
       <ModuleLabel>Forum</ModuleLabel>
-      <h3 className="mt-2 text-sm font-medium leading-5 text-divlab-text transition group-hover:text-white">
+      <h3 className="mt-2 whitespace-normal break-words text-sm font-medium leading-5 text-divlab-text transition group-hover:text-white">
         {thread.title}
       </h3>
-      <p className="mt-auto pt-3 text-xs text-divlab-text-muted">
+      <p className="mt-auto whitespace-normal break-words pt-3 text-xs text-divlab-text-muted">
         {thread.category}
         <span aria-hidden="true"> · </span>
         {thread.replies} svar
@@ -286,7 +286,7 @@ export default async function ProductPreviewPanel() {
       <div className="space-y-3">
         <NewsModule article={latestNews} />
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-3">
           <LearningModule article={latestLearning} />
           <FrihetsmaskinenModule />
           <ForumModule thread={latestThread} />
