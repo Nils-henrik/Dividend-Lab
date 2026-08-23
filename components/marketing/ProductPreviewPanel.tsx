@@ -187,7 +187,7 @@ function LearningModule({
       className="group flex h-full min-h-[7.5rem] flex-col rounded-lg border divlab-border-neutral bg-white/[0.02] p-3.5 transition hover:border-divlab-border-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/40"
     >
       <ModuleLabel>Utbildning</ModuleLabel>
-      <h3 className="mt-2 line-clamp-3 text-sm font-medium leading-5 text-divlab-text transition group-hover:text-white">
+      <h3 className="mt-2 text-sm font-medium leading-5 text-divlab-text transition group-hover:text-white">
         {article.title}
       </h3>
       <p className="mt-auto pt-3 text-xs text-divlab-text-muted">
@@ -249,7 +249,7 @@ function ForumModule({ thread }: { thread: ForumThread | null }) {
       className="group flex h-full min-h-[7.5rem] flex-col rounded-lg border divlab-border-neutral bg-white/[0.02] p-3.5 transition hover:border-divlab-border-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/40"
     >
       <ModuleLabel>Forum</ModuleLabel>
-      <h3 className="mt-2 line-clamp-2 text-sm font-medium leading-5 text-divlab-text transition group-hover:text-white">
+      <h3 className="mt-2 text-sm font-medium leading-5 text-divlab-text transition group-hover:text-white">
         {thread.title}
       </h3>
       <p className="mt-auto pt-3 text-xs text-divlab-text-muted">
