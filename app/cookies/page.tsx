@@ -3,7 +3,7 @@ import CookiesPageContent from "@/components/marketing/legal/CookiesPageContent"
 import MarketingPageShell from "@/components/marketing/MarketingPageShell";
 
 export const metadata: Metadata = {
-  title: "Cookiepolicy | DivLab",
+  title: "Cookiepolicy",
   description:
     "Cookiepolicy för DivLab — cookies och webbläsarlagring i den kostnadsfria betan.",
 };
