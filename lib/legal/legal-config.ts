@@ -13,8 +13,8 @@ export const LEGAL_LAST_UPDATED = "12 juli 2026";
  * Does not affect LEGAL_PUBLISHED_VERSIONS or legal acceptance.
  */
 export const LEGAL_PAGE_LAST_UPDATED = {
-  privacy: "19 augusti 2026",
-  cookies: "13 augusti 2026",
+  privacy: "23 augusti 2026",
+  cookies: "23 augusti 2026",
 } as const;
 
 export const legalConfig = {
