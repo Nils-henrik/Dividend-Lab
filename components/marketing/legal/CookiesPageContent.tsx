@@ -78,10 +78,11 @@ export default function CookiesPageContent() {
     >
       <LegalSection title="Översikt">
         <p>
-          {serviceName} använder i nuläget endast webbläsarlagring som behövs för inloggning,
-          sessioner och lösenordsåterställning. Denna policy beskriver den verifierade
-          implementationen — inte framtida planer. DivLabs räknare för unika läsare arbetar
-          server-side och skapar ingen cookie eller annan beständig identifierare i webbläsaren.
+          {serviceName} använder webbläsarlagring för inloggning, sessioner,
+          lösenordsåterställning och för att komma ihåg den tema-inställning som användaren själv
+          väljer. Denna policy beskriver den verifierade implementationen — inte framtida planer.
+          DivLabs räknare för unika läsare arbetar server-side och skapar ingen cookie eller annan
+          beständig identifierare i webbläsaren.
         </p>
       </LegalSection>
 
@@ -120,10 +121,19 @@ export default function CookiesPageContent() {
 
       <LegalSection title="Lokal lagring i webbläsaren">
         <p>
-          {serviceName} använder för närvarande inte localStorage, sessionStorage eller IndexedDB
-          för funktioner i betan. Räknaren för unika läsare använder inte heller någon sådan
-          webbläsarlagring. Tidigare betaversioner kunde spara onboarding-status lokalt; detta
-          används inte längre.
+          {serviceName} använder <code className="text-divlab-text">localStorage</code> för att
+          komma ihåg vald tema-inställning på den aktuella enheten. Nyckeln
+          <code className="mx-1 text-divlab-text">divlab-theme</code> lagrar endast
+          <code className="mx-1 text-divlab-text">light</code>,
+          <code className="mx-1 text-divlab-text">dark</code> eller
+          <code className="mx-1 text-divlab-text">system</code>. Den används inte för analys,
+          annonsering, kontospårning eller läsarräkning. Tjänsten använder inte
+          <code className="mx-1 text-divlab-text">sessionStorage</code> eller
+          <code className="mx-1 text-divlab-text">IndexedDB</code> för denna funktion.
+        </p>
+        <p>
+          Räknaren för unika läsare använder inte webbläsarlagring. Tidigare betaversioner kunde
+          spara onboarding-status lokalt; detta används inte längre.
         </p>
       </LegalSection>
 
@@ -160,8 +170,9 @@ export default function CookiesPageContent() {
           Vercel Web Analytics används för anonym, aggregerad trafikstatistik och sätter inte
           cookies. DivLabs egen räknare för unika läsare gör en förstapartsförfrågan efter att en
           börsnyhet eller utbildningsartikel har öppnats och deduplicerar server-side med en saltad
-          hash; den sätter ingen cookie och använder inte localStorage. Behandlingen beskrivs i
-          integritetspolicyn.
+          hash; den sätter ingen cookie och använder inte localStorage. Temapreferensen som beskrivs
+          ovan är förstaparts-localStorage och används endast för att komma ihåg det utseende som
+          användaren själv har valt. Behandlingen beskrivs även i integritetspolicyn.
         </p>
         <p>
           DivLab visar därför ingen cookie-banner i den nuvarande betan. En mekanism för samtycke
@@ -183,7 +194,8 @@ export default function CookiesPageContent() {
       <LegalSection title="Mer information">
         <p>
           Se integritetspolicyn för hur personuppgifter behandlas i samband med autentisering,
-          hosting, den server-side läsarräknaren och externa tjänster som TradingView.
+          hosting, den server-side läsarräknaren, tema-inställningen och externa tjänster som
+          TradingView.
         </p>
       </LegalSection>
     </LegalPageLayout>

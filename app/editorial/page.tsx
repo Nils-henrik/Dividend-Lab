@@ -2,10 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import MarketingPageShell from "@/components/marketing/MarketingPageShell";
 import { getCanonicalUrl } from "@/lib/seo/canonical";
-import { DIVLAB_BRAND_NAME } from "@/lib/site/brand";
 
 export const metadata: Metadata = {
-  title: `Redaktionella riktlinjer | ${DIVLAB_BRAND_NAME}`,
+  title: "Redaktionella riktlinjer",
   description:
     "Hur DivLab arbetar med redaktionellt innehåll, källor, uppdateringar och skillnaden mellan information och finansiell rådgivning.",
   alternates: {

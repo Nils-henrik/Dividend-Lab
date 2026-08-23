@@ -213,10 +213,17 @@ export default function PrivacyPageContent() {
       <LegalSection title="Cookies och webbläsarlagring">
         <p>
           Tjänsten använder nödvändiga Supabase Auth-sessionscookies via @supabase/ssr samt
-          återställningscookien {RECOVERY_COOKIE_NAME} (15 minuter). DivLab använder inte
-          localStorage eller sessionStorage i betan. Räknaren för unika läsare använder inte
+          återställningscookien {RECOVERY_COOKIE_NAME} (15 minuter). DivLab använder dessutom
+          <code className="mx-1 text-divlab-text">localStorage</code> för att komma ihåg den
+          tema-inställning som användaren själv väljer. Nyckeln
+          <code className="mx-1 text-divlab-text">divlab-theme</code> lagrar endast värdet
+          <code className="mx-1 text-divlab-text">light</code>,
+          <code className="mx-1 text-divlab-text">dark</code> eller
+          <code className="mx-1 text-divlab-text">system</code> lokalt på enheten och används inte
+          för analys, annonsering eller läsarräkning. Räknaren för unika läsare använder inte
           cookies eller webbläsarlagring. Vercel Web Analytics använder inte cookies; den behandlar
-          anonymiserad, aggregerad trafikdata. Se cookiepolicyn för detaljer om cookies.
+          anonymiserad, aggregerad trafikdata. Se cookiepolicyn för detaljer om cookies och lokal
+          lagring.
         </p>
       </LegalSection>
 
