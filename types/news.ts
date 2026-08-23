@@ -19,9 +19,17 @@ export type NewsImageCaptionPart = {
   href?: string;
 };
 
+export type NewsArticleInlineImage = {
+  src: string;
+  alt: string;
+  caption?: string;
+};
+
 export type NewsArticleSection = {
   heading: string;
   paragraphs: string[];
+  /** Optional editorial figure rendered after the section paragraphs. */
+  inlineImage?: NewsArticleInlineImage;
 };
 
 /**
