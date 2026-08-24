@@ -71,9 +71,9 @@ export default function MarketTickerTape() {
   return (
     <section
       aria-label="Rullande marknadsöversikt"
-      className="overflow-hidden rounded-xl border divlab-border-neutral bg-divlab-surface"
+      className="h-[48px] overflow-hidden rounded-xl border divlab-border-neutral bg-divlab-surface"
     >
-      <div ref={containerRef} className="min-h-[52px] w-full" />
+      <div ref={containerRef} className="min-h-[46px] w-full" />
     </section>
   );
 }
