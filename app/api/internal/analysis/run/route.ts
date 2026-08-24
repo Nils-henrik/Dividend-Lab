@@ -41,6 +41,18 @@ function failedCheckNames(checks: Record<string, boolean>): string[] {
 
 export async function POST(request: Request) {
   if (process.env.VERCEL_ENV?.trim().toLowerCase() !== "preview") return new NextResponse(null, { status: 404 });
+
+  // Every heavy Preview execution is staff-gated before target resolution,
+  // provider preflight, model execution, persistence or publication. Paid-user
+  // access must use a separate entitlement boundary in a later product phase.
+  const authSupabase = await createAuthenticatedSupabaseClient();
+  const { data: { user }, error } = await authSupabase.auth.getUser();
+  if (error || !user) return noStore(NextResponse.json({ status: "founder_auth_required" }, { status: 401 }));
+  const roles = await getStaffRolesForUser(user.id);
+  if (!roles.some((role) => CREATOR_ROLES.has(role))) {
+    return noStore(NextResponse.json({ status: "founder_role_required" }, { status: 403 }));
+  }
+
   const body = (await request.json().catch(() => ({}))) as Body;
   const symbol = typeof body.symbol === "string" ? body.symbol.trim().toUpperCase() : "";
   const exchange = typeof body.exchange === "string" ? body.exchange.trim().toUpperCase() : "ST";
@@ -48,17 +60,6 @@ export async function POST(request: Request) {
   const publish = body.publish === true;
   const useEscalationModel = body.useEscalationModel === true;
   if (publish && !persist) return noStore(NextResponse.json({ status: "publish_requires_persist" }, { status: 400 }));
-
-  let authSupabase: Awaited<ReturnType<typeof createAuthenticatedSupabaseClient>> | null = null;
-  if (publish) {
-    authSupabase = await createAuthenticatedSupabaseClient();
-    const { data: { user }, error } = await authSupabase.auth.getUser();
-    if (error || !user) return noStore(NextResponse.json({ status: "founder_auth_required" }, { status: 401 }));
-    const roles = await getStaffRolesForUser(user.id);
-    if (!roles.some((role) => CREATOR_ROLES.has(role))) {
-      return noStore(NextResponse.json({ status: "founder_role_required" }, { status: 403 }));
-    }
-  }
 
   const curated = getCuratedPeerSet({ symbol, exchange });
   const resolved = curated
@@ -123,7 +124,7 @@ export async function POST(request: Request) {
       }
       let publication = null;
       let persistence = result.persistence;
-      if (publish && authSupabase) {
+      if (publish) {
         const founder = await founderPersistAndPublishDivLabAnalysis({
           supabase: authSupabase, packet: result.finalPacket, analystDraft: result.analystDraft,
           analystQualityGate: result.analystQualityGate, analystModel: result.model,
@@ -157,7 +158,7 @@ export async function POST(request: Request) {
         });
       }
       let publication = null;
-      if (publish && authSupabase) {
+      if (publish) {
         const founder = await founderPersistAndPublishSpecialistAnalysis({
           supabase: authSupabase, packet: result.packet, draft: result.draft,
           analystQualityGate: result.analystQualityGate, analystModel: result.analystModel,
@@ -190,7 +191,7 @@ export async function POST(request: Request) {
       });
     }
     let publication = null;
-    if (publish && authSupabase) {
+    if (publish) {
       const founder = await founderPersistAndPublishSpecialistAnalysis({
         supabase: authSupabase, packet: result.packet, draft: result.draft,
         analystQualityGate: result.analystQualityGate, analystModel: result.analystModel,
