@@ -39,7 +39,7 @@ const article: LearningArticle = {
         "Det totala registrerade antalet aktier behöver inte direkt minska bara för att bolaget har köpt tillbaka aktier. Om bolaget behåller de återköpta aktierna som egna aktier kan det fortfarande finnas 100 miljoner aktier totalt, men endast 90 miljoner är utestående hos externa aktieägare. Om de återköpta aktierna senare dras in minskar även det totala antalet aktier.",
       ],
       callout:
-        "Återköpta aktier och indragna aktier är inte samma sak. Ett återköp kan minska antalet utestående aktier utan att det registrerade totala antalet aktier omedelbart minskar.",
+        "När ett bolag köper tillbaka aktier minskar antalet aktier som finns ute på marknaden. Det totala antalet aktier i bolaget minskar först om de återköpta aktierna dras in.",
     },
     {
       heading: "Varför köper företag tillbaka sina egna aktier?",
