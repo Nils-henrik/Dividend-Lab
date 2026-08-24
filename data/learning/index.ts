@@ -1,3 +1,4 @@
+import aktieaterkop from "./articles/aktieaterkop-varfor-koper-bolag-egna-aktier";
 import borjaInvestera from "./articles/borja-investera-pa-borsen";
 import borsensOrdlista from "./articles/borsens-ordlista";
 import direktavkastning from "./articles/direktavkastning-och-utdelningssakerhet";
@@ -34,6 +35,7 @@ export {
 } from "./reading-time";
 
 const rawArticles: LearningArticle[] = [
+  aktieaterkop,
   kvartalsrapport,
   borsensOrdlista,
   {
