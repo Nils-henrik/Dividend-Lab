@@ -2,19 +2,25 @@ type Props = {
   imageUrl: string;
   /** CSS object-position for object-cover crops. */
   objectPosition?: string;
+  /** CSS aspect-ratio for the thumbnail container. */
+  aspectRatio?: string;
 };
 
 /**
  * Learning library thumbnail.
- * Covers use their native 3:2 editorial shape so embedded headlines remain
- * readable instead of being compressed into a small desktop chip.
+ * Defaults to the library's 3:2 editorial shape, while individual articles
+ * can opt into a wider ratio when the approved cover must remain uncropped.
  */
 export default function LearningArticleThumbnail({
   imageUrl,
   objectPosition = "center",
+  aspectRatio = "3 / 2",
 }: Props) {
   return (
-    <div className="aspect-[3/2] w-full shrink-0 overflow-hidden rounded-xl border divlab-border-neutral bg-divlab-surface md:w-[270px]">
+    <div
+      className="w-full shrink-0 overflow-hidden rounded-xl border divlab-border-neutral bg-divlab-surface md:w-[270px]"
+      style={{ aspectRatio }}
+    >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={imageUrl}
