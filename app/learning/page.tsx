@@ -36,18 +36,18 @@ export async function generateMetadata({
   const isFirstPage = page === 1;
   const pageSuffix = isFirstPage ? "" : ` – sida ${page}`;
   const canonicalPath = isFirstPage ? "/learning" : `/learning?page=${page}`;
+  const description =
+    "Lär dig aktier, indexfonder, ETF:er, ISK, ränta på ränta, barnsparande, pension och FIRE. Svenska guider om börsen och privatekonomi utan köpråd.";
 
   return {
     title: `Utbildning om aktier, fonder och privatekonomi${pageSuffix}`,
-    description:
-      "Guider om aktier, fonder, privatekonomi, pension, FIRE, konton och skatt samt långsiktigt sparande — sakligt och utan köpråd.",
+    description,
     alternates: {
       canonical: getCanonicalUrl(canonicalPath),
     },
     openGraph: {
       title: `Utbildning${pageSuffix} | ${DIVLAB_BRAND_NAME}`,
-      description:
-        "Guider om aktier, fonder, privatekonomi, pension och FIRE för svenska sparare.",
+      description,
       url: getCanonicalUrl(canonicalPath),
       type: "website",
       locale: "sv_SE",
