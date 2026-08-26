@@ -16,6 +16,7 @@ const article: LearningArticle = {
   coverImageAlt:
     "Familj vid köksbord som planerar barnsparande med sparbössa, svenska kronor och rubriken 650 kronor räcker.",
   thumbnailObjectPosition: "center",
+  thumbnailAspectRatio: "16 / 9",
   relatedArticleSlugs: [
     "ranta-pa-ranta",
     "isk-eller-kapitalforsakring",
