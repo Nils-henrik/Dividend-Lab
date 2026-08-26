@@ -59,8 +59,10 @@ function getLearningArticleSearchText(article: (typeof learningArticles)[number]
 
   return [
     article.title,
+    article.seoTitle ?? "",
     article.description,
     article.excerpt,
+    ...(article.searchTerms ?? []),
     introText,
     ...sectionText,
   ]
