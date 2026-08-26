@@ -1,4 +1,5 @@
 import aktieaterkop from "./articles/aktieaterkop-varfor-koper-bolag-egna-aktier";
+import barnsparande from "./articles/barnsparande-2026-hur-mycket-ska-man-spara-till-barn";
 import borjaInvestera from "./articles/borja-investera-pa-borsen";
 import borsensOrdlista from "./articles/borsens-ordlista";
 import direktavkastning from "./articles/direktavkastning-och-utdelningssakerhet";
@@ -35,6 +36,7 @@ export {
 } from "./reading-time";
 
 const rawArticles: LearningArticle[] = [
+  barnsparande,
   aktieaterkop,
   kvartalsrapport,
   borsensOrdlista,
