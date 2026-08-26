@@ -26,6 +26,7 @@ export default function LearningArticleRow({
               <LearningArticleThumbnail
                 imageUrl={listImageUrl}
                 objectPosition={article.thumbnailObjectPosition}
+                aspectRatio={article.thumbnailAspectRatio}
               />
             </div>
           )}
