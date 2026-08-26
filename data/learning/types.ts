@@ -71,6 +71,11 @@ export type LearningArticle = {
    * Defaults to the library's 3:2 thumbnail ratio.
    */
   thumbnailAspectRatio?: string;
+  /**
+   * Natural Swedish search aliases used by DivLab's own search. These are not
+   * rendered as a visible keyword list and are not emitted as meta keywords.
+   */
+  searchTerms?: string[];
   /** Slugs of other published Learning articles to show in "Relaterade ämnen". */
   relatedArticleSlugs?: string[];
   /** Compact source list rendered near the end of the article. */
