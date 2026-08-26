@@ -20,7 +20,7 @@ import vadArEnAktie from "./articles/vad-ar-en-aktie";
 import vadArEnIndexfond from "./articles/vad-ar-en-indexfond";
 import { withReadingTime, type LearningArticleWithReadingTime } from "./reading-time";
 import type { LearningArticle } from "./types";
-import { applyLearningSearchSeo } from "@/lib/seo/editorial-content";
+import { applyLearningSearchSeo } from "@/lib/seo/learning-search";
 
 export type {
   LearningArticle,
