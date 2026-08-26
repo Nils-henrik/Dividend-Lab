@@ -66,6 +66,11 @@ export type LearningArticle = {
    * Falls back to centered cover when omitted.
    */
   thumbnailObjectPosition?: string;
+  /**
+   * Optional CSS aspect-ratio for the Learning list-card image, e.g. "16 / 9".
+   * Defaults to the library's 3:2 thumbnail ratio.
+   */
+  thumbnailAspectRatio?: string;
   /** Slugs of other published Learning articles to show in "Relaterade ämnen". */
   relatedArticleSlugs?: string[];
   /** Compact source list rendered near the end of the article. */
