@@ -1,4 +1,6 @@
+import { BORSSVERIGE_27_AUGUSTI_2026_ARTICLE } from "@/data/news-articles/borssverige-27-augusti-2026";
 import { DEMO_NEWS_ARTICLES } from "@/data/news-demo";
+import { applyNewsSearchSeo } from "@/lib/seo/editorial-content";
 import type { NewsArticle } from "@/types/news";
 
 /**
@@ -98,12 +100,18 @@ function resolveNewsArticleImages(article: NewsArticle): NewsArticle {
   };
 }
 
+const PUBLISHED_NEWS_ARTICLES: NewsArticle[] = [
+  applyNewsSearchSeo(BORSSVERIGE_27_AUGUSTI_2026_ARTICLE),
+  ...DEMO_NEWS_ARTICLES,
+];
+
 const RESOLVED_NEWS_ARTICLES: NewsArticle[] =
-  DEMO_NEWS_ARTICLES.map(resolveNewsArticleImages);
+  PUBLISHED_NEWS_ARTICLES.map(resolveNewsArticleImages);
 
 /**
  * Börsnyheter article source.
- * Currently served from published editorial content in data/news-demo.ts.
+ * Published editorial content is assembled here from the current article and
+ * the historical article registry in data/news-demo.ts.
  */
 export function getNewsArticles(): NewsArticle[] {
   return RESOLVED_NEWS_ARTICLES;
