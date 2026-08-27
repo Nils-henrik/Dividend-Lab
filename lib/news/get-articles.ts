@@ -1,4 +1,5 @@
 import { BORSSVERIGE_27_AUGUSTI_2026_ARTICLE } from "@/data/news-articles/borssverige-27-augusti-2026";
+import { USA_BORSEN_NVIDIA_NASDAQ_AI_RALLY_27_AUGUSTI_2026_ARTICLE } from "@/data/news-articles/usa-borsen-nvidia-nasdaq-ai-rally-27-augusti-2026";
 import { DEMO_NEWS_ARTICLES } from "@/data/news-demo";
 import { applyNewsSearchSeo } from "@/lib/seo/editorial-content";
 import type { NewsArticle } from "@/types/news";
@@ -101,6 +102,7 @@ function resolveNewsArticleImages(article: NewsArticle): NewsArticle {
 }
 
 const PUBLISHED_NEWS_ARTICLES: NewsArticle[] = [
+  applyNewsSearchSeo(USA_BORSEN_NVIDIA_NASDAQ_AI_RALLY_27_AUGUSTI_2026_ARTICLE),
   applyNewsSearchSeo(BORSSVERIGE_27_AUGUSTI_2026_ARTICLE),
   ...DEMO_NEWS_ARTICLES,
 ];
