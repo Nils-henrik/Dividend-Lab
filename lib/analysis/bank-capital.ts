@@ -54,6 +54,16 @@ function tokensWithUnits(value: string): Array<{ raw: string; scale: number }> {
   return tokens;
 }
 
+function emptyFact(): DivLabBankCapitalFact {
+  return {
+    status: "not_found",
+    valuePctPoints: null,
+    rawToken: null,
+    context: null,
+    sourceId: null,
+  };
+}
+
 function factFromCandidates(input: {
   candidates: readonly Candidate[];
   sourceId: string;
@@ -195,6 +205,36 @@ function regulatoryRequirementFromContext(input: {
   return factFromCandidates({ candidates, sourceId: input.sourceId });
 }
 
+function usableReports(evidence: readonly AnalysisEvidence[]): AnalysisEvidence[] {
+  return [...evidence]
+    .filter(
+      (item) =>
+        item.primary &&
+        item.documentRetrieved &&
+        item.kind === "official_report_excerpt" &&
+        Boolean(item.documentExcerpt?.trim()),
+    )
+    .sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
+}
+
+/**
+ * Search newest verified evidence first for one capital fact. A newer document
+ * that explicitly yields an ambiguous value blocks fallback to older evidence;
+ * only a true `not_found` may continue to another verified report/Fact Book.
+ */
+function factAcrossReports(input: {
+  reports: readonly AnalysisEvidence[];
+  extractor: (input: { excerpt: string; sourceId: string }) => DivLabBankCapitalFact;
+}): DivLabBankCapitalFact {
+  for (const report of input.reports) {
+    const excerpt = report.documentExcerpt?.trim();
+    if (!excerpt) continue;
+    const result = input.extractor({ excerpt, sourceId: report.sourceId });
+    if (result.status !== "not_found") return result;
+  }
+  return emptyFact();
+}
+
 /**
  * Build source-bound bank capital context without scoring adequacy.
  *
@@ -207,21 +247,10 @@ export function buildBankCapitalContext(input: {
   evidence: readonly AnalysisEvidence[];
   reportMetrics: DivLabBankReportMetrics;
 }): DivLabBankCapitalContext {
-  const report = input.evidence.find(
-    (item) =>
-      item.primary &&
-      item.documentRetrieved &&
-      item.kind === "official_report_excerpt" &&
-      Boolean(item.documentExcerpt?.trim()),
-  );
-  if (!report?.documentExcerpt?.trim()) {
-    const empty: DivLabBankCapitalFact = {
-      status: "not_found",
-      valuePctPoints: null,
-      rawToken: null,
-      context: null,
-      sourceId: null,
-    };
+  const reports = usableReports(input.evidence);
+  const anchorReport = reports[0] ?? null;
+  if (!anchorReport) {
+    const empty = emptyFact();
     return {
       version: DIVLAB_BANK_CAPITAL_VERSION,
       status: "not_applicable",
@@ -238,17 +267,21 @@ export function buildBankCapitalContext(input: {
     input.reportMetrics.metrics.cet1Ratio.status === "confirmed"
       ? input.reportMetrics.metrics.cet1Ratio.valuePct
       : null;
-  const regulatoryCet1Requirement = regulatoryRequirementFromContext({
-    excerpt: report.documentExcerpt,
-    sourceId: report.sourceId,
+  const regulatoryCet1Requirement = factAcrossReports({
+    reports,
+    extractor: regulatoryRequirementFromContext,
   });
-  const reportedCapitalBuffer = extractFact({
-    excerpt: report.documentExcerpt,
-    sourceId: report.sourceId,
-    labels: CAPITAL_BUFFER_LABELS,
-    allowBasisPoints: true,
-    min: -20,
-    max: 30,
+  const reportedCapitalBuffer = factAcrossReports({
+    reports,
+    extractor: ({ excerpt, sourceId }) =>
+      extractFact({
+        excerpt,
+        sourceId,
+        labels: CAPITAL_BUFFER_LABELS,
+        allowBasisPoints: true,
+        min: -20,
+        max: 30,
+      }),
   });
 
   const requirement = regulatoryCet1Requirement.valuePctPoints;
@@ -274,13 +307,13 @@ export function buildBankCapitalContext(input: {
         : actualCet1Pct !== null || hasCapitalReference || ambiguous
           ? "partial"
           : "insufficient",
-    sourceId: report.sourceId,
+    sourceId: anchorReport.sourceId,
     actualCet1Pct,
     regulatoryCet1Requirement,
     reportedCapitalBuffer,
     derivedHeadroomPctPoints,
     notes: [
-      "Kapitalmåtten är rapportfakta och aritmetik, inte en adequacy-score. Managementmål, regulatoriskt krav och rapporterad kapitalbuffert hålls separata.",
+      "Kapitalmåtten är source-bound rapportfakta och aritmetik och kan komma från flera verifierade primärrapporter; varje kapitalreferens behåller sitt eget sourceId. Managementmål, regulatoriskt krav och rapporterad kapitalbuffert hålls separata.",
     ],
   };
 }

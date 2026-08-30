@@ -60,7 +60,7 @@ function metric(
   return {
     value,
     unit,
-    sourceIds: [...new Set(sourceIds)],
+    sourceIds: [...new Set(sourceIds.filter((sourceId) => sourceId.trim()))],
     status: value !== null && Number.isFinite(value) ? "confirmed" : "missing",
   };
 }
@@ -113,7 +113,57 @@ function findSignedPercent(
   return null;
 }
 
+function marketPriceSourceIds(packet: DivLabResearchPacket): string[] {
+  return [
+    ...new Set(
+      packet.sources
+        .filter((source) => source.kind === "market_data")
+        .map((source) => source.id)
+        .filter((sourceId) => sourceId.trim()),
+    ),
+  ];
+}
+
+export function investmentCompanyDiscountProvenanceReady(input: {
+  navPerShare: FinancialSpecialistMetric;
+  discountToNavPct: FinancialSpecialistMetric;
+  marketSourceIds: readonly string[];
+  knownSourceIds: ReadonlySet<string>;
+}): boolean {
+  if (
+    input.navPerShare.status !== "confirmed" ||
+    input.navPerShare.value === null ||
+    input.discountToNavPct.status !== "confirmed" ||
+    input.discountToNavPct.value === null
+  ) {
+    return false;
+  }
+
+  const navSourceIds = [...new Set(input.navPerShare.sourceIds.filter((sourceId) => sourceId.trim()))];
+  const marketSourceIds = [...new Set(input.marketSourceIds.filter((sourceId) => sourceId.trim()))];
+  if (navSourceIds.length === 0 || marketSourceIds.length === 0) return false;
+
+  const discountSourceIds = new Set(input.discountToNavPct.sourceIds);
+  return (
+    input.discountToNavPct.sourceIds.length > 0 &&
+    input.discountToNavPct.sourceIds.every((sourceId) => input.knownSourceIds.has(sourceId)) &&
+    navSourceIds.every(
+      (sourceId) => input.knownSourceIds.has(sourceId) && discountSourceIds.has(sourceId),
+    ) &&
+    marketSourceIds.every(
+      (sourceId) => input.knownSourceIds.has(sourceId) && discountSourceIds.has(sourceId),
+    )
+  );
+}
+
 const NAV_PATTERNS = [
+  // Investor-style official wording reports total NAV first and the required
+  // per-share value in a later parenthetical, e.g. "net asset value (NAV) was
+  // SEK 1,214.7bn (SEK 397 per share)". Consume the optional acronym but bind
+  // only to the explicitly labelled per-share token; never reinterpret total
+  // NAV, equity or market cap as a per-share value.
+  /(?:net asset value|substansvärde)(?:\s*\(NAV\))?[^()\n]{0,180}\(\s*(?:SEK|kr)\s*(\d{2,4}(?:[.,]\d+)?)\s*(?:per share|per aktie)\s*\)/i,
+  /\bNAV\b[^()\n]{0,180}\(\s*(?:SEK|kr)\s*(\d{2,4}(?:[.,]\d+)?)\s*(?:per share|per aktie)\s*\)/i,
   /(?:SEK|kr)\s*(\d{2,4}(?:[.,]\d+)?)\s*(?:per share|per aktie)[^\n.]{0,80}(?:net asset value|NAV|substansvärde)/i,
   /(?:net asset value|NAV|substansvärde)[^\n.]{0,220}?(?:SEK|kr)\s*(\d{2,4}(?:[.,]\d+)?)\s*(?:per share|per aktie)/i,
   /(?:net asset value|substansvärde)[^\n.]{0,220}?(\d{2,4}(?:[.,]\d+)?)\s*(?:SEK|kr)\s*(?:per share|per aktie)/i,
@@ -159,6 +209,7 @@ export function buildFinancialSpecialistResearch(input: {
   const trailingPeValue = input.basePacket.valuation.trailing.pe;
   const trailingPeSources =
     input.basePacket.valuationProvenance.measures.pe.sourceIds;
+  const marketSources = marketPriceSourceIds(input.basePacket);
 
   const navPerShare = metric(
     nav?.value ?? null,
@@ -166,13 +217,17 @@ export function buildFinancialSpecialistResearch(input: {
     nav ? [nav.sourceId] : [],
   );
   const discount =
-    nav?.value && nav.value > 0
+    nav?.value &&
+    nav.value > 0 &&
+    Number.isFinite(input.basePacket.instrument.currentPrice) &&
+    input.basePacket.instrument.currentPrice > 0 &&
+    marketSources.length > 0
       ? 1 - input.basePacket.instrument.currentPrice / nav.value
       : null;
   const discountToNavPct = metric(
     discount === null ? null : discount * 100,
     "%",
-    nav ? [nav.sourceId] : [],
+    nav && marketSources.length > 0 ? [nav.sourceId, ...marketSources] : [],
   );
   const netDebtRatioPct = metric(
     debtRatio?.value ?? null,

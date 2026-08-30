@@ -71,7 +71,11 @@ export type OfficialDocumentExtractSuccess = {
 
 export type OfficialDocumentExtractFailure = {
   ok: false;
-  reason: "parse_failed" | "empty_text" | "parse_timeout";
+  reason:
+    | "parse_failed"
+    | "empty_text"
+    | "focus_anchor_not_found"
+    | "parse_timeout";
 };
 
 export type OfficialDocumentExtractResult =
@@ -268,9 +272,22 @@ function collapseWhitespace(value: string): string {
     .trim();
 }
 
+function boundedFocusAnchor(value: string | undefined): string | null {
+  if (value === undefined) return null;
+  const normalized = collapseWhitespace(value);
+  if (!normalized || normalized.length > 240 || normalized.includes("\n")) return null;
+  return normalized;
+}
+
 /**
  * Deterministic bounded PDF text extraction. No LLM involvement.
  * Extracted text is untrusted external evidence only.
+ *
+ * `focusAnchor` does not widen page or character budgets. The parser already
+ * reads the bounded page window before truncating; when an internal caller knows
+ * an exact table heading, this option simply starts the returned bounded excerpt
+ * at that literal heading. Missing anchors fail closed instead of falling back
+ * to a guessed offset.
  *
  * Timeout note: the Promise.race deadline returns `parse_timeout` to the caller
  * and clears the timer handle, then destroys the parser. It does not hard-abort
@@ -282,10 +299,15 @@ export async function extractBoundedPdfText(input: {
   maxPages?: number;
   maxChars?: number;
   parseTimeoutMs?: number;
+  focusAnchor?: string;
 }): Promise<OfficialDocumentExtractResult> {
   const maxPages = input.maxPages ?? OFFICIAL_DOCUMENT_BOUNDS.maxPagesExtracted;
   const maxChars = input.maxChars ?? OFFICIAL_DOCUMENT_BOUNDS.maxTextChars;
   const parseTimeoutMs = input.parseTimeoutMs ?? 8_000;
+  const focusAnchor = boundedFocusAnchor(input.focusAnchor);
+  if (input.focusAnchor !== undefined && focusAnchor === null) {
+    return { ok: false, reason: "focus_anchor_not_found" };
+  }
 
   const parser = new PDFParse({ data: input.bytes, CanvasFactory });
   let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
@@ -302,9 +324,21 @@ export async function extractBoundedPdfText(input: {
         last: pagesExtracted,
         pageJoiner: "\n",
       });
-      const text = collapseWhitespace(textResult.text ?? "");
-      if (!text) return { ok: false, reason: "empty_text" };
-      const truncated = text.length > maxChars || pagesExtracted < pageCount;
+      const fullText = collapseWhitespace(textResult.text ?? "");
+      if (!fullText) return { ok: false, reason: "empty_text" };
+
+      let text = fullText;
+      let omittedPrefix = false;
+      if (focusAnchor) {
+        const anchorIndex = fullText.indexOf(focusAnchor);
+        if (anchorIndex < 0) {
+          return { ok: false, reason: "focus_anchor_not_found" };
+        }
+        omittedPrefix = anchorIndex > 0;
+        text = fullText.slice(anchorIndex);
+      }
+
+      const truncated = omittedPrefix || text.length > maxChars || pagesExtracted < pageCount;
       return {
         ok: true,
         text: text.slice(0, maxChars),

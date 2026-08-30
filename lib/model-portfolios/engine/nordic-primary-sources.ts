@@ -72,6 +72,11 @@ const HARD_MAX_HITS = 12;
 // network request or widen the accepted issuer/market scope.
 const HARD_MAX_QUERY_COUNT = 100;
 const HARD_MAX_SEARCH_TERMS = 5;
+// Attachment entries are trusted Nasdaq metadata only. Retaining up to four
+// lets dedicated Deep Research identify a specialist document (for example a
+// Fact Book) even when it is the third attachment, without fetching any extra
+// document or changing the one/two-document enrichment budgets.
+const HARD_MAX_ATTACHMENTS_PER_HIT = 4;
 
 function text(value: unknown): string | null {
   return typeof value === "string" && value.trim() ? value.trim() : null;
@@ -203,7 +208,7 @@ function attachmentsFromItem(item: NasdaqCnsItem): NordicPrimaryAttachment[] {
       mimeType: text(attachment.mimetype),
       fileName: text(attachment.fileName),
     });
-    if (attachments.length >= 2) break;
+    if (attachments.length >= HARD_MAX_ATTACHMENTS_PER_HIT) break;
   }
   return attachments;
 }

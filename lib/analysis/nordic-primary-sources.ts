@@ -149,6 +149,12 @@ function preferredIssuerSearchName(companyName: string): string {
   const aliases = nordicDisclosureCompanyAliases(companyName)
     .map((value) => value.replace(/\s+/g, " ").trim())
     .filter(Boolean);
+  const withoutShareSeries = aliases.find(
+    (alias) =>
+      !/\bser\.?\s*[A-Z]\b/i.test(alias)
+      && !/\s*\((?:SDR|B|A)\)\s*$/i.test(alias),
+  );
+  if (withoutShareSeries) return withoutShareSeries;
   const withoutLegalSuffix = aliases.find(
     (alias) => !/\s(?:AB|ASA|Oyj|A\/S|Plc|PLC|Ltd|Limited|Group)\.?$/i.test(alias),
   );
@@ -221,7 +227,11 @@ export function nordicCurrentReportIntentTerms(input: {
   return uniqueTerms([
     `${ticker} ${intent.quarter}`,
     `${issuer} ${intent.phrase}`,
-    `${issuer} ${intent.periodOnlyPhrase}`,
+    // The broad period-only query gets the existing 100-row window and then
+    // relies on the shared adapter's strict issuer-name filter. Prefixing the
+    // issuer here accidentally downgraded it to the 20-row ordinary budget and
+    // could hide valid issuers such as Investor behind newer market releases.
+    intent.periodOnlyPhrase,
   ]).slice(0, DEEP_RESEARCH_CNS_REQUEST_BUDGET.currentReport);
 }
 

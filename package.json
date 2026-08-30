@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsx --test \"tests/*.test.ts\"",
+    "test": "node --import ./tests/shims/register-server-only.mjs --import tsx --test \"tests/*.test.ts\"",
     "test:seo": "tsx --test \"lib/seo/**/*.test.ts\" \"lib/news/**/*.test.ts\" \"lib/i18n/**/*.test.ts\"",
     "test:divbrain": "node --import ./tests/shims/register-server-only.mjs --import tsx --test \"lib/divbrain/**/*.test.ts\"",
     "test:divbrain:context": "node --import ./tests/shims/register-server-only.mjs --import tsx --test \"lib/divbrain/server/context/**/*.test.ts\"",

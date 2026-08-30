@@ -33,15 +33,18 @@ describe("Dedicated Nordic period-aware report discovery contract", () => {
     assert.match(analysisSource, /status:\s*429/);
   });
 
-  it("uses issuer-bound period-aware terms without weakening issuer filtering", () => {
+  it("uses the existing bounded period-only window while preserving strict issuer filtering", () => {
     assert.match(analysisSource, /export function nordicCurrentReportIntentTerms/);
     assert.match(analysisSource, /quarter:\s*"Q2"/);
     assert.match(analysisSource, /phrase:\s*"half-year"/);
     assert.match(analysisSource, /periodOnlyPhrase:\s*`interim report January-June \$\{year\}`/);
-    assert.match(analysisSource, /`\$\{issuer\} \$\{intent\.periodOnlyPhrase\}`/);
+    assert.match(analysisSource, /\n\s*intent\.periodOnlyPhrase,\n/);
+    assert.match(analysisSource, /queryCount:\s*isPeriodOnlyReportTerm\(term\)/);
+    assert.match(analysisSource, /periodOnlyTerm:\s*100/);
     assert.match(analysisSource, /url\.searchParams\.set\("freeText", freeText\)/);
     assert.match(analysisSource, /companyName:\s*input\.companyName/);
     assert.match(analysisSource, /symbol:\s*input\.symbol/);
+    assert.match(sharedSource, /companyNamesLikelyMatch\(issuer, companyName\)/);
   });
 
   it("fails closed if the dedicated CNS wrapper is asked to rewrite another endpoint", () => {

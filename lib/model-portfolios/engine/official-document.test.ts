@@ -153,6 +153,34 @@ describe("official document retrieval safety", () => {
     assert.ok(summary.length <= 6000);
   });
 
+  it("focuses an already-bounded PDF excerpt at an exact literal anchor without widening the character ceiling", async () => {
+    const anchor = "Key figures - SEB Group, nine quarters";
+    const bytes = buildFixturePdf(
+      `Introductory text that must be omitted. ${anchor} Net ECL level 0.05 percent and more trailing text.`,
+    );
+    const focused = await extractBoundedPdfText({
+      bytes,
+      maxPages: 1,
+      maxChars: 55,
+      focusAnchor: anchor,
+    });
+    assert.equal(focused.ok, true);
+    if (!focused.ok) return;
+    assert.equal(focused.text.startsWith(anchor), true);
+    assert.equal(focused.text.includes("Introductory text"), false);
+    assert.ok(focused.text.length <= 55);
+    assert.equal(focused.truncated, true);
+
+    const missing = await extractBoundedPdfText({
+      bytes,
+      maxPages: 1,
+      maxChars: 55,
+      focusAnchor: "Key figures - another issuer",
+    });
+    assert.equal(missing.ok, false);
+    if (!missing.ok) assert.equal(missing.reason, "focus_anchor_not_found");
+  });
+
   it("distinguishes unread, failed, and budget-skipped report attachments in evidence copy", () => {
     const unread = buildOfficialReleaseEvidenceSummary({
       company: "Investor AB",

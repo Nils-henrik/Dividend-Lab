@@ -51,6 +51,26 @@ function baseHit(overrides: Partial<NordicPrimarySourceHit> = {}): NordicPrimary
   };
 }
 
+function sebHit(): NordicPrimarySourceHit {
+  return baseHit({
+    title: "SEB's results for the second quarter 2026",
+    company: "Skandinaviska Enskilda Banken AB",
+    publishedAt: "2026-07-15T06:30:00.000Z",
+    attachments: [
+      {
+        url: "https://attachment.news.eu.nasdaq.com/seb-result-presentation",
+        mimeType: "application/pdf",
+        fileName: "SEB Q2 2026 Result Presentation.pdf",
+      },
+      {
+        url: "https://attachment.news.eu.nasdaq.com/seb-fact-book",
+        mimeType: "application/pdf",
+        fileName: "SEB Q2 2026 Fact Book.pdf",
+      },
+    ],
+  });
+}
+
 describe("primary source enrichment", () => {
   it("classifies a successfully retrieved official report PDF as company_report", async () => {
     const pdf = buildFixturePdf("Investor AB Interim report January-June 2026 Adjusted NAV SEK 100");
@@ -104,6 +124,34 @@ describe("primary source enrichment", () => {
     assert.equal(enriched[0]?.kind, "company_release");
     assert.equal(enriched[0]?.reportPeriod, "Q2");
     assert.equal(enriched[0]?.reportYear, 2026);
+  });
+
+  it("prefers SEB's already-trusted Fact Book only for the dedicated multi-document Deep Research path", async () => {
+    const ordinaryUrls: string[] = [];
+    await enrichNordicPrimarySourceHits({
+      hits: [sebHit()],
+      maxDocuments: 1,
+      fetchImpl: async (input) => {
+        ordinaryUrls.push(input instanceof URL ? input.toString() : typeof input === "string" ? input : input.url);
+        return new Response("missing", { status: 404 });
+      },
+    });
+    assert.deepEqual(ordinaryUrls, [
+      "https://attachment.news.eu.nasdaq.com/seb-result-presentation",
+    ]);
+
+    const deepResearchUrls: string[] = [];
+    await enrichNordicPrimarySourceHits({
+      hits: [sebHit()],
+      maxDocuments: 2,
+      fetchImpl: async (input) => {
+        deepResearchUrls.push(input instanceof URL ? input.toString() : typeof input === "string" ? input : input.url);
+        return new Response("missing", { status: 404 });
+      },
+    });
+    assert.deepEqual(deepResearchUrls, [
+      "https://attachment.news.eu.nasdaq.com/seb-fact-book",
+    ]);
   });
 
   it("consumes the document attempt budget before fetch, even when the first fetch fails", async () => {

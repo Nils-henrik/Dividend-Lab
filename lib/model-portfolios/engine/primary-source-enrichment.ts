@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { ModelPortfolioEvidence } from "./decision";
-import type { NordicPrimarySourceHit } from "./nordic-primary-sources";
+import type { NordicPrimaryAttachment, NordicPrimarySourceHit } from "./nordic-primary-sources";
 import {
   buildOfficialReleaseEvidenceSummary,
   buildOfficialReportEvidenceSummary,
@@ -15,6 +15,11 @@ import {
   type PrimaryEvidenceKind,
   type ReportPeriod,
 } from "./report-metadata";
+import {
+  isSebFactBookFileName,
+  isSebIssuerName,
+  projectSebFactBookCurrentPeriod,
+} from "./seb-fact-book";
 
 export const PRIMARY_SOURCE_ENRICHMENT_BOUNDS = {
   /**
@@ -32,6 +37,8 @@ export const PRIMARY_SOURCE_ENRICHMENT_BOUNDS = {
    */
   maxDocumentTextChars: 12_000,
 } as const;
+
+const SEB_FACT_BOOK_FOCUS_ANCHOR = "Key figures - SEB Group, nine quarters";
 
 export type EnrichedPrimarySourceHit = {
   hit: NordicPrimarySourceHit;
@@ -79,6 +86,30 @@ function boundedDocumentTextChars(value: number | undefined): number {
   );
 }
 
+function isPdfAttachment(item: NordicPrimaryAttachment): boolean {
+  const mime = item.mimeType?.toLowerCase() ?? "";
+  return !mime || mime.includes("pdf") || (item.fileName ?? "").toLowerCase().endsWith(".pdf");
+}
+
+/**
+ * The normal portfolio path keeps its historical first-PDF behavior. Only the
+ * dedicated Deep Research path (identified by its explicit >1 document budget)
+ * may prefer SEB's official CNS Fact Book attachment over the result deck. This
+ * consumes the same single PDF attempt for the hit and does not add any request.
+ */
+function preferredAttachment(input: {
+  hit: NordicPrimarySourceHit;
+  dedicatedDeepResearch: boolean;
+}): NordicPrimaryAttachment | null {
+  const pdfs = input.hit.attachments.filter(isPdfAttachment);
+  if (!pdfs.length) return null;
+  if (input.dedicatedDeepResearch && isSebIssuerName(input.hit.company)) {
+    const factBook = pdfs.find((item) => isSebFactBookFileName(item.fileName));
+    if (factBook) return factBook;
+  }
+  return pdfs[0] ?? null;
+}
+
 /**
  * Enrich CNS primary hits with at most one official PDF *attempt* per
  * company/pass. The bound is consumed before fetch starts, whether or not
@@ -100,14 +131,17 @@ export async function enrichNordicPrimarySourceHits(input: {
   const maxDocuments = input.maxDocuments ?? OFFICIAL_DOCUMENT_BOUNDS.maxDocumentsPerCompanyPass;
   const maxDocumentBytes = boundedDocumentBytes(input.maxDocumentBytes);
   const maxDocumentTextChars = boundedDocumentTextChars(input.maxDocumentTextChars);
+  const dedicatedDeepResearch =
+    maxDocuments > OFFICIAL_DOCUMENT_BOUNDS.maxDocumentsPerCompanyPass;
   let documentsAttempted = 0;
   const enriched: EnrichedPrimarySourceHit[] = [];
 
   for (const hit of input.hits) {
-    const attachment = hit.attachments.find((item) => {
-      const mime = item.mimeType?.toLowerCase() ?? "";
-      return !mime || mime.includes("pdf") || (item.fileName ?? "").toLowerCase().endsWith(".pdf");
-    }) ?? null;
+    const attachment = preferredAttachment({ hit, dedicatedDeepResearch });
+    const selectedSebFactBook =
+      dedicatedDeepResearch
+      && isSebIssuerName(hit.company)
+      && isSebFactBookFileName(attachment?.fileName);
 
     let documentRetrieved = false;
     let documentAttempted = false;
@@ -141,6 +175,11 @@ export async function enrichNordicPrimarySourceHits(input: {
         const extracted = await extractBoundedPdfText({
           bytes: fetched.buffer,
           maxChars: maxDocumentTextChars,
+          // The Fact Book table can occur after enough introductory text that
+          // first-N-character truncation would miss it. Focusing does not read
+          // more pages or return more characters: it selects a literal anchor
+          // inside the same already-bounded six-page extraction window.
+          focusAnchor: selectedSebFactBook ? SEB_FACT_BOOK_FOCUS_ANCHOR : undefined,
         });
         if (!extracted.ok) {
           failureReason = extracted.reason;
@@ -208,11 +247,29 @@ export async function enrichNordicPrimarySourceHits(input: {
               documentFailureReason: documentAttempted ? failureReason : null,
             });
 
+    let analysisExcerpt = excerpt;
+    if (
+      selectedSebFactBook
+      && documentRetrieved
+      && excerpt
+      && (isSebFactBookFileName(attachment?.fileName) || isSebFactBookFileName(fileName))
+    ) {
+      const projection = projectSebFactBookCurrentPeriod({
+        text: excerpt,
+        reportPeriod: parsed.reportPeriod,
+        reportYear: parsed.reportYear,
+      });
+      // Fail closed: if the strict nine-quarter proof cannot be established,
+      // retain raw source text. Existing bank extraction will keep its
+      // multi-period rows ambiguous rather than guessing a current value.
+      if (projection) analysisExcerpt = projection.excerpt;
+    }
+
     enriched.push({
       hit,
       kind,
       summary,
-      documentExcerpt: excerpt,
+      documentExcerpt: analysisExcerpt,
       documentRetrieved,
       documentUrl,
       reportPeriod: parsed.reportPeriod,

@@ -6,15 +6,19 @@ import type { AnalysisEvidence } from "../lib/analysis/evidence";
 
 const SOURCE_ID = "bank-report:q2";
 
-function evidence(excerpt: string): AnalysisEvidence {
+function evidence(
+  excerpt: string,
+  options: { sourceId?: string; publishedAt?: string } = {},
+): AnalysisEvidence {
+  const sourceId = options.sourceId ?? SOURCE_ID;
   return {
-    id: "evidence:bank-capital",
-    sourceId: SOURCE_ID,
+    id: `evidence:${sourceId}`,
+    sourceId,
     kind: "official_report_excerpt",
     title: "Bank capital report",
     content: "Verifierat rapportutdrag.",
     documentExcerpt: excerpt,
-    publishedAt: "2026-07-15T06:00:00.000Z",
+    publishedAt: options.publishedAt ?? "2026-07-15T06:00:00.000Z",
     primary: true,
     documentRetrieved: true,
     reportPeriod: "Q2",
@@ -66,9 +70,6 @@ describe("DivLab bank capital v1", () => {
       "Return on equity 18.9%",
     ].join("\n"));
 
-    // Narrative clause binding can safely separate two explicitly labelled
-    // facts on the same line. This is not a multi-period table: CET1 belongs
-    // to the first clause and the regulatory requirement to the second.
     assert.equal(result.actualCet1Pct, 19);
     assert.equal(result.regulatoryCet1Requirement.valuePctPoints, 15.6);
     assert.equal(result.derivedHeadroomPctPoints, 3.4);
@@ -101,6 +102,76 @@ describe("DivLab bank capital v1", () => {
     assert.equal(result.regulatoryCet1Requirement.valuePctPoints, null);
     assert.equal(result.derivedHeadroomPctPoints, null);
     assert.equal(result.status, "partial");
+  });
+
+  it("finds a source-bound capital buffer in the release when a newer Fact Book has no capital reference", () => {
+    const factBook = evidence(
+      [
+        "Net ECL level 0.05%",
+        "Cost/income ratio 40%",
+        "Liquidity Coverage Ratio 125%",
+        "Net Stable Funding Ratio 110%",
+      ].join("\n"),
+      {
+        sourceId: "bank-fact-book:q2",
+        publishedAt: "2026-07-15T06:01:00.000Z",
+      },
+    );
+    const release = evidence(
+      [
+        "CET1 capital ratio 17.2%",
+        "Return on equity 15.7%",
+        "The bank reported a capital buffer of 250 basis points.",
+      ].join("\n"),
+      {
+        sourceId: "bank-release:q2",
+        publishedAt: "2026-07-15T06:00:00.000Z",
+      },
+    );
+    const items = [factBook, release];
+    const result = buildBankCapitalContext({
+      evidence: items,
+      reportMetrics: extractBankReportMetrics(items),
+    });
+
+    assert.equal(result.status, "evidence_ready");
+    assert.equal(result.actualCet1Pct, 17.2);
+    assert.equal(result.reportedCapitalBuffer.status, "confirmed");
+    assert.equal(result.reportedCapitalBuffer.valuePctPoints, 2.5);
+    assert.equal(result.reportedCapitalBuffer.sourceId, release.sourceId);
+    assert.equal(result.sourceId, factBook.sourceId);
+  });
+
+  it("does not fall back to an older capital requirement when newer verified evidence is ambiguous", () => {
+    const newer = evidence(
+      [
+        "CET1 capital ratio 18.0%",
+        "Return on equity 14.0%",
+        "Regulatory CET1 requirement 11.5%",
+        "Regulatory CET1 requirement 12.1%",
+      ].join("\n"),
+      {
+        sourceId: "bank-release:newer",
+        publishedAt: "2026-07-15T06:01:00.000Z",
+      },
+    );
+    const older = evidence(
+      "Regulatory CET1 requirement 10.9%",
+      {
+        sourceId: "bank-release:older",
+        publishedAt: "2026-07-14T06:00:00.000Z",
+      },
+    );
+    const items = [older, newer];
+    const result = buildBankCapitalContext({
+      evidence: items,
+      reportMetrics: extractBankReportMetrics(items),
+    });
+
+    assert.equal(result.regulatoryCet1Requirement.status, "ambiguous");
+    assert.equal(result.regulatoryCet1Requirement.valuePctPoints, null);
+    assert.equal(result.regulatoryCet1Requirement.sourceId, newer.sourceId);
+    assert.equal(result.derivedHeadroomPctPoints, null);
   });
 
   it("requires a clean primary report", () => {

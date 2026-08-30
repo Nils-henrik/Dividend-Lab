@@ -39,6 +39,12 @@ type MetricSpec = {
   allowBasisPoints?: boolean;
 };
 
+type MetricCandidate = {
+  valuePct: number;
+  rawToken: string;
+  context: string;
+};
+
 const METRICS: readonly MetricSpec[] = [
   {
     name: "cet1Ratio",
@@ -177,10 +183,8 @@ function metricFromExcerpt(input: {
   sourceId: string;
   spec: MetricSpec;
 }): DivLabBankMetric {
-  const matches = new Map<
-    string,
-    { valuePct: number; rawToken: string; context: string }
-  >();
+  const matches = new Map<string, MetricCandidate>();
+  let ambiguousLineSeen = false;
   const lines = input.excerpt
     .split(/\r?\n/)
     .map((line) => line.trim())
@@ -193,6 +197,7 @@ function metricFromExcerpt(input: {
     if (!labelMatch || labelMatch.index === undefined) continue;
     const afterLabel = line.slice(labelMatch.index + labelMatch[0].length);
     const valueScope = metricValueScope(afterLabel);
+    const lineMatches = new Map<string, MetricCandidate>();
 
     for (const token of percentTokens(valueScope)) {
       if (token.scale === 0.01 && !input.spec.allowBasisPoints) continue;
@@ -200,12 +205,24 @@ function metricFromExcerpt(input: {
         const valuePct = candidate * token.scale;
         if (valuePct < input.spec.minPct || valuePct > input.spec.maxPct) continue;
         const key = valuePct.toFixed(6);
-        matches.set(key, {
+        lineMatches.set(key, {
           valuePct,
           rawToken: `${token.raw}${token.scale === 0.01 ? " bp" : "%"}`,
           context: cleanContext(line),
         });
       }
+    }
+
+    const lineValues = [...lineMatches.values()];
+    if (lineValues.length === 1) {
+      const value = lineValues[0]!;
+      matches.set(value.valuePct.toFixed(6), value);
+    } else if (lineValues.length > 1) {
+      // A multi-period table row remains ambiguous on its own. If the same
+      // official release also contains a separate one-value narrative clause,
+      // that explicit clause may confirm the metric without guessing a table
+      // column. Different one-value clauses still conflict below.
+      ambiguousLineSeen = true;
     }
   }
 
@@ -213,7 +230,7 @@ function metricFromExcerpt(input: {
   if (values.length === 0) {
     return {
       name: input.spec.name,
-      status: "not_found",
+      status: ambiguousLineSeen ? "ambiguous" : "not_found",
       valuePct: null,
       rawToken: null,
       context: null,
@@ -274,33 +291,61 @@ function emptyResult(note: string): DivLabBankReportMetrics {
   };
 }
 
+function usableReports(evidence: readonly AnalysisEvidence[]): AnalysisEvidence[] {
+  return [...evidence]
+    .filter(
+      (item) =>
+        item.primary &&
+        item.documentRetrieved &&
+        item.kind === "official_report_excerpt" &&
+        Boolean(item.documentExcerpt?.trim()),
+    )
+    .sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
+}
+
 /**
- * Confirmation-only extraction of bank-specific ratios from a bounded official
- * report excerpt. This is not a bank scorecard and does not infer regulatory
+ * Search each verified primary report independently for one metric. A newer
+ * report that explicitly contains an ambiguous row blocks fallback to an older
+ * value; only true `not_found` may continue to the next verified document.
+ */
+function metricAcrossReports(input: {
+  reports: readonly AnalysisEvidence[];
+  spec: MetricSpec;
+}): DivLabBankMetric {
+  for (const report of input.reports) {
+    const excerpt = report.documentExcerpt?.trim();
+    if (!excerpt) continue;
+    const result = metricFromExcerpt({
+      excerpt,
+      sourceId: report.sourceId,
+      spec: input.spec,
+    });
+    if (result.status !== "not_found") return result;
+  }
+  return emptyMetric(input.spec.name);
+}
+
+/**
+ * Confirmation-only extraction of bank-specific ratios from bounded official
+ * report excerpts. Metrics may come from different verified documents (for
+ * example an interim report plus a Fact Book), while every metric retains its
+ * own sourceId and an ambiguous newer row never silently falls back to stale
+ * evidence. This is not a bank scorecard and does not infer regulatory
  * headroom, quality or valuation from generic thresholds.
  */
 export function extractBankReportMetrics(
   evidence: readonly AnalysisEvidence[],
 ): DivLabBankReportMetrics {
-  const report = evidence.find(
-    (item) =>
-      item.primary &&
-      item.documentRetrieved &&
-      item.kind === "official_report_excerpt" &&
-      Boolean(item.documentExcerpt?.trim()),
-  );
-  if (!report?.documentExcerpt?.trim()) {
+  const reports = usableReports(evidence);
+  const anchorReport = reports[0] ?? null;
+  if (!anchorReport) {
     return emptyResult(
       "Ingen ren, hämtad primärrapporttext finns för bankspecialiserad analys.",
     );
   }
 
   const extracted = METRICS.map((spec) =>
-    metricFromExcerpt({
-      excerpt: report.documentExcerpt!,
-      sourceId: report.sourceId,
-      spec,
-    }),
+    metricAcrossReports({ reports, spec }),
   );
   const metrics = Object.fromEntries(
     extracted.map((metric) => [metric.name, metric]),
@@ -326,15 +371,15 @@ export function extractBankReportMetrics(
       : confirmedMetrics >= 2
         ? "partial"
         : "insufficient",
-    sourceId: report.sourceId,
-    reportPeriod: report.reportPeriod,
-    reportYear: report.reportYear,
+    sourceId: anchorReport.sourceId,
+    reportPeriod: anchorReport.reportPeriod,
+    reportYear: anchorReport.reportYear,
     confirmedMetrics,
     requiredCoreConfirmed,
     coverage: Math.round(coverage * 10_000) / 10_000,
     metrics,
     notes: [
-      "Värdena är confirmation-only rapportfakta. Regulatoriskt kapitalkrav, kapitalbuffert och bankvärdering måste analyseras separat innan metodiken kan klassas som komplett.",
+      "Värdena är confirmation-only rapportfakta och kan komma från flera verifierade primärrapporter; varje mått behåller sitt eget sourceId. Regulatoriskt kapitalkrav, kapitalbuffert och bankvärdering måste analyseras separat innan metodiken kan klassas som komplett.",
     ],
   };
 }
