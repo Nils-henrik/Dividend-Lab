@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "node scripts/validate-specialist-p0.mjs",
   "git": {
     "deploymentEnabled": {
       "cursor/issue-*": false
