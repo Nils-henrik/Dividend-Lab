@@ -34,6 +34,35 @@ function packet(input: {
   return {
     instrument: { symbol: "TEST", exchange: "ST", name: "Test", currency: "SEK", currentPrice: input.price },
     companyClassification: { ...providerFinancial(), type: input.type, confidence: "high" },
+    sources: [
+      {
+        id: "primary:1",
+        kind: "quarterly_report",
+        publisher: "Test issuer",
+        url: "https://example.com/report",
+        publishedAt: "2026-06-30T00:00:00.000Z",
+        verifiedAt: "2026-06-30T01:00:00.000Z",
+        primary: true,
+      },
+      {
+        id: "market:1",
+        kind: "market_data",
+        publisher: "Yahoo Finance",
+        url: "https://finance.yahoo.com/quote/TEST.ST/",
+        publishedAt: "2026-08-22T00:00:00.000Z",
+        verifiedAt: "2026-08-22T00:00:00.000Z",
+        primary: false,
+      },
+      {
+        id: "fundamental:1",
+        kind: "fundamental_data",
+        publisher: "Yahoo Finance",
+        url: "https://finance.yahoo.com/quote/TEST.ST/",
+        publishedAt: "2026-08-22T00:00:00.000Z",
+        verifiedAt: "2026-08-22T00:00:00.000Z",
+        primary: false,
+      },
+    ],
     evidence: [{ id: "e1", sourceId: "primary:1", kind: "official_report_excerpt", title: "Report", content: input.evidence, documentExcerpt: input.evidence, publishedAt: "2026-06-30T00:00:00.000Z", primary: true, documentRetrieved: true, reportPeriod: "Q2", reportYear: 2026, documentType: "interim_report" }],
     valuation: { trailing: { pe: input.eps ? input.price / input.eps : null } },
     valuationProvenance: { measures: { pe: { sourceIds: ["market:1", "fundamental:1"] } } },
@@ -86,6 +115,7 @@ describe("OMXS30 methodology coverage", () => {
     const research = buildFinancialSpecialistResearch({ basePacket: base });
     assert.equal(research.status, "research_ready");
     assert.equal(research.metrics.navPerShare.value, 397);
+    assert.deepEqual(research.metrics.discountToNavPct.sourceIds, ["primary:1", "market:1"]);
     assert.ok((research.metrics.discountToNavPct.value ?? 0) > 11 && (research.metrics.discountToNavPct.value ?? 0) < 12);
     const scenarios = buildFinancialSpecialistScenarioSet({ currentPrice: 350, currency: "SEK", research, trailingEps: null, draft: draft("investment_company") });
     assert.equal(scenarios.scenarios[0]?.method, "NAV_discount");
