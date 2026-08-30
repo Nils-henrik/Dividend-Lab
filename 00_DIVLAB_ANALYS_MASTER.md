@@ -246,7 +246,7 @@ P0 is closed because:
 - each runtime result is either research-ready or exposes an exact defensible blocker;
 - persistence/publication stayed off;
 - no quality/provenance/methodology gate was reduced;
-- the living master, dated acceptance record and PR acceptance text were updated.
+- the living master, dated acceptance record and PR acceptance text are the required P0 closure artifacts.
 
 P0 acceptance does **not** mean SEB or Investor are Research-ready. Their observed blockers become explicit prerequisites for their later Analyst acceptance.
 
