@@ -50,10 +50,14 @@ describe("Specialist Research Readiness v2 Preview canary contract", () => {
     assert.match(routeSource, /specialist_canary_provenance_incomplete/);
   });
 
-  it("requires Investor NAV plus market provenance and keeps EQT on the same specialist Research engine", () => {
+  it("requires Investor discount lineage to include NAV and market provenance and keeps EQT on the same specialist Research engine", () => {
     assert.match(routeSource, /"NAV\/share"/);
     assert.match(routeSource, /"Discount\/premium to NAV"/);
-    assert.match(routeSource, /sourceIdsKnown\(marketSourceIds, knownSourceIds\)/);
+    assert.match(routeSource, /investmentCompanyDiscountProvenanceReady/);
+    assert.match(routeSource, /navPerShare:\s*specialistResearch\.metrics\.navPerShare/);
+    assert.match(routeSource, /discountToNavPct:\s*specialistResearch\.metrics\.discountToNavPct/);
+    assert.match(routeSource, /marketSourceIds/);
+    assert.match(routeSource, /knownSourceIds/);
     assert.match(routeSource, /"Total AUM"/);
     assert.match(routeSource, /"Fee-generating AUM"/);
     assert.match(routeSource, /"Trailing P\/E"/);
