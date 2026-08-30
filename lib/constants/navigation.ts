@@ -4,6 +4,7 @@ import type { NavigationItem } from "@/types/navigation";
 export const appNavigation: NavigationItem[] = [
   { label: "Översikt", href: "/dashboard", icon: "dashboard" },
   { label: "Börsnyheter", href: "/news", icon: "news" },
+  { label: "Analyser", href: "/analyses", icon: "chart", statusLabel: "Ny" },
   { label: "Portföljer", href: "/portfolios", icon: "portfolio", statusLabel: "Ny" },
   { label: "Forum", href: "/forum", icon: "forum" },
   { label: "Utbildning", href: "/learning", icon: "learning" },
@@ -41,6 +42,7 @@ export const appNavigation: NavigationItem[] = [
 export const pageTitles: Record<string, string> = {
   "/account": "Investeraridentitet",
   "/account/edit": "Redigera profil",
+  "/analyses": "Analyser",
   "/brain": "DivBrain",
   "/calendar": "Kalender",
   "/dashboard": "Översikt",
