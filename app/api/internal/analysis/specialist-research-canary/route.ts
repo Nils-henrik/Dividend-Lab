@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { buildBankResearch } from "@/lib/analysis/bank-research";
 import { buildDivLabResearchPacket } from "@/lib/analysis/deep-research";
-import { buildFinancialSpecialistResearch } from "@/lib/analysis/financial-specialist-research";
+import {
+  buildFinancialSpecialistResearch,
+  investmentCompanyDiscountProvenanceReady,
+} from "@/lib/analysis/financial-specialist-research";
 import { loadDivLabResearchInputs } from "@/lib/analysis/research-loader";
 import { getStaffRolesForUser } from "@/lib/profiles/staff-roles.server";
 import { createClient } from "@/lib/supabase/server";
@@ -321,15 +324,15 @@ export async function POST(request: Request) {
     ];
 
     const marketSourceIds = common.marketSourceIds;
-    const nav = metrics[0]!;
-    const discount = metrics[1]!;
     const totalAum = metrics[2]!;
     const feeAum = metrics[3]!;
     const trailingPe = metrics[4]!;
-    const investmentCompanyInputsTraceable =
-      metricConfirmedAndKnown(nav, knownSourceIds) &&
-      metricConfirmedAndKnown(discount, knownSourceIds) &&
-      sourceIdsKnown(marketSourceIds, knownSourceIds);
+    const investmentCompanyInputsTraceable = investmentCompanyDiscountProvenanceReady({
+      navPerShare: specialistResearch.metrics.navPerShare,
+      discountToNavPct: specialistResearch.metrics.discountToNavPct,
+      marketSourceIds,
+      knownSourceIds,
+    });
     const assetManagerInputsTraceable =
       metricConfirmedAndKnown(totalAum, knownSourceIds) &&
       metricConfirmedAndKnown(feeAum, knownSourceIds) &&
