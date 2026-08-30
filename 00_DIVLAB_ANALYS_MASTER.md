@@ -1,6 +1,6 @@
 # DIVLAB ANALYS MASTER
 
-Last updated: 2026-08-23
+Last updated: 2026-08-30
 Status: LIVING SOURCE OF TRUTH
 Scope: DivLab Analys — Research, Analyst, methodology coverage, source provenance, Preview acceptance, persistence/public read and rollout.
 
@@ -8,36 +8,32 @@ Scope: DivLab Analys — Research, Analyst, methodology coverage, source provena
 
 This is the permanent working master for DivLab Analys.
 
-Use this file to answer three questions before any new analysis work begins:
+Before material analysis work begins, answer from this file:
 
 1. What is already built and accepted?
 2. What is still missing or only partially verified?
 3. What is the next safest task to execute?
 
-Dated `00_DIVLAB_MASTER_UPDATE_*` files remain historical decision/acceptance records. They are useful evidence, but this file is the canonical current backlog and status board.
+Dated `00_DIVLAB_MASTER_UPDATE_*` files are historical/acceptance evidence. This file is the canonical current backlog and status board.
 
 ## Mandatory working rule
 
-Every material DivLab Analys task must start by reading this file together with the active engineering/build rules.
-
-When work changes the real state of the system, update this file in the same workstream.
-
-Never mark an item complete because code merely exists. Completion requires the evidence named in the acceptance rule for that item.
-
-Never delete an unfinished item to make the backlog look cleaner. Move it to `Completed / accepted` only when its acceptance evidence exists.
-
-Do not weaken a quality gate, provenance requirement, methodology boundary or auth/write safeguard merely to obtain a green result.
+- Read this file before material DivLab Analys work.
+- Update it when verified system state changes.
+- Never mark work complete merely because code exists.
+- Never delete unfinished work to make the backlog look cleaner.
+- Never weaken a quality gate, provenance requirement, methodology boundary or auth/write safeguard to obtain a green result.
 
 ## Non-negotiable product rules
 
 - Research must be evidence-grounded and source-traceable.
-- Analyst must only interpret verified Research; it must not manufacture Research readiness.
+- Analyst may interpret verified Research only; Analyst must not manufacture Research readiness.
 - Research quality must be 100/100 where the active methodology requires a quality score.
-- Analyst quality must be 100/100 before any publishable result.
+- Analyst quality must be 100/100 before a publishable result.
 - Source IDs used by derived facts or Analyst claims must resolve to known packet sources.
 - Primary-source evidence is mandatory where the methodology requires it.
-- Company types must use the correct methodology. Unsupported types remain fail-closed.
-- Preview validation comes before any production rollout.
+- Company types must use the correct methodology; unsupported types remain fail-closed.
+- Preview validation comes before production rollout.
 - Persistence and publication are separate explicit actions and remain off during no-write acceptance runs.
 - No production write is used as a testing shortcut.
 - No merge to `main` or production rollout is authorized merely because a Preview build is green.
@@ -59,9 +55,9 @@ Do not weaken a quality gate, provenance requirement, methodology boundary or au
 - fund_or_etf
 - unknown
 
-These must not fall through to a generic company or financial-specialist engine until a separately designed methodology is implemented and accepted.
+These may not fall through to an existing methodology until a separately designed and accepted methodology exists.
 
-### Existing specialist registry inherited from OMXS30 methodology work
+### Narrow OMXS30 specialist registry
 
 - `NDA-SE.ST` -> bank
 - `SHB-A.ST` -> bank
@@ -71,308 +67,287 @@ These must not fall through to a generic company or financial-specialist engine 
 - `INDU-C.ST` -> investment_company
 - `EQT.ST` -> asset_manager
 
-The registry is intentionally narrow. Broad provider labels such as Financial Services must never automatically promote an arbitrary company into a specialist engine.
+Broad provider labels must never automatically promote arbitrary companies into a specialist engine.
 
 ## Accepted baseline
 
-### Operating company / US path
+### Operating-company / global baseline
 
-- Founder-authenticated MSFT Preview execution has previously reached US Research 100/100, final Research 100/100 and Analyst 100/100.
-- SEC source and evidence provenance were preserved.
-- Persistence and publication remained off.
-- This is an accepted architecture baseline for the operating-company/global stack, not permission for unrestricted global production analysis.
+Founder-authenticated MSFT Preview execution has previously reached US Research 100/100, final Research 100/100 and Analyst 100/100 with SEC provenance preserved and persistence/publication off.
 
-### Specialist Research code baseline
+This is an accepted architecture baseline, not permission for unrestricted global production analysis.
 
-Runtime code baseline previously verified by Vercel build:
+## COMPLETED / ACCEPTED — SPECIALIST RESEARCH P0
 
-- commit: `8f50cf47b7f0a8804f0b170d005e6da93273621f`
-- deployment: `dpl_FYo74xRUbmwTRKWYAcGWLFBfKAE1`
-- result: `READY`
+### 2026-08-30 — Specialist Research Readiness v2 P0
 
-That build proves Next.js compile/TypeScript/build success for that exact runtime code baseline. It is not by itself proof of all repository tests, runtime canaries or release readiness.
+Status: **ACCEPTED / CLOSED P0**.
 
-Current active specialist work:
+Historical acceptance record:
+
+- `00_DIVLAB_MASTER_UPDATE_2026-08-30_SPECIALIST_RESEARCH_P0_ACCEPTANCE.md`
+
+Active PR/branch:
 
 - PR `#289` — `fix(analysis): specialist research readiness v2`
 - branch: `agent/specialist-research-readiness-v2`
-- state: Draft / unmerged
+- PR state after P0 acceptance: Draft / unmerged
 
-## What is built in Specialist Research Readiness v2
+### Exact runtime candidate
 
-### SEB
+- runtime source commit: `db6a3fea198b78a4bfdc6094d526809469375839`
+- Preview deployment: `dpl_DXwPfuTwHFtJ4nVzC12zGT8TLXmv`
+- Preview URL: `https://dividend-1qia3km7a-dividend-lab.vercel.app`
+- state: `READY`
 
-Built:
+Documentation commits after this runtime candidate are not runtime acceptance candidates unless separately revalidated.
 
-- bounded issuer-specific Nasdaq/CNS source discovery;
-- SEB Fact Book attachment selection for dedicated multi-document Research;
-- deterministic current-period projection from the Fact Book;
-- source-bound Net ECL extraction;
-- source-bound Cost/income extraction;
-- source-bound LCR extraction;
-- source-bound NSFR extraction;
-- separate source-bound CET1 extraction from official release evidence;
-- separate source-bound ROE extraction from official release evidence;
-- separate source-bound capital-buffer extraction from official release evidence;
-- multi-document bank metric/funding/capital extraction;
-- newer ambiguous evidence blocks stale fallback;
-- P/B valuation provenance through market/fundamental inputs;
-- deterministic regression proving split-source `research_ready` assembly.
+### Exact validation candidate
 
-Important boundary:
+Validation ran from the runtime source tree on a separate validation branch so the test runner did not change runtime behavior.
 
-- Missing or ambiguous metrics remain missing/ambiguous.
-- No metric may be invented from unrelated prose or ratios.
+- validation branch: `validation/specialist-research-p0-db6a3fe`
+- validation commit: `9a5ae1f7b109b337c37449c9d0417c8eea07b48d`
+- validation deployment: `dpl_CqDAxb7BAdFwgikQCQCaFmhngjYz`
+- state: `READY`
 
-### Investor
+Recorded validation:
 
-Built:
+- focused Specialist P0 tests: **69/69** passed;
+- lint: **0 errors**, 3 existing warnings;
+- typecheck: passed;
+- `npm test`: **611/611** passed;
+- SEO tests: **49/49** passed;
+- DivBrain tests: **518/518** passed;
+- Cursor Bridge tests: **30/30** passed;
+- final `next build`: compiled, TypeScript completed, **101/101 static pages** generated.
 
-- bounded period-only CNS discovery within the existing request ceiling;
-- allowlisted Nasdaq issuer release-body retrieval;
-- explicit NAV/share extraction from Investor-style official wording;
-- protection against treating total NAV/equity/market cap as NAV per share;
-- deterministic discount/premium calculation from NAV/share and frozen current market price;
-- regression for successful official-release NAV extraction;
-- regression proving fail-closed behavior when explicit NAV/share is absent.
+Database/migration/browser-auth validation remains required at the later integration/production-release gate. P0 acceptance does not claim broad production readiness.
 
-### EQT
+### P0.1 — Investor derived-discount provenance — ACCEPTED
 
-Built/inherited:
+The deterministic Investor discount now explicitly carries both required input lineages:
 
-- asset-manager methodology classification;
-- Total AUM extraction;
-- fee-generating AUM extraction;
-- trailing P/E valuation basis;
-- AUM/FAUM format normalization and regression coverage;
-- existing `research_ready` regression role.
+- official NAV/share source; and
+- frozen market-price source.
 
-### Preview specialist canary
+The specialist canary requires that exact derivation provenance and unknown market provenance cannot pass.
 
-Built:
+Runtime Investor remained blocked because the primary NAV/share input was not discovered on the accepted candidate, not because the derived-provenance gate failed open.
 
-- Preview-only endpoint `/api/internal/analysis/specialist-research-canary`;
-- target allowlist is exactly `SEB-A.ST`, `INVE-B.ST`, `EQT.ST`;
-- founder/CEO/admin authentication before Research starts;
-- deterministic Research only;
-- no Analyst model call;
-- no `persist` option;
-- no `publish` option;
-- persistence result fixed to null/off;
-- publication result fixed to null/off;
-- UI surfaces classification, Research status, source/evidence counts, metrics, source IDs, blockers and warnings;
-- Preview page is noindex and unavailable outside Preview.
+### P0.2 — final deterministic regression run — ACCEPTED
 
-Earlier canary attempts returned HTTP 401 before Research because that Preview hostname had no active DivLab session. Those requests are auth-precondition observations only and do not count as SEB/Investor/EQT Research acceptance.
+Focused final source-candidate suite passed 69/69 and includes:
 
-## OPEN WORK — P0 NOW
-
-These items block completion of Specialist Research Readiness v2.
-
-### P0.1 Investor derived-discount provenance
-
-Problem:
-
-`discountToNavPct` is calculated from two inputs: verified NAV/share and frozen current market price. The current derived metric primarily carries the NAV source ID while the market source is verified separately in the packet/canary.
-
-Required fix:
-
-- make the derived discount explicitly trace both inputs;
-- preferred implementation: attach both NAV source ID and market-price source ID to the derived metric, or use an explicit derivation-provenance object;
-- update the specialist canary to require this exact lineage;
-- add regression tests proving a market source is part of the derivation and that an unknown market source cannot pass provenance.
-
-Acceptance:
-
-Investor discount provenance must identify both the official NAV input and the frozen market-price input without relying on an implicit side check.
-
-### P0.2 Final deterministic regression run
-
-Run the focused tests on the final source candidate for:
-
-- SEB Fact Book projection;
-- SEB real text-layer shapes;
-- SEB real release shape;
-- SEB multi-source Research readiness;
+- SEB Fact Book projection and real text-layer shapes;
+- SEB release/multi-source Research handling;
 - bank funding/capital/Research regressions;
-- Investor release integration;
-- financial-specialist shorthand/format handling;
-- EQT regression;
+- Investor official-release integration and provenance;
+- financial-specialist format/shorthand handling;
+- EQT regression behavior;
 - specialist canary contract;
-- specialist no-write safety;
-- methodology dispatch fail-closed behavior.
+- no-write safety;
+- fail-closed methodology dispatch.
 
-Acceptance:
+### P0.3 — repository validation evidence — ACCEPTED FOR P0
 
-All focused deterministic tests pass on the exact source candidate that will be used for runtime canary.
+Exact commands/results are recorded above. Broader database/migration/browser-auth checks remain integration/release gates and must not be inferred from the P0 build.
 
-### P0.3 Repository validation evidence
+### P0.4 — exact final Preview build — ACCEPTED
 
-Do not equate a Vercel `next build` with the whole repository validation set.
+The exact runtime source commit `db6a3fea198b78a4bfdc6094d526809469375839` reached Vercel `READY` on `dpl_DXwPfuTwHFtJ4nVzC12zGT8TLXmv`.
 
-Required before stack merge acceptance:
+### P0.5 — founder-authenticated specialist Research canary — ACCEPTED
 
-- `npm test`;
-- `npm run lint`;
-- `npm run typecheck` if not already part of the exact validation path;
-- broader `test:all` / database / migration / browser-auth validation required by the parent master before production release.
+The required sequence ran on the exact runtime deployment:
 
-Acceptance:
+1. SEB — 2026-08-30 18:00:20Z
+2. Investor — 2026-08-30 18:00:50Z
+3. EQT — 2026-08-30 18:01:09Z
 
-Record the exact commit and exact commands/results. No vague `CI looked green` acceptance.
+Vercel runtime logs confirm all three requests as HTTP 200 on the accepted deployment.
 
-### P0.4 Exact final Preview build
+The P0 acceptance contract explicitly permits either `research_ready` or an exact defensible fail-closed blocker. A blocked target must not be forced green by reducing gates.
 
-After P0 code changes and tests, obtain one READY Preview build for the exact source candidate.
+#### SEB `SEB-A.ST` — ACCEPTED FAIL-CLOSED
 
-Acceptance record must contain:
+- classification: `bank` = expected `bank`;
+- Research: `partial`;
+- provenance: not fully proven;
+- sources: **14 total / 4 primary**;
+- evidence: **11**;
+- CET1: **17.2%**, confirmed/source-bound;
+- ROE: **15.7%**, confirmed/source-bound;
+- capital buffer: **2.5 pp**, confirmed/source-bound;
+- P/B: **1.931x**, traceable;
+- Net ECL: ambiguous;
+- Cost/income: not found;
+- LCR: not found;
+- NSFR: not found;
+- persistence: off/null;
+- publication: off/null.
 
-- Git commit SHA;
-- Vercel deployment ID/URL;
-- READY state;
-- build/test evidence relevant to that candidate.
+Exact blockers:
 
-Documentation-only commits after the runtime candidate must not be confused with the tested runtime code head.
+- `bank_credit_loss_not_confirmed`
+- `bank_margin_efficiency_context_missing`
+- `bank_funding_context_insufficient`
+- `specialist_canary_provenance_incomplete`
 
-### P0.5 Founder-authenticated specialist Research canary
+The bank engine correctly refused to invent values or use stale fallback.
 
-On the same exact Preview candidate, run in order:
+#### Investor `INVE-B.ST` — ACCEPTED FAIL-CLOSED
 
-1. SEB
-2. Investor
-3. EQT
+- classification: `investment_company` = expected `investment_company`;
+- Research: `insufficient`;
+- provenance: not proven;
+- sources: **3 total / 1 primary**;
+- evidence: **0**;
+- NAV/share: missing;
+- NAV discount/premium: missing;
+- persistence: off/null;
+- publication: off/null.
 
-For every result record:
+Exact blockers:
 
-- target;
-- detected/expected classification;
-- Research status;
-- provenance status;
-- source count;
-- primary-source count;
-- evidence count;
-- metric values;
-- metric source IDs;
-- blockers/warnings;
-- persistence = null/off;
-- publication = null/off.
+- `investment_company_nav_per_share_missing`
+- `investment_company_discount_missing`
+- `specialist_canary_provenance_incomplete`
 
-Acceptance:
+Observed warning:
 
-- SEB: `research_ready` with every required bank core metric source-bound and P/B traceable, OR an exact defensible blocker.
-- Investor: `research_ready` with explicit NAV/share + discount derivation lineage, OR an exact defensible blocker.
-- EQT: remains `research_ready` with AUM/FAUM/trailing-P/E provenance, OR an exact defensible blocker.
+- `investment_company_net_debt_ratio_missing`
 
-Never lower a gate to make a blocked target pass.
+The runtime bounded discovery did not produce usable current primary Investor evidence. The engine therefore correctly refused to create NAV/share or a discount.
 
-### P0.6 Close Specialist Research Readiness v2 correctly
+#### EQT `EQT.ST` — ACCEPTED / RESEARCH_READY
 
-When P0.1-P0.5 are complete:
+- classification: `asset_manager` = expected `asset_manager`;
+- Research: `research_ready`;
+- provenance: preserved;
+- sources: **18 total / 4 primary**;
+- evidence: **14**;
+- Total AUM: **291 EUR bn**, confirmed/source-bound;
+- Fee-generating AUM: **155 EUR bn**, confirmed/source-bound;
+- trailing P/E: **34.567x**, confirmed with market/fundamental provenance;
+- persistence: off/null;
+- publication: off/null.
 
-- update this master;
-- update the dated Specialist Research Readiness v2 record;
-- update PR #289 acceptance text;
-- only then decide whether the PR is ready for stack integration/review.
+NAV/share/NAV discount are not required by the asset-manager methodology.
 
-Do not merge merely because the three buttons are green if the exact commit/test/provenance record is incomplete.
+### P0.6 — closure — ACCEPTED
+
+P0 is closed because:
+
+- P0.1 provenance repair is implemented and regression-covered;
+- final deterministic/repository validation is recorded;
+- one exact runtime candidate reached Preview READY;
+- founder-authenticated SEB -> Investor -> EQT canaries ran on that exact candidate;
+- each runtime result is either research-ready or exposes an exact defensible blocker;
+- persistence/publication stayed off;
+- no quality/provenance/methodology gate was reduced;
+- the living master, dated acceptance record and PR acceptance text were updated.
+
+P0 acceptance does **not** mean SEB or Investor are Research-ready. Their observed blockers become explicit prerequisites for their later Analyst acceptance.
 
 ## OPEN WORK — P1 NEXT
-
-These tasks begin after the deterministic specialist Research slice is accepted.
 
 ### P1.1 Reconcile bank Analyst-readiness semantics
 
 Current contradiction:
 
-`buildBankResearch` still exposes `analystReady: false` and `bank_analyst_schema_v3_required`, while the inherited branch already contains and uses the bank-v3 Analyst engine.
+`buildBankResearch` still exposes `analystReady: false` / `bank_analyst_schema_v3_required`, while the inherited stack already contains and uses the bank-v3 Analyst engine.
 
 Required:
 
-- define one unambiguous readiness contract;
-- remove or version the stale blocker semantics;
-- ensure no consumer can incorrectly conclude that bank Analyst support is absent;
-- keep Research and Analyst quality gates intact.
+- define separate truthful states for Research readiness, Analyst eligibility and publishability;
+- remove/version stale contradictory semantics;
+- retain all Research and Analyst quality gates.
 
-Acceptance:
+Acceptance: no consumer can incorrectly conclude that bank Analyst support is absent when the service/dispatch layer supports it.
 
-Research readiness, Analyst eligibility and publishability have distinct, truthful states with no contradictory flag/blocker combination.
+### P1.2 Resolve SEB runtime Research blocker, then full specialist Analyst acceptance
 
-### P1.2 Full SEB specialist Analyst acceptance
+Current P0 prerequisite blocker:
 
-Run the existing bank service with no persistence/publication.
+- current bounded runtime evidence did not source-bind Net ECL, Cost/income, LCR and NSFR sufficiently for bank Research readiness.
 
-Require on the same execution:
+Do not call Analyst acceptance complete until Research is actually ready.
+
+Then require on the same no-write execution:
 
 - bank Research quality = 100/100;
 - bank Analyst quality = 100/100;
-- P/B scenario basis is valid;
+- P/B scenario basis valid;
 - Bear < Base < Bull;
-- bank core factors are source-supported;
-- Analyst source IDs resolve to known sources;
+- core bank factors source-supported;
+- Analyst source IDs known;
 - persistence off/null;
 - publication off/null.
 
-If quality fails, diagnose observed evidence/output. Do not reduce `knownQualityFactors`, source-diversity or other gate thresholds just to pass.
+No quality threshold may be lowered to pass.
 
-### P1.3 Full Investor specialist Analyst acceptance
+### P1.3 Resolve Investor runtime primary-source blocker, then full specialist Analyst acceptance
 
-Use the existing financial-specialist service with no persistence/publication.
+Current P0 prerequisite blocker:
 
-Require:
+- accepted runtime canary returned no usable current primary evidence, so explicit NAV/share and discount were missing.
+
+Do not call Analyst acceptance complete until deterministic Research is actually ready.
+
+Then require:
 
 - specialist Research quality = 100/100;
 - specialist Analyst quality = 100/100;
 - NAV_discount scenario methodology;
-- explicit NAV/market-price provenance;
+- explicit NAV + frozen market-price provenance;
 - sufficient source diversity;
-- Analyst source IDs resolve to known sources;
+- Analyst source IDs known;
 - persistence off/null;
 - publication off/null.
 
 ### P1.4 Full EQT specialist Analyst acceptance
 
-Use the same financial-specialist service.
+EQT deterministic Research is already `research_ready` on the P0 runtime candidate.
 
-Require:
+Run the financial-specialist service with no persistence/publication and require:
 
 - Research quality = 100/100;
 - Analyst quality = 100/100;
 - AUM/FAUM/trailing-P-E methodology preserved;
-- P/E scenario basis rather than NAV or generic enterprise methodology;
+- P/E scenario basis, not NAV or generic enterprise methodology;
 - source provenance preserved;
 - persistence off/null;
 - publication off/null.
 
 ### P1.5 Controlled persistence/public-read verification
 
-Only after the no-write 100/100 acceptance runs.
+Only after no-write 100/100 acceptance for the relevant specialist path.
 
 Validate in controlled DEV/Preview:
 
 - bank specialist schema persistence;
 - financial-specialist schema persistence;
 - publication requires accepted Research + Analyst gates;
-- stored schema dispatches to correct public reader;
+- stored schema dispatches to the correct public reader;
 - specialist content is never parsed as operating-company `analyst-v2`;
-- existing published operating-company analysis remains readable/unchanged;
-- no production write is used as validation.
+- existing published operating-company analyses remain readable/unchanged;
+- no production write is used for validation.
 
 ### P1.6 Consolidate the analysis PR stack
 
-The specialist code is inherited from earlier OMXS30 methodology work while newer global/source/research work is stacked later.
-
 Before `main` integration:
 
-- map which older draft PRs are ancestors, historical artifacts or still carry unique changes;
-- avoid merging overlapping draft PRs independently into `main`;
-- create one explicit integration order;
+- map older draft PRs as ancestors, historical artifacts or unique changes;
+- do not merge overlapping draft PRs independently;
+- define one explicit integration order;
 - verify merge-base and regression state after consolidation.
 
 ## OPEN WORK — P2 BREADTH / HARDENING
 
 ### P2.1 Wider OMXS30 specialist canary matrix
 
-Before claiming broad OMXS30 specialist support, verify at least:
+Before claiming broad OMXS30 specialist support, verify:
 
 Banks:
 - Nordea `NDA-SE.ST`
@@ -387,14 +362,14 @@ Investment companies:
 Asset manager:
 - EQT `EQT.ST`
 
-Each target must use its correct methodology and remain fail-closed on missing official evidence.
+Each target must use its correct methodology and fail closed on missing official evidence.
 
 ### P2.2 Investment-company ambiguity hardening
 
-Before reusing the Investor extractor broadly, add deterministic handling/tests for:
+Before broad reuse of the Investor extractor, add deterministic handling/tests for:
 
 - multiple NAV/share values in one document;
-- current period versus previous period;
+- current versus previous period;
 - conflicting primary documents;
 - unique current-period binding;
 - ambiguous current values -> fail closed;
@@ -402,15 +377,15 @@ Before reusing the Investor extractor broadly, add deterministic handling/tests 
 
 ### P2.3 Self-identifying runtime acceptance records
 
-Improve canary/runtime JSON with fields such as:
+Add fields such as:
 
 - `executedAt`;
-- immutable build/commit identifier;
-- deployment identifier when safely available;
+- immutable commit/build identifier;
+- deployment identifier where safe;
 - methodology version;
 - relevant Research/Analyst gate versions.
 
-Goal: screenshots/logs should identify exactly which code produced the result.
+Goal: future screenshots/logs identify exactly which code generated a result.
 
 ### P2.4 Additional specialist methodology families
 
@@ -421,68 +396,48 @@ Remain fail-closed until separately designed:
 - financial-other;
 - ETF/fund.
 
-For each future family create a new master slice containing:
-
-- deterministic Research basis;
-- primary-source requirements;
-- valuation methodology;
-- scenario methodology;
-- Analyst schema;
-- Research quality gate;
-- Analyst quality gate;
-- persistence/public-read schema;
-- Preview acceptance matrix.
-
-Do not route these through an existing methodology simply because it produces a number.
+Each future family requires its own deterministic Research basis, primary-source contract, valuation/scenario methodology, Analyst schema, quality gates, persistence/public-read schema and Preview acceptance matrix.
 
 ### P2.5 OMXS30 index analysis
 
-The index itself needs a separate methodology and must not use company annual-report valuation gates.
+The index requires a separate methodology rather than company annual-report gates.
 
-Future index Research should cover concepts such as:
-
-- index composition/weights;
-- breadth;
-- market regime;
-- technical structure;
-- macro/rates/currency context;
-- earnings/valuation breadth where defensible;
-- scenario/risk framework appropriate to an index.
-
-This is a separate project slice after company methodology coverage is accepted.
+Future index Research should cover index composition/weights, breadth, regime/technical structure, macro/rates/currency context, defensible earnings/valuation breadth and index-appropriate scenarios/risk.
 
 ## OPEN WORK — P3 PRODUCT ROLLOUT
 
-Only after specialist and global analysis stacks are accepted:
+Only after specialist/global stacks are accepted:
 
-- define which instruments are publicly analyzable;
-- define user-facing failure/methodology messages;
-- establish cost/rate-limit controls for AI execution;
-- add production monitoring and audit logs;
-- verify privacy/security for stored analysis requests;
+- define publicly analyzable instruments;
+- define user-facing methodology/failure messages;
+- establish AI cost/rate-limit controls;
+- add production monitoring/audit logs;
+- verify privacy/security for stored requests;
 - verify public analysis SEO/canonical/schema behavior;
-- establish regeneration/versioning policy;
-- establish stale-analysis policy and data timestamp visibility;
-- establish publication/editorial review rules where required;
-- perform production-readiness security/compliance review before enabling public writes.
+- define regeneration/versioning policy;
+- define stale-analysis/data timestamp policy;
+- define publication/editorial-review rules where needed;
+- run full repository/database/migration/browser validation on the integration candidate;
+- perform production security/compliance review;
+- prepare controlled production rollout and monitoring.
 
 ## Completed / accepted evidence
 
-Use this section for durable accepted milestones, not ordinary coding progress.
+### 2026-08 — operating-company/global baseline
 
-### 2026-08 — Operating-company/global baseline
+Founder-authenticated MSFT Preview run reached Research/Analyst 100/100 with preserved SEC provenance and no persistence/publication.
 
-Accepted evidence includes a founder-authenticated MSFT Preview run with Research/Analyst 100/100, preserved SEC provenance and no persistence/publication.
+### 2026-08-22 — Specialist compiled baseline
 
-### 2026-08-22 — Specialist runtime code compiled baseline
+`8f50cf47b7f0a8804f0b170d005e6da93273621f` reached Vercel READY on `dpl_FYo74xRUbmwTRKWYAcGWLFBfKAE1`. This remains a historical compiled baseline only.
 
-`8f50cf47b7f0a8804f0b170d005e6da93273621f` reached Vercel READY on `dpl_FYo74xRUbmwTRKWYAcGWLFBfKAE1`.
+### 2026-08-30 — Specialist Research P0 accepted
 
-This is recorded as a compiled baseline only. Specialist runtime canary acceptance remains open above.
+Runtime candidate `db6a3fea198b78a4bfdc6094d526809469375839` reached Preview READY and completed founder-authenticated SEB -> Investor -> EQT canaries with no writes. EQT was research-ready; SEB and Investor exposed exact fail-closed blockers. This satisfies the explicit P0 acceptance contract without weakening any gate.
+
+See `00_DIVLAB_MASTER_UPDATE_2026-08-30_SPECIALIST_RESEARCH_P0_ACCEPTANCE.md` for the full acceptance record.
 
 ## Acceptance record template
-
-When an analysis milestone is accepted, add a compact record using this template:
 
 ```text
 Date:
@@ -508,38 +463,37 @@ When starting work:
 
 1. Read this file.
 2. Identify the highest relevant unfinished P0/P1/P2 item.
-3. Confirm the active branch/PR and exact baseline.
+3. Confirm active branch/PR and exact baseline.
 4. Inspect current code before patching.
 
 When completing work:
 
 1. Add deterministic regression coverage where applicable.
 2. Record exact commit/build/runtime evidence.
-3. Update the relevant task in this file.
-4. Move a task to `Completed / accepted` only if its acceptance condition is actually met.
-5. Keep dated master updates as historical evidence; do not use them as the only current backlog.
+3. Update the relevant task here.
+4. Move work to completed only when its acceptance condition is met.
+5. Preserve dated master updates as historical evidence.
 
 ## Historical master references
 
-Important dated records currently feeding this living master include:
-
 - `00_DIVLAB_MASTER_UPDATE_2026-08-16_OMXS30_METHODOLOGY_COVERAGE_V1.md`
 - `00_DIVLAB_MASTER_UPDATE_2026-08-22_SPECIALIST_RESEARCH_READINESS_V2.md`
-- the US Research / Preview execution / monster-coverage master updates from the accepted global-analysis stack.
+- `00_DIVLAB_MASTER_UPDATE_2026-08-30_SPECIALIST_RESEARCH_P0_ACCEPTANCE.md`
+- US Research / Preview execution / monster-coverage master updates from the accepted global-analysis stack.
 
-If a dated record conflicts with this file because later verified work changed the state, update this file to the latest verified state and preserve the older dated record as history.
+If a historical dated record conflicts with later verified work, this living master controls the current state while the old record remains historical evidence.
 
 ## Definition of done for DivLab Analys as a public product
 
-DivLab Analys is not considered broadly production-ready until all of the following are true:
+DivLab Analys is not broadly production-ready until all of the following are true:
 
-- every publicly supported company family has its own accepted methodology;
+- every publicly supported company family has an accepted methodology;
 - representative real targets pass Research 100/100 + Analyst 100/100;
-- provenance survives from source discovery through Research, derived values, Analyst and public read;
+- provenance survives source discovery -> Research -> derived values -> Analyst -> public read;
 - persistence/publication are verified under correct schemas;
 - unsupported targets fail closed with useful messages;
-- full repository/build/database/browser validation is green on the integration candidate;
+- full repository/build/database/migration/browser validation is green on the integration candidate;
 - production security/compliance review is complete;
 - controlled production rollout and monitoring are prepared.
 
-Until then, this master remains the authoritative list of what is built, what is proven and what still has to be done.
+Until then, this master remains the authoritative list of what is built, what is proven and what remains.
