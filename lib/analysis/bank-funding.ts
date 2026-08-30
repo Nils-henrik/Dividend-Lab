@@ -115,7 +115,9 @@ function extractMetric(input: {
     if (!label) continue;
     const labelMatch = line.match(label);
     if (!labelMatch || labelMatch.index === undefined) continue;
-    const after = line.slice(labelMatch.index + labelMatch[0].length);
+    const after = line
+      .slice(labelMatch.index + labelMatch[0].length)
+      .replace(/^\s*\((?:LCR|NSFR)\)\s*/iu, "");
     for (const raw of valueTokens(after)) {
       const value = parseNumber(raw);
       if (value === null || value < input.spec.minPct || value > input.spec.maxPct) continue;
