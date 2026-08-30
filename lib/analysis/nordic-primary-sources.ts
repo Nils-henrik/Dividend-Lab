@@ -149,6 +149,12 @@ function preferredIssuerSearchName(companyName: string): string {
   const aliases = nordicDisclosureCompanyAliases(companyName)
     .map((value) => value.replace(/\s+/g, " ").trim())
     .filter(Boolean);
+  const withoutShareSeries = aliases.find(
+    (alias) =>
+      !/\bser\.?\s*[A-Z]\b/i.test(alias)
+      && !/\s*\((?:SDR|B|A)\)\s*$/i.test(alias),
+  );
+  if (withoutShareSeries) return withoutShareSeries;
   const withoutLegalSuffix = aliases.find(
     (alias) => !/\s(?:AB|ASA|Oyj|A\/S|Plc|PLC|Ltd|Limited|Group)\.?$/i.test(alias),
   );
