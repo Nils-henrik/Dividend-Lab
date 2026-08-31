@@ -37,7 +37,10 @@ export {
 } from "./reading-time";
 
 const rawArticles: LearningArticle[] = [
-  nyemission,
+  {
+    ...nyemission,
+    thumbnailObjectPosition: "left center",
+  },
   barnsparande,
   aktieaterkop,
   kvartalsrapport,
