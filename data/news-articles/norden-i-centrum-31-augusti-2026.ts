@@ -74,16 +74,16 @@ export const NORDEN_I_CENTRUM_31_AUGUSTI_2026_ARTICLE: NewsArticle = {
     {
       heading: "Sverige: AcadeMedia avslutar året starkt",
       paragraphs: [
-        "AcadeMedia redovisar en omsättning på 5 658 miljoner kronor för det fjärde kvartalet, en ökning med 10,6 procent jämfört med samma period förra året. Den organiska försäljningstillväxten uppgick till 6,0 procent.",
-        "Rörelseresultatet, EBIT, steg till 666 miljoner kronor från 578 miljoner. Det justerade EBITA-resultatet ökade samtidigt till 552 miljoner från 475 miljoner kronor, motsvarande en förbättring på drygt 16 procent.",
+        "AcadeMedia redovisar en omsättning på 5 658 miljoner kronor för det fjärde kvartalet, en ökning med 10,6 procent jämfört med samma period förra året. Tillväxten i den befintliga verksamheten uppgick till 6,0 procent.",
+        "Rörelseresultatet, EBIT, steg till 666 miljoner kronor från 578 miljoner. Det justerade EBITA-resultatet – ett lönsamhetsmått som bolaget använder för den löpande verksamheten – ökade samtidigt till 552 miljoner från 475 miljoner kronor, motsvarande en förbättring på drygt 16 procent.",
         "Även elevutvecklingen är tydligt positiv. Det genomsnittliga antalet barn och elever inom förskola, grundskola och gymnasium ökade med 5,2 procent till 119 430 under kvartalet.",
-        "En viktig del av investeringscaset är att AcadeMedia blir allt mer internationellt. Den internationella verksamheten tillsammans med vuxenutbildningen motsvarar omkring 44 procent av koncernens proformaomsättning. För marknaden blir frågan därför inte bara hur det avslutade kvartalet såg ut, utan om expansionen utanför Sverige kan fortsätta bära tillväxten framåt.",
+        "En viktig del av bolagets utveckling framåt är att AcadeMedia blir allt mer internationellt. Den internationella verksamheten tillsammans med vuxenutbildningen motsvarar omkring 44 procent av koncernens omsättning när man räknar verksamheterna som om de hade ingått under hela perioden. För marknaden blir frågan därför inte bara hur det avslutade kvartalet såg ut, utan om expansionen utanför Sverige kan fortsätta bära tillväxten framåt.",
       ],
     },
     {
       heading: "Norge: Bakkafrost lyfter kraftigt – men Skottland fortsätter tynga",
       paragraphs: [
-        "Oslo-noterade, färöiska Bakkafrost levererar morgonens tydligaste resultatförbättring. Det operationella rörelseresultatet steg till 273 miljoner danska kronor i Q2, från 65 miljoner under samma kvartal förra året.",
+        "Oslo-noterade, färöiska Bakkafrost levererar morgonens tydligaste resultatförbättring. Bakkafrosts operationella rörelseresultat, bolagets centrala resultatmått för den löpande verksamheten, steg till 273 miljoner danska kronor i Q2, från 65 miljoner under samma kvartal förra året.",
         "Det är framför allt verksamheten på Färöarna som ligger bakom förbättringen. Där ökade det operationella rörelseresultatet till 411 miljoner danska kronor från 211 miljoner. Skördevolymerna steg samtidigt med 67 procent och bolaget lyfter fram bättre biologiska förhållanden och lägre kostnader.",
         "Skottland är fortfarande problemet. Den skotska verksamheten redovisade ett operationellt rörelseresultat på minus 139 miljoner danska kronor, jämfört med minus 146 miljoner året före. Låga skördevolymer och biologiska problem i en grupp fisk fortsatte att belasta resultatet.",
         "Rapporten blir därmed tudelad: kärnverksamheten på Färöarna går betydligt bättre, men Bakkafrost har fortfarande arbete kvar i Skottland. Bolaget beskriver samtidigt marknadsutsikterna för andra halvåret som mer balanserade när tillväxten i det globala laxutbudet väntas bromsa.",
@@ -101,9 +101,9 @@ export const NORDEN_I_CENTRUM_31_AUGUSTI_2026_ARTICLE: NewsArticle = {
     {
       heading: "Danmark: Freetrailer höjer prognosen och startar återköp",
       paragraphs: [
-        "Danska Freetrailer går in i veckan efter en rapport där tillväxten fortsätter samtidigt som investeringar pressar resultatet. Under årets första sex månader ökade omsättningen med 26,2 procent, medan EBIT minskade med 19,8 procent till 10,2 miljoner danska kronor.",
+        "Danska Freetrailer går in i veckan efter en rapport där tillväxten fortsätter samtidigt som investeringar pressar resultatet. Under årets första sex månader ökade omsättningen med 26,2 procent, medan rörelseresultatet, EBIT, minskade med 19,8 procent till 10,2 miljoner danska kronor.",
         "Bolaget kopplar den lägre vinsten till investeringar i fortsatt expansion, där den tyska marknaden är ett viktigt område. Trots resultattappet höjde Freetrailer sina prognoser för helåret.",
-        "Bolaget räknar nu med en omsättning på 178–185 miljoner danska kronor under 2026, jämfört med tidigare 168–178 miljoner. Prognosen för EBIT höjdes samtidigt till 27–32 miljoner danska kronor från tidigare 20–30 miljoner.",
+        "Bolaget räknar nu med en omsättning på 178–185 miljoner danska kronor under 2026, jämfört med tidigare 168–178 miljoner. Prognosen för rörelseresultatet, EBIT, höjdes samtidigt till 27–32 miljoner danska kronor från tidigare 20–30 miljoner.",
         "Freetrailer har dessutom beslutat om ett återköpsprogram på upp till 20 miljoner danska kronor som löper till årsskiftet. Nästa större hållpunkt är den 17 september, då bolaget planerar att presentera en ny tillväxtstrategi.",
       ],
     },
