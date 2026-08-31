@@ -1,3 +1,4 @@
+import { BORSSVERIGE_31_AUGUSTI_2026_ARTICLE } from "@/data/news-articles/borssverige-31-augusti-2026";
 import { NORDEN_I_CENTRUM_31_AUGUSTI_2026_ARTICLE } from "@/data/news-articles/norden-i-centrum-31-augusti-2026";
 import { BORSVECKA_36_2026_JOBBRAPPORT_BROADCOM_EUROINFLATION_ARTICLE } from "@/data/news-articles/borsvecka-36-2026-jobbrapport-broadcom-euroinflation";
 import { VECKAN_SOM_GATT_29_AUGUSTI_2026_SEO_ARTICLE } from "@/data/news-articles/veckan-som-gatt-29-augusti-2026-seo";
@@ -107,6 +108,7 @@ function resolveNewsArticleImages(article: NewsArticle): NewsArticle {
 }
 
 const PUBLISHED_NEWS_ARTICLES: NewsArticle[] = [
+  applyNewsSearchSeo(BORSSVERIGE_31_AUGUSTI_2026_ARTICLE),
   applyNewsSearchSeo(NORDEN_I_CENTRUM_31_AUGUSTI_2026_ARTICLE),
   applyNewsSearchSeo(BORSVECKA_36_2026_JOBBRAPPORT_BROADCOM_EUROINFLATION_ARTICLE),
   applyNewsSearchSeo(VECKAN_SOM_GATT_29_AUGUSTI_2026_SEO_ARTICLE),
