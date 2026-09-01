@@ -49,11 +49,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     alternates: {
       canonical,
     },
+    robots: {
+      index: true,
+      follow: true,
+    },
     openGraph: {
       title: pageTitle,
       description: article.description,
       type: "article",
       url: canonical,
+      siteName: "DivLab",
       locale: "sv_SE",
       ...(article.publishedAt ? { publishedTime: article.publishedAt } : {}),
       ...(article.updatedAt ? { modifiedTime: article.updatedAt } : {}),
@@ -68,16 +73,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
           }
         : {}),
     },
-    ...(imageUrl
-      ? {
-          twitter: {
-            card: "summary_large_image",
-            title: pageTitle,
-            description: article.description,
-            images: [imageUrl],
-          },
-        }
-      : {}),
+    twitter: {
+      card: "summary_large_image",
+      title: pageTitle,
+      description: article.description,
+    },
   };
 }
 
