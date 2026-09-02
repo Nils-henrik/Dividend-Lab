@@ -36,12 +36,13 @@ export const BORSSVERIGE_2_SEPTEMBER_2026_ARTICLE: NewsArticle = {
     "BörsSverige 2 september 2026 med Stockholm i morgonljus inför onsdagens handel på Stockholmsbörsen.",
   imageCaption: "Illustration: DivLab.",
   readingMinutes: 5,
-  seoTitle: "BörsSverige 2 september: Skanska får order på 530 miljoner",
+  seoTitle: "BörsSverige 2 september: Skanska får USA-order på 530 miljoner",
   seoDescription:
-    "Skanska får en USA-order på cirka 530 miljoner kronor. Samtidigt visar svensk industri fortsatt tillväxt, men också ett snabbt stigande kostnadstryck.",
+    "Stockholmsbörsen 2 september: Skanska får en USA-order på cirka 530 miljoner kronor, svensk industri växer och Volvo Cars väntas lämna försäljningssiffror.",
   seoKeywords: [
     "BörsSverige",
     "Stockholmsbörsen idag",
+    "börsen idag",
     "börsnyheter idag",
     "svenska aktier",
     "Skanska",
@@ -135,32 +136,6 @@ export const BORSSVERIGE_2_SEPTEMBER_2026_ARTICLE: NewsArticle = {
         "Svensk industri fortsätter samtidigt att växa, men den snabba uppgången i företagens inköpskostnader gör lönsamhet och prissättning till viktigare frågor inför hösten.",
         "Och under dagen väntas Volvo Cars ge en ny temperaturmätare på den globala bilförsäljningen. Efter två raka nedgångsdagar på Stockholmsbörsen är det en kombination av konkreta bolagsbesked och ett mer utmanande kostnadsläge som sätter tonen för BörsSverige den 2 september.",
       ],
-    },
-  ],
-  sources: [
-    {
-      text: "Skanska – USA-order i Del Mar, 2 september 2026",
-      href: "https://news.cision.com/skanska/r/skanska-to-expand-traffic-corridor-in-del-mar--california--usa--for-usd-57m--about-sek-530m%2Cc4390853",
-    },
-    {
-      text: "Swedbank/Silf – PMI steg till 56,1 i augusti, 1 september 2026",
-      href: "https://www.swedbank.com/sv/newsroom/press-releases.details.pmi-steg-till-56%2C1-i-augusti-%E2%80%93-tillv%C3%A4xt-och-h%C3%B6gre-kostnadstryck.AB32D7E8729AF1B0.html",
-    },
-    {
-      text: "SEB – Sparbarometern Q2 2026, 2 september 2026",
-      href: "https://sebgroup.com/sv/press/pressmeddelanden/2026/historisk-milstolpe-i-hushallens-sparande--storre-sparande-i-aktier-an-i-fastigheter",
-    },
-    {
-      text: "Volvo Cars – Försäljning maj–juli 2026, 4 augusti 2026",
-      href: "https://www.volvocars.com/se/media/press-releases/ADE5AF14E199FBD8/",
-    },
-    {
-      text: "Nyhetsbyrån Direkt/Placera – PM i fokus onsdag 2 september 2026",
-      href: "https://www.placera.se/telegram/pm-i-fokus-onsdag-2-september-20260902",
-    },
-    {
-      text: "Finwire/MarketScreener – Stockholmsbörsens stängning 1 september 2026",
-      href: "https://se.marketscreener.com/nyheter/ned-t-p-stockholmsborsen-for-andra-dagen-i-rad-omxs30-index-backade-1-3-procent-ce7858d2d98dff22",
     },
   ],
 };
