@@ -10,7 +10,7 @@ import type { NewsArticle } from "@/types/news";
  * is woven into the copy.
  *
  * Cover:
- * public/news-demo/norden-i-centrum-2026-09-03.png
+ * public/news-demo/norden-i-centrum-2026-09-03-x.png
  */
 export const NORDEN_I_CENTRUM_3_SEPTEMBER_2026_ARTICLE: NewsArticle = {
   id: "norden-i-centrum-3-september-2026",
@@ -24,7 +24,7 @@ export const NORDEN_I_CENTRUM_3_SEPTEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-09-03T07:38:00+02:00",
   url: "/news/norden-i-centrum-3-september-2026",
   featured: true,
-  imageUrl: "/news-demo/norden-i-centrum-2026-09-03.png",
+  imageUrl: "/news-demo/norden-i-centrum-2026-09-03-x.png",
   thumbnailObjectPosition: "center 50%",
   mobileThumbnailObjectPosition: "center 50%",
   imageAlt:
