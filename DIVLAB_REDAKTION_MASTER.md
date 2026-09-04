@@ -1,9 +1,9 @@
 # DIVLAB_REDAKTION_MASTER.md
 
-**Version:** 1.1  
+**Version:** 1.2  
 **Status:** Aktiv redaktionell master / CURRENT  
 **Projekt:** DivLab Redaktion  
-**Senast uppdaterad:** 24 augusti 2026  
+**Senast uppdaterad:** 4 september 2026  
 **Ägare:** DivLab
 
 ---
@@ -172,6 +172,28 @@ Artikeln ska kännas som en riktig redaktionell text, inte en forskningslogg.
 
 Råa länksamlingar eller en lång ”Källor”-sektion läggs inte automatiskt längst ned. Källor och attribution vävs in naturligt där det behövs, eller redovisas separat när artikeltypen kräver det.
 
+## 3.4 Motstridiga kalendrar och datum
+
+Om en extern rapportkalender, nyhetskalender eller sammanställning säger något som strider mot bolagets egen IR-kalender eller en annan primärkälla gäller primärkällan.
+
+Exempel på permanent arbetsregel:
+
+- extern kalender säger rapport i dag,
+- bolagets IR-sida säger ett annat datum,
+- då ska den externa uppgiften **inte** publiceras som dagens rapport.
+
+Vid konflikt ska redaktionen hellre ta bort punkten än fylla ut artikeln med en osäker händelse.
+
+## 3.5 Händelser som ännu inte har inträffat
+
+Om en rapport, statistikpunkt eller annan händelse ligger senare samma dag får resultatet inte föregripas.
+
+Skriv tydligt framåtblickande, exempelvis:
+
+> Sectra publicerar Q1 klockan 08.15.
+
+Skriv inte rapportutfall eller marknadsreaktion innan de faktiskt har publicerats och verifierats.
+
 ---
 
 # 4. Vad är en DivLab-nyhet?
@@ -285,6 +307,17 @@ Artikeln ska prioritera de viktigaste svenska händelserna och hellre gå djupar
 Artikeln ska leta efter de viktigaste ekonomiska och börsrelaterade händelserna i Norden och inte bli Sverige plus några utfyllnadsnotiser.
 
 Eftersträva geografisk variation när nyhetsläget tillåter det.
+
+Den dagliga researchen ska normalt omfatta:
+
+- aktuella bolagsbesked i Sverige, Norge, Danmark och Finland,
+- rapportkalendrar verifierade mot bolagens egna IR-sidor,
+- nordiska börs- och sektorrörelser,
+- räntor, energi och valuta när de faktiskt påverkar dagens nordiska berättelse,
+- globala signaler endast när de har tydlig relevans för Norden,
+- dagens viktigaste kommande makrohändelser som kan ändra marknadsläget senare under dagen.
+
+Målet är inte exakt en nyhet per land till varje pris. Geografisk bredd är bra, men nyhetsvärde och verifierbarhet går före symmetri.
 
 ### Bildstandard – Norden i centrum
 
@@ -510,6 +543,35 @@ Länka när det finns naturlig nytta, exempelvis:
 
 Länka inte bara för SEO.
 
+## 13.5 Sökord ska vävas in naturligt
+
+För dagliga marknadsartiklar ska relevanta Google-sökfraser identifieras redan under skrivningen, inte läggas på som en separat SEO-klump efteråt.
+
+Exempel för Norden i centrum kan vara:
+
+- `nordiska börsen idag`
+- `nordiska börser`
+- bolagsnamn + `rapport`
+- bolagsnamn + `aktie`
+- `oljepris idag`
+- relevant makrohändelse
+- datum när det hjälper sökintentionen
+
+Sökorden ska förekomma där de är språkligt naturliga i rubrik, ingress, mellanrubriker, metadata och brödtext. Keyword stuffing är förbjuden.
+
+## 13.6 SEO ska verifieras i produktion
+
+Det räcker inte att SEO-fälten finns i källkoden. Efter deploy ska den publika artikeln kontrolleras för:
+
+- faktisk `<title>`
+- faktisk meta description
+- canonical
+- `robots: index, follow`
+- Googlebot-direktiv
+- Open Graph-titel, beskrivning och bild
+- X/Twitter-card och bild
+- strukturerad `NewsArticle`-data
+
 ---
 
 # 14. Artikelbilder
@@ -624,6 +686,21 @@ behåller sitt legacy-namn eftersom den är den kanoniska DivLab-logoreferensen.
 
 Vid namnbyte av en redan publicerad bild ska artikelns runtime-referens uppdateras i samma förändring, direkt eller genom den centrala legacy-aliaslösningen i `lib/news/get-articles.ts`, så att ingen publicerad artikel får en trasig bild.
 
+## 14.7 Kirurgisk textändring i befintlig serie-bild
+
+När användaren skickar en befintlig DivLab-bild och uttryckligen säger exempelvis **”ändra bara datum”**, **”ändra företagen”** eller **”ändra bara texterna”** gäller strikt text-only-läge.
+
+Då ska redaktionen:
+
+- behålla originalbildens komposition,
+- behålla bakgrund, motiv, färger, karta, flaggor och övriga visuella element,
+- endast ändra de texter som uttryckligen efterfrågas,
+- inte lägga till nya bilder, personer, miljöer eller dekorationer,
+- inte ”förbättra” layouten på eget initiativ,
+- inte regenerera hela omslaget när en kirurgisk textändring räcker.
+
+Om användaren säger **”gör inga bilder”** eller motsvarande ska ingen ny bild genereras. Instruktionen ska följas bokstavligt.
+
 ---
 
 # 15. Publiceringsstandard på DivLab
@@ -648,6 +725,45 @@ Den är klar först när följande har verifierats i den publika upplevelsen:
 - inga gamla bilder eller metadata ligger kvar från en tidigare artikel
 
 Säg aldrig att något är ”live” innan det faktiskt har verifierats som live.
+
+## 15.1 Tekniskt standardflöde för en ny Börsnyhetsartikel
+
+När DivLabs nuvarande artikelstruktur används ska publiceringen normalt innebära:
+
+1. skapa artikelns fil i `data/news-articles/`,
+2. sätt `id`, `slug`, titel, summary, kategori, publiceringstid och URL,
+3. koppla exakt bildsökväg i `imageUrl`,
+4. sätt alt-text och bildtext,
+5. sätt `seoTitle`, `seoDescription` och relevanta `seoKeywords`,
+6. sätt internlänkar och relaterade artiklar där det hjälper läsaren,
+7. registrera artikeln i `lib/news/get-articles.ts`,
+8. låt produktionen deployas,
+9. verifiera den riktiga publika routen.
+
+En användaruppladdad bild ska inte antas ligga under det namn vi föreslog. Kontrollera den faktiska GitHub-committen eller mappen och koppla den verkliga filvägen.
+
+Om en generiskt namngiven upload har använts ska den helst normaliseras till semantiskt filnamn när det kan göras säkert utan att fördröja eller bryta publiceringen.
+
+## 15.2 Produktionskontroll efter deploy
+
+När deployen är klar ska följande verifieras på den riktiga artikelsidan:
+
+- HTTP 200
+- korrekt H1
+- korrekt bild laddas
+- korrekt publiceringstid
+- artikeltexten finns i SSR-svaret
+- SEO-title
+- meta description
+- canonical
+- robots/indexering
+- Open Graph
+- X/Twitter `summary_large_image`
+- rätt social bild
+- `NewsArticle`-strukturerad data
+- interna relaterade länkar
+
+Först därefter får redaktionen säga **”klart”**.
 
 ---
 
@@ -758,6 +874,37 @@ Koppla text, bild och metadata.
 
 Kontrollera den riktiga publika sidan på mobil och desktop.
 
+## 18.1 Praktisk daglig arbetsordning för återkommande morgonartiklar
+
+För format som **Norden i centrum** och **BörsSverige** ska arbetsordningen normalt vara:
+
+1. läs den aktuella redaktionella mastern,
+2. kontrollera hur de senaste relevanta artiklarna på DivLab är skrivna och strukturerade,
+3. gör bred marknadsresearch,
+4. verifiera de viktigaste punkterna mot primärkällor,
+5. notera och aktivt rensa bort felaktiga eller motstridiga kalenderuppgifter,
+6. sätt ett tydligt research-cutoff för morgonläget,
+7. skriv artikeln med SEO och Google-sökintention inbyggd från början,
+8. faktakontrollera den färdiga texten separat,
+9. arbeta fram eller uppdatera omslagsbild enligt användarens exakta instruktion,
+10. ge GitHub-uppladdningsplats när användaren vill ladda upp bilden själv,
+11. efter uppladdning: verifiera den faktiska filvägen,
+12. publicera artikel + bild + metadata,
+13. kontrollera Vercel/produktion tills slutlig deploy är `READY`,
+14. hämta den publika artikeln och verifiera SEO, bild, social metadata och innehåll,
+15. först därefter meddela användaren att arbetet är klart,
+16. leverera färdig X-text med länk och hashtags invävda i den löpande texten.
+
+## 18.2 Research ska kunna visa vad som valdes bort
+
+Om researchen hittar en uppgift som ser relevant ut men som faller på faktakontrollen är det bra redaktionellt arbete att säga det kort till användaren.
+
+Exempel:
+
+> En extern kalender listade Rusta i dag, men bolagets IR-sida anger 9 september, så den tas inte med.
+
+Det visar att artikeln har redigerats, inte bara sammanställts.
+
 ---
 
 # 19. ”Definition of Done” för en DivLab-artikel
@@ -767,6 +914,8 @@ En artikel är färdig först när alla relevanta punkter är uppfyllda:
 - [ ] Nyheten är verklig och aktuell
 - [ ] Primärkälla är kontrollerad när sådan finns
 - [ ] Centrala fakta är verifierade
+- [ ] Motstridiga kalenderuppgifter är utredda
+- [ ] Framtida rapporter eller statistik har inte föregripits
 - [ ] Rubriken är korrekt och klickvänlig utan att vilseleda
 - [ ] Ingressen sammanfattar nyheten
 - [ ] Jargong är borttagen eller förklarad
@@ -777,16 +926,21 @@ En artikel är färdig först när alla relevanta punkter är uppfyllda:
 - [ ] Canonical är korrekt
 - [ ] Slug är korrekt
 - [ ] Alt-text är satt
+- [ ] Relevanta Google-sökord är invävda naturligt
 - [ ] Artikelbilden följer DivLabs bildstandard
 - [ ] Rätt DivLab-logga används på Börsnyhetsbilden
 - [ ] Bildfilen har semantiskt filnamn, med undantag för den låsta logoreferensen
 - [ ] Rätt bild är kopplad till rätt artikel
 - [ ] Open Graph-data är korrekt
+- [ ] X/Twitter använder `summary_large_image` och rätt artikelbild
+- [ ] NewsArticle/Article-strukturerad data är korrekt där den används
 - [ ] Mobilvy är kontrollerad
 - [ ] Desktopvy är kontrollerad
 - [ ] Delningsknappar fungerar
 - [ ] Artikeln syns korrekt i `/news`
-- [ ] Publik URL är verifierad
+- [ ] Publik URL är verifierad med HTTP 200
+- [ ] Produktionsdeploy är verifierad som klar
+- [ ] X-text är färdig med artikel-URL och hashtags invävda i texten när användaren har bett om den
 
 ---
 
@@ -799,15 +953,20 @@ En artikel är färdig först när alla relevanta punkter är uppfyllda:
 - överanvända olja som förklaring bara för att oljepriset finns tillgängligt
 - fylla svenska artiklar med USA-material
 - skriva rapportartiklar utifrån gamla kvartal när ny rapport finns
+- publicera en tredjepartskalenderuppgift som strider mot bolagets egen IR-sida
+- föregripa rapportutfall som ännu inte har publicerats
 - överlastade bilder med AI-symbolik
 - påhittade visuella detaljer som ser dokumentära ut
+- ändra mer än begärt i en befintlig serie-bild
+- regenerera hela bilden när användaren uttryckligen bara har bett om textändringar
 - långa stycken med bolagsjargong
 - generiska AI-avslutningar
 - onödiga råd om köp/sälj
 - publicera innan bild och metadata faktiskt är kopplade
 - använda fel eller improviserad DivLab-logotyp på Börsnyhetsbilder
-- lägga nya generiskt namngivna `file_000...`-bilder i nyhetsmappen
+- lägga nya generiskt namngivna `file_000...`-bilder i nyhetsmappen när semantiskt namn kan användas
 - säga ”klart” eller ”live” utan verifiering
+- säga att SEO är korrekt utan att kontrollera den renderade produktionen
 
 ---
 
@@ -873,7 +1032,40 @@ Hellre en något senare korrekt artikel än en snabb felaktig artikel.
 
 ---
 
+# 25. X / Twitter efter publicering
+
+När användaren ber om text till X efter en publicerad artikel ska DivLab normalt leverera ett färdigt inlägg på svenska.
+
+Regler:
+
+- artikelns länk ska vara med,
+- öppningen ska bära nyhetsvärdet,
+- texten ska vara formell men klickvänlig,
+- hashtags ska **vävas in i den löpande texten**,
+- samla inte hashtags som en separat rad eller klump längst ned,
+- använd bara relevanta hashtags,
+- inlägget ska kunna kopieras och publiceras direkt utan redigering.
+
+Exempel på rätt princip:
+
+> Fredagens #NordenICentrum: Sectra rapporterar Q1, #Vestas fyller på orderboken och Brentoljan ligger kvar över 95 dollar. Samtidigt väntar marknaden på USA:s jobbrapport – ett besked som kan flytta räntor och #börsen i hela Norden. Läs mer: [artikel-URL]
+
+---
+
 ## Versionshistorik
+
+### 1.2 – 4 september 2026
+
+- Det praktiska arbetsflödet från den dagliga Norden i centrum-produktionen formaliserat.
+- Ny regel införd att bolagens egna IR-kalendrar går före motstridiga externa rapportkalendrar.
+- Ny regel införd att ännu ej publicerade rapporter och statistikutfall aldrig får föregripas.
+- Daglig researchordning för Norden i centrum och återkommande morgonformat förtydligad.
+- SEO-arbetet flyttat tydligare in i själva skrivprocessen med naturligt invävda Google-sökfraser.
+- Produktionsverifiering utökad till faktisk kontroll av title, meta description, canonical, robots, Open Graph, X/Twitter-card, social bild och NewsArticle-data.
+- Tekniskt publiceringsflöde för `data/news-articles/` och `lib/news/get-articles.ts` dokumenterat.
+- Ny permanent regel för kirurgiska textändringar i befintliga DivLab-bilder: ändra endast det användaren ber om och regenerera inte resten.
+- X-standarden formaliserad: artikel-URL ska med och hashtags ska vävas in i den löpande texten, inte läggas som en klump längst ned.
+- Definition of Done utökad med deploy-, HTTP 200-, social metadata- och X-kontroller.
 
 ### 1.1 – 24 augusti 2026
 
