@@ -1,6 +1,6 @@
 # DIVLAB_REDAKTION_MASTER.md
 
-**Version:** 1.2  
+**Version:** 1.3  
 **Status:** Aktiv redaktionell master / CURRENT  
 **Projekt:** DivLab Redaktion  
 **Senast uppdaterad:** 4 september 2026  
@@ -285,6 +285,22 @@ BörsSverige ska inte fyllas ut med USA-material om inte händelsen har en tydli
 
 Artikeln ska prioritera de viktigaste svenska händelserna och hellre gå djupare i 1–3 verkligt relevanta nyheter än rada upp små rörelser.
 
+### Arbetsprincip – samma kvalitetssäkrade flöde, men Sverige endast
+
+Det praktiska arbetsflödet i kapitel 18.1 gäller **fullt ut även BörsSverige**: master → senaste DivLab-artiklar → bred research → primärkällor → separat faktakontroll → SEO → bild → publicering → produktionsverifiering → X-text.
+
+Skillnaden är geografisk och redaktionell avgränsning:
+
+- själva BörsSverige-artikeln ska handla om **Sverige och svenska börsrelevanta händelser**, inte Norden i stort,
+- researchen ska prioritera Stockholmsbörsen, svenska noterade bolag, svenska rapporter, svenska bolagsbesked, Riksbanken, SCB, svensk makrodata, kronan och andra faktorer som direkt påverkar svensk marknad,
+- globala eller nordiska signaler får granskas i researchen för att förstå svensk börspåverkan, men tas bara med i artikeln när kopplingen till Sverige är tydlig och relevant,
+- utländska bolagsnyheter ska inte användas som utfyllnad i BörsSverige,
+- externa rapportkalendrar ska verifieras mot svenska bolags egna IR-sidor på samma sätt som i Norden i centrum,
+- framtida rapportutfall eller statistik får aldrig föregripas,
+- samma krav på SEO, Google-sökintention, bild, social metadata och verifierad produktion gäller som för Norden i centrum.
+
+Kort regel: **samma arbetsmetod, samma kvalitetskrav – men BörsSverige är Sverige endast.**
+
 ### Bildstandard – BörsSverige
 
 - 1280 × 720
@@ -555,6 +571,17 @@ Exempel för Norden i centrum kan vara:
 - bolagsnamn + `aktie`
 - `oljepris idag`
 - relevant makrohändelse
+- datum när det hjälper sökintentionen
+
+Exempel för BörsSverige kan vara:
+
+- `börsen idag Sverige`
+- `Stockholmsbörsen idag`
+- `svenska börsen idag`
+- svenskt bolagsnamn + `rapport`
+- svenskt bolagsnamn + `aktie`
+- `OMXS30 idag` när det är relevant
+- svensk makrohändelse, exempelvis Riksbanken eller svensk inflation
 - datum när det hjälper sökintentionen
 
 Sökorden ska förekomma där de är språkligt naturliga i rubrik, ingress, mellanrubriker, metadata och brödtext. Keyword stuffing är förbjuden.
@@ -880,7 +907,7 @@ För format som **Norden i centrum** och **BörsSverige** ska arbetsordningen no
 
 1. läs den aktuella redaktionella mastern,
 2. kontrollera hur de senaste relevanta artiklarna på DivLab är skrivna och strukturerade,
-3. gör bred marknadsresearch,
+3. gör bred marknadsresearch inom formatets geografiska uppdrag,
 4. verifiera de viktigaste punkterna mot primärkällor,
 5. notera och aktivt rensa bort felaktiga eller motstridiga kalenderuppgifter,
 6. sätt ett tydligt research-cutoff för morgonläget,
@@ -894,6 +921,8 @@ För format som **Norden i centrum** och **BörsSverige** ska arbetsordningen no
 14. hämta den publika artikeln och verifiera SEO, bild, social metadata och innehåll,
 15. först därefter meddela användaren att arbetet är klart,
 16. leverera färdig X-text med länk och hashtags invävda i den löpande texten.
+
+**Formatavgränsning är obligatorisk:** BörsSverige använder detta flöde med Sverige som enda redaktionella marknad. Norden i centrum använder samma flöde med Sverige, Norge, Danmark och Finland som marknader.
 
 ## 18.2 Research ska kunna visa vad som valdes bort
 
@@ -916,6 +945,7 @@ En artikel är färdig först när alla relevanta punkter är uppfyllda:
 - [ ] Centrala fakta är verifierade
 - [ ] Motstridiga kalenderuppgifter är utredda
 - [ ] Framtida rapporter eller statistik har inte föregripits
+- [ ] Artikelns geografiska formatgräns är respekterad, särskilt Sverige-only för BörsSverige
 - [ ] Rubriken är korrekt och klickvänlig utan att vilseleda
 - [ ] Ingressen sammanfattar nyheten
 - [ ] Jargong är borttagen eller förklarad
@@ -952,6 +982,7 @@ En artikel är färdig först när alla relevanta punkter är uppfyllda:
 - återanvända samma makroförklaring i varje artikel utan stöd
 - överanvända olja som förklaring bara för att oljepriset finns tillgängligt
 - fylla svenska artiklar med USA-material
+- fylla BörsSverige med nordiska eller globala bolagsnyheter utan tydlig svensk börskoppling
 - skriva rapportartiklar utifrån gamla kvartal när ny rapport finns
 - publicera en tredjepartskalenderuppgift som strider mot bolagets egen IR-sida
 - föregripa rapportutfall som ännu inte har publicerats
@@ -1053,6 +1084,14 @@ Exempel på rätt princip:
 ---
 
 ## Versionshistorik
+
+### 1.3 – 4 september 2026
+
+- Klargjort att samma kvalitetssäkrade arbetsflöde som används för Norden i centrum även gäller BörsSverige.
+- BörsSverige låst tydligare till Sverige-only: Stockholmsbörsen, svenska bolag och svensk makroinformation som direkt påverkar svensk marknad.
+- Globala och nordiska signaler får användas i researchen för att förstå svensk påverkan, men ska inte fylla artikeln utan tydlig svensk koppling.
+- Google-sökfraser för BörsSverige dokumenterade separat, exempelvis `börsen idag Sverige`, `Stockholmsbörsen idag` och relevanta svenska bolags-/rapportfraser.
+- Definition of Done kompletterad med kontroll av artikeltypens geografiska formatgräns.
 
 ### 1.2 – 4 september 2026
 
