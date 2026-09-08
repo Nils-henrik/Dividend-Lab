@@ -29,19 +29,20 @@ export const BORSSVERIGE_8_SEPTEMBER_2026_ARTICLE: NewsArticle = {
   id: "borssverige-8-september-2026-skf-vertevo-bostadsmarknaden",
   slug: "borssverige-8-september-2026-skf-vertevo-bostadsmarknaden",
   title:
-    "BörsSverige 8 september: SKF tar Vertevo mot börsen – villaförsäljningen slår rekord",
+    "BörsSverige 8 september: SKF tar Vertevo mot börsen – villaförsäljningen sätter augustirekord",
   summary:
     "SKF tar nästa steg mot en separat börsnotering av fordonsverksamheten SKF Vertevo. Samtidigt stiger villapriserna 0,6 procent i augusti och antalet sålda villor når den högsta augustinivån sedan mätserien startade 2005.",
   category: "market",
   source: "DivLab",
   publishedAt: "2026-09-08T08:24:00+02:00",
+  updatedAt: "2026-09-08T08:29:00+02:00",
   url: "/news/borssverige-8-september-2026-skf-vertevo-bostadsmarknaden",
   featured: true,
   imageUrl: null,
   readingMinutes: 6,
   seoTitle: "BörsSverige 8 september: SKF Vertevo och bostadsmarknaden",
   seoDescription:
-    "SKF tar Vertevo närmare börsen samtidigt som villaförsäljningen slår augustirekord. Här är dagens viktigaste svenska börsnyheter 8 september 2026.",
+    "SKF tar Vertevo närmare börsen samtidigt som villaförsäljningen sätter augustirekord. Här är dagens viktigaste svenska börsnyheter 8 september 2026.",
   seoKeywords: [
     "BörsSverige",
     "Stockholmsbörsen idag",
@@ -80,7 +81,7 @@ export const BORSSVERIGE_8_SEPTEMBER_2026_ARTICLE: NewsArticle = {
   showDisclaimer: true,
   intro: [
     "SKF, den svenska bostadsmarknaden och låg inflation sätter ramen för tisdagens BörsSverige. SKF:s styrelse vill gå vidare med utdelningen och den separata noteringen av fordonsverksamheten SKF Vertevo, med 1 december som planerat första handelsdatum om aktieägare och myndigheter ger klartecken.",
-    "Samtidigt visar färsk statistik från Svensk Mäklarstatistik att bostadsrättspriserna i riket var i stort sett oförändrade i augusti, medan villapriserna steg. Det mest tydliga beskedet är dock aktiviteten: 5 300 villor bytte ägare under månaden, den högsta augustinivån sedan mätserien började 2005.",
+    "Samtidigt visar färsk statistik från Svensk Mäklarstatistik att bostadsrättspriserna i riket var i stort sett oförändrade i augusti, medan villapriserna steg. Det tydligaste beskedet är dock aktiviteten: 5 300 villor bytte ägare under månaden, den högsta augustinivån sedan mätserien började 2005.",
     "Researchen för den här morgonupplagan stängdes klockan 08.24, före Stockholmsbörsens öppning. Därför anges inga kursreaktioner för tisdagens handel som fakta. SKF:s besked publicerades dessutom redan under måndagseftermiddagen och är alltså känt av marknaden sedan tidigare handelsdag.",
   ],
   sections: [
@@ -125,8 +126,8 @@ export const BORSSVERIGE_8_SEPTEMBER_2026_ARTICLE: NewsArticle = {
       heading: "Det här blir viktigast på Stockholmsbörsen i dag",
       paragraphs: [
         "SKF:s planerade uppdelning är den största bolagshändelsen i dagens svenska morgonbild, men beskedet kom klockan 15.00 på måndagen och hann därmed bli känt före gårdagens stängning. En eventuell rörelse i SKF i dag blir därför en fortsättning på marknadens värdering av beskedet, inte den första reaktionen.",
-        "Bostadsstatistiken är däremot ny för morgonen och ger färsk information om både priser och aktivitet. Rekordmånga villaaffärer för en augustimånad är ett tydligt datapunkt, samtidigt som prisförändringarna fortfarande är förhållandevis små.",
-        "För dagens BörsSverige är slutsatsen därför mer nyanserad än en enkel risk på eller risk av-signal. SKF går mot en strukturellt viktig uppdelning, hushållens bostadsmarknad visar högre aktivitet och den preliminära inflationen är fortsatt låg. När börsen öppnar klockan 09.00 blir det först då möjligt att skilja den faktiska marknadsreaktionen från morgonens fundamentala nyhetsflöde.",
+        "Bostadsstatistiken är däremot ny för morgonen och ger färsk information om både priser och aktivitet. Rekordmånga villaaffärer för en augustimånad är en tydlig datapunkt, samtidigt som prisförändringarna fortfarande är förhållandevis små.",
+        "För dagens BörsSverige är slutsatsen därför mer nyanserad än en enkel signal om högre eller lägre riskvilja. SKF går mot en strukturellt viktig uppdelning, hushållens bostadsmarknad visar högre aktivitet och den preliminära inflationen är fortsatt låg. När börsen öppnar klockan 09.00 blir det först då möjligt att skilja den faktiska marknadsreaktionen från morgonens fundamentala nyhetsflöde.",
       ],
     },
   ],
