@@ -1,0 +1,10 @@
+// Isolated invalid TypeScript snippet used by dry-run case C.
+// Not part of the production compile graph. Do not import this file.
+
+type NewsArticleLike = { id: string; slug: string; title: string };
+
+export const BROKEN_TODAY_ARTICLE: NewsArticleLike = {
+  id: 291,
+  slug: null,
+  title: undefined,
+};

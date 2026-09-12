@@ -72,6 +72,7 @@ docs/
 
   automation/
     CURSOR_BRIDGE.md
+    AUTOREDATION_V1.md
 ```
 
 ---
