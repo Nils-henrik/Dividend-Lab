@@ -32,11 +32,15 @@ async function copyReference(source: string, targetName: string) {
   await copyFile(path.join(ROOT, source), path.join(REFERENCES_DIR, targetName));
 }
 
-async function writeResizedReference(source: string, targetName: string) {
+async function writeResizedReference(
+  source: string,
+  targetName: string,
+  outputDir = RENDERS_DIR,
+) {
   await sharp(path.join(ROOT, source))
     .resize(SERIES_IMAGE_WIDTH, SERIES_IMAGE_HEIGHT, { fit: "cover", position: "centre" })
     .png({ compressionLevel: 9 })
-    .toFile(path.join(RENDERS_DIR, targetName));
+    .toFile(path.join(outputDir, targetName));
 }
 
 async function renderReview(
@@ -88,7 +92,11 @@ async function writeDiff(
 
 async function main() {
   await ensureDirectories();
-  await copyReference(BORSSVERIGE_TEMPLATE_V2.referencePath, "borssverige-reference.png");
+  await writeResizedReference(
+    BORSSVERIGE_TEMPLATE_V2.referencePath,
+    "borssverige-reference.png",
+    REFERENCES_DIR,
+  );
   await copyReference(NORDEN_I_CENTRUM_TEMPLATE_V2.referencePath, "norden-reference.png");
 
   // Nearby published editions are review evidence for the established dynamic
