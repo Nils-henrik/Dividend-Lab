@@ -1,8 +1,21 @@
+export type ApprovedCompanyLogoVariants = {
+  /** Variant intended for a light photographic/background area. */
+  light?: string;
+  /** Variant intended for a dark photographic/background area. */
+  dark?: string;
+};
+
 export type ApprovedCompanyLogo = {
   company: string;
   file: string;
+  variants?: ApprovedCompanyLogoVariants;
   source: string;
   checkedAt: string;
+};
+
+export type ResolvedCompanyLogo = ApprovedCompanyLogo & {
+  resolvedFile: string;
+  variant: "default" | "light" | "dark";
 };
 
 const EXISTING_LOGO_SOURCE =
@@ -10,8 +23,9 @@ const EXISTING_LOGO_SOURCE =
 
 /**
  * Approved local-only assets. Daily automation must never fetch a logo from
- * the network. Additions belong here only after the local file and provenance
- * have been reviewed.
+ * the network. `variants` is intentionally empty until an official/local
+ * alternative has been reviewed; the renderer must never manufacture a white
+ * or monochrome logo simply to improve contrast.
  */
 export const APPROVED_COMPANY_LOGOS = {
   Apple: { company: "Apple", file: "public/company-logos/apple.svg", source: EXISTING_LOGO_SOURCE, checkedAt: "2026-07-11" },
@@ -32,6 +46,25 @@ export type ApprovedCompanyName = keyof typeof APPROVED_COMPANY_LOGOS;
 export function getApprovedCompanyLogo(company: string): ApprovedCompanyLogo | null {
   const entry = (APPROVED_COMPANY_LOGOS as Record<string, ApprovedCompanyLogo>)[company];
   return entry ?? null;
+}
+
+/**
+ * Resolve only an already-approved local variant. If no reviewed variant exists
+ * we return the reviewed default asset; callers may still skip it after visual
+ * review instead of inventing contrast treatment.
+ */
+export function resolveApprovedCompanyLogo(
+  company: string,
+  background: "dark" | "light",
+): ResolvedCompanyLogo | null {
+  const entry = getApprovedCompanyLogo(company);
+  if (!entry) return null;
+  const preferred = background === "dark" ? entry.variants?.dark : entry.variants?.light;
+  return {
+    ...entry,
+    resolvedFile: preferred ?? entry.file,
+    variant: preferred ? background : "default",
+  };
 }
 
 export function hasApprovedCompanyLogo(company: string): boolean {
