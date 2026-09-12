@@ -4,6 +4,8 @@ import path from "node:path";
 import sharp from "sharp";
 
 import { parseIsoDateTime, stockholmCalendarDate } from "@/lib/news/autoredaktion/dates";
+import type { EditorialSeries } from "@/lib/news/autoredaktion/types";
+import type { NewsArticle } from "@/types/news";
 
 import { getApprovedCompanyLogo } from "./company-logo-map";
 import { getSeriesImageTemplate } from "./templates";
@@ -50,6 +52,34 @@ async function staticLogoRegionHash(
     .raw()
     .toBuffer();
   return hash(raw);
+}
+
+async function validateReadablePng(
+  imagePath: string,
+  referencePath: string,
+  staticLogoRegion: { x: number; y: number; width: number; height: number },
+): Promise<string[]> {
+  const issues: string[] = [];
+  try {
+    const image = await sharp(imagePath).metadata();
+    if (image.width !== SERIES_IMAGE_WIDTH || image.height !== SERIES_IMAGE_HEIGHT) {
+      issues.push("image-dimensions");
+    }
+    if (image.format !== SERIES_IMAGE_FORMAT) issues.push("image-format");
+
+    if (existsSync(referencePath)) {
+      const [generatedLogoHash, referenceLogoHash] = await Promise.all([
+        staticLogoRegionHash(imagePath, staticLogoRegion),
+        staticLogoRegionHash(referencePath, staticLogoRegion, true),
+      ]);
+      if (generatedLogoHash !== referenceLogoHash) {
+        issues.push("canonical-logo-region-changed");
+      }
+    }
+  } catch {
+    issues.push("image-unreadable");
+  }
+  return issues;
 }
 
 export async function validateGeneratedSeriesImage(
@@ -115,25 +145,53 @@ export async function validateGeneratedSeriesImage(
     }
   }
 
-  try {
-    const image = await sharp(metadata.outputPath).metadata();
-    if (image.width !== SERIES_IMAGE_WIDTH || image.height !== SERIES_IMAGE_HEIGHT) {
-      issues.push("image-dimensions");
-    }
-    if (image.format !== SERIES_IMAGE_FORMAT) issues.push("image-format");
+  issues.push(
+    ...(await validateReadablePng(
+      metadata.outputPath,
+      referencePath,
+      template.staticLogoRegion,
+    )),
+  );
 
-    if (existsSync(referencePath)) {
-      const [generatedLogoHash, referenceLogoHash] = await Promise.all([
-        staticLogoRegionHash(metadata.outputPath, template.staticLogoRegion),
-        staticLogoRegionHash(referencePath, template.staticLogoRegion, true),
-      ]);
-      if (generatedLogoHash !== referenceLogoHash) {
-        issues.push("canonical-logo-region-changed");
-      }
-    }
-  } catch {
-    issues.push("image-unreadable");
+  return { ok: issues.length === 0, issues };
+}
+
+/**
+ * Quality-gate validation for the image path declared by a finished article.
+ * `imageUrl:null` is a valid explicit fail-safe. A non-null generated path must
+ * be the canonical date URL and must point at a readable 1280x720 PNG whose
+ * static DivLab brand region still matches the approved template reference.
+ */
+export async function validateDeclaredGeneratedImage(
+  article: NewsArticle,
+  series: EditorialSeries,
+  repoRoot = process.cwd(),
+): Promise<SeriesImageValidation> {
+  if (article.imageUrl == null) return { ok: true, issues: [] };
+  if (!article.imageUrl.startsWith("/news/generated/")) {
+    return { ok: true, issues: [] };
   }
+
+  const issues: string[] = [];
+  const published = parseIsoDateTime(article.publishedAt);
+  if (!published) return { ok: false, issues: ["published-at-invalid"] };
+  const date = stockholmCalendarDate(published);
+  const expectedPublicPath = `/news/generated/${series}-${date}.png`;
+  if (article.imageUrl !== expectedPublicPath) issues.push("declared-public-path");
+  if (article.thumbnailImageUrl != null && article.thumbnailImageUrl !== article.imageUrl) {
+    issues.push("thumbnail-image-mismatch");
+  }
+
+  const imagePath = path.join(repoRoot, "public", article.imageUrl.replace(/^\//, ""));
+  if (!existsSync(imagePath)) return { ok: false, issues: [...issues, "output-missing"] };
+  const stats = statSync(imagePath);
+  if (!stats.isFile() || stats.size <= 0) issues.push("output-empty");
+
+  const template = getSeriesImageTemplate(series);
+  const referencePath = path.join(repoRoot, template.referencePath);
+  issues.push(
+    ...(await validateReadablePng(imagePath, referencePath, template.staticLogoRegion)),
+  );
 
   return { ok: issues.length === 0, issues };
 }
