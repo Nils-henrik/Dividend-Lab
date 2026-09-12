@@ -13,6 +13,7 @@ import {
   validateResearchCutoffComment,
 } from "@/lib/news/autoredaktion";
 import { getNewsArticles } from "@/lib/news/get-articles";
+import type { NewsArticle } from "@/types/news";
 
 const REGISTRY_PATH = "lib/news/get-articles.ts";
 const SERIES_FILE_PATTERN =
@@ -74,8 +75,8 @@ async function main() {
 
     const moduleUrl = `${pathToFileURL(path.resolve(articleFile)).href}?autoredaktion=${Date.now()}`;
     const articleModule = (await import(moduleUrl)) as Record<string, unknown>;
-    const articleExports = Object.entries(articleModule).filter(([, value]) =>
-      isNewsArticleLike(value),
+    const articleExports = Object.entries(articleModule).filter(
+      (entry): entry is [string, NewsArticle] => isNewsArticleLike(entry[1]),
     );
 
     if (articleExports.length !== 1) {
