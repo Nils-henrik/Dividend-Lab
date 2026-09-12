@@ -91,6 +91,28 @@ async function main() {
   await copyReference(BORSSVERIGE_TEMPLATE_V2.referencePath, "borssverige-reference.png");
   await copyReference(NORDEN_I_CENTRUM_TEMPLATE_V2.referencePath, "norden-reference.png");
 
+  // Nearby published editions are review evidence for the established dynamic
+  // zones. They are copied only into the CI artifact and are never templates or
+  // production outputs themselves.
+  await Promise.all([
+    copyReference(
+      "public/news-demo/borssverige-2026-09-01.png",
+      "borssverige-reference-2026-09-01.png",
+    ),
+    copyReference(
+      "public/news-demo/norden-i-centrum-2026-09-03.png",
+      "norden-reference-2026-09-03.png",
+    ),
+    copyReference(
+      "public/news-demo/norden-i-centrum-2026-09-02.png",
+      "norden-reference-2026-09-02.png",
+    ),
+    copyReference(
+      "public/news-demo/norden-i-centrum-2026-09-01.png",
+      "norden-reference-2026-09-01.png",
+    ),
+  ]);
+
   // Canonical reference reproduction at the fixed social-image dimensions.
   await writeResizedReference(
     NORDEN_I_CENTRUM_TEMPLATE_V2.referencePath,
@@ -171,7 +193,12 @@ async function main() {
           borssverige: borsDiff,
           norden: nordenDiff,
         },
-        results: results.map(({ target, ...result }) => result),
+        results: results.map((result) => ({
+          targetName: result.targetName,
+          templateVersion: result.templateVersion,
+          companiesUsed: result.companiesUsed,
+          missingCompanyLogos: result.missingCompanyLogos,
+        })),
       },
       null,
       2,
