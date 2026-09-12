@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { mkdir, mkdtemp, readFile, rm } from "node:fs/promises";
+import { copyFile, mkdir, mkdtemp, readFile, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -14,6 +14,7 @@ import {
   normalizeRequestedCompanies,
   selectNordenCompanies,
 } from "./select-norden-companies";
+import { calculateStaticRegionDiff, staticRegionDiffPasses } from "./static-regression";
 import { getSeriesImageTemplate } from "./templates";
 import {
   SERIES_IMAGE_FORMAT,
@@ -52,16 +53,24 @@ function sha256(buffer: Buffer): string {
   return createHash("sha256").update(buffer).digest("hex");
 }
 
+function dynamicRegions(series: "borssverige" | "norden-i-centrum") {
+  const template = getSeriesImageTemplate(series);
+  return [
+    template.dynamicRegions.date,
+    ...(template.dynamicRegions.companyRow ? [template.dynamicRegions.companyRow] : []),
+  ];
+}
+
 test("Norden company selection is deterministic and editorially weighted", () => {
   const first = selectNordenCompanies(article());
   const second = selectNordenCompanies(article());
   assert.deepEqual(first, second);
   assert.equal(first.requestedCompanies[0], "Volvo");
-  assert.ok(first.missingCompanyLogos.includes("Nokia"));
+  assert.equal(first.requestedCompanies.length, MAX_NORDEN_LOGOS);
   assert.ok(first.companiesUsed.includes("Volvo"));
 });
 
-test("company normalization dedupes and trims to max five", () => {
+test("company normalization dedupes and follows the four-logo reference maximum", () => {
   const result = normalizeRequestedCompanies([
     "Volvo",
     "volvo",
@@ -71,8 +80,8 @@ test("company normalization dedupes and trims to max five", () => {
     "Microsoft",
     "Apple",
   ]);
-  assert.equal(result.length, MAX_NORDEN_LOGOS);
-  assert.deepEqual(result, ["Volvo", "Ericsson", "Investor", "H&M", "Microsoft"]);
+  assert.equal(MAX_NORDEN_LOGOS, 4);
+  assert.deepEqual(result, ["Volvo", "Ericsson", "Investor", "H&M"]);
 });
 
 test("BörsSverige ignores companies and renders a valid 1280x720 PNG", async () => {
@@ -88,6 +97,24 @@ test("BörsSverige ignores companies and renders a valid 1280x720 PNG", async ()
   assert.equal(result.width, 1280);
   assert.equal(result.height, 720);
   assert.equal(result.format, "png");
+});
+
+test("BörsSverige different-width date stays inside the date-only template", async () => {
+  const result = await renderSeriesImage({
+    series: "borssverige",
+    date: "2026-09-30",
+    articleSlug: "borssverige-wide-date",
+  });
+  assert.equal(result.status, "generated");
+  assert.ok(result.imagePath);
+  const template = getSeriesImageTemplate("borssverige");
+  const diff = await calculateStaticRegionDiff(
+    result.imagePath!,
+    path.join(process.cwd(), template.referencePath),
+    dynamicRegions("borssverige"),
+    template.staticRegression,
+  );
+  assert.equal(staticRegionDiffPasses(diff, template.staticRegression), true);
 });
 
 test("missing Norden logo is traced and skipped without blocking the image", async () => {
@@ -203,16 +230,49 @@ test("rerun is deterministic and reuses the canonical output path", async () => 
   assert.equal(sha256(firstBytes), sha256(secondBytes));
 });
 
-test("Norden five-logo output stays inside the configured safe areas", async () => {
+test("Norden four-logo output follows the reference row maximum", async () => {
   await mkdir(path.join(process.cwd(), ".tmp", "autoredaktion-images"), { recursive: true });
   const result = await renderSeriesImage({
     series: "norden-i-centrum",
     date: "2026-09-18",
-    articleSlug: "five-logo-layout",
+    articleSlug: "four-logo-layout",
     companies: ["Volvo", "Ericsson", "Investor", "H&M", "Microsoft"],
   });
   assert.equal(result.status, "generated");
-  assert.equal(result.companiesUsed.length, 5);
+  assert.equal(result.companiesUsed.length, 4);
   assert.equal(result.width, SERIES_IMAGE_WIDTH);
   assert.equal(result.height, SERIES_IMAGE_HEIGHT);
+});
+
+test("masked regression rejects a changed pixel outside the dynamic zones", async () => {
+  const rendered = await renderSeriesImage({
+    series: "borssverige",
+    date: "2026-09-14",
+    articleSlug: "static-regression-negative",
+  });
+  assert.equal(rendered.status, "generated");
+  assert.ok(rendered.imagePath && rendered.metadata);
+
+  const temp = await mkdtemp(path.join(os.tmpdir(), "divlab-static-regression-"));
+  try {
+    const outputPath = path.join(temp, "borssverige-2026-09-14.png");
+    await copyFile(rendered.imagePath!, outputPath);
+    const input = await sharp(outputPath).ensureAlpha().raw().toBuffer();
+    const pixel = (500 * SERIES_IMAGE_WIDTH + 1000) * 4;
+    input[pixel] = input[pixel] === 255 ? 0 : 255;
+    await sharp(input, {
+      raw: { width: SERIES_IMAGE_WIDTH, height: SERIES_IMAGE_HEIGHT, channels: 4 },
+    })
+      .png()
+      .toFile(`${outputPath}.tmp.png`);
+    await rm(outputPath, { force: true });
+    await copyFile(`${outputPath}.tmp.png`, outputPath);
+
+    const metadata = { ...rendered.metadata!, outputPath };
+    const validation = await validateGeneratedSeriesImage(metadata, { repoRoot: process.cwd() });
+    assert.equal(validation.ok, false);
+    assert.ok(validation.issues.some((issue) => issue.startsWith("static-region-regression:")));
+  } finally {
+    await rm(temp, { recursive: true, force: true });
+  }
 });
