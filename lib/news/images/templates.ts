@@ -19,6 +19,24 @@ export type DateTypography = {
   fill: string;
 };
 
+export type CompanyRowTypography = {
+  /** First label x coordinate relative to the company-row dynamic region. */
+  x: number;
+  /** Top coordinate for the trimmed wordmark image, relative to the row. */
+  top: number;
+  fontFamily: string;
+  fontSize: number;
+  fontWeight: number;
+  letterSpacing: number;
+  fill: string;
+  gapBeforeSeparator: number;
+  gapAfterSeparator: number;
+  separatorTop: number;
+  separatorBottom: number;
+  separatorColor: string;
+  separatorOpacity: number;
+};
+
 export type StaticRegressionPolicy = {
   /** Per-channel delta at or below this value is treated as compression noise. */
   pixelChannelTolerance: number;
@@ -38,6 +56,7 @@ export type SeriesImageTemplate = {
     companyRow?: PixelRegion;
   };
   dateTypography: DateTypography;
+  companyRowTypography?: CompanyRowTypography;
   dateFormat: "day-month-year" | "day-month";
   maxCompanyLogos: number;
   staticRegression: StaticRegressionPolicy;
@@ -46,8 +65,11 @@ export type SeriesImageTemplate = {
 /**
  * v2 rule: the approved published cover is the template. We do not rebuild the
  * composition. Only the masked date pixels are reconstructed and repainted.
- * Coordinates are calibrated against the canonical reference after its fixed
- * 1280x720 cover resize.
+ *
+ * Calibration against the 4 Sep source-of-truth at 1280x720:
+ * - visible date glyph bbox ≈ x36..573, y297..339
+ * - Lato 58/800 with 0.6 tracking reproduces that cap height and width closely
+ * - measured dominant blue is approximately rgb(0, 68, 151)
  */
 export const BORSSVERIGE_TEMPLATE_V2: SeriesImageTemplate = {
   series: "borssverige",
@@ -60,13 +82,13 @@ export const BORSSVERIGE_TEMPLATE_V2: SeriesImageTemplate = {
   },
   dateTypography: {
     x: 12,
-    baseline: 54,
+    baseline: 58,
     textAnchor: "start",
-    fontFamily: "Inter, Arial, Helvetica, sans-serif",
-    fontSize: 44,
+    fontFamily: "Lato, Arial, Helvetica, sans-serif",
+    fontSize: 58,
     fontWeight: 800,
-    letterSpacing: 0.7,
-    fill: "#0755ad",
+    letterSpacing: 0.6,
+    fill: "#004497",
   },
   dateFormat: "day-month-year",
   maxCompanyLogos: 0,
@@ -80,8 +102,11 @@ export const BORSSVERIGE_TEMPLATE_V2: SeriesImageTemplate = {
 /**
  * v2 rule: keep the established NORDEN / I CENTRUM composition intact. Only
  * the existing date field and the discrete lower company row may change.
- * Four companies is the normal and maximum layout because that is what the
- * canonical published reference supports without inventing a new composition.
+ *
+ * Published 1, 2 and 4 Sep covers establish the company-row grammar: white,
+ * bold typographic wordmarks separated by thin vertical rules. The 3 Sep cover
+ * adds editorial imagery above that row but retains the same wordmark grammar.
+ * Four companies is therefore the normal and maximum reference-driven layout.
  */
 export const NORDEN_I_CENTRUM_TEMPLATE_V2: SeriesImageTemplate = {
   series: "norden-i-centrum",
@@ -95,14 +120,29 @@ export const NORDEN_I_CENTRUM_TEMPLATE_V2: SeriesImageTemplate = {
     companyRow: { x: 40, y: 555, width: 720, height: 84 },
   },
   dateTypography: {
-    x: 286,
-    baseline: 44,
+    x: 292,
+    baseline: 43,
     textAnchor: "end",
-    fontFamily: "Inter, Arial, Helvetica, sans-serif",
-    fontSize: 36,
+    fontFamily: "Lato, Arial, Helvetica, sans-serif",
+    fontSize: 40,
     fontWeight: 800,
     letterSpacing: 0.35,
     fill: "#ffffff",
+  },
+  companyRowTypography: {
+    x: 10,
+    top: 31,
+    fontFamily: "Lato, Arial, Helvetica, sans-serif",
+    fontSize: 31,
+    fontWeight: 800,
+    letterSpacing: 0,
+    fill: "#ffffff",
+    gapBeforeSeparator: 30,
+    gapAfterSeparator: 27,
+    separatorTop: 15,
+    separatorBottom: 68,
+    separatorColor: "#ffffff",
+    separatorOpacity: 0.35,
   },
   dateFormat: "day-month",
   maxCompanyLogos: 4,
