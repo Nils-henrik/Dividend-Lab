@@ -1,8 +1,9 @@
 import type { NewsArticle } from "@/types/news";
 
 import { hasApprovedCompanyLogo } from "./company-logo-map";
+import { NORDEN_I_CENTRUM_TEMPLATE_V2 } from "./templates";
 
-export const MAX_NORDEN_LOGOS = 5;
+export const MAX_NORDEN_LOGOS = NORDEN_I_CENTRUM_TEMPLATE_V2.maxCompanyLogos;
 
 export type NordenCompanySelection = {
   requestedCompanies: string[];
@@ -23,8 +24,7 @@ function companyScore(article: NewsArticle, company: string, originalIndex: numb
     0,
   );
   const sectionBodyHits = (article.sections ?? []).reduce(
-    (sum, section) =>
-      sum + countOccurrences(section.paragraphs.join(" "), company),
+    (sum, section) => sum + countOccurrences(section.paragraphs.join(" "), company),
     0,
   );
 
@@ -41,8 +41,8 @@ function companyScore(article: NewsArticle, company: string, originalIndex: numb
 /**
  * Deterministic editorial selection from the final article metadata/copy.
  * Internal-linking companies are the canonical candidate set authored with the
- * fact-checked article. Text position/importance controls ordering; raw mention
- * count is only a low-weight tie-breaker.
+ * fact-checked article. The template, not technical capacity, controls the
+ * maximum visible company count.
  */
 export function selectNordenCompanies(article: NewsArticle): NordenCompanySelection {
   const canonical = article.internalLinking?.companies ?? [];
