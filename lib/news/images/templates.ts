@@ -63,18 +63,20 @@ export type SeriesImageTemplate = {
 };
 
 /**
- * v2 rule: the approved published cover is the template. We do not rebuild the
- * composition. Only the masked date pixels are reconstructed and repainted.
+ * v2 rule: the approved published 1 Sep cover is the static master. We do not
+ * rebuild the composition. Only the masked date pixels are reconstructed and
+ * repainted. The generic subtitle remains baked into the approved master:
+ * "De viktigaste nyheterna om svenska börsbolag inför dagen."
  *
- * Calibration against the 4 Sep source-of-truth at 1280x720:
- * - visible date glyph bbox ≈ x36..573, y297..339
- * - Lato 58/800 with 0.6 tracking reproduces that cap height and width closely
+ * Calibration against the approved source-of-truth at 1280x720:
+ * - visible date glyph bbox uses the established x36 start and y339 baseline
+ * - Lato 58/800 with 0.6 tracking matches the published date treatment closely
  * - measured dominant blue is approximately rgb(0, 68, 151)
  */
 export const BORSSVERIGE_TEMPLATE_V2: SeriesImageTemplate = {
   series: "borssverige",
-  templateVersion: "borssverige-v2-source-of-truth",
-  referencePath: "public/news-demo/borssverige-2026-09-04-sectra.png",
+  templateVersion: "borssverige-v2-2026-09-01-generic-master",
+  referencePath: "public/news-demo/borssverige-2026-09-01.png",
   canonicalDivLabLogoSource:
     "public/news-demo/file_000000009cf48246883ae568fc196154.png",
   dynamicRegions: {
