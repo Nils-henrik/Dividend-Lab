@@ -7,7 +7,11 @@ import { getNewsArticles } from "@/lib/news/get-articles";
 import { validateNewsArticle } from "@/lib/news/autoredaktion/article-validator";
 import { defaultPublicDir } from "@/lib/news/autoredaktion/images";
 import { validateEditorialSeries } from "@/lib/news/autoredaktion/series-validator";
-import type { EditorialSeries, ValidationIssue } from "@/lib/news/autoredaktion/types";
+import {
+  fail,
+  type EditorialSeries,
+  type ValidationIssue,
+} from "@/lib/news/autoredaktion/types";
 import type { NewsArticle } from "@/types/news";
 
 const REGISTRY_PATH = "lib/news/get-articles.ts";
@@ -65,10 +69,6 @@ function articleText(article: NewsArticle): string {
   ]
     .filter(Boolean)
     .join(" \n ");
-}
-
-function fail(code: string, message: string, path?: string): ValidationIssue {
-  return { code, message, path };
 }
 
 function validateAutonomousContract(
