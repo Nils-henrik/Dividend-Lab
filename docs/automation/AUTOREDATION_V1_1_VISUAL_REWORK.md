@@ -22,8 +22,13 @@ Canonical references:
 - BörsSverige: `public/news-demo/borssverige-2026-09-04-sectra.png`
 - Norden i centrum: `public/news-demo/file_000000008a308210b3b73b7b8e0ad122.png`
 
-Both are resized deterministically to the canonical social size, 1280×720,
-using Sharp `fit: cover`, `position: centre`.
+Additional comparison references in visual-review-v2 include BörsSverige
+1 September and Norden 1, 2 and 3 September. These establish how the existing
+editable areas behaved across published editions; they are not alternate runtime
+templates.
+
+All references are resized deterministically to the canonical social size,
+1280×720, using Sharp `fit: cover`, `position: centre`.
 
 ## Explicit dynamic masks
 
@@ -60,49 +65,72 @@ spill into static pixels.
 
 ## Typography calibration
 
-The flat PNGs contain no font metadata, so the values below are visual
-measurements/calibration against the references rather than claimed original
-font metadata.
+The flat PNGs contain no font metadata. Values below were measured against the
+actual raster glyph bounds and then checked against generated review output.
+The measurements match Lato closely enough to use it as the deterministic
+render family with normal fallbacks.
 
-BörsSverige date:
+### BörsSverige date
 
-- family: `Inter, Arial, Helvetica, sans-serif`
+Source-of-truth visible glyph bounds at 1280×720 are approximately
+`x36..573 / y297..339` for `4 SEPTEMBER 2026`.
+
+- family: `Lato, Arial, Helvetica, sans-serif`
 - weight: 800
-- size: 44 px
-- tracking: 0.7 px
-- left aligned
-- blue: `#0755ad`
+- size: 58 px
+- tracking: 0.6 px
+- baseline: 339 px absolute
+- left aligned at approximately x36
+- measured dominant blue: approximately `#004497`
 - format: `D MÅNAD YYYY`
 
-Norden date:
+### Norden date
 
-- family: `Inter, Arial, Helvetica, sans-serif`
+Source-of-truth visible glyph bounds are approximately
+`x992..1260 / y59..89` for `4 SEPTEMBER`.
+
+- family: `Lato, Arial, Helvetica, sans-serif`
 - weight: 800
-- size: 36 px
+- size: 40 px
 - tracking: 0.35 px
-- right aligned
+- baseline: 89 px absolute
+- right aligned to approximately x1260
 - white
 - format: `D MÅNAD`
 
-These values remain subject to the one-time editorial visual PASS/FAIL.
+These values still require the one-time editorial PASS/FAIL; measurement does
+not replace human template approval.
 
 ## Norden company row
 
-The first-iteration white logo cards are removed completely.
+The first-iteration white logo cards and the second-iteration coloured SVG marks
+are both rejected as non-source-of-truth treatments.
 
-The row is a direct transparent-logo composition on the existing dark lower
-background, with thin separators matching the established discrete row. Logos
-use `contain` and preserve aspect ratio. There is no card background, shadow,
-large padding or invented contrast treatment.
+Published 1, 2 and 4 September covers establish the normal row grammar:
 
-The canonical reference supports four companies cleanly, so v2 sets the normal
-and technical maximum to **4**. The deterministic editorial ranking is retained.
-`requestedCompanies`, `companiesUsed` and `missingCompanyLogos` remain separate.
+- white, bold company wordmarks/names;
+- Lato-like 31 px / weight 800;
+- left-flow layout starting around x50;
+- thin vertical separators;
+- roughly 30 px before a separator and 27 px after it;
+- no cards, shadows or white boxes.
 
-`company-logo-map.ts` now supports optional reviewed `light`/`dark` local
-variants. No synthetic recoloring is allowed. If a suitable reviewed asset is
-not available, the correct behavior is to skip the company and continue with
-fewer marks.
+The 3 September cover adds editorial imagery above the lower row, but the lower
+company labels follow the same white-wordmark treatment.
+
+Accordingly v2 renders the approved company display names in the established
+row grammar rather than placing coloured logo artwork that is visibly wrong on
+the dark background. The local logo registry remains the approval/availability
+allowlist: a company without an approved, existing local registry asset is still
+skipped and traced as missing. Optional reviewed `light`/`dark` variants remain
+supported for future templates that actually use logo artwork. No live fetching
+or synthetic recolouring is allowed.
+
+Four companies is the reference-driven maximum. Marks are measured before
+composition. If four approved names do not fit the established row at canonical
+size, the lowest-ranked trailing company is omitted instead of shrinking or
+crowding the row. Therefore `requestedCompanies` and `companiesUsed` can differ
+for both missing-asset and visual-fit reasons.
 
 ## Masked static regression
 
@@ -133,26 +161,10 @@ Quality Gate uploads:
 
 `autoredaktion-v1-1-visual-review-v2`
 
-with this structure:
+with canonical references, neighboring comparison references, the required date
+and company-count renders, and:
 
 ```text
-references/
-  borssverige-reference.png
-  norden-reference.png
-
-renders/
-  borssverige-date-04.png
-  borssverige-date-14.png
-  borssverige-date-30.png
-  norden-canonical-reference-reproduction.png
-  norden-1-logo.png
-  norden-2-logos.png
-  norden-3-logos.png
-  norden-4-logos.png
-  norden-max-logos.png
-  norden-no-logos.png
-  norden-missing-logo.png
-
 diffs/
   borssverige-static-region-diff.png
   norden-static-region-diff.png
@@ -180,7 +192,7 @@ The rework does not change:
 
 Do not enable v1.1 after an internal visual inspection alone.
 
-Required order after v2 artifact exists:
+Required order after the final v2 artifact exists:
 
 1. Redaktion explicitly marks **BörsSverige PASS/FAIL**.
 2. Redaktion explicitly marks **Norden PASS/FAIL**.
