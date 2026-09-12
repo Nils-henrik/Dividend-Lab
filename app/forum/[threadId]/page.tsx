@@ -42,6 +42,13 @@ type Props = {
   }>;
 };
 
+type StructuredForumComment = {
+  text: string;
+  datePublished: string;
+  authorName: string;
+  authorPath?: string;
+};
+
 function getDemoThreadView(): {
   thread: ForumThread;
   replies: ForumPost[];
@@ -121,6 +128,8 @@ export default async function ForumThreadRoute({ params }: Props) {
   let openingAuthorInitials = "DL";
   let openingMemberSince = "DivLab-medlem";
   let openingTimestamp = "";
+  let threadPublishedAt = "";
+  let structuredComments: StructuredForumComment[] = [];
 
   if (isForumDemoThread(threadId)) {
     const demo = getDemoThreadView();
@@ -137,6 +146,7 @@ export default async function ForumThreadRoute({ params }: Props) {
 
     if (threadRecord) {
       thread = mapThreadRecordToForumThread(threadRecord);
+      threadPublishedAt = threadRecord.createdAt;
       openingAuthorUsername = getForumAuthorUsername(
         threadRecord.authorUsername,
       );
@@ -153,6 +163,20 @@ export default async function ForumThreadRoute({ params }: Props) {
         threadRecord.id,
       );
       replies = replyRecords.map(mapReplyRecordToForumPost);
+      structuredComments = replyRecords.map((reply) => {
+        const replyAuthorUsername = reply.authorUsername?.trim().toLowerCase();
+
+        return {
+          text: reply.body,
+          datePublished: reply.createdAt,
+          authorName: getForumAuthorUsername(reply.authorUsername),
+          ...(replyAuthorUsername
+            ? {
+                authorPath: `/profile/${encodeURIComponent(replyAuthorUsername)}`,
+              }
+            : {}),
+        };
+      });
       reactionMap = await getForumReactionsForThreadPage(
         threadRecord.id,
         replyRecords.map((reply) => reply.id),
@@ -187,15 +211,21 @@ export default async function ForumThreadRoute({ params }: Props) {
 
   return (
     <PublicPageShell contentClassName="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-      {thread && !isDemoThread ? (
+      {thread && !isDemoThread && threadPublishedAt ? (
         <JsonLdScript
           data={[
             discussionForumPostingJsonLd({
               title: thread.title,
               description: thread.excerpt || thread.title,
               path: `/forum/${thread.slug}`,
+              datePublished: threadPublishedAt,
               authorName: thread.authorUsername || thread.author,
-              commentCount: thread.replies,
+              authorPath: thread.authorUsername
+                ? `/profile/${encodeURIComponent(
+                    thread.authorUsername.trim().toLowerCase(),
+                  )}`
+                : undefined,
+              comments: structuredComments,
             }),
             breadcrumbJsonLd([
               { name: "Hem", path: "/" },
