@@ -1,12 +1,13 @@
+import { existsSync } from "node:fs";
 import { mkdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import sharp, { type OverlayOptions } from "sharp";
 
 import type { NewsArticle } from "@/types/news";
 
-import { getApprovedCompanyLogo } from "./company-logo-map";
+import { resolveApprovedCompanyLogo } from "./company-logo-map";
 import { normalizeRequestedCompanies, selectNordenCompanies } from "./select-norden-companies";
-import { getSeriesImageTemplate, type SeriesImageTemplate } from "./templates";
+import { getSeriesImageTemplate, type PixelRegion, type SeriesImageTemplate } from "./templates";
 import {
   SERIES_IMAGE_FORMAT,
   SERIES_IMAGE_HEIGHT,
@@ -51,7 +52,7 @@ function escapeXml(value: string): string {
     .replaceAll("'", "&apos;");
 }
 
-export function formatSeriesImageDate(date: string): string {
+function parseDate(date: string) {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
   if (!match) throw new Error(`Invalid image date: ${date}`);
   const year = Number(match[1]);
@@ -60,7 +61,20 @@ export function formatSeriesImageDate(date: string): string {
   if (month < 1 || month > 12 || day < 1 || day > 31) {
     throw new Error(`Invalid image date: ${date}`);
   }
+  return { year, month, day };
+}
+
+export function formatSeriesImageDate(date: string): string {
+  const { year, month, day } = parseDate(date);
   return `${day} ${SWEDISH_MONTHS[month - 1]} ${year}`;
+}
+
+function formatTemplateDate(template: SeriesImageTemplate, date: string): string {
+  const { year, month, day } = parseDate(date);
+  const monthName = SWEDISH_MONTHS[month - 1];
+  return template.dateFormat === "day-month-year"
+    ? `${day} ${monthName} ${year}`
+    : `${day} ${monthName}`;
 }
 
 function outputFor(input: SeriesImageInput, repoRoot: string, mode: "dry-run" | "publish") {
@@ -77,80 +91,119 @@ function outputFor(input: SeriesImageInput, repoRoot: string, mode: "dry-run" | 
   };
 }
 
-function logoSlots(count: number, panel: NonNullable<SeriesImageTemplate["logoPanel"]>): LogoSlot[] {
-  const plateWidth = 188;
-  const plateHeight = 112;
-  const left = panel.x + 32;
-  const right = panel.x + panel.width - 32 - plateWidth;
-  const center = panel.x + Math.round((panel.width - plateWidth) / 2);
-  const top = panel.y + 34;
-  const middle = panel.y + 164;
-  const bottom = panel.y + 294;
+/**
+ * Remove baked dynamic content without touching any pixel outside the explicit
+ * mask. Each column is reconstructed from the clean pixels immediately above
+ * and below the mask. This is deterministic local interpolation, not generative
+ * inpainting, and is intentionally limited to the small date/company zones.
+ */
+function reconstructRegion(
+  pixels: Buffer,
+  width: number,
+  height: number,
+  region: PixelRegion,
+) {
+  const left = Math.max(0, region.x);
+  const right = Math.min(width, region.x + region.width);
+  const top = Math.max(0, region.y);
+  const bottom = Math.min(height, region.y + region.height);
+  const topSampleY = Math.max(0, top - 1);
+  const bottomSampleY = Math.min(height - 1, bottom);
+  const span = Math.max(1, bottom - top + 1);
 
-  switch (count) {
-    case 0:
-      return [];
-    case 1:
-      return [{ x: center, y: middle, width: plateWidth, height: plateHeight }];
-    case 2:
-      return [
-        { x: left, y: middle, width: plateWidth, height: plateHeight },
-        { x: right, y: middle, width: plateWidth, height: plateHeight },
-      ];
-    case 3:
-      return [
-        { x: left, y: top + 30, width: plateWidth, height: plateHeight },
-        { x: right, y: top + 30, width: plateWidth, height: plateHeight },
-        { x: center, y: bottom - 20, width: plateWidth, height: plateHeight },
-      ];
-    case 4:
-      return [
-        { x: left, y: top, width: plateWidth, height: plateHeight },
-        { x: right, y: top, width: plateWidth, height: plateHeight },
-        { x: left, y: bottom - 24, width: plateWidth, height: plateHeight },
-        { x: right, y: bottom - 24, width: plateWidth, height: plateHeight },
-      ];
-    default:
-      return [
-        { x: left, y: top - 4, width: plateWidth, height: plateHeight },
-        { x: right, y: top - 4, width: plateWidth, height: plateHeight },
-        { x: left, y: bottom - 24, width: plateWidth, height: plateHeight },
-        { x: right, y: bottom - 24, width: plateWidth, height: plateHeight },
-        { x: center, y: middle - 4, width: plateWidth, height: plateHeight },
-      ];
+  for (let y = top; y < bottom; y += 1) {
+    const mix = (y - top + 1) / span;
+    for (let x = left; x < right; x += 1) {
+      const target = (y * width + x) * 4;
+      const topIndex = (topSampleY * width + x) * 4;
+      const bottomIndex = (bottomSampleY * width + x) * 4;
+      for (let channel = 0; channel < 4; channel += 1) {
+        pixels[target + channel] = Math.round(
+          pixels[topIndex + channel] * (1 - mix) + pixels[bottomIndex + channel] * mix,
+        );
+      }
+    }
   }
 }
 
-function foregroundSvg(template: SeriesImageTemplate, date: string, logoCount: number): Buffer {
-  const panel = template.textPanel;
-  const logoPanel = template.logoPanel;
-  const seriesName = escapeXml(template.seriesName);
-  const formattedDate = escapeXml(formatSeriesImageDate(date));
-  const logoPlateRects = logoPanel
-    ? logoSlots(logoCount, logoPanel)
-        .map(
-          (slot) =>
-            `<rect x="${slot.x}" y="${slot.y}" width="${slot.width}" height="${slot.height}" rx="18" fill="#ffffff" fill-opacity="0.94" stroke="#d7e3f6" stroke-opacity="0.42"/>`,
-        )
-        .join("")
-    : "";
+async function cleanTemplateBase(referencePath: string, template: SeriesImageTemplate) {
+  const { data, info } = await sharp(referencePath)
+    .resize(SERIES_IMAGE_WIDTH, SERIES_IMAGE_HEIGHT, {
+      fit: "cover",
+      position: "centre",
+    })
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
 
-  return Buffer.from(`
-    <svg width="${SERIES_IMAGE_WIDTH}" height="${SERIES_IMAGE_HEIGHT}" viewBox="0 0 ${SERIES_IMAGE_WIDTH} ${SERIES_IMAGE_HEIGHT}" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="panel" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stop-color="#071426" stop-opacity="0.97"/>
-          <stop offset="1" stop-color="#0b2d58" stop-opacity="0.94"/>
-        </linearGradient>
-      </defs>
-      <rect x="${panel.x}" y="${panel.y}" width="${panel.width}" height="${panel.height}" rx="26" fill="url(#panel)"/>
-      ${logoPanel ? `<rect x="${logoPanel.x}" y="${logoPanel.y}" width="${logoPanel.width}" height="${logoPanel.height}" rx="28" fill="#071426" fill-opacity="0.91"/>` : ""}
-      ${logoPlateRects}
-      <text x="${panel.x + 42}" y="${panel.y + 118}" fill="#ffffff" font-family="Inter, Arial, Helvetica, sans-serif" font-size="58" font-weight="800" letter-spacing="1">${seriesName}</text>
-      <text x="${panel.x + 44}" y="${panel.y + 190}" fill="#dbeafe" font-family="Inter, Arial, Helvetica, sans-serif" font-size="34" font-weight="700" letter-spacing="2">${formattedDate}</text>
-      <rect x="${panel.x + 44}" y="${panel.y + 224}" width="84" height="6" rx="3" fill="#0a84ff"/>
+  if (info.channels !== 4) throw new Error("template-base-must-be-rgba");
+  const pixels = Buffer.from(data);
+  reconstructRegion(pixels, SERIES_IMAGE_WIDTH, SERIES_IMAGE_HEIGHT, template.dynamicRegions.date);
+  if (template.dynamicRegions.companyRow) {
+    reconstructRegion(
+      pixels,
+      SERIES_IMAGE_WIDTH,
+      SERIES_IMAGE_HEIGHT,
+      template.dynamicRegions.companyRow,
+    );
+  }
+
+  return sharp(pixels, {
+    raw: { width: SERIES_IMAGE_WIDTH, height: SERIES_IMAGE_HEIGHT, channels: 4 },
+  });
+}
+
+function dateOverlay(template: SeriesImageTemplate, date: string): OverlayOptions {
+  const region = template.dynamicRegions.date;
+  const typography = template.dateTypography;
+  const value = escapeXml(formatTemplateDate(template, date));
+  const svg = Buffer.from(`
+    <svg width="${region.width}" height="${region.height}" viewBox="0 0 ${region.width} ${region.height}" xmlns="http://www.w3.org/2000/svg">
+      <text
+        x="${typography.x}"
+        y="${typography.baseline}"
+        text-anchor="${typography.textAnchor}"
+        fill="${typography.fill}"
+        font-family="${typography.fontFamily}"
+        font-size="${typography.fontSize}"
+        font-weight="${typography.fontWeight}"
+        letter-spacing="${typography.letterSpacing}"
+      >${value}</text>
     </svg>
   `);
+  return { input: svg, left: region.x, top: region.y };
+}
+
+function logoSlots(count: number, region: PixelRegion): LogoSlot[] {
+  if (count <= 0) return [];
+  const slotWidth = region.width / count;
+  const logoHeight = Math.min(36, region.height - 28);
+  return Array.from({ length: count }, (_, index) => {
+    const left = region.x + Math.round(index * slotWidth);
+    const right = region.x + Math.round((index + 1) * slotWidth);
+    return {
+      x: left,
+      y: region.y + Math.round((region.height - logoHeight) / 2),
+      width: Math.max(1, right - left),
+      height: logoHeight,
+    };
+  });
+}
+
+function separatorOverlay(count: number, region: PixelRegion): OverlayOptions | null {
+  if (count <= 1) return null;
+  const slotWidth = region.width / count;
+  const lines = Array.from({ length: count - 1 }, (_, index) => {
+    const x = Math.round((index + 1) * slotWidth);
+    return `<line x1="${x}" x2="${x}" y1="14" y2="${region.height - 14}" stroke="#ffffff" stroke-opacity="0.35" stroke-width="1"/>`;
+  }).join("");
+  return {
+    input: Buffer.from(
+      `<svg width="${region.width}" height="${region.height}" viewBox="0 0 ${region.width} ${region.height}" xmlns="http://www.w3.org/2000/svg">${lines}</svg>`,
+    ),
+    left: region.x,
+    top: region.y,
+  };
 }
 
 async function renderLogoOverlay(
@@ -158,24 +211,24 @@ async function renderLogoOverlay(
   company: string,
   slot: LogoSlot,
 ): Promise<OverlayOptions | null> {
-  const logo = getApprovedCompanyLogo(company);
+  const logo = resolveApprovedCompanyLogo(company, "dark");
   if (!logo) return null;
-  const sourcePath = path.join(repoRoot, logo.file);
+  const sourcePath = path.join(repoRoot, logo.resolvedFile);
+  if (!existsSync(sourcePath)) return null;
   const input = await readFile(sourcePath);
   const resized = await sharp(input)
     .resize({
-      width: slot.width - 34,
-      height: slot.height - 32,
+      width: Math.max(1, slot.width - 32),
+      height: slot.height,
       fit: "contain",
-      withoutEnlargement: true,
       background: { r: 255, g: 255, b: 255, alpha: 0 },
     })
     .png()
     .toBuffer();
 
   const metadata = await sharp(resized).metadata();
-  const width = metadata.width ?? slot.width - 34;
-  const height = metadata.height ?? slot.height - 32;
+  const width = metadata.width ?? slot.width - 32;
+  const height = metadata.height ?? slot.height;
   return {
     input: resized,
     left: slot.x + Math.round((slot.width - width) / 2),
@@ -183,16 +236,22 @@ async function renderLogoOverlay(
   };
 }
 
-function resolveCompanies(input: SeriesImageInput) {
+function resolveCompanies(input: SeriesImageInput, repoRoot: string) {
   if (input.series === "borssverige") {
     return { requestedCompanies: [], companiesUsed: [], missingCompanyLogos: [] };
   }
 
   const requestedCompanies = normalizeRequestedCompanies(input.companies ?? []);
-  const companiesUsed = requestedCompanies.filter((company) => getApprovedCompanyLogo(company));
-  const missingCompanyLogos = requestedCompanies.filter(
-    (company) => !getApprovedCompanyLogo(company),
-  );
+  const companiesUsed: string[] = [];
+  const missingCompanyLogos: string[] = [];
+  for (const company of requestedCompanies) {
+    const logo = resolveApprovedCompanyLogo(company, "dark");
+    if (logo && existsSync(path.join(repoRoot, logo.resolvedFile))) {
+      companiesUsed.push(company);
+    } else {
+      missingCompanyLogos.push(company);
+    }
+  }
   return { requestedCompanies, companiesUsed, missingCompanyLogos };
 }
 
@@ -206,21 +265,22 @@ export async function renderSeriesImage(
   const mode = options.mode ?? "dry-run";
   const template = getSeriesImageTemplate(input.series);
   const { outputPath, publicPath } = outputFor(input, repoRoot, mode);
-  const { requestedCompanies, companiesUsed, missingCompanyLogos } = resolveCompanies(input);
+  const { requestedCompanies, companiesUsed, missingCompanyLogos } = resolveCompanies(
+    input,
+    repoRoot,
+  );
   const referencePath = path.join(repoRoot, template.referencePath);
 
   await mkdir(path.dirname(outputPath), { recursive: true });
 
-  const base = sharp(referencePath).resize(SERIES_IMAGE_WIDTH, SERIES_IMAGE_HEIGHT, {
-    fit: "cover",
-    position: "centre",
-  });
-  const overlays: OverlayOptions[] = [
-    { input: foregroundSvg(template, input.date, companiesUsed.length), left: 0, top: 0 },
-  ];
+  const base = await cleanTemplateBase(referencePath, template);
+  const overlays: OverlayOptions[] = [dateOverlay(template, input.date)];
 
-  if (input.series === "norden-i-centrum" && template.logoPanel) {
-    const slots = logoSlots(companiesUsed.length, template.logoPanel);
+  if (input.series === "norden-i-centrum" && template.dynamicRegions.companyRow) {
+    const region = template.dynamicRegions.companyRow;
+    const slots = logoSlots(companiesUsed.length, region);
+    const separators = separatorOverlay(companiesUsed.length, region);
+    if (separators) overlays.push(separators);
     for (let index = 0; index < companiesUsed.length; index += 1) {
       const overlay = await renderLogoOverlay(repoRoot, companiesUsed[index], slots[index]);
       if (overlay) overlays.push(overlay);
