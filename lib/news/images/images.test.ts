@@ -244,7 +244,7 @@ test("Norden four-logo output follows the reference row maximum", async () => {
   assert.equal(result.height, SERIES_IMAGE_HEIGHT);
 });
 
-test("masked regression rejects a changed pixel outside the dynamic zones", async () => {
+test("masked regression rejects a changed static block outside the dynamic zones", async () => {
   const rendered = await renderSeriesImage({
     series: "borssverige",
     date: "2026-09-14",
@@ -258,8 +258,14 @@ test("masked regression rejects a changed pixel outside the dynamic zones", asyn
     const outputPath = path.join(temp, "borssverige-2026-09-14.png");
     await copyFile(rendered.imagePath!, outputPath);
     const input = await sharp(outputPath).ensureAlpha().raw().toBuffer();
-    const pixel = (500 * SERIES_IMAGE_WIDTH + 1000) * 4;
-    input[pixel] = input[pixel] === 255 ? 0 : 255;
+    // 32x32 = 1024 static pixels, deliberately well above the documented
+    // 0.01% changed-pixel tolerance. The block is far outside the date mask.
+    for (let y = 480; y < 512; y += 1) {
+      for (let x = 980; x < 1012; x += 1) {
+        const pixel = (y * SERIES_IMAGE_WIDTH + x) * 4;
+        input[pixel] = input[pixel] === 255 ? 0 : 255;
+      }
+    }
     await sharp(input, {
       raw: { width: SERIES_IMAGE_WIDTH, height: SERIES_IMAGE_HEIGHT, channels: 4 },
     })
