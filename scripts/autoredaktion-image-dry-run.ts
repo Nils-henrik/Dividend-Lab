@@ -1,17 +1,42 @@
 import { copyFile, mkdir } from "node:fs/promises";
 import path from "node:path";
+import sharp from "sharp";
 
 import { renderSeriesImage } from "@/lib/news/images";
 import {
-  BORSSVERIGE_TEMPLATE_V1,
-  NORDEN_I_CENTRUM_TEMPLATE_V1,
+  calculateStaticRegionDiff,
+  writeStaticRegionDiffImage,
+} from "@/lib/news/images/static-regression";
+import {
+  BORSSVERIGE_TEMPLATE_V2,
+  NORDEN_I_CENTRUM_TEMPLATE_V2,
+  type SeriesImageTemplate,
 } from "@/lib/news/images/templates";
+import { SERIES_IMAGE_HEIGHT, SERIES_IMAGE_WIDTH } from "@/lib/news/images/types";
 
 const ROOT = process.cwd();
-const REVIEW_DIR = path.join(ROOT, ".tmp", "autoredaktion-images", "review");
+const REVIEW_DIR = path.join(ROOT, ".tmp", "autoredaktion-images", "review-v2");
+const REFERENCES_DIR = path.join(REVIEW_DIR, "references");
+const RENDERS_DIR = path.join(REVIEW_DIR, "renders");
+const DIFFS_DIR = path.join(REVIEW_DIR, "diffs");
+
+async function ensureDirectories() {
+  await Promise.all([
+    mkdir(REFERENCES_DIR, { recursive: true }),
+    mkdir(RENDERS_DIR, { recursive: true }),
+    mkdir(DIFFS_DIR, { recursive: true }),
+  ]);
+}
 
 async function copyReference(source: string, targetName: string) {
-  await copyFile(path.join(ROOT, source), path.join(REVIEW_DIR, targetName));
+  await copyFile(path.join(ROOT, source), path.join(REFERENCES_DIR, targetName));
+}
+
+async function writeResizedReference(source: string, targetName: string) {
+  await sharp(path.join(ROOT, source))
+    .resize(SERIES_IMAGE_WIDTH, SERIES_IMAGE_HEIGHT, { fit: "cover", position: "centre" })
+    .png({ compressionLevel: 9 })
+    .toFile(path.join(RENDERS_DIR, targetName));
 }
 
 async function renderReview(
@@ -22,58 +47,119 @@ async function renderReview(
   if (result.status !== "generated" || !result.imagePath) {
     throw new Error(`${targetName}: ${result.validation.issues.join(", ")}`);
   }
-  await copyFile(result.imagePath, path.join(REVIEW_DIR, targetName));
+  const target = path.join(RENDERS_DIR, targetName);
+  await copyFile(result.imagePath, target);
   return {
     targetName,
+    target,
     templateVersion: result.templateVersion,
     companiesUsed: result.companiesUsed,
     missingCompanyLogos: result.missingCompanyLogos,
   };
 }
 
-async function main() {
-  await mkdir(REVIEW_DIR, { recursive: true });
-  await copyReference(BORSSVERIGE_TEMPLATE_V1.referencePath, "borssverige-reference-2026-09-04.png");
-  await copyReference(NORDEN_I_CENTRUM_TEMPLATE_V1.referencePath, "norden-reference-2026-09-04.png");
+function dynamicRegions(template: SeriesImageTemplate) {
+  return [
+    template.dynamicRegions.date,
+    ...(template.dynamicRegions.companyRow ? [template.dynamicRegions.companyRow] : []),
+  ];
+}
 
-  const results = [];
-  results.push(
-    await renderReview("borssverige-render-2026-09-14.png", {
-      series: "borssverige",
-      date: "2026-09-14",
-      articleSlug: "visual-dry-run-borssverige",
-      companies: ["Volvo", "Ericsson"],
-    }),
+async function writeDiff(
+  targetName: string,
+  renderPath: string,
+  template: SeriesImageTemplate,
+) {
+  const referencePath = path.join(ROOT, template.referencePath);
+  const target = path.join(DIFFS_DIR, targetName);
+  await writeStaticRegionDiffImage(
+    renderPath,
+    referencePath,
+    dynamicRegions(template),
+    target,
+  );
+  return calculateStaticRegionDiff(
+    renderPath,
+    referencePath,
+    dynamicRegions(template),
+    template.staticRegression,
+  );
+}
+
+async function main() {
+  await ensureDirectories();
+  await copyReference(BORSSVERIGE_TEMPLATE_V2.referencePath, "borssverige-reference.png");
+  await copyReference(NORDEN_I_CENTRUM_TEMPLATE_V2.referencePath, "norden-reference.png");
+
+  // Canonical reference reproduction at the fixed social-image dimensions.
+  await writeResizedReference(
+    NORDEN_I_CENTRUM_TEMPLATE_V2.referencePath,
+    "norden-canonical-reference-reproduction.png",
   );
 
-  const approved = ["Volvo", "Ericsson", "Investor", "H&M", "Microsoft"];
-  for (let count = 1; count <= 5; count += 1) {
-    const day = 13 + count;
+  const results = [];
+  const bs04 = await renderReview("borssverige-date-04.png", {
+    series: "borssverige",
+    date: "2026-09-04",
+    articleSlug: "visual-v2-borssverige-04",
+    companies: ["Volvo", "Ericsson"],
+  });
+  const bs14 = await renderReview("borssverige-date-14.png", {
+    series: "borssverige",
+    date: "2026-09-14",
+    articleSlug: "visual-v2-borssverige-14",
+    companies: ["Volvo", "Ericsson"],
+  });
+  const bs30 = await renderReview("borssverige-date-30.png", {
+    series: "borssverige",
+    date: "2026-09-30",
+    articleSlug: "visual-v2-borssverige-30",
+  });
+  results.push(bs04, bs14, bs30);
+
+  const approved = ["Volvo", "Ericsson", "Investor", "H&M"];
+  for (let count = 1; count <= 4; count += 1) {
     results.push(
-      await renderReview(`norden-layout-${count}-logos.png`, {
+      await renderReview(`norden-${count}-logo${count === 1 ? "" : "s"}.png`, {
         series: "norden-i-centrum",
-        date: `2026-09-${String(day).padStart(2, "0")}`,
-        articleSlug: `visual-dry-run-norden-${count}`,
+        date: `2026-09-${String(13 + count).padStart(2, "0")}`,
+        articleSlug: `visual-v2-norden-${count}`,
         companies: approved.slice(0, count),
       }),
     );
   }
 
-  results.push(
-    await renderReview("norden-missing-logo.png", {
-      series: "norden-i-centrum",
-      date: "2026-09-19",
-      articleSlug: "visual-dry-run-norden-missing",
-      companies: ["Volvo", "Nokia"],
-    }),
+  const nordenMax = await renderReview("norden-max-logos.png", {
+    series: "norden-i-centrum",
+    date: "2026-09-18",
+    articleSlug: "visual-v2-norden-max",
+    companies: [...approved, "Microsoft"],
+  });
+  const nordenNoLogos = await renderReview("norden-no-logos.png", {
+    series: "norden-i-centrum",
+    date: "2026-09-19",
+    articleSlug: "visual-v2-norden-none",
+    companies: [],
+  });
+  const nordenMissing = await renderReview("norden-missing-logo.png", {
+    series: "norden-i-centrum",
+    date: "2026-09-20",
+    articleSlug: "visual-v2-norden-missing",
+    companies: ["Volvo", "Nokia", "Ericsson"],
+  });
+  results.push(nordenMax, nordenNoLogos, nordenMissing);
+
+  const borsDiff = await writeDiff(
+    "borssverige-static-region-diff.png",
+    bs14.target,
+    BORSSVERIGE_TEMPLATE_V2,
   );
-  results.push(
-    await renderReview("norden-no-logos.png", {
-      series: "norden-i-centrum",
-      date: "2026-09-20",
-      articleSlug: "visual-dry-run-norden-none",
-      companies: [],
-    }),
+  const nordenFour = results.find((result) => result.targetName === "norden-4-logos.png");
+  if (!nordenFour) throw new Error("missing-norden-four-logo-review-render");
+  const nordenDiff = await writeDiff(
+    "norden-static-region-diff.png",
+    nordenFour.target,
+    NORDEN_I_CENTRUM_TEMPLATE_V2,
   );
 
   console.log(
@@ -81,19 +167,11 @@ async function main() {
       {
         ok: true,
         reviewDir: path.relative(ROOT, REVIEW_DIR),
-        files: [
-          "borssverige-reference-2026-09-04.png",
-          "borssverige-render-2026-09-14.png",
-          "norden-reference-2026-09-04.png",
-          "norden-layout-1-logos.png",
-          "norden-layout-2-logos.png",
-          "norden-layout-3-logos.png",
-          "norden-layout-4-logos.png",
-          "norden-layout-5-logos.png",
-          "norden-missing-logo.png",
-          "norden-no-logos.png",
-        ],
-        results,
+        staticRegression: {
+          borssverige: borsDiff,
+          norden: nordenDiff,
+        },
+        results: results.map(({ target, ...result }) => result),
       },
       null,
       2,
