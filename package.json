@@ -19,6 +19,7 @@
     "test:browser:all": "node scripts/verify-public-experience.mjs && node scripts/verify-browser-flows.mjs",
     "test:all": "npm test && npm run test:seo && npm run test:db && npm run test:divbrain && npm run test:cursor-bridge",
     "typecheck": "tsc --noEmit",
+    "validate:autoredaktion": "tsx scripts/autoredaktion/validate-changed-news.mts",
     "divbrain:provider-benchmark:live": "tsx scripts/divbrain-provider-benchmark.mts"
   },
   "dependencies": {
