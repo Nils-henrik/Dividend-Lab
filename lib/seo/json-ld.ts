@@ -170,30 +170,56 @@ export function webApplicationJsonLd(input: {
   };
 }
 
+type DiscussionForumCommentJsonLdInput = {
+  text: string;
+  datePublished: string;
+  authorName?: string;
+  authorPath?: string;
+};
+
 export function discussionForumPostingJsonLd(input: {
   title: string;
   description: string;
   path: string;
-  datePublished?: string;
+  datePublished: string;
   authorName?: string;
-  commentCount?: number;
+  authorPath?: string;
+  comments?: DiscussionForumCommentJsonLdInput[];
 }): JsonLd {
+  const comments = input.comments ?? [];
+
   return {
     "@context": "https://schema.org",
     "@type": "DiscussionForumPosting",
     headline: input.title,
     text: input.description,
+    datePublished: input.datePublished,
+    mainEntityOfPage: absoluteUrl(input.path),
     url: absoluteUrl(input.path),
     inLanguage: "sv-SE",
     isAccessibleForFree: true,
-    ...(input.datePublished ? { datePublished: input.datePublished } : {}),
-    ...(typeof input.commentCount === "number"
-      ? { commentCount: input.commentCount }
-      : {}),
+    commentCount: comments.length,
     author: {
       "@type": "Person",
       name: input.authorName ?? "DivLab-medlem",
+      ...(input.authorPath ? { url: absoluteUrl(input.authorPath) } : {}),
     },
+    ...(comments.length > 0
+      ? {
+          comment: comments.map((comment) => ({
+            "@type": "Comment",
+            text: comment.text,
+            datePublished: comment.datePublished,
+            author: {
+              "@type": "Person",
+              name: comment.authorName ?? "DivLab-medlem",
+              ...(comment.authorPath
+                ? { url: absoluteUrl(comment.authorPath) }
+                : {}),
+            },
+          })),
+        }
+      : {}),
     publisher: {
       "@type": "Organization",
       name: DIVLAB_BRAND_NAME,
