@@ -43,6 +43,7 @@ export type SeriesValidatorOptions = {
 export type AutoredaktionGateName =
   | "article-validator"
   | "series-validator"
+  | "image-validator"
   | "lint"
   | "typecheck"
   | "news-seo-tests"
@@ -61,6 +62,18 @@ export type AutoredaktionRunTrace = {
   researchCutoff: string;
   title: string;
   slug: string;
+  imageGeneration?: {
+    templateVersion: string;
+    requestedCompanies: string[];
+    companiesUsed: string[];
+    missingCompanyLogos: string[];
+    outputPath: string | null;
+    width: 1280;
+    height: 720;
+    format: "png";
+    validation: "pass" | "fail" | "skipped";
+    fallbackUsed: boolean;
+  };
   gateResults: Record<AutoredaktionGateName, AutoredaktionGateResult>;
   commitSha: string | null;
   deployment: {
