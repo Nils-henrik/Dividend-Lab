@@ -49,6 +49,10 @@ async function staticLogoRegionHash(
       width: region.width,
       height: region.height,
     })
+    // Composite output can be RGBA while the approved source is RGB. Normalize
+    // both before hashing so the regression check compares visible pixels, not
+    // container channel metadata.
+    .ensureAlpha()
     .raw()
     .toBuffer();
   return hash(raw);
