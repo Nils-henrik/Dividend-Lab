@@ -12,6 +12,7 @@
     "test:autoredaktion": "tsx --test \"lib/news/autoredaktion/**/*.test.ts\"",
     "autoredaktion:dry-run": "tsx scripts/autoredaktion-dry-run.ts",
     "autoredaktion:validate": "tsx scripts/autoredaktion-validate.ts",
+    "autoredaktion:validate-changed": "tsx scripts/autoredaktion-validate-changed.ts",
     "test:divbrain": "node --import ./tests/shims/register-server-only.mjs --import tsx --test \"lib/divbrain/**/*.test.ts\"",
     "test:divbrain:context": "node --import ./tests/shims/register-server-only.mjs --import tsx --test \"lib/divbrain/server/context/**/*.test.ts\"",
     "test:cursor-bridge": "tsx --test \"lib/cursor-bridge/**/*.test.ts\"",
