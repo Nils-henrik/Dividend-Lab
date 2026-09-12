@@ -45,6 +45,8 @@ supabase/.temp/
 # Local licensed/source media (not for public web root)
 /private/
 
+# Disposable local/CI dry-run output
+/.tmp/
 tmp/
 
 supabase/.branches/
