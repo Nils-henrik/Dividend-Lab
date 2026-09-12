@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { existsSync, statSync } from "node:fs";
 import path from "node:path";
 import sharp from "sharp";
@@ -23,6 +24,34 @@ function canonicalFilename(metadata: SeriesImageRenderMetadata): string {
   return `${metadata.series}-${metadata.date}.png`;
 }
 
+function hash(value: Buffer): string {
+  return createHash("sha256").update(value).digest("hex");
+}
+
+async function staticLogoRegionHash(
+  file: string,
+  region: { x: number; y: number; width: number; height: number },
+  resizeReference = false,
+): Promise<string> {
+  let image = sharp(file);
+  if (resizeReference) {
+    image = image.resize(SERIES_IMAGE_WIDTH, SERIES_IMAGE_HEIGHT, {
+      fit: "cover",
+      position: "centre",
+    });
+  }
+  const raw = await image
+    .extract({
+      left: region.x,
+      top: region.y,
+      width: region.width,
+      height: region.height,
+    })
+    .raw()
+    .toBuffer();
+  return hash(raw);
+}
+
 export async function validateGeneratedSeriesImage(
   metadata: SeriesImageRenderMetadata,
   options: ValidateGeneratedImageOptions = {},
@@ -30,6 +59,7 @@ export async function validateGeneratedSeriesImage(
   const repoRoot = options.repoRoot ?? process.cwd();
   const issues: string[] = [];
   const template = getSeriesImageTemplate(metadata.series);
+  const referencePath = path.join(repoRoot, template.referencePath);
 
   if (!existsSync(metadata.outputPath)) {
     issues.push("output-missing");
@@ -41,6 +71,9 @@ export async function validateGeneratedSeriesImage(
 
   if (path.basename(metadata.outputPath) !== canonicalFilename(metadata)) {
     issues.push("output-filename");
+  }
+  if (metadata.publicPath !== `/news/generated/${canonicalFilename(metadata)}`) {
+    issues.push("public-path");
   }
 
   if (metadata.width !== SERIES_IMAGE_WIDTH || metadata.height !== SERIES_IMAGE_HEIGHT) {
@@ -68,7 +101,7 @@ export async function validateGeneratedSeriesImage(
     }
   }
 
-  if (!existsSync(path.join(repoRoot, template.referencePath))) issues.push("template-reference-missing");
+  if (!existsSync(referencePath)) issues.push("template-reference-missing");
   if (!existsSync(path.join(repoRoot, template.canonicalDivLabLogoSource))) {
     issues.push("canonical-divlab-logo-source-missing");
   }
@@ -88,6 +121,16 @@ export async function validateGeneratedSeriesImage(
       issues.push("image-dimensions");
     }
     if (image.format !== SERIES_IMAGE_FORMAT) issues.push("image-format");
+
+    if (existsSync(referencePath)) {
+      const [generatedLogoHash, referenceLogoHash] = await Promise.all([
+        staticLogoRegionHash(metadata.outputPath, template.staticLogoRegion),
+        staticLogoRegionHash(referencePath, template.staticLogoRegion, true),
+      ]);
+      if (generatedLogoHash !== referenceLogoHash) {
+        issues.push("canonical-logo-region-changed");
+      }
+    }
   } catch {
     issues.push("image-unreadable");
   }
