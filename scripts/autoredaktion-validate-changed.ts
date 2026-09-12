@@ -12,6 +12,7 @@ import {
   type EditorialSeries,
   type ValidationIssue,
 } from "@/lib/news/autoredaktion/types";
+import { validateDeclaredGeneratedImage } from "@/lib/news/images/validate-generated-image";
 import type { NewsArticle } from "@/types/news";
 
 const REGISTRY_PATH = "lib/news/get-articles.ts";
@@ -279,6 +280,19 @@ async function main() {
       ? "borssverige"
       : "norden-i-centrum";
 
+    const imageValidation = await validateDeclaredGeneratedImage(
+      article,
+      series,
+      process.cwd(),
+    );
+    const imageIssues = imageValidation.issues.map((code) =>
+      fail(
+        `generated-image-${code}`,
+        `Generated image validation failed: ${code}.`,
+        "imageUrl",
+      ),
+    );
+
     const issues: ValidationIssue[] = [
       ...validateNewsArticle(article, {
         registry: published,
@@ -286,6 +300,7 @@ async function main() {
       }).issues,
       ...validateEditorialSeries(article, series).issues,
       ...validateAutonomousContract(article, sourceText),
+      ...imageIssues,
     ];
 
     if (imports.get(exportName) !== moduleName) {
