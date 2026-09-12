@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import { existsSync, statSync } from "node:fs";
 import path from "node:path";
 import sharp from "sharp";
@@ -7,7 +6,8 @@ import { parseIsoDateTime, stockholmCalendarDate } from "@/lib/news/autoredaktio
 import type { EditorialSeries } from "@/lib/news/autoredaktion/types";
 import type { NewsArticle } from "@/types/news";
 
-import { getApprovedCompanyLogo } from "./company-logo-map";
+import { resolveApprovedCompanyLogo } from "./company-logo-map";
+import { calculateStaticRegionDiff, staticRegionDiffPasses } from "./static-regression";
 import { getSeriesImageTemplate } from "./templates";
 import {
   SERIES_IMAGE_FORMAT,
@@ -26,42 +26,10 @@ function canonicalFilename(metadata: SeriesImageRenderMetadata): string {
   return `${metadata.series}-${metadata.date}.png`;
 }
 
-function hash(value: Buffer): string {
-  return createHash("sha256").update(value).digest("hex");
-}
-
-async function staticLogoRegionHash(
-  file: string,
-  region: { x: number; y: number; width: number; height: number },
-  resizeReference = false,
-): Promise<string> {
-  let image = sharp(file);
-  if (resizeReference) {
-    image = image.resize(SERIES_IMAGE_WIDTH, SERIES_IMAGE_HEIGHT, {
-      fit: "cover",
-      position: "centre",
-    });
-  }
-  const raw = await image
-    .extract({
-      left: region.x,
-      top: region.y,
-      width: region.width,
-      height: region.height,
-    })
-    // Composite output can be RGBA while the approved source is RGB. Normalize
-    // both before hashing so the regression check compares visible pixels, not
-    // container channel metadata.
-    .ensureAlpha()
-    .raw()
-    .toBuffer();
-  return hash(raw);
-}
-
 async function validateReadablePng(
   imagePath: string,
   referencePath: string,
-  staticLogoRegion: { x: number; y: number; width: number; height: number },
+  series: EditorialSeries,
 ): Promise<string[]> {
   const issues: string[] = [];
   try {
@@ -71,13 +39,22 @@ async function validateReadablePng(
     }
     if (image.format !== SERIES_IMAGE_FORMAT) issues.push("image-format");
 
-    if (existsSync(referencePath)) {
-      const [generatedLogoHash, referenceLogoHash] = await Promise.all([
-        staticLogoRegionHash(imagePath, staticLogoRegion),
-        staticLogoRegionHash(referencePath, staticLogoRegion, true),
-      ]);
-      if (generatedLogoHash !== referenceLogoHash) {
-        issues.push("canonical-logo-region-changed");
+    if (existsSync(referencePath) && image.width === SERIES_IMAGE_WIDTH && image.height === SERIES_IMAGE_HEIGHT) {
+      const template = getSeriesImageTemplate(series);
+      const dynamicRegions = [
+        template.dynamicRegions.date,
+        ...(template.dynamicRegions.companyRow ? [template.dynamicRegions.companyRow] : []),
+      ];
+      const diff = await calculateStaticRegionDiff(
+        imagePath,
+        referencePath,
+        dynamicRegions,
+        template.staticRegression,
+      );
+      if (!staticRegionDiffPasses(diff, template.staticRegression)) {
+        issues.push(
+          `static-region-regression:ratio=${diff.changedPixelRatio.toFixed(6)}:mae=${diff.meanAbsoluteError.toFixed(4)}`,
+        );
       }
     }
   } catch {
@@ -123,14 +100,14 @@ export async function validateGeneratedSeriesImage(
     metadata.companiesUsed.map((company) => company.toLocaleLowerCase("sv-SE")),
   );
   if (uniqueCompanies.size !== metadata.companiesUsed.length) issues.push("duplicate-company-logo");
-  if (metadata.companiesUsed.length > 5) issues.push("too-many-company-logos");
+  if (metadata.companiesUsed.length > template.maxCompanyLogos) issues.push("too-many-company-logos");
   if (metadata.series === "borssverige" && metadata.companiesUsed.length > 0) {
     issues.push("borssverige-company-logo");
   }
 
   for (const company of metadata.companiesUsed) {
-    const logo = getApprovedCompanyLogo(company);
-    if (!logo || !existsSync(path.join(repoRoot, logo.file))) {
+    const logo = resolveApprovedCompanyLogo(company, "dark");
+    if (!logo || !existsSync(path.join(repoRoot, logo.resolvedFile))) {
       issues.push(`broken-logo:${company}`);
     }
   }
@@ -149,13 +126,7 @@ export async function validateGeneratedSeriesImage(
     }
   }
 
-  issues.push(
-    ...(await validateReadablePng(
-      metadata.outputPath,
-      referencePath,
-      template.staticLogoRegion,
-    )),
-  );
+  issues.push(...(await validateReadablePng(metadata.outputPath, referencePath, metadata.series)));
 
   return { ok: issues.length === 0, issues };
 }
@@ -164,7 +135,7 @@ export async function validateGeneratedSeriesImage(
  * Quality-gate validation for the image path declared by a finished article.
  * `imageUrl:null` is a valid explicit fail-safe. A non-null generated path must
  * be the canonical date URL and must point at a readable 1280x720 PNG whose
- * static DivLab brand region still matches the approved template reference.
+ * pixels outside the explicit date/company masks still match source of truth.
  */
 export async function validateDeclaredGeneratedImage(
   article: NewsArticle,
@@ -193,9 +164,7 @@ export async function validateDeclaredGeneratedImage(
 
   const template = getSeriesImageTemplate(series);
   const referencePath = path.join(repoRoot, template.referencePath);
-  issues.push(
-    ...(await validateReadablePng(imagePath, referencePath, template.staticLogoRegion)),
-  );
+  issues.push(...(await validateReadablePng(imagePath, referencePath, series)));
 
   return { ok: issues.length === 0, issues };
 }
