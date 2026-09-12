@@ -32,8 +32,8 @@ function isNewsArticle(value: unknown): value is NewsArticle {
 
 async function loadArticle(modulePath: string): Promise<NewsArticle> {
   const absolute = path.resolve(modulePath);
-  const module = await import(pathToFileURL(absolute).href);
-  const article = Object.values(module).find(isNewsArticle);
+  const importedModule = await import(pathToFileURL(absolute).href);
+  const article = Object.values(importedModule).find(isNewsArticle);
   if (!article) throw new Error(`No NewsArticle export found in ${modulePath}`);
   return article;
 }
