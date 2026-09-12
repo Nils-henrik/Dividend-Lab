@@ -11,6 +11,8 @@ export type SeriesImageTemplate = {
   /** Norden-only clean foreground area that replaces baked company marks. */
   logoPanel?: { x: number; y: number; width: number; height: number };
   safeArea: { x: number; y: number; width: number; height: number };
+  /** Must remain pixel-identical to the approved resized reference. */
+  staticLogoRegion: { x: number; y: number; width: number; height: number };
 };
 
 /**
@@ -28,6 +30,7 @@ export const BORSSVERIGE_TEMPLATE_V1: SeriesImageTemplate = {
   seriesName: "BÖRSSVERIGE",
   textPanel: { x: 72, y: 318, width: 650, height: 300 },
   safeArea: { x: 64, y: 54, width: 1152, height: 612 },
+  staticLogoRegion: { x: 0, y: 0, width: 620, height: 170 },
 };
 
 /**
@@ -47,6 +50,7 @@ export const NORDEN_I_CENTRUM_TEMPLATE_V1: SeriesImageTemplate = {
   textPanel: { x: 72, y: 318, width: 630, height: 300 },
   logoPanel: { x: 742, y: 178, width: 466, height: 440 },
   safeArea: { x: 64, y: 54, width: 1152, height: 612 },
+  staticLogoRegion: { x: 0, y: 0, width: 620, height: 170 },
 };
 
 export function getSeriesImageTemplate(series: EditorialSeries): SeriesImageTemplate {
