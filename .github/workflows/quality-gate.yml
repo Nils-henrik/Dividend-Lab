@@ -35,6 +35,22 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Detect image-relevant changes
+        id: image_changes
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        shell: bash
+        run: |
+          base="$BASE_SHA"
+          if [[ -z "$base" || "$base" =~ ^0+$ ]]; then
+            base="$(git rev-parse HEAD^)"
+          fi
+          if git diff --name-only "$base"...HEAD | grep -Eq '^(lib/news/images/|scripts/autoredaktion-image|public/news/generated/|public/company-logos/|data/news-articles/(borssverige|norden-i-centrum)-|docs/automation/AUTOREDATION_V1\.md|package\.json)'; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Lint
         run: npm run lint
 
@@ -52,8 +68,25 @@ jobs:
       - name: SEO and news tests
         run: npm run test:seo
 
+      - name: Autoredaktion image tests
+        if: steps.image_changes.outputs.changed == 'true'
+        run: npm run test:news-images
+
       - name: Autoredaktion dry-run
         run: npm run autoredaktion:dry-run
+
+      - name: Autoredaktion image visual dry-run
+        if: steps.image_changes.outputs.changed == 'true'
+        run: npm run autoredaktion:image:dry-run
+
+      - name: Upload image visual-review artifact
+        if: steps.image_changes.outputs.changed == 'true'
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
+        with:
+          name: autoredaktion-v1-1-visual-review
+          path: .tmp/autoredaktion-images/review/*.png
+          if-no-files-found: error
+          retention-days: 7
 
       - name: DivBrain tests
         run: npm run test:divbrain
