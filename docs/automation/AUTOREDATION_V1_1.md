@@ -1,8 +1,8 @@
 # Autoredaktion v1.1 — source of truth
 
-Status: **PRODUCTION VERIFICATION IN PROGRESS**  
+Status: **Autoredaktion v1.1 READY**  
 Approved templates: **Norden i centrum PASS ✅ / BörsSverige PASS ✅**  
-Activation: existing weekday jobs at 08:00 and 08:20 remain unchanged until every production check below is PASS.
+Activation: implementation is production-verified and ready to be wired into the existing weekday jobs at 08:00 and 08:20. Those jobs are not changed by this runbook update.
 
 This document is the authoritative runbook for Autoredaktion v1.1 image production. It supersedes the original v1.1 section appended to `AUTOREDATION_V1.md` and the implementation/rework notes in `AUTOREDATION_V1_1_VISUAL_REWORK.md` wherever those documents differ from this file.
 
@@ -92,27 +92,30 @@ Image-relevant PRs run the normal repository gate plus:
 
 A failing gate is not merged.
 
-## One-time production verification
+## Production verification — PASS ✅
 
-Before the weekday jobs may be switched to v1.1, verify after a production deployment:
+Completed 12 September 2026 after both editorial template approvals.
 
-1. `divlab.se` is served by the intended production commit;
-2. a `/news/generated/...` canary is HTTP 200 with `image/png` and 1280×720;
-3. a real news article renders its configured image correctly on desktop and mobile;
-4. `/news` renders the same configured image as thumbnail;
-5. article HTML emits matching `og:image`, `twitter:image` and `summary_large_image`;
-6. normal generated filenames are date-versioned and unique per day;
-7. renderer exception → `imageUrl:null` is proven by tests;
-8. declared broken generated image still fails closed;
-9. production has no relevant runtime errors.
+Evidence:
+
+1. implementation PR #295 passed the complete Quality Gate and was merged as `bf7debb422314d4184fc17e29c8e936cca8d99d4`;
+2. production-verification PR #296 passed the complete Quality Gate and was merged as `d92b33e15128073ca74acee716a69cc0bdf0f43b`;
+3. Vercel production deployment for `d92b33e15128073ca74acee716a69cc0bdf0f43b` reached `READY` and serves `divlab.se`;
+4. `/news/generated/_canary/autoredaktion-v1-1-2026-09-01.png` returned HTTP 200 with `content-type: image/png`; its PNG IHDR is 1280×720;
+5. the live BörsSverige 1 September article returned HTTP 200 and its image component uses responsive sizes for mobile and desktop with the configured object position;
+6. the same article emitted `og:image`, `twitter:image` and `twitter:card=summary_large_image` from its configured article image;
+7. `/news` returned HTTP 200 and rendered article thumbnails through the same responsive image path (`100vw` on mobile, `176px` on desktop);
+8. generated production filenames are date-versioned (`{series}-YYYY-MM-DD.png`), so a new publication date receives a new social-image URL;
+9. image tests prove renderer exception → no public path / `imageUrl:null`, while a declared broken generated image fails closed;
+10. Vercel reported no relevant runtime errors during the final verification window.
 
 The transport canary under `public/news/generated/_canary/` is verification-only. It is deliberately outside the canonical article filename namespace and must never be assigned to an article. It proves static serving; actual series output correctness is proven by the image renderer/validator tests and approved visual-review artifacts.
 
 ## Activation
 
-Only after all production checks above are PASS may this status change to **Autoredaktion v1.1 READY**. At that point the implementation is ready to be wired into the two existing weekday jobs:
+**Autoredaktion v1.1 READY.** The implementation is ready to be wired into the two existing weekday jobs:
 
 - 08:00 — Norden i centrum;
 - 08:20 — BörsSverige.
 
-Do not create a second scheduler. Do not change the jobs before production verification is complete.
+Do not create a second scheduler. When the existing jobs are updated, they must follow this runbook and the final publishing flow above.
