@@ -1,34 +1,39 @@
 # Autoredaktion v1.1 — Visual Template Rework v2
 
-Status: **VISUAL TEMPLATE REWORK REQUIRED**  
+Status: **NORDEN PASS / BÖRSSVERIGE FINAL REVIEW PENDING**  
 PR: **#295 remains draft**  
 Activation: **08:00 Norden and 08:20 BörsSverige remain unchanged**
 
 This document supersedes the first v1.1 visual-template proposal. The technical
 article/image pipeline remains intact; only the deterministic visual rendering
-is being reworked.
+was reworked.
+
+## Editorial decisions
+
+- **Norden i centrum: PASS.** Freeze the current v2 layout. Do not change the
+  date field, `NORDEN / I CENTRUM` composition or typographic company row.
+  Maximum company count is a hard **4**. 1–4 companies, missing-logo and
+  no-logo fallback are approved.
+- **BörsSverige: final review pending.** The only rejected item was the old
+  4 September static master because it baked the article-specific Sectra line
+  into a recurring template. The canonical master is now the approved
+  **1 September 2026** cover with the generic subtitle:
+  `De viktigaste nyheterna om svenska börsbolag inför dagen.`
 
 ## Source-of-truth rule
 
-The published approved images are the templates. The renderer must behave like
-an editor opening the existing image and changing only the values that are meant
-to change.
-
+The published approved images are the templates. The renderer behaves like an
+editor opening the existing image and changing only explicitly dynamic values.
 It must not introduce a new panel, card system, typography system or composition.
 No generative image model or generative inpainting is used.
 
 Canonical references:
 
-- BörsSverige: `public/news-demo/borssverige-2026-09-04-sectra.png`
+- BörsSverige: `public/news-demo/borssverige-2026-09-01.png`
 - Norden i centrum: `public/news-demo/file_000000008a308210b3b73b7b8e0ad122.png`
 
-Additional comparison references in visual-review-v2 include BörsSverige
-1 September and Norden 1, 2 and 3 September. These establish how the existing
-editable areas behaved across published editions; they are not alternate runtime
-templates.
-
-All references are resized deterministically to the canonical social size,
-1280×720, using Sharp `fit: cover`, `position: centre`.
+All runtime references are resized deterministically to the canonical social
+size, 1280×720, using Sharp `fit: cover`, `position: centre`.
 
 ## Explicit dynamic masks
 
@@ -39,14 +44,15 @@ Coordinates are in the fixed 1280×720 output space.
 
 - `date`: `{ x: 24, y: 281, width: 585, height: 70 }`
 
-Everything outside the date mask is static. The existing background, DivLab
-identity, `BÖRSSVERIGE`, article teaser, Stockholm scene and all other pixels
-come directly from the canonical reference.
+Everything outside the date mask is static: Stockholm/morning background,
+canonical DivLab branding, `BÖRSSVERIGE` and the generic subtitle. No company
+logos and no article headline may be added.
 
-### Norden i centrum
+### Norden i centrum — frozen after PASS
 
 - `date`: `{ x: 970, y: 46, width: 296, height: 58 }`
 - `companyRow`: `{ x: 40, y: 555, width: 720, height: 84 }`
+- hard maximum: **4 companies**
 
 Everything outside those two masks is static, including the established
 `NORDEN / I CENTRUM` composition, DivLab identity, subtitle, map, chart,
@@ -59,21 +65,16 @@ reconstructs only the masked area by linear interpolation between the clean
 pixel immediately above and below each mask column. This is deterministic local
 pixel processing, not AI inpainting. No pixel outside the mask is rewritten.
 
-Fresh date text and Norden company marks are then composited only inside their
-mask. SVG overlays are clipped to the mask dimensions, preventing accidental
-spill into static pixels.
+Fresh date text and Norden company marks are composited only inside their mask.
+SVG overlays are clipped to the mask dimensions, preventing accidental spill
+into static pixels.
 
 ## Typography calibration
 
-The flat PNGs contain no font metadata. Values below were measured against the
-actual raster glyph bounds and then checked against generated review output.
-The measurements match Lato closely enough to use it as the deterministic
-render family with normal fallbacks.
+The flat PNGs contain no font metadata. Values were measured against the raster
+glyph bounds and checked against generated review output.
 
 ### BörsSverige date
-
-Source-of-truth visible glyph bounds at 1280×720 are approximately
-`x36..573 / y297..339` for `4 SEPTEMBER 2026`.
 
 - family: `Lato, Arial, Helvetica, sans-serif`
 - weight: 800
@@ -84,10 +85,11 @@ Source-of-truth visible glyph bounds at 1280×720 are approximately
 - measured dominant blue: approximately `#004497`
 - format: `D MÅNAD YYYY`
 
-### Norden date
+The 14 and 30 September review renders are required to verify different date
+widths remain inside the date-only mask without affecting series name or generic
+subtitle.
 
-Source-of-truth visible glyph bounds are approximately
-`x992..1260 / y59..89` for `4 SEPTEMBER`.
+### Norden date
 
 - family: `Lato, Arial, Helvetica, sans-serif`
 - weight: 800
@@ -98,44 +100,20 @@ Source-of-truth visible glyph bounds are approximately
 - white
 - format: `D MÅNAD`
 
-These values still require the one-time editorial PASS/FAIL; measurement does
-not replace human template approval.
+## Norden company row — approved and frozen
 
-## Norden company row
+Published 1, 2 and 4 September covers establish the approved row grammar:
+white, bold typographic company wordmarks/names with thin vertical separators,
+no cards, no shadows and no coloured logo blocks.
 
-The first-iteration white logo cards and the second-iteration coloured SVG marks
-are both rejected as non-source-of-truth treatments.
-
-Published 1, 2 and 4 September covers establish the normal row grammar:
-
-- white, bold company wordmarks/names;
-- Lato-like 31 px / weight 800;
-- left-flow layout starting around x50;
-- thin vertical separators;
-- roughly 30 px before a separator and 27 px after it;
-- no cards, shadows or white boxes.
-
-The 3 September cover adds editorial imagery above the lower row, but the lower
-company labels follow the same white-wordmark treatment.
-
-Accordingly v2 renders the approved company display names in the established
-row grammar rather than placing coloured logo artwork that is visibly wrong on
-the dark background. The local logo registry remains the approval/availability
-allowlist: a company without an approved, existing local registry asset is still
-skipped and traced as missing. Optional reviewed `light`/`dark` variants remain
-supported for future templates that actually use logo artwork. No live fetching
-or synthetic recolouring is allowed.
-
-Four companies is the reference-driven maximum. Marks are measured before
-composition. If four approved names do not fit the established row at canonical
-size, the lowest-ranked trailing company is omitted instead of shrinking or
-crowding the row. Therefore `requestedCompanies` and `companiesUsed` can differ
-for both missing-asset and visual-fit reasons.
+The local logo registry remains the approval/availability allowlist. A company
+without an approved existing local asset is skipped and traced as missing.
+Four companies is the hard maximum. If approved names do not fit, trailing
+lower-ranked names are omitted rather than shrinking or crowding the row.
 
 ## Masked static regression
 
-The old DivLab-logo-only regression is replaced by whole-image static
-regression outside the masks.
+Whole-image static regression runs outside the explicit masks.
 
 Policy for both templates:
 
@@ -143,35 +121,24 @@ Policy for both templates:
 - maximum changed-pixel ratio outside masks: **0.0001** (0.01%)
 - maximum mean absolute RGB error outside masks: **0.05 / 255**
 
-A renderer that changes composition, logo, background or any other meaningful
-static region fails `static-region-regression` even if the output is otherwise a
-valid PNG.
+A renderer that changes composition, logo, background, series name, generic
+subtitle or any other meaningful static region fails `static-region-regression`.
 
-Because v2 begins from the resized canonical reference and clips every overlay
-to its dynamic mask, normal output is expected to be effectively pixel-identical
-outside the masks. The small threshold exists only for renderer/compositing
-noise and is not permission for visual redesign.
+## Final BörsSverige visual review
 
-## Visual review v2
+`npm run autoredaktion:image:dry-run` writes below the ignored
+`.tmp/autoredaktion-images/review-v2/` tree. Quality Gate uploads
+`autoredaktion-v1-1-visual-review-v2`.
 
-`npm run autoredaktion:image:dry-run` writes only below the ignored
-`.tmp/autoredaktion-images/review-v2/` tree.
+The final BörsSverige review must include:
 
-Quality Gate uploads:
+- 1280×720 canonical 1 September reference with generic subtitle;
+- `14 SEPTEMBER 2026` render;
+- `30 SEPTEMBER 2026` render;
+- static-region diff.
 
-`autoredaktion-v1-1-visual-review-v2`
-
-with canonical references, neighboring comparison references, the required date
-and company-count renders, and:
-
-```text
-diffs/
-  borssverige-static-region-diff.png
-  norden-static-region-diff.png
-```
-
-The diff heatmaps render expected dynamic masks in grey, unchanged static pixels
-black and static RGB differences in red.
+Outside the date mask the two renders must be effectively pixel-identical to
+the resized 1 September canonical reference.
 
 ## Existing safety contract remains unchanged
 
@@ -190,25 +157,22 @@ The rework does not change:
 
 ## Activation gate
 
-Do not enable v1.1 after an internal visual inspection alone.
+Do not merge or enable v1.1 before the final BörsSverige editorial PASS.
 
-Required order after the final v2 artifact exists:
+Current order:
 
-1. Redaktion explicitly marks **BörsSverige PASS/FAIL**.
-2. Redaktion explicitly marks **Norden PASS/FAIL**.
-3. Only after both PASS: run/confirm the complete Quality Gate including
-   DivBrain, cursor-bridge and production build.
-4. Mark PR #295 Ready for Review.
-5. Merge implementation.
-6. Wait for Vercel production `READY`.
-7. Verify existing `/news` behavior.
-8. Verify preview/test article-image integration.
-9. Verify `og:image`.
-10. Verify `twitter:image` / `summary_large_image`.
-11. Verify public image HTTP 200 and image content type.
-12. Verify desktop, mobile and thumbnail crop.
-13. Only then update the existing 08:00 and 08:20 ChatGPT automations.
+1. Norden i centrum editorial template review: **PASS**.
+2. Generate corrected BörsSverige final review from the 1 September master.
+3. Complete the full Quality Gate including lint, typecheck, changed-article
+   validation, core tests, SEO/news tests, image tests, Autoredaktion dry-run,
+   visual dry-run, DivBrain, cursor-bridge and production build.
+4. Redaktion explicitly marks **BörsSverige PASS/FAIL**.
+5. Only after BörsSverige PASS: mark PR #295 Ready for Review, inspect intended
+   diff, merge, wait for Vercel production READY and perform the production,
+   image, desktop/mobile/thumbnail and OG/X verification defined in the main
+   Autoredaktion runbook.
+6. Only after that complete production verification may the existing 08:00 and
+   08:20 weekday jobs be updated.
 
-Until those steps are complete, status remains:
-
-**VISUAL TEMPLATE REWORK REQUIRED**
+Until the BörsSverige PASS is given, PR #295 remains draft and the jobs remain
+unchanged.
