@@ -39,7 +39,7 @@ Static pixels preserve:
 
 Only the existing date field is dynamic. No article headline, company logos, new panels/cards or generative image work may be added.
 
-Template version: `borssverige-v2-generic-master`.
+Template version: `borssverige-v2-2026-09-01-generic-master`.
 
 ## Norden i centrum — approved and frozen
 
