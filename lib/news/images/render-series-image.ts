@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { mkdir, readFile } from "node:fs/promises";
+import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import sharp, { type OverlayOptions } from "sharp";
 
@@ -7,7 +7,12 @@ import type { NewsArticle } from "@/types/news";
 
 import { resolveApprovedCompanyLogo } from "./company-logo-map";
 import { normalizeRequestedCompanies, selectNordenCompanies } from "./select-norden-companies";
-import { getSeriesImageTemplate, type PixelRegion, type SeriesImageTemplate } from "./templates";
+import {
+  getSeriesImageTemplate,
+  type CompanyRowTypography,
+  type PixelRegion,
+  type SeriesImageTemplate,
+} from "./templates";
 import {
   SERIES_IMAGE_FORMAT,
   SERIES_IMAGE_HEIGHT,
@@ -41,7 +46,12 @@ export type RenderSeriesImageOptions = {
   throwBeforeRender?: boolean;
 };
 
-type LogoSlot = { x: number; y: number; width: number; height: number };
+type RenderedCompanyMark = {
+  company: string;
+  input: Buffer;
+  width: number;
+  height: number;
+};
 
 function escapeXml(value: string): string {
   return value
@@ -174,85 +184,126 @@ function dateOverlay(template: SeriesImageTemplate, date: string): OverlayOption
   return { input: svg, left: region.x, top: region.y };
 }
 
-function logoSlots(count: number, region: PixelRegion): LogoSlot[] {
-  if (count <= 0) return [];
-  const slotWidth = region.width / count;
-  const logoHeight = Math.min(36, region.height - 28);
-  return Array.from({ length: count }, (_, index) => {
-    const left = region.x + Math.round(index * slotWidth);
-    const right = region.x + Math.round((index + 1) * slotWidth);
-    return {
-      x: left,
-      y: region.y + Math.round((region.height - logoHeight) / 2),
-      width: Math.max(1, right - left),
-      height: logoHeight,
-    };
-  });
-}
-
-function separatorOverlay(count: number, region: PixelRegion): OverlayOptions | null {
-  if (count <= 1) return null;
-  const slotWidth = region.width / count;
-  const lines = Array.from({ length: count - 1 }, (_, index) => {
-    const x = Math.round((index + 1) * slotWidth);
-    return `<line x1="${x}" x2="${x}" y1="14" y2="${region.height - 14}" stroke="#ffffff" stroke-opacity="0.35" stroke-width="1"/>`;
-  }).join("");
-  return {
-    input: Buffer.from(
-      `<svg width="${region.width}" height="${region.height}" viewBox="0 0 ${region.width} ${region.height}" xmlns="http://www.w3.org/2000/svg">${lines}</svg>`,
-    ),
-    left: region.x,
-    top: region.y,
-  };
-}
-
-async function renderLogoOverlay(
-  repoRoot: string,
+/**
+ * The published 1/2/4 Sep Norden covers show the company row as white
+ * typographic wordmarks separated by thin rules. Rendering the approved company
+ * names in that grammar is deliberately more source-of-truth faithful than
+ * placing the coloured SVG assets directly on this dark photographic template.
+ * The local logo registry still acts as the approval/availability allowlist;
+ * missing or broken registry assets are therefore skipped before this stage.
+ */
+async function renderCompanyMark(
   company: string,
-  slot: LogoSlot,
-): Promise<OverlayOptions | null> {
-  const logo = resolveApprovedCompanyLogo(company, "dark");
-  if (!logo) return null;
-  const sourcePath = path.join(repoRoot, logo.resolvedFile);
-  if (!existsSync(sourcePath)) return null;
-  const input = await readFile(sourcePath);
-  const resized = await sharp(input)
-    .resize({
-      width: Math.max(1, slot.width - 32),
-      height: slot.height,
-      fit: "contain",
-      background: { r: 255, g: 255, b: 255, alpha: 0 },
-    })
-    .png()
-    .toBuffer();
-
-  const metadata = await sharp(resized).metadata();
-  const width = metadata.width ?? slot.width - 32;
-  const height = metadata.height ?? slot.height;
+  typography: CompanyRowTypography,
+): Promise<RenderedCompanyMark> {
+  const displayName = escapeXml(company.toLocaleUpperCase("sv-SE"));
+  const svg = Buffer.from(`
+    <svg width="520" height="70" viewBox="0 0 520 70" xmlns="http://www.w3.org/2000/svg">
+      <text
+        x="2"
+        y="50"
+        fill="${typography.fill}"
+        font-family="${typography.fontFamily}"
+        font-size="${typography.fontSize}"
+        font-weight="${typography.fontWeight}"
+        letter-spacing="${typography.letterSpacing}"
+      >${displayName}</text>
+    </svg>
+  `);
+  const { data, info } = await sharp(svg)
+    .trim()
+    .png({ compressionLevel: 9 })
+    .toBuffer({ resolveWithObject: true });
   return {
-    input: resized,
-    left: slot.x + Math.round((slot.width - width) / 2),
-    top: slot.y + Math.round((slot.height - height) / 2),
+    company,
+    input: data,
+    width: info.width,
+    height: info.height,
   };
+}
+
+function companyRowRequiredWidth(
+  marks: readonly RenderedCompanyMark[],
+  typography: CompanyRowTypography,
+) {
+  if (marks.length === 0) return typography.x;
+  const separators = marks.length - 1;
+  return (
+    typography.x +
+    marks.reduce((sum, mark) => sum + mark.width, 0) +
+    separators *
+      (typography.gapBeforeSeparator + 1 + typography.gapAfterSeparator)
+  );
+}
+
+async function companyRowOverlays(
+  companies: readonly string[],
+  region: PixelRegion,
+  typography: CompanyRowTypography,
+): Promise<{ overlays: OverlayOptions[]; companiesUsed: string[] }> {
+  const marks = await Promise.all(companies.map((company) => renderCompanyMark(company, typography)));
+
+  // Visual fit is part of selection: fewer correctly sized marks are preferable
+  // to shrinking/crowding the established row merely to hit a technical max.
+  while (marks.length > 0 && companyRowRequiredWidth(marks, typography) > region.width) {
+    marks.pop();
+  }
+
+  const overlays: OverlayOptions[] = [];
+  const separatorPositions: number[] = [];
+  let x = typography.x;
+
+  for (let index = 0; index < marks.length; index += 1) {
+    const mark = marks[index];
+    overlays.push({
+      input: mark.input,
+      left: region.x + x,
+      top: region.y + typography.top,
+    });
+    x += mark.width;
+    if (index < marks.length - 1) {
+      const separatorX = x + typography.gapBeforeSeparator;
+      separatorPositions.push(separatorX);
+      x = separatorX + 1 + typography.gapAfterSeparator;
+    }
+  }
+
+  if (separatorPositions.length > 0) {
+    const lines = separatorPositions
+      .map(
+        (separatorX) =>
+          `<line x1="${separatorX}" x2="${separatorX}" y1="${typography.separatorTop}" y2="${typography.separatorBottom}" stroke="${typography.separatorColor}" stroke-opacity="${typography.separatorOpacity}" stroke-width="1"/>`,
+      )
+      .join("");
+    overlays.push({
+      input: Buffer.from(
+        `<svg width="${region.width}" height="${region.height}" viewBox="0 0 ${region.width} ${region.height}" xmlns="http://www.w3.org/2000/svg">${lines}</svg>`,
+      ),
+      left: region.x,
+      top: region.y,
+    });
+  }
+
+  return { overlays, companiesUsed: marks.map((mark) => mark.company) };
 }
 
 function resolveCompanies(input: SeriesImageInput, repoRoot: string) {
   if (input.series === "borssverige") {
-    return { requestedCompanies: [], companiesUsed: [], missingCompanyLogos: [] };
+    return { requestedCompanies: [], eligibleCompanies: [], missingCompanyLogos: [] };
   }
 
   const requestedCompanies = normalizeRequestedCompanies(input.companies ?? []);
-  const companiesUsed: string[] = [];
+  const eligibleCompanies: string[] = [];
   const missingCompanyLogos: string[] = [];
   for (const company of requestedCompanies) {
     const logo = resolveApprovedCompanyLogo(company, "dark");
     if (logo && existsSync(path.join(repoRoot, logo.resolvedFile))) {
-      companiesUsed.push(company);
+      eligibleCompanies.push(company);
     } else {
       missingCompanyLogos.push(company);
     }
   }
-  return { requestedCompanies, companiesUsed, missingCompanyLogos };
+  return { requestedCompanies, eligibleCompanies, missingCompanyLogos };
 }
 
 export async function renderSeriesImage(
@@ -265,7 +316,7 @@ export async function renderSeriesImage(
   const mode = options.mode ?? "dry-run";
   const template = getSeriesImageTemplate(input.series);
   const { outputPath, publicPath } = outputFor(input, repoRoot, mode);
-  const { requestedCompanies, companiesUsed, missingCompanyLogos } = resolveCompanies(
+  const { requestedCompanies, eligibleCompanies, missingCompanyLogos } = resolveCompanies(
     input,
     repoRoot,
   );
@@ -275,16 +326,20 @@ export async function renderSeriesImage(
 
   const base = await cleanTemplateBase(referencePath, template);
   const overlays: OverlayOptions[] = [dateOverlay(template, input.date)];
+  let companiesUsed = eligibleCompanies;
 
-  if (input.series === "norden-i-centrum" && template.dynamicRegions.companyRow) {
-    const region = template.dynamicRegions.companyRow;
-    const slots = logoSlots(companiesUsed.length, region);
-    const separators = separatorOverlay(companiesUsed.length, region);
-    if (separators) overlays.push(separators);
-    for (let index = 0; index < companiesUsed.length; index += 1) {
-      const overlay = await renderLogoOverlay(repoRoot, companiesUsed[index], slots[index]);
-      if (overlay) overlays.push(overlay);
-    }
+  if (
+    input.series === "norden-i-centrum" &&
+    template.dynamicRegions.companyRow &&
+    template.companyRowTypography
+  ) {
+    const row = await companyRowOverlays(
+      eligibleCompanies,
+      template.dynamicRegions.companyRow,
+      template.companyRowTypography,
+    );
+    companiesUsed = row.companiesUsed;
+    overlays.push(...row.overlays);
   }
 
   await base
