@@ -46,6 +46,9 @@ jobs:
       - name: SEO and news tests
         run: npm run test:seo
 
+      - name: Autoredaktion dry-run
+        run: npm run autoredaktion:dry-run
+
       - name: DivBrain tests
         run: npm run test:divbrain
 

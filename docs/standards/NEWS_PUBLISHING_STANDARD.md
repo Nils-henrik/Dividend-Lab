@@ -18,6 +18,8 @@ The X publication should:
 
 Publishing the article on DivLab without completing the X distribution step means the editorial publication workflow is not fully complete.
 
+Autonomous weekday publication for **BörsSverige** and **Norden i centrum** must also follow `docs/automation/AUTOREDATION_V1.md`. Those jobs still obey this standard and `DIVLAB_REDAKTION_MASTER.md`; the autoredaktion layer only makes publication fail-closed.
+
 ## 2. Order of operations
 
 1. Publish and verify the article on `https://divlab.se/news`.
