@@ -196,3 +196,31 @@ The production release verified that the related-content block is server-rendere
 - Relevance changes require deterministic tests, including guardrails against generic period/category matches such as unrelated Q2 articles.
 - Existing published article bodies must not be rewritten automatically to manufacture links; retroactive body links remain an editorial action.
 - The same approach may later expand to other published DivLab surfaces, but only through explicit product work rather than broad automatic rewriting.
+
+---
+
+## ADR-007: Global AdSense with static allowlist CSP
+
+Date: 2026-09-13
+Status: Accepted
+
+### Context
+
+DivLab needs a single global Google AdSense bootstrap (`ca-pub-1024192127032504`) while keeping the current production CSP, Supabase session proxy, Vercel Analytics, TradingView embeds, theme bootstrap and static/CDN rendering for public pages.
+
+Google's current AdSense CSP guidance only documents nonce + `strict-dynamic` (with `'unsafe-inline' 'unsafe-eval' https: http:` as older-browser fallbacks). Next.js 16 applies request nonces during server rendering, which requires every page to be dynamic and disables static optimization, ISR and default CDN caching.
+
+Issue #303 forbids that broader rendering change and also forbids replacing the current CSP with an unsupported or generic `https:` script policy just to make ads load.
+
+### Decision
+
+Keep the existing static allowlist CSP in `next.config.ts` and extend it with scoped Google AdSense / CMP origins. Load the official AdSense script exactly once from the root layout. Do not migrate `proxy.ts` to per-request nonces. Do not add `'strict-dynamic'` or `script-src https:`. Leave `public/ads.txt` unchanged.
+
+A future nonce + `strict-dynamic` migration remains valid only as a dedicated performance/security project that explicitly accepts site-wide dynamic rendering.
+
+### Consequences
+
+- Public pages stay statically optimizable.
+- AdSense and Google's CMP are allowed through a reviewed origin list rather than a rolling undocumented domain set or a generic `https:` script wildcard.
+- If Google later serves required scripts from a new host, CSP must be updated deliberately.
+- `proxy.ts` remains a session-only boundary.
