@@ -48,6 +48,7 @@ docs/
     ROADMAP.md
     FEATURES.md
     DECISIONS.md
+    ADSENSE_STRICT_CSP_MEASUREMENT.md
     API.md
     DATABASE.md
 

@@ -196,3 +196,40 @@ The production release verified that the related-content block is server-rendere
 - Relevance changes require deterministic tests, including guardrails against generic period/category matches such as unrelated Q2 articles.
 - Existing published article bodies must not be rewritten automatically to manufacture links; retroactive body links remain an editorial action.
 - The same approach may later expand to other published DivLab surfaces, but only through explicit product work rather than broad automatic rewriting.
+
+---
+
+## ADR-007: AdSense remains disabled until Product Owner accepts site-wide dynamic rendering
+
+Date: 2026-09-13
+Status: Proposed
+
+### Context
+
+Issue #303 asked for global Google AdSense. PR #304 implemented that with a static Google/AdSense/CMP domain allowlist encoded as production CSP and as an Accepted ADR. Google's current AdSense CSP documentation states that those domains change over time and that Google **only supports** strict CSP (per-request nonce + `'strict-dynamic'`).
+
+Next.js documents that nonce CSP is applied only during dynamic rendering and disables static optimization / ISR. That impact was measured on this repository (see `docs/project/ADSENSE_STRICT_CSP_MEASUREMENT.md`).
+
+Reading the request nonce from the root layout via `headers()` — the supported Next.js model — converted every HTML route from `○` static or `●` SSG to `ƒ` dynamic, including `/`, every prerendered `/news/[slug]` article and every prerendered `/learning/[slug]` article. Cache Components and Partial Prerendering cannot keep a static HTML shell without withholding the nonce from framework and theme scripts.
+
+### Decision
+
+Fail closed.
+
+- Do not enable AdSense in production.
+- Do not attach nonce + `strict-dynamic` CSP in `proxy.ts` or the root layout.
+- Do not adopt a rolling `ADSENSE_SCRIPT_SOURCES` (or similar) host allowlist.
+- Do not mark “Global AdSense with static allowlist CSP” as Accepted.
+- Keep `public/ads.txt` unchanged.
+- Keep the current static production CSP for Next.js, Supabase, Vercel Analytics and TradingView.
+- Treat Google's supported strict-CSP builder as measured supporting work only.
+
+Enabling AdSense later requires explicit Product Owner approval of the measured site-wide dynamic-rendering / CDN / cost trade-off. This ADR stays **Proposed** until that approval exists.
+
+### Consequences
+
+- Publisher verification via `/ads.txt` can continue.
+- Production rendering, SEO static HTML and Proxy session behavior stay as on `main`.
+- Sensitive paths (`proxy.ts`, `next.config.ts`, CSP modules) remain manual-only.
+- Automatic merge is forbidden.
+- A future enablement must use nonce + `'strict-dynamic'`, Report-Only then enforcement, a single official publisher script, and a new measured route table. It must not revive the PR #304 allowlist.
