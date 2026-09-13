@@ -48,6 +48,18 @@ const browser = await chromium.launch({ headless: true });
 const page = await browser.newPage();
 const cspViolations = [];
 const scriptRequests = [];
+const adNetwork = [];
+
+await page.addInitScript(() => {
+  window.__cspViolations = [];
+  document.addEventListener("securitypolicyviolation", (event) => {
+    window.__cspViolations.push({
+      blockedURI: event.blockedURI,
+      effectiveDirective: event.effectiveDirective,
+      violatedDirective: event.violatedDirective,
+    });
+  });
+});
 
 page.on("console", (message) => {
   if (message.type() === "error" && /content security policy|csp/i.test(message.text())) {
@@ -56,8 +68,27 @@ page.on("console", (message) => {
 });
 
 page.on("request", (request) => {
-  if (request.url().includes("adsbygoogle.js") || request.url().includes("pagead2.googlesyndication.com/pagead/js/adsbygoogle.js")) {
-    scriptRequests.push(request.url());
+  const url = request.url();
+  if (url.includes("adsbygoogle.js")) {
+    scriptRequests.push(url);
+  }
+  if (
+    /googlesyndication|doubleclick|fundingchoices|adtrafficquality|googleadservices|adservice\.google/i.test(
+      url,
+    )
+  ) {
+    adNetwork.push({ type: "request", url, resourceType: request.resourceType() });
+  }
+});
+
+page.on("response", (response) => {
+  const url = response.url();
+  if (
+    /googlesyndication|doubleclick|fundingchoices|adtrafficquality|googleadservices|adservice\.google/i.test(
+      url,
+    )
+  ) {
+    adNetwork.push({ type: "response", url, status: response.status() });
   }
 });
 
@@ -96,40 +127,57 @@ await check("existing security headers remain", () => {
 await page.waitForTimeout(2500);
 
 const scriptState = await page.evaluate((expectedSrc) => {
-  const nodes = [...document.querySelectorAll("script")].filter((node) => {
-    const src = node.getAttribute("src") ?? "";
-    return src.includes("adsbygoogle.js") || src.includes("pagead2.googlesyndication.com");
-  });
+  const official = [...document.querySelectorAll("script#google-adsense")];
+  const adsbygoogle = [...document.querySelectorAll("script")].filter((node) =>
+    (node.getAttribute("src") ?? "").includes("adsbygoogle.js"),
+  );
   return {
-    count: nodes.length,
-    sources: nodes.map((node) => node.getAttribute("src")),
-    ids: nodes.map((node) => node.id),
-    crossOrigin: nodes.map((node) => node.getAttribute("crossorigin")),
-    expectedPresent: nodes.some((node) => (node.getAttribute("src") ?? "") === expectedSrc),
+    officialCount: official.length,
+    officialSources: official.map((node) => node.getAttribute("src")),
+    officialCrossOrigin: official.map((node) => node.getAttribute("crossorigin")),
+    adsbygoogleCount: adsbygoogle.length,
+    adsbygoogleSources: adsbygoogle.map((node) => node.getAttribute("src")),
+    expectedPresent: official.some((node) => (node.getAttribute("src") ?? "") === expectedSrc),
+    cspViolations: window.__cspViolations ?? [],
   };
 }, ADSENSE_SRC);
 
-await check("AdSense script is present exactly once", () => {
-  assert.equal(scriptState.count, 1, `found ${scriptState.count} AdSense script tags`);
-  assert.equal(scriptState.expectedPresent, true, `sources=${JSON.stringify(scriptState.sources)}`);
-  assert.deepEqual(scriptState.ids, ["google-adsense"]);
-  assert.deepEqual(scriptState.crossOrigin, ["anonymous"]);
+await check("official AdSense bootstrap is present exactly once", () => {
+  assert.equal(scriptState.officialCount, 1, `found ${scriptState.officialCount} #google-adsense tags`);
+  assert.ok(
+    scriptState.adsbygoogleCount >= 1,
+    `missing adsbygoogle.js tags: ${JSON.stringify(scriptState.adsbygoogleSources)}`,
+  );
+  assert.equal(scriptState.expectedPresent, true, `sources=${JSON.stringify(scriptState.officialSources)}`);
+  assert.deepEqual(scriptState.officialCrossOrigin, ["anonymous"]);
   return JSON.stringify(scriptState);
 });
 
-await check("AdSense script request is not CSP-blocked", () => {
-  const blocked = cspViolations.filter((message) =>
-    /adsbygoogle|googlesyndication|fundingchoices/i.test(message),
+await check("AdSense/CMP resources are not CSP-blocked", () => {
+  const consoleBlocked = cspViolations.filter((message) =>
+    /adsbygoogle|googlesyndication|fundingchoices|doubleclick|adtrafficquality/i.test(message),
   );
-  assert.equal(blocked.length, 0, blocked.join(" | "));
-  assert.ok(
-    scriptRequests.length >= 1 || scriptState.expectedPresent,
-    "AdSense script was not observed on the network",
+  const eventBlocked = scriptState.cspViolations.filter((event) =>
+    /adsbygoogle|googlesyndication|fundingchoices|doubleclick|adtrafficquality|googleadservices|adservice\.google/i.test(
+      `${event.blockedURI} ${event.effectiveDirective}`,
+    ),
   );
-  return `requests=${scriptRequests.length}; violations=${cspViolations.length}`;
+  assert.equal(consoleBlocked.length, 0, consoleBlocked.join(" | "));
+  assert.equal(eventBlocked.length, 0, JSON.stringify(eventBlocked));
+  assert.ok(scriptRequests.length >= 1, "official AdSense script was not requested");
+  return `bootstrapRequests=${scriptRequests.length}; adNetwork=${adNetwork.length}; cspEvents=${scriptState.cspViolations.length}`;
 });
 
 await browser.close();
+
+report.adNetworkHosts = [...new Set(adNetwork.map((entry) => {
+  try {
+    return new URL(entry.url).origin;
+  } catch {
+    return entry.url;
+  }
+}))].sort();
+report.cspViolations = scriptState.cspViolations;
 
 const failed = report.checks.filter((item) => !item.ok);
 writeFileSync(REPORT_PATH, JSON.stringify(report, null, 2));
