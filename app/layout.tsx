@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import { Geist, Geist_Mono } from "next/font/google";
-import AdSenseScript from "@/components/adsense/AdSenseScript";
 import ThemeSync from "@/components/theme/ThemeSync";
 import { PRODUCTION_SITE_ORIGIN } from "@/lib/seo/site";
 import "./globals.css";
@@ -79,7 +78,6 @@ export default function RootLayout({
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
-        <AdSenseScript />
       </head>
       <body className="min-h-full flex flex-col">
         <ThemeSync />

@@ -199,28 +199,30 @@ The production release verified that the related-content block is server-rendere
 
 ---
 
-## ADR-007: Global AdSense with static allowlist CSP
+## ADR-007: AdSense blocked until official strict CSP is an accepted site-wide change
 
 Date: 2026-09-13
-Status: Accepted
+Status: Blocked
 
 ### Context
 
-DivLab needs a single global Google AdSense bootstrap (`ca-pub-1024192127032504`) while keeping the current production CSP, Supabase session proxy, Vercel Analytics, TradingView embeds, theme bootstrap and static/CDN rendering for public pages.
+Issue #303 asked for a single global Google AdSense bootstrap (`ca-pub-1024192127032504`) with a production-safe CSP, while preserving Supabase session proxy behavior, Vercel Analytics, TradingView, theme bootstrap, routes, SEO and public static/CDN rendering.
 
-Google's current AdSense CSP guidance only documents nonce + `strict-dynamic` (with `'unsafe-inline' 'unsafe-eval' https: http:` as older-browser fallbacks). Next.js 16 applies request nonces during server rendering, which requires every page to be dynamic and disables static optimization, ISR and default CDN caching.
+Google's current AdSense CSP documentation states that AdSense domains change over time and that Google only supports strict CSP: a per-response nonce plus `strict-dynamic` (with `'unsafe-inline' 'unsafe-eval' https: http:` as older-browser fallbacks). A rolling domain allowlist is not a supported AdSense CSP model.
 
-Issue #303 forbids that broader rendering change and also forbids replacing the current CSP with an unsupported or generic `https:` script policy just to make ads load.
+Next.js 16 official CSP guidance states that request nonces are applied during server rendering. Using a nonce therefore requires dynamic rendering: static optimization, ISR and default CDN caching are disabled, and Partial Prerendering is incompatible. Reading the nonce in the root layout via `headers()` would force that behavior for every public page.
+
+Issue #303 required fail-closed behavior rather than shipping an unsupported CSP when the supported model has that broader performance cost. A static AdSense/CMP origin allowlist was evaluated and rejected as a production architecture: it is not Google's supported model and must not be recorded as an accepted durable decision.
 
 ### Decision
 
-Keep the existing static allowlist CSP in `next.config.ts` and extend it with scoped Google AdSense / CMP origins. Load the official AdSense script exactly once from the root layout. Do not migrate `proxy.ts` to per-request nonces. Do not add `'strict-dynamic'` or `script-src https:`. Leave `public/ads.txt` unchanged.
+Do not enable AdSense in this change. Do not add `adsbygoogle` / `ca-pub` script tags. Do not broaden `script-src`, `connect-src` or `frame-src` for AdSense or CMP. Do not migrate `proxy.ts` to per-request nonces in this task. Leave `public/ads.txt` unchanged. Keep the existing static allowlist CSP for Next.js, Supabase, Vercel Analytics and TradingView.
 
-A future nonce + `strict-dynamic` migration remains valid only as a dedicated performance/security project that explicitly accepts site-wide dynamic rendering.
+A later dedicated project may implement Google's official nonce + `strict-dynamic` model only if DivLab explicitly accepts site-wide dynamic rendering, measures the SEO/CDN/TTFB impact, and re-validates Supabase session, theme bootstrap, Vercel Analytics and TradingView under that policy.
 
 ### Consequences
 
-- Public pages stay statically optimizable.
-- AdSense and Google's CMP are allowed through a reviewed origin list rather than a rolling undocumented domain set or a generic `https:` script wildcard.
-- If Google later serves required scripts from a new host, CSP must be updated deliberately.
-- `proxy.ts` remains a session-only boundary.
+- AdSense is not loaded in production from this work.
+- The current CSP is not weakened by an unsupported AdSense allowlist and is not replaced by an unmeasured nonce policy.
+- `ads.txt` remains in place for publisher verification without ad-code execution.
+- Shipping AdSense later is a security-and-performance project, not a layout-only follow-up.
