@@ -196,3 +196,83 @@ The production release verified that the related-content block is server-rendere
 - Relevance changes require deterministic tests, including guardrails against generic period/category matches such as unrelated Q2 articles.
 - Existing published article bodies must not be rewritten automatically to manufacture links; retroactive body links remain an editorial action.
 - The same approach may later expand to other published DivLab surfaces, but only through explicit product work rather than broad automatic rewriting.
+
+---
+
+## ADR-007: Global AdSense bootstrap with scheme-level HTTPS CSP
+
+Date: 2026-09-13
+Status: Accepted
+
+### Context
+
+DivLab needs a single global Google AdSense publisher bootstrap
+(`ca-pub-1024192127032504`) while keeping static/SSG rendering, the current
+security-header set, Supabase session proxy, Vercel Analytics, TradingView
+embeds and theme bootstrap.
+
+Rejected approaches in #303/#305 and closed PRs #304/#306/#307:
+
+- A rolling Google/AdSense host allowlist. Google's AdSense CSP documentation
+  states that AdSense domains change over time and that Google does not
+  support maintaining that list.
+- Site-wide request nonces + `strict-dynamic`. Reading a nonce in the root
+  layout makes all DivLab HTML dynamic and removes SSG/CDN benefits.
+
+Google's current AdSense CSP guidance documents nonce + `strict-dynamic` as
+the supported *strict* model, and also states that a **more permissive CSP
+may be chosen if it fits the use case**. Issue #308 uses that escape hatch
+deliberately.
+
+### Decision
+
+1. Load the official publisher script exactly once from the root layout
+   `<head>`:
+   `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1024192127032504`
+   with `async` and `crossorigin="anonymous"`.
+2. Keep `proxy.ts` as a session-only boundary. Do not add nonces or
+   `headers()` to the root layout.
+3. Keep CSP. Do not remove it. Do not add `http:` on HTTPS production.
+4. Relax only the directives AdSense/CMP actually need, using scheme-level
+   `https:` rather than a host list: `script-src`, `connect-src`,
+   `frame-src`, plus `font-src`, `style-src` and `media-src` for CMP/ad
+   creatives. `img-src` already allowed `https:`.
+5. Preserve `object-src 'none'`, `frame-ancestors 'none'`, `base-uri` /
+   `form-action` protections, `worker-src 'self' blob:`,
+   `upgrade-insecure-requests`, and the existing Supabase / Vercel /
+   TradingView source tokens.
+6. Leave `public/ads.txt` byte-for-byte unchanged. Do not add per-page
+   AdSense snippets or change Auto Ads placements in code.
+
+This is **not** strict CSP. Production already contained `'unsafe-inline'`
+and `'unsafe-eval'`. Adding `https:` on selected directives is a deliberate
+broadening, not a claim of nonce-based XSS protection.
+
+### Security trade-off versus current production CSP
+
+| Directive | Before | After | Trade-off |
+| --- | --- | --- | --- |
+| `script-src` | `'self' 'unsafe-inline' 'unsafe-eval'` + Vercel/TradingView hosts | same tokens + `https:` | Any HTTPS origin may load scripts. Combined with existing `'unsafe-inline'` / `'unsafe-eval'`, this is a permissive script policy chosen so AdSense/CMP can inject scripts from hosts that change over time. |
+| `connect-src` | `'self'` + Supabase / Vercel / TradingView hosts | same tokens + `https:` | The page may fetch any HTTPS origin. If XSS exists, this widens exfiltration destinations. `wss://*.supabase.co` and local Supabase HTTP/WS origins remain explicit because `https:` does not cover them. |
+| `frame-src` | `'self'` + TradingView hosts | same tokens + `https:` | Any HTTPS iframe may be embedded. Needed for SafeFrame creatives and Google CMP dialogs. `X-Frame-Options: DENY` and `frame-ancestors 'none'` still prevent *this site* from being framed. |
+| `font-src` | `'self' data:` | `'self' data: https:` | CMP/ad fonts from HTTPS origins may load. |
+| `style-src` | `'self' 'unsafe-inline'` | `'self' 'unsafe-inline' https:` | CMP/ad stylesheets from HTTPS origins may load. Inline styles were already allowed. |
+| `media-src` | inherited `default-src 'self'` | `'self' https:` | Video ad creatives from HTTPS origins may play. |
+| `img-src` | already `'self' data: blob: https:` | unchanged | — |
+| `object-src` | `'none'` | unchanged | — |
+| `frame-ancestors` | `'none'` | unchanged | — |
+| `worker-src` | `'self' blob:` | unchanged | Worker protections are preserved. |
+| `http:` | absent | still absent | HTTPS-only production is preserved. |
+
+Do not describe this policy as strict CSP in reviews or future work.
+
+### Consequences
+
+- Public SSG/CDN routes stay statically optimizable.
+- Auto Ads can be controlled from the AdSense account without adding code
+  to each future page.
+- CSP must not grow a Google host list later; if AdSense requires a new
+  *scheme* (for example `http:`), that is a separate security decision.
+- A future nonce + `strict-dynamic` migration remains valid only as a
+  dedicated project that explicitly accepts site-wide dynamic rendering.
+
