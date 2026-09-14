@@ -17,6 +17,7 @@
     "autoredaktion:prepare-branch": "tsx scripts/autoredaktion-prepare-branch.ts",
     "autoredaktion:preflight": "npm run lint && npm run typecheck && npm run autoredaktion:validate-changed && npm run test:autoredaktion && npm run test:news-images",
     "autoredaktion:pr-policy": "tsx scripts/autoredaktion-pr-policy.ts",
+    "autoredaktion:live-verify": "tsx scripts/autoredaktion-live-verify.ts",
     "autoredaktion:image": "tsx scripts/autoredaktion-image.ts",
     "autoredaktion:image:borssverige": "tsx scripts/autoredaktion-image.ts --series borssverige",
     "autoredaktion:image:norden": "tsx scripts/autoredaktion-image.ts --series norden-i-centrum",

@@ -6,7 +6,9 @@ on:
     types: [completed]
 
 concurrency:
-  group: autoredaktion-release-${{ github.event.workflow_run.head_branch }}
+  # One global release lane for both daily series. This prevents Norden and
+  # BörsSverige from racing each other through Ready/merge.
+  group: autoredaktion-release-global
   cancel-in-progress: false
 
 permissions:
@@ -84,19 +86,30 @@ jobs:
         run: |
           set -euo pipefail
           pr_head="${{ steps.resolve.outputs.pr_head }}"
-          state="$(gh api "repos/$GITHUB_REPOSITORY/commits/$pr_head/status" --jq '[.statuses[] | select(.context == "autoredaktion/preflight")][0].state // ""')"
+          state="$(gh api "repos/$GITHUB_REPOSITORY/commits/$pr_head/status" --jq '[.statuses[] | select(.context == "autoredaktion/preflight")] | sort_by(.updated_at) | last.state // ""')"
           if [[ "$state" != "success" ]]; then
             echo "Missing successful autoredaktion/preflight status on $pr_head." >&2
             exit 1
           fi
 
-      - name: Green gate -> ready and merge exact head
+      - name: Green gate -> require latest main, then ready and merge exact head
         if: steps.resolve.outputs.skip == 'false' && env.RUN_CONCLUSION == 'success'
         shell: bash
         run: |
           set -euo pipefail
           pr="${{ steps.resolve.outputs.pr_number }}"
           head="${{ steps.resolve.outputs.pr_head }}"
+
+          # The branch must still contain latest main at merge time. This is the
+          # final stale-write guard protecting the additive news registry when
+          # the two weekday series run close together.
+          git fetch origin main "$HEAD_BRANCH" --no-tags
+          main_sha="$(git rev-parse origin/main)"
+          if ! git merge-base --is-ancestor "$main_sha" "$head"; then
+            gh pr comment "$pr" --body "Autoredaktion STOPP: main flyttade efter preflight/Quality Gate. PR-head $head innehåller inte senaste main $main_sha. Ingen merge eller ny deployment skapas automatiskt."
+            exit 0
+          fi
+
           gh pr ready "$pr"
           result="$(gh api --method PUT "repos/$GITHUB_REPOSITORY/pulls/$pr/merge" \
             -f merge_method='merge' \

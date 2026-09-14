@@ -1,16 +1,16 @@
 # Autoredaktion v1.1 — source of truth
 
-Status: **Autoredaktion v1.1 READY / release hardening phase A implemented**  
+Status: **Autoredaktion v1.1 READY / release hardening phase B implemented**  
 Approved templates: **Norden i centrum PASS ✅ / BörsSverige PASS ✅**  
 Scheduler: the existing ChatGPT weekday jobs remain the only scheduler: **08:00 Norden i centrum / 08:20 BörsSverige**.
 
-This document is the authoritative runbook for Autoredaktion v1.1 image production and the managed publication handoff. It supersedes older v1.1 notes in `AUTOREDATION_V1.md` and `AUTOREDATION_V1_1_VISUAL_REWORK.md` where they differ.
+This document is the authoritative runbook for Autoredaktion v1.1 image production, managed publication handoff, production observation and live verification. It supersedes older v1.1 notes in `AUTOREDATION_V1.md` and `AUTOREDATION_V1_1_VISUAL_REWORK.md` where they differ.
 
 ## Editorial source of truth
 
 `DIVLAB_REDAKTION_MASTER.md` remains authoritative for research, fact-checking, language, SEO and editorial quality. Release automation must never weaken those rules.
 
-## Managed flow after release hardening
+## Final managed flow
 
 The weekday ChatGPT job owns the editorial phase and exactly one initial Git commit:
 
@@ -29,11 +29,15 @@ GitHub then owns deterministic release preparation:
 
 After the PR exists, ChatGPT is no longer required to stay alive. `Autoredaktion Release State Machine` reacts to the completed Quality Gate:
 
-- green exact-head gate → strict PR-policy check → draft becomes Ready → merge exact SHA;
+- green exact-head gate → strict PR-policy check → latest-main check → draft becomes Ready → merge exact SHA;
 - red gate → at most **one** deterministic repair commit on the **same branch**, then exactly one manually dispatched Quality Gate retry;
-- second failure, stale head, unrelated diff or non-repairable error → STOPP / fail closed.
+- second failure, stale head, stale main, unrelated diff or non-repairable error → STOPP / fail closed.
 
-This phase deliberately does not implement the later post-merge deployment/live-verification hardening. Vercel's existing Git integration still deploys `main`; production observation and live verification are the next phase.
+After a successful managed merge, `Autoredaktion Production Verify` owns the asynchronous production phase:
+
+`exact managed merge SHA → observe Vercel status on that exact SHA → divlab.se live checks → desktop/mobile verification → autoredaktion/production status → X-text`
+
+The production verifier is observation-only. It never calls a Vercel deploy hook, Vercel CLI deploy command, redeploy API, creates a hotfix commit or pushes to `main`.
 
 ## Pre-PR contract
 
@@ -133,7 +137,15 @@ A PR can be managed/merged automatically only when **all** of these are true:
 - commit budget is at most three commits: initial publication, optional preparation, optional single CI repair;
 - no more than one `[autoredaktion-ci-repair]` commit exists.
 
-The release workflow verifies the successful Quality Gate SHA equals the current PR head before merge. A stale green run can never merge a newer head.
+The release workflow verifies the successful Quality Gate SHA equals the current PR head and verifies that current `main` is still an ancestor of that head immediately before merge. A stale green run or stale registry base can never be merged.
+
+## Daily-series sequencing
+
+Norden i centrum is the first release lane at 08:00. BörsSverige is second at 08:20.
+
+Before BörsSverige creates its managed branch it must inspect the same-day Norden run. If Norden is still actively moving through preflight/PR/Quality Gate, BörsSverige waits and re-checks rather than writing a registry change from a stale `main`. When Norden is either successfully merged or definitively fail-closed, BörsSverige refreshes latest `main` and only then creates its one initial commit.
+
+GitHub additionally serializes managed release handling through one global `autoredaktion-release-global` concurrency lane. The latest-main ancestor check is the final defense if the two series still race.
 
 ## Bounded self-repair / anti-loop
 
@@ -146,9 +158,42 @@ Per series + Europe/Stockholm date:
 - if attempt 1 fails for a deterministic article/image contract error: one repair commit maximum on the same branch;
 - Quality Gate attempt 2 is explicitly dispatched for the repaired SHA;
 - if attempt 2 fails: STOPP;
-- no second repair branch, PR or merge is created.
+- no second repair branch, PR or merge is created;
+- max one merge to `main`;
+- max one production deployment caused by the managed publication;
+- no automated post-merge hotfix or redeploy.
 
 Expected deterministic repairs are intentionally narrow: exact `DivLab Redaktion` source, canonical image wiring, removal of invalid no-image fields and deterministic image regeneration. Editorial facts/prose, unrelated code failures and stale-main conflicts are never auto-rewritten by the repair stage.
+
+## Vercel deployment budget
+
+Vercel Git preview deployments are disabled for `autoredaktion/*` branches in `vercel.json`. GitHub preflight and Quality Gate are the branch validation systems.
+
+Therefore a normal managed publication has no Vercel deployment during branch preparation/repair. The single merge to `main` is the only publication action that is allowed to cause a production deployment.
+
+The post-merge workflow observes the `Vercel` commit status attached to the exact merge SHA. It can wait for that same status to become successful, but it cannot trigger a new deployment. Failure or timeout means `autoredaktion/production = failure` and STOPP.
+
+## Production/live verification contract
+
+A managed merge is not `LIVE` merely because it exists on `main`.
+
+The exact merge SHA must first receive a successful `Vercel` status. The live verifier then checks `https://divlab.se/news/[slug]` and `/news` for:
+
+- article HTTP 200;
+- exact H1/title and published timestamp;
+- SEO title and description;
+- canonical URL on `https://divlab.se`;
+- Open Graph title/description;
+- when an image is present: `twitter:card=summary_large_image`, exact `og:image` and `twitter:image`;
+- generated image HTTP 200, `image/png`, decodable PNG, exactly 1280×720;
+- article present in `/news`;
+- desktop 1280px and mobile 390px article rendering;
+- desktop/mobile `/news` article visibility and no horizontal overflow;
+- thumbnail exists in the article row when a generated image is present.
+
+Only after every check passes is commit status `autoredaktion/production` set to `success`. The workflow then posts a compact success trace and an X-text suggestion to the managed PR. X is never posted automatically.
+
+If any post-merge check fails, `autoredaktion/production` becomes `failure`. The workflow creates no commit, no second merge, no hotfix and no redeploy.
 
 ## Quality Gate
 
@@ -168,6 +213,12 @@ The ordinary Quality Gate still runs the complete repository checks:
 
 `quality-gate.yml` also exposes a bounded `workflow_dispatch` entry used only for the single repaired-SHA retry. It does not add a scheduler.
 
+## Future-day contract fixture
+
+The Autoredaktion test suite contains future-day fixtures for the next publication date shape. They validate canonical BörsSverige/Norden branch identity, Swedish article filename mapping, optional image fallback, production-status observation and canonical `divlab.se` URL construction before the next real live run.
+
+This prevents date-specific assumptions from making a green 14 September implementation fail on the next weekday.
+
 ## Existing production verification baseline
 
 The v1.1 renderer/template transport was production-verified 12 September 2026: PRs #295/#296/#297/#298 established the approved templates, canary delivery, 1280×720 PNG transport, responsive news images, and OG/X reuse of the article image path.
@@ -183,6 +234,8 @@ The existing 08:00 and 08:20 prompts must use this handoff:
 5. use one canonical managed branch and one initial commit containing article + additive registry change;
 6. wait for `autoredaktion/preflight=success` on the latest branch head;
 7. create one **draft** PR with marker `<!-- AUTOREDAKTION_MANAGED_V2 -->` and label `autoredaktion`;
-8. stop controlling CI/repair/Ready/merge; GitHub state machine owns that phase.
+8. stop controlling CI/repair/Ready/merge/deployment; GitHub state machines own the rest;
+9. BörsSverige must wait for same-day Norden to reach a terminal state before it creates its branch, then refresh latest `main`;
+10. never trigger a Vercel deployment or redeploy manually as part of the daily publication.
 
-A failed preflight means no PR. A failed second Quality Gate means no merge. Never bypass either gate.
+A failed preflight means no PR. A failed second Quality Gate means no merge. A failed Vercel/live verification means no automatic hotfix/redeploy. Never bypass any gate.
