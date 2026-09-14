@@ -24,6 +24,8 @@ jobs:
     if: startsWith(github.event.workflow_run.head_branch, 'autoredaktion/')
     runs-on: ubuntu-latest
     timeout-minutes: 12
+    outputs:
+      merge_sha: ${{ steps.merge.outputs.merge_sha }}
     env:
       GH_TOKEN: ${{ github.token }}
       HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
@@ -93,6 +95,7 @@ jobs:
           fi
 
       - name: Green gate -> require latest main, then ready and merge exact head
+        id: merge
         if: steps.resolve.outputs.skip == 'false' && env.RUN_CONCLUSION == 'success'
         shell: bash
         run: |
@@ -116,10 +119,12 @@ jobs:
             -f sha="$head" \
             -f commit_title="Autoredaktion: merge managed publication PR #$pr")"
           merged="$(printf '%s' "$result" | jq -r '.merged')"
-          if [[ "$merged" != "true" ]]; then
+          merge_sha="$(printf '%s' "$result" | jq -r '.sha // empty')"
+          if [[ "$merged" != "true" || -z "$merge_sha" ]]; then
             printf '%s\n' "$result" >&2
             exit 1
           fi
+          echo "merge_sha=$merge_sha" >> "$GITHUB_OUTPUT"
 
       - name: Failed gate -> at most one deterministic repair
         if: steps.resolve.outputs.skip == 'false' && env.RUN_CONCLUSION == 'failure'
@@ -186,3 +191,11 @@ jobs:
         shell: bash
         run: |
           gh pr comment "${{ steps.resolve.outputs.pr_number }}" --body "Autoredaktion STOPP: Quality Gate avslutades med status $RUN_CONCLUSION. Ingen merge, repair eller extra retry görs."
+
+  production_verify:
+    name: Production observation and live verification
+    needs: release
+    if: needs.release.outputs.merge_sha != ''
+    uses: ./.github/workflows/autoredaktion-production-verify.yml
+    with:
+      merge_sha: ${{ needs.release.outputs.merge_sha }}
