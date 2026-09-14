@@ -105,7 +105,7 @@ Template version: `norden-v2-source-of-truth`.
 
 ## USA i fokus — approved and frozen
 
-Canonical master: `public/news-demo/usa-i-fokus-2026-09-07.jpg`.
+Canonical master: `public/news-demo/usa-i-fokus-2026-09-07.png`.
 
 Static pixels preserve the approved New York/Wall Street composition, canonical DivLab branding, `USA I FOKUS`, the generic subtitle `De viktigaste börsnyheterna från USA inför dagen.` and the lower topic strip. Only the existing top-right date field is dynamic.
 
