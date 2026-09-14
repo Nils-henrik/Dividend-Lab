@@ -59,7 +59,7 @@ describe("autonomous article source normalization", () => {
     assert.doesNotMatch(normalized, /imageCaption:/);
   });
 
-  it("wires one canonical generated path to article and thumbnail", () => {
+  it("wires one canonical generated path to article, thumbnail and accessible alt text", () => {
     const path = canonicalGeneratedImagePath("borssverige", "2026-09-14");
     const normalized = normalizeAutonomousArticleSource(BAD_ARTICLE_SOURCE, {
       series: "borssverige",
@@ -68,6 +68,20 @@ describe("autonomous article source normalization", () => {
     assert.equal((normalized.match(/imageUrl:/g) ?? []).length, 1);
     assert.equal((normalized.match(/thumbnailImageUrl:/g) ?? []).length, 1);
     assert.equal((normalized.match(/\/news\/generated\/borssverige-2026-09-14\.png/g) ?? []).length, 2);
+    assert.match(normalized, /imageAlt: "BörsSverige 2026-09-14/);
+  });
+
+  it("preserves a meaningful editorial image alt when one is already supplied", () => {
+    const source = BAD_ARTICLE_SOURCE.replace(
+      "  imageAlt: null,",
+      '  imageAlt: "Egen redaktionell alttext",',
+    );
+    const normalized = normalizeAutonomousArticleSource(source, {
+      series: "borssverige",
+      imagePath: canonicalGeneratedImagePath("borssverige", "2026-09-14"),
+    });
+    assert.equal((normalized.match(/imageAlt:/g) ?? []).length, 1);
+    assert.match(normalized, /imageAlt: "Egen redaktionell alttext"/);
   });
 });
 
