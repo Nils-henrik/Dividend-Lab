@@ -21,6 +21,12 @@ function isNullOrEmptyStringProperty(line: string, key: string): boolean {
   return new RegExp(`^  ${escaped}:\\s*(?:null|""|'')\\s*,?\\s*$`).test(line);
 }
 
+function generatedImageAlt(series: EditorialSeries, date: string): string {
+  return series === "borssverige"
+    ? `BörsSverige ${date} – DivLabs morgonöversikt över svenska börsnyheter.`
+    : `Norden i centrum ${date} – DivLabs morgonöversikt över nordiska börsnyheter.`;
+}
+
 export function canonicalGeneratedImagePath(
   series: EditorialSeries,
   date: string,
@@ -46,11 +52,9 @@ export function normalizeAutonomousArticleSource(
 ): string {
   const hadTrailingNewline = sourceText.endsWith("\n");
   const imagePath = options.imagePath ?? null;
-  if (imagePath) {
-    const match = GENERATED_IMAGE_PATH.exec(imagePath);
-    if (!match || match[1] !== options.series) {
-      throw new Error(`Non-canonical generated image path for ${options.series}: ${imagePath}`);
-    }
+  const imageMatch = imagePath ? GENERATED_IMAGE_PATH.exec(imagePath) : null;
+  if (imagePath && (!imageMatch || imageMatch[1] !== options.series)) {
+    throw new Error(`Non-canonical generated image path for ${options.series}: ${imagePath}`);
   }
 
   let sourceFound = false;
@@ -82,17 +86,22 @@ export function normalizeAutonomousArticleSource(
     throw new Error("Autonomous article source field is missing");
   }
 
-  if (imagePath) {
+  if (imagePath && imageMatch) {
     const featuredIndex = next.findIndex((line) => /^  featured:\s*(?:true|false),?\s*$/.test(line));
     if (featuredIndex < 0) {
       throw new Error("Autonomous article featured field is missing");
     }
-    next.splice(
-      featuredIndex + 1,
-      0,
+    const hasImageAlt = next.some((line) => topLevelProperty(line) === "imageAlt");
+    const inserted = [
       `  imageUrl: ${JSON.stringify(imagePath)},`,
       `  thumbnailImageUrl: ${JSON.stringify(imagePath)},`,
-    );
+    ];
+    if (!hasImageAlt) {
+      inserted.push(
+        `  imageAlt: ${JSON.stringify(generatedImageAlt(options.series, imageMatch[2]))},`,
+      );
+    }
+    next.splice(featuredIndex + 1, 0, ...inserted);
   }
 
   const normalized = next.join("\n");
