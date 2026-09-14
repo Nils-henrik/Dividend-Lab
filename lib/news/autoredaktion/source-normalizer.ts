@@ -1,7 +1,7 @@
 import type { EditorialSeries } from "./types";
 
 const GENERATED_IMAGE_PATH =
-  /^\/news\/generated\/(borssverige|norden-i-centrum)-(\d{4}-\d{2}-\d{2})\.png$/;
+  /^\/news\/generated\/(borssverige|norden-i-centrum|usa-i-fokus)-(\d{4}-\d{2}-\d{2})\.png$/;
 
 const IMAGE_PATH_FIELDS = new Set(["imageUrl", "thumbnailImageUrl"]);
 const IMAGE_METADATA_FIELDS = new Set([
@@ -22,9 +22,13 @@ function isNullOrEmptyStringProperty(line: string, key: string): boolean {
 }
 
 function generatedImageAlt(series: EditorialSeries, date: string): string {
-  return series === "borssverige"
-    ? `BörsSverige ${date} – DivLabs morgonöversikt över svenska börsnyheter.`
-    : `Norden i centrum ${date} – DivLabs morgonöversikt över nordiska börsnyheter.`;
+  if (series === "borssverige") {
+    return `BörsSverige ${date} – DivLabs morgonöversikt över svenska börsnyheter.`;
+  }
+  if (series === "norden-i-centrum") {
+    return `Norden i centrum ${date} – DivLabs morgonöversikt över nordiska börsnyheter.`;
+  }
+  return `USA i fokus ${date} – DivLabs översikt över den amerikanska börsmarknaden inför Wall Streets öppning.`;
 }
 
 export function canonicalGeneratedImagePath(
