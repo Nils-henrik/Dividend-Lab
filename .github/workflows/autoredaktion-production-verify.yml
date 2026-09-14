@@ -82,7 +82,7 @@ jobs:
           gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$MERGE_SHA" \
             -f state='pending' \
             -f context='autoredaktion/production' \
-            -f description='Waiting for the one Vercel production deployment and live verification'
+            -f description='Waiting for Vercel on exact merge SHA and divlab.se live checks'
 
       - name: Setup Node.js
         if: steps.detect.outputs.managed == 'true'
@@ -144,7 +144,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          npm run autoredaktion:live-verify | tee /tmp/autoredaktion-live.json
+          # Call tsx directly so the capture contains JSON only; npm's script
+          # banner would make jq parsing ambiguous.
+          npx tsx scripts/autoredaktion-live-verify.ts | tee /tmp/autoredaktion-live.json
+          jq -e '.ok == true and (.articleUrl | startswith("https://divlab.se/news/"))' /tmp/autoredaktion-live.json >/dev/null
           x_text="$(jq -r '.xText' /tmp/autoredaktion-live.json)"
           article_url="$(jq -r '.articleUrl' /tmp/autoredaktion-live.json)"
           image_url="$(jq -r '.imageUrl // ""' /tmp/autoredaktion-live.json)"
@@ -164,7 +167,7 @@ jobs:
             -f state='success' \
             -f context='autoredaktion/production' \
             -f target_url='${{ steps.live.outputs.article_url }}' \
-            -f description='Vercel production READY-equivalent and divlab.se live checks passed'
+            -f description='Exact Vercel SHA and divlab.se live checks passed'
 
       - name: Report success on managed PR
         if: steps.detect.outputs.managed == 'true'
@@ -175,7 +178,7 @@ jobs:
           Autoredaktion LIVE ✅
 
           - exact merge SHA: `${{ env.MERGE_SHA }}`
-          - Vercel status for the same SHA: success
+          - Vercel status for the same main SHA: success
           - production URL verified: ${{ steps.live.outputs.article_url }}
           - article + `/news`: desktop PASS / mobile PASS
           - generated PNG: HTTP/PNG/1280×720 verified when image is present
@@ -193,7 +196,7 @@ jobs:
           gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$MERGE_SHA" \
             -f state='failure' \
             -f context='autoredaktion/production' \
-            -f description='Production/live verification failed; no automatic redeploy or hotfix is allowed'
+            -f description='Live verification failed; no automatic redeploy or hotfix allowed'
           pr='${{ steps.detect.outputs.pr }}'
           if [[ -n "$pr" ]]; then
             gh pr comment "$pr" --body 'Autoredaktion BLOCKED ❌ efter merge. Production- eller live-verifieringen klarade inte fail-closed-kedjan. Ingen extra commit, hotfix, redeploy eller andra production-deployment har skapats av workflowet. Kontrollera körningen `Autoredaktion Production Verify` för exakt blockerare.'
