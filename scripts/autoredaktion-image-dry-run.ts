@@ -10,6 +10,7 @@ import {
 import {
   BORSSVERIGE_TEMPLATE_V2,
   NORDEN_I_CENTRUM_TEMPLATE_V2,
+  USA_I_FOKUS_TEMPLATE_V1,
   type SeriesImageTemplate,
 } from "@/lib/news/images/templates";
 import { SERIES_IMAGE_HEIGHT, SERIES_IMAGE_WIDTH } from "@/lib/news/images/types";
@@ -98,6 +99,7 @@ async function main() {
     REFERENCES_DIR,
   );
   await copyReference(NORDEN_I_CENTRUM_TEMPLATE_V2.referencePath, "norden-reference.png");
+  await copyReference(USA_I_FOKUS_TEMPLATE_V1.referencePath, "usa-i-fokus-reference.jpg");
 
   // Nearby published editions are review evidence for the established dynamic
   // zones. They are copied only into the CI artifact and are never templates or
@@ -121,10 +123,14 @@ async function main() {
     ),
   ]);
 
-  // Canonical reference reproduction at the fixed social-image dimensions.
+  // Canonical reference reproductions at the fixed social-image dimensions.
   await writeResizedReference(
     NORDEN_I_CENTRUM_TEMPLATE_V2.referencePath,
     "norden-canonical-reference-reproduction.png",
+  );
+  await writeResizedReference(
+    USA_I_FOKUS_TEMPLATE_V1.referencePath,
+    "usa-i-fokus-canonical-reference-reproduction.png",
   );
 
   const results = [];
@@ -179,6 +185,19 @@ async function main() {
   });
   results.push(nordenMax, nordenNoLogos, nordenMissing);
 
+  const usa14 = await renderReview("usa-i-fokus-date-14.png", {
+    series: "usa-i-fokus",
+    date: "2026-09-14",
+    articleSlug: "visual-v1-usa-i-fokus-14",
+    companies: ["Nvidia", "Apple", "Microsoft"],
+  });
+  const usa30 = await renderReview("usa-i-fokus-date-30.png", {
+    series: "usa-i-fokus",
+    date: "2026-09-30",
+    articleSlug: "visual-v1-usa-i-fokus-30",
+  });
+  results.push(usa14, usa30);
+
   const borsDiff = await writeDiff(
     "borssverige-static-region-diff.png",
     bs14.target,
@@ -191,6 +210,11 @@ async function main() {
     nordenFour.target,
     NORDEN_I_CENTRUM_TEMPLATE_V2,
   );
+  const usaDiff = await writeDiff(
+    "usa-i-fokus-static-region-diff.png",
+    usa14.target,
+    USA_I_FOKUS_TEMPLATE_V1,
+  );
 
   console.log(
     JSON.stringify(
@@ -200,6 +224,7 @@ async function main() {
         staticRegression: {
           borssverige: borsDiff,
           norden: nordenDiff,
+          usa: usaDiff,
         },
         results: results.map((result) => ({
           targetName: result.targetName,
