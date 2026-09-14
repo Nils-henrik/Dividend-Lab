@@ -119,6 +119,7 @@ async function verifyHttp(article: NewsArticle) {
   );
 
   if (expectedImage) {
+    assert.ok(article.imageAlt?.trim(), "Generated live image must have accessible alt text");
     assert.equal(
       metaContent(articleFetch.text, "name", "twitter:card"),
       "summary_large_image",
@@ -169,7 +170,10 @@ async function verifyBrowser(article: NewsArticle, articleUrl: string, expectedI
       { name: "desktop", width: 1280, height: 800 },
       { name: "mobile", width: 390, height: 844 },
     ]) {
-      const page = await browser.newPage({ viewport: { width: viewport.width, height: viewport.height } });
+      const context = await browser.newContext({
+        viewport: { width: viewport.width, height: viewport.height },
+      });
+      const page = await context.newPage();
       try {
         await page.goto(articleUrl, { waitUntil: "domcontentloaded", timeout: 45_000 });
         await page.getByRole("heading", { level: 1, name: article.title, exact: true }).waitFor({
@@ -190,12 +194,20 @@ async function verifyBrowser(article: NewsArticle, articleUrl: string, expectedI
         );
 
         if (expectedImage) {
-          const hero = page.locator(`img[src*="${article.imageUrl}"]`).first();
-          assert.ok((await hero.count()) >= 1, `${viewport.name}: article hero image missing`);
+          const hero = page.locator("article figure img").first();
+          await hero.waitFor({ state: "visible", timeout: 20_000 });
+          assert.equal(
+            await hero.getAttribute("alt"),
+            article.imageAlt,
+            `${viewport.name}: article hero alt mismatch`,
+          );
         }
 
         await page.goto(`${ORIGIN}/news`, { waitUntil: "domcontentloaded", timeout: 45_000 });
-        const articleLink = page.locator(`a[href="/news/${article.slug}"]`).filter({ hasText: article.title }).first();
+        const articleLink = page
+          .locator(`a[href="/news/${article.slug}"]`)
+          .filter({ hasText: article.title })
+          .first();
         await articleLink.waitFor({ state: "visible", timeout: 20_000 });
         const listingOverflow = await page.evaluate(() => ({
           scrollWidth: document.documentElement.scrollWidth,
@@ -208,10 +220,10 @@ async function verifyBrowser(article: NewsArticle, articleUrl: string, expectedI
 
         if (expectedImage) {
           const row = articleLink.locator("xpath=ancestor::article[1]");
-          assert.ok((await row.locator("img").count()) >= 1, `${viewport.name}: article thumbnail missing`);
+          await row.locator("img").first().waitFor({ state: "visible", timeout: 20_000 });
         }
       } finally {
-        await page.close();
+        await context.close();
       }
     }
   } finally {
