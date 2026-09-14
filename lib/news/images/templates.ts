@@ -164,7 +164,7 @@ export const NORDEN_I_CENTRUM_TEMPLATE_V2: SeriesImageTemplate = {
 export const USA_I_FOKUS_TEMPLATE_V1: SeriesImageTemplate = {
   series: "usa-i-fokus",
   templateVersion: "usa-i-fokus-v1-2026-09-07-generic-master",
-  referencePath: "public/news-demo/usa-i-fokus-2026-09-07.jpg",
+  referencePath: "public/news-demo/usa-i-fokus-2026-09-07.png",
   canonicalDivLabLogoSource:
     "public/news-demo/file_000000009cf48246883ae568fc196154.png",
   dynamicRegions: {
