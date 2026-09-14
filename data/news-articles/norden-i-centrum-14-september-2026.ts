@@ -20,14 +20,12 @@ export const NORDEN_I_CENTRUM_14_SEPTEMBER_2026_ARTICLE: NewsArticle = {
   summary:
     "Svensk inflation står i fokus efter SCB:s preliminära augustisiffror. I Norge söker 21 bolag nytt olje- och gasområde, medan Fortums långa elavtal med Google fortsätter att sätta fokus på Finlands AI- och energiinvesteringar. I Danmark har Novo Nordisk fått ett nytt Wegovy-godkännande i Kina.",
   category: "market",
-  source: "DivLab",
+  source: "DivLab Redaktion",
   publishedAt: "2026-09-14T08:10:00+02:00",
   url: "/news/norden-i-centrum-14-september-2026",
   featured: true,
-  imageUrl: null,
-  thumbnailImageUrl: null,
-  imageAlt: "",
-  imageCaption: "",
+  imageUrl: "/news/generated/norden-i-centrum-2026-09-14.png",
+  thumbnailImageUrl: "/news/generated/norden-i-centrum-2026-09-14.png",
   readingMinutes: 5,
   seoTitle: "Norden i centrum 14 september: inflation, olja och Fortum",
   seoDescription:
