@@ -7,6 +7,13 @@ function workflow(pathFromRoot: string): string {
   return readFileSync(path.join(process.cwd(), pathFromRoot), "utf8");
 }
 
+function executableWorkflowText(source: string): string {
+  return source
+    .split("\n")
+    .filter((line) => !line.trimStart().startsWith("#"))
+    .join("\n");
+}
+
 describe("Autoredaktion workflow handoff contract", () => {
   it("calls production verification directly from the release state machine", () => {
     const release = workflow(".github/workflows/autoredaktion-release.yml");
@@ -36,12 +43,18 @@ describe("Autoredaktion workflow handoff contract", () => {
     );
   });
 
-  it("keeps production verification observational and forbids redeploy commands", () => {
+  it("keeps production verification observational and forbids executable redeploy commands", () => {
     const production = workflow(
       ".github/workflows/autoredaktion-production-verify.yml",
     );
+    const executable = executableWorkflowText(production);
+
     assert.match(production, /No redeploy was triggered/);
-    assert.doesNotMatch(production, /vercel\s+deploy/i);
-    assert.doesNotMatch(production, /deploy-hook/i);
+    assert.doesNotMatch(executable, /\bvercel\s+(?:deploy|--prod)\b/i);
+    assert.doesNotMatch(executable, /\bdeploy(?:ment)?[_-]?hook\b/i);
+    assert.doesNotMatch(
+      executable,
+      /api\.vercel\.com\/v\d+\/deployments/i,
+    );
   });
 });
