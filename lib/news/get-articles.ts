@@ -1,3 +1,4 @@
+import { NORDEN_I_CENTRUM_14_SEPTEMBER_2026_ARTICLE } from "@/data/news-articles/norden-i-centrum-14-september-2026";
 import { BORSSVERIGE_8_SEPTEMBER_2026_ARTICLE } from "@/data/news-articles/borssverige-8-september-2026";
 import { NORDEN_I_CENTRUM_8_SEPTEMBER_2026_ARTICLE } from "@/data/news-articles/norden-i-centrum-8-september-2026";
 import { NORDEN_I_CENTRUM_7_SEPTEMBER_2026_ARTICLE } from "@/data/news-articles/norden-i-centrum-7-september-2026";
@@ -119,6 +120,7 @@ function resolveNewsArticleImages(article: NewsArticle): NewsArticle {
 }
 
 const PUBLISHED_NEWS_ARTICLES: NewsArticle[] = [
+  applyNewsSearchSeo(NORDEN_I_CENTRUM_14_SEPTEMBER_2026_ARTICLE),
   applyNewsSearchSeo(BORSSVERIGE_8_SEPTEMBER_2026_ARTICLE),
   applyNewsSearchSeo(NORDEN_I_CENTRUM_8_SEPTEMBER_2026_ARTICLE),
   applyNewsSearchSeo(NORDEN_I_CENTRUM_7_SEPTEMBER_2026_ARTICLE),
