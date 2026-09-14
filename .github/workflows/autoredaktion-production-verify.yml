@@ -1,0 +1,201 @@
+name: Autoredaktion Production Verify
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: autoredaktion-production-${{ github.sha }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  statuses: write
+  issues: write
+  pull-requests: read
+
+jobs:
+  verify:
+    name: Observe Vercel and verify live publication
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      MERGE_SHA: ${{ github.sha }}
+      LIVE_ORIGIN: https://divlab.se
+
+    steps:
+      - name: Checkout exact main commit
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: Detect managed Autoredaktion merge
+        id: detect
+        shell: bash
+        run: |
+          set -euo pipefail
+          message="$(git log -1 --pretty=%B)"
+          pr="$(printf '%s\n' "$message" | sed -nE 's/^Autoredaktion: merge managed publication PR #([0-9]+).*$/\1/p' | head -n1)"
+          if [[ -z "$pr" ]]; then
+            echo "managed=false" >> "$GITHUB_OUTPUT"
+            echo "Not a managed Autoredaktion merge; production verifier exits without side effects."
+            exit 0
+          fi
+
+          parent_count="$(git rev-list --parents -n1 HEAD | awk '{print NF-1}')"
+          if [[ "$parent_count" -lt 2 ]]; then
+            echo "Managed merge marker found on a non-merge commit; fail closed." >&2
+            exit 1
+          fi
+
+          base="$(git rev-parse HEAD^1)"
+          mapfile -t files < <(git diff --name-only "$base" HEAD)
+          mapfile -t articles < <(printf '%s\n' "${files[@]}" | grep -E '^data/news-articles/(borssverige|norden-i-centrum)-.+\.ts$' || true)
+          if [[ "${#articles[@]}" != "1" ]]; then
+            echo "Expected exactly one managed article in merge diff; found ${#articles[@]}." >&2
+            exit 1
+          fi
+
+          article="${articles[0]}"
+          if ! printf '%s\n' "${files[@]}" | grep -Fxq 'lib/news/get-articles.ts'; then
+            echo "Managed merge is missing lib/news/get-articles.ts." >&2
+            exit 1
+          fi
+          unexpected="$(printf '%s\n' "${files[@]}" | grep -Ev '^(data/news-articles/(borssverige|norden-i-centrum)-.+\.ts|lib/news/get-articles\.ts|public/news/generated/(borssverige|norden-i-centrum)-[0-9]{4}-[0-9]{2}-[0-9]{2}\.png)$' || true)"
+          if [[ -n "$unexpected" ]]; then
+            echo "Managed production merge contains unexpected files:" >&2
+            echo "$unexpected" >&2
+            exit 1
+          fi
+
+          echo "managed=true" >> "$GITHUB_OUTPUT"
+          echo "pr=$pr" >> "$GITHUB_OUTPUT"
+          echo "article=$article" >> "$GITHUB_OUTPUT"
+          echo "base=$base" >> "$GITHUB_OUTPUT"
+
+      - name: Mark production verification pending
+        if: steps.detect.outputs.managed == 'true'
+        shell: bash
+        run: |
+          gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$MERGE_SHA" \
+            -f state='pending' \
+            -f context='autoredaktion/production' \
+            -f description='Waiting for the one Vercel production deployment and live verification'
+
+      - name: Setup Node.js
+        if: steps.detect.outputs.managed == 'true'
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        if: steps.detect.outputs.managed == 'true'
+        run: npm ci
+
+      - name: Observe exact-SHA Vercel deployment
+        if: steps.detect.outputs.managed == 'true'
+        id: vercel
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Observation only. This workflow must never call a deploy hook, Vercel CLI
+          # deploy command, redeploy API or create a commit to trigger another build.
+          for attempt in $(seq 1 40); do
+            payload="$(gh api "repos/$GITHUB_REPOSITORY/commits/$MERGE_SHA/status")"
+            latest="$(printf '%s' "$payload" | jq -c '[.statuses[] | select((.context | ascii_downcase) == "vercel")] | sort_by(.updated_at) | last // {}')"
+            state="$(printf '%s' "$latest" | jq -r '.state // "missing"')"
+            target="$(printf '%s' "$latest" | jq -r '.target_url // ""')"
+            echo "Vercel observation $attempt/40: $state"
+
+            case "$state" in
+              success)
+                echo "target_url=$target" >> "$GITHUB_OUTPUT"
+                exit 0
+                ;;
+              failure|error)
+                echo "Vercel production status for exact merge SHA is $state." >&2
+                exit 1
+                ;;
+              pending|missing|"")
+                sleep 15
+                ;;
+              *)
+                echo "Unknown Vercel status '$state'; continuing observation of the same SHA."
+                sleep 15
+                ;;
+            esac
+          done
+          echo "Timed out waiting for Vercel status on exact merge SHA. No redeploy was triggered." >&2
+          exit 1
+
+      - name: Install Chromium for live mobile/desktop verification
+        if: steps.detect.outputs.managed == 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify live DivLab article and news listing
+        if: steps.detect.outputs.managed == 'true'
+        id: live
+        env:
+          AUTOREDAKTION_ARTICLE_FILE: ${{ steps.detect.outputs.article }}
+          AUTOREDAKTION_LIVE_ORIGIN: ${{ env.LIVE_ORIGIN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run autoredaktion:live-verify | tee /tmp/autoredaktion-live.json
+          x_text="$(jq -r '.xText' /tmp/autoredaktion-live.json)"
+          article_url="$(jq -r '.articleUrl' /tmp/autoredaktion-live.json)"
+          image_url="$(jq -r '.imageUrl // ""' /tmp/autoredaktion-live.json)"
+          {
+            echo "x_text<<EOF"
+            echo "$x_text"
+            echo "EOF"
+            echo "article_url=$article_url"
+            echo "image_url=$image_url"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Mark exact merge SHA LIVE
+        if: steps.detect.outputs.managed == 'true'
+        shell: bash
+        run: |
+          gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$MERGE_SHA" \
+            -f state='success' \
+            -f context='autoredaktion/production' \
+            -f target_url='${{ steps.live.outputs.article_url }}' \
+            -f description='Vercel production READY-equivalent and divlab.se live checks passed'
+
+      - name: Report success on managed PR
+        if: steps.detect.outputs.managed == 'true'
+        shell: bash
+        run: |
+          pr='${{ steps.detect.outputs.pr }}'
+          cat > /tmp/autoredaktion-success.md <<'EOF'
+          Autoredaktion LIVE ✅
+
+          - exact merge SHA: `${{ env.MERGE_SHA }}`
+          - Vercel status for the same SHA: success
+          - production URL verified: ${{ steps.live.outputs.article_url }}
+          - article + `/news`: desktop PASS / mobile PASS
+          - generated PNG: HTTP/PNG/1280×720 verified when image is present
+          - no redeploy, hotfix commit or second production deployment was triggered
+
+          **X-förslag:** ${{ steps.live.outputs.x_text }}
+          EOF
+          gh pr comment "$pr" --body-file /tmp/autoredaktion-success.md
+
+      - name: Fail closed without retry or redeploy
+        if: failure() && steps.detect.outputs.managed == 'true'
+        shell: bash
+        run: |
+          set +e
+          gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$MERGE_SHA" \
+            -f state='failure' \
+            -f context='autoredaktion/production' \
+            -f description='Production/live verification failed; no automatic redeploy or hotfix is allowed'
+          pr='${{ steps.detect.outputs.pr }}'
+          if [[ -n "$pr" ]]; then
+            gh pr comment "$pr" --body 'Autoredaktion BLOCKED ❌ efter merge. Production- eller live-verifieringen klarade inte fail-closed-kedjan. Ingen extra commit, hotfix, redeploy eller andra production-deployment har skapats av workflowet. Kontrollera körningen `Autoredaktion Production Verify` för exakt blockerare.'
+          fi
+          exit 1
