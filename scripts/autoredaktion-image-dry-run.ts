@@ -189,12 +189,13 @@ async function main() {
     series: "usa-i-fokus",
     date: "2026-09-14",
     articleSlug: "visual-v1-usa-i-fokus-14",
-    companies: ["Nvidia", "Apple", "Microsoft"],
+    companies: [],
   });
   const usa30 = await renderReview("usa-i-fokus-date-30.png", {
     series: "usa-i-fokus",
     date: "2026-09-30",
     articleSlug: "visual-v1-usa-i-fokus-30",
+    companies: [],
   });
   results.push(usa14, usa30);
 
