@@ -2,7 +2,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 
 import { renderSeriesImage, renderSeriesImageForArticle } from "@/lib/news/images";
-import type { EditorialSeries } from "@/lib/news/autoredaktion/types";
+import { EDITORIAL_SERIES, type EditorialSeries } from "@/lib/news/autoredaktion/types";
 import type { NewsArticle } from "@/types/news";
 
 function arg(name: string): string | null {
@@ -16,8 +16,10 @@ function flag(name: string): boolean {
 
 function seriesArg(): EditorialSeries {
   const value = arg("series");
-  if (value === "borssverige" || value === "norden-i-centrum") return value;
-  throw new Error("--series must be borssverige or norden-i-centrum");
+  if (value && (EDITORIAL_SERIES as readonly string[]).includes(value)) {
+    return value as EditorialSeries;
+  }
+  throw new Error(`--series must be one of: ${EDITORIAL_SERIES.join(", ")}`);
 }
 
 function isNewsArticle(value: unknown): value is NewsArticle {

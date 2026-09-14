@@ -74,9 +74,10 @@ const NORDIC_PHRASES = [
   "omxh",
 ] as const;
 
-const FOREIGN_MARKET_PHRASES = [
+const US_MARKET_PHRASES = [
   "wall street",
   "federal reserve",
+  "fed",
   "s&p 500",
   "s&p500",
   "dow jones",
@@ -89,18 +90,25 @@ const FOREIGN_MARKET_PHRASES = [
   "amerikansk",
   "nasdaq",
   "nyse",
+  "new york",
+  "treasury",
+  "treasuries",
+  "washington",
+  "usa",
+] as const;
+
+const FOREIGN_MARKET_PHRASES = [
+  ...US_MARKET_PHRASES,
   "nikkei",
   "hang seng",
   "shanghai",
   "tokyo",
   "asien",
   "asia",
-  "washington",
   "världsmarknaden",
   "varldsmarknaden",
   "global markets",
   "world market",
-  "usa",
 ] as const;
 
 const NORDIC_EXCHANGE_EXCEPTIONS = [
@@ -147,9 +155,7 @@ function countPhraseHits(text: string, phrases: readonly string[]): number {
 
   for (const phrase of phrases) {
     const needle = normalizeEditorialText(phrase);
-    if (!needle) {
-      continue;
-    }
+    if (!needle) continue;
 
     const escaped = needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const pattern = new RegExp(
@@ -162,12 +168,18 @@ function countPhraseHits(text: string, phrases: readonly string[]): number {
   return count;
 }
 
-function foreignMarketHits(text: string): number {
-  const neutralized = NORDIC_EXCHANGE_EXCEPTIONS.reduce((current, exception) => {
+function neutralizeNordicNasdaq(text: string): string {
+  return NORDIC_EXCHANGE_EXCEPTIONS.reduce((current, exception) => {
     return current.split(exception).join(" ");
   }, normalizeEditorialText(text));
+}
 
-  return countPhraseHits(neutralized, FOREIGN_MARKET_PHRASES);
+function foreignMarketHits(text: string): number {
+  return countPhraseHits(neutralizeNordicNasdaq(text), FOREIGN_MARKET_PHRASES);
+}
+
+function usaMarketHits(text: string): number {
+  return countPhraseHits(neutralizeNordicNasdaq(text), US_MARKET_PHRASES);
 }
 
 function swedenHits(text: string): number {
@@ -186,8 +198,10 @@ function looksLikeSeries(article: NewsArticle, series: EditorialSeries): boolean
   if (series === "borssverige") {
     return haystack.includes("borssverige") || haystack.includes("börssverige");
   }
-
-  return haystack.includes("norden i centrum") || haystack.includes("norden-i-centrum");
+  if (series === "norden-i-centrum") {
+    return haystack.includes("norden i centrum") || haystack.includes("norden-i-centrum");
+  }
+  return haystack.includes("usa i fokus") || haystack.includes("usa-i-fokus");
 }
 
 function validateBorssverige(article: NewsArticle): ValidationIssue[] {
@@ -285,6 +299,53 @@ function validateNorden(article: NewsArticle): ValidationIssue[] {
   return issues;
 }
 
+function validateUsa(article: NewsArticle): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  const body = articlePlainText(article);
+  const lead = leadText(article);
+  const usa = usaMarketHits(body);
+  const usaLead = usaMarketHits(lead);
+  const nordic = nordicHits(body);
+  const nordicLead = nordicHits(lead);
+
+  if (!looksLikeSeries(article, "usa-i-fokus")) {
+    issues.push(
+      fail(
+        "series-identity",
+        "USA i fokus articles must identify the series in title, slug or id",
+        "title",
+      ),
+    );
+  }
+
+  if (usa === 0 || usaLead === 0) {
+    issues.push(
+      fail(
+        "usa-focus",
+        "USA i fokus must primarily concern the US market, US-listed companies, Federal Reserve, US rates or US macro",
+        "title",
+      ),
+    );
+  }
+
+  const nordicDominated =
+    (nordicLead >= 2 && usaLead === 0) ||
+    (nordic >= 8 && usa <= 2) ||
+    (nordic >= 10 && nordic >= usa * 3);
+
+  if (nordicDominated) {
+    issues.push(
+      fail(
+        "nordic-dominated",
+        "USA i fokus rejects copy dominated by Sweden/Nordics without a direct US-market connection",
+        "title",
+      ),
+    );
+  }
+
+  return issues;
+}
+
 export function validateEditorialSeries(
   article: NewsArticle,
   series: EditorialSeries,
@@ -292,19 +353,23 @@ export function validateEditorialSeries(
   if (series === "borssverige") {
     return resultFromIssues(validateBorssverige(article));
   }
-
-  return resultFromIssues(validateNorden(article));
+  if (series === "norden-i-centrum") {
+    return resultFromIssues(validateNorden(article));
+  }
+  return resultFromIssues(validateUsa(article));
 }
 
 export function scoreEditorialGeography(article: NewsArticle): {
   sweden: number;
   nordic: number;
   foreign: number;
+  usa: number;
 } {
   const body = articlePlainText(article);
   return {
     sweden: swedenHits(body),
     nordic: nordicHits(body),
     foreign: foreignMarketHits(body),
+    usa: usaMarketHits(body),
   };
 }

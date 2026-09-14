@@ -1,6 +1,10 @@
 import type { NewsArticle } from "@/types/news";
 
-export const EDITORIAL_SERIES = ["borssverige", "norden-i-centrum"] as const;
+export const EDITORIAL_SERIES = [
+  "borssverige",
+  "norden-i-centrum",
+  "usa-i-fokus",
+] as const;
 
 export type EditorialSeries = (typeof EDITORIAL_SERIES)[number];
 
@@ -29,7 +33,7 @@ export type ArticleValidatorOptions = {
   /** Absolute path to the repo `public/` directory. */
   publicDir?: string;
   /**
-   * How current `publishedAt` must be. Morning series should stay on the
+   * How current `publishedAt` must be. Scheduled series should stay on the
    * Stockholm calendar day of the run, with a small skew for timezone edges.
    */
   maxAgeHours?: number;
@@ -52,7 +56,7 @@ export type AutoredaktionGateName =
 export type AutoredaktionGateResult = "pass" | "fail" | "skipped";
 
 /**
- * Compact operational trace the weekday ChatGPT jobs must leave after a run.
+ * Compact operational trace the scheduled ChatGPT jobs must leave after a run.
  * Success must not be claimed from commit SHA alone.
  */
 export type AutoredaktionRunTrace = {

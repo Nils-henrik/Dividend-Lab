@@ -155,8 +155,42 @@ export const NORDEN_I_CENTRUM_TEMPLATE_V2: SeriesImageTemplate = {
   },
 };
 
+/**
+ * v1 rule: the approved USA I FOKUS cover is a frozen static composition.
+ * The Wall Street/New York background, DivLab branding, series title, generic
+ * subtitle and topic strip remain unchanged. Only the top-right date field is
+ * dynamic. No daily company logos or article headline are injected.
+ */
+export const USA_I_FOKUS_TEMPLATE_V1: SeriesImageTemplate = {
+  series: "usa-i-fokus",
+  templateVersion: "usa-i-fokus-v1-2026-09-07-generic-master",
+  referencePath: "public/news-demo/usa-i-fokus-2026-09-07.png",
+  canonicalDivLabLogoSource:
+    "public/news-demo/file_000000009cf48246883ae568fc196154.png",
+  dynamicRegions: {
+    date: { x: 952, y: 42, width: 316, height: 58 },
+  },
+  dateTypography: {
+    x: 300,
+    baseline: 39,
+    textAnchor: "end",
+    fontFamily: "Lato, Arial, Helvetica, sans-serif",
+    fontSize: 30,
+    fontWeight: 800,
+    letterSpacing: 0.45,
+    fill: "#ffffff",
+  },
+  dateFormat: "day-month-year",
+  maxCompanyLogos: 0,
+  staticRegression: {
+    pixelChannelTolerance: 2,
+    maxChangedPixelRatio: 0.0001,
+    maxMeanAbsoluteError: 0.05,
+  },
+};
+
 export function getSeriesImageTemplate(series: EditorialSeries): SeriesImageTemplate {
-  return series === "borssverige"
-    ? BORSSVERIGE_TEMPLATE_V2
-    : NORDEN_I_CENTRUM_TEMPLATE_V2;
+  if (series === "borssverige") return BORSSVERIGE_TEMPLATE_V2;
+  if (series === "norden-i-centrum") return NORDEN_I_CENTRUM_TEMPLATE_V2;
+  return USA_I_FOKUS_TEMPLATE_V1;
 }

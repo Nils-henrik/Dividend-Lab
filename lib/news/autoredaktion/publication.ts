@@ -88,7 +88,11 @@ export function plannedModuleName(series: EditorialSeries, date: Date): string {
 export function plannedExportName(series: EditorialSeries, date: Date): string {
   const { year, monthIndex, day } = stockholmParts(date);
   const prefix =
-    series === "borssverige" ? "BORSSVERIGE" : "NORDEN_I_CENTRUM";
+    series === "borssverige"
+      ? "BORSSVERIGE"
+      : series === "norden-i-centrum"
+        ? "NORDEN_I_CENTRUM"
+        : "USA_I_FOKUS";
   return `${prefix}_${day}_${ENGLISH_MONTHS[monthIndex]}_${year}_ARTICLE`;
 }
 

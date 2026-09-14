@@ -16,7 +16,8 @@ import { validateDeclaredGeneratedImage } from "@/lib/news/images/validate-gener
 import type { NewsArticle } from "@/types/news";
 
 const REGISTRY_PATH = "lib/news/get-articles.ts";
-const SERIES_FILE = /^data\/news-articles\/(borssverige-|norden-i-centrum-).+\.ts$/;
+const SERIES_FILE =
+  /^data\/news-articles\/(borssverige-|norden-i-centrum-|usa-i-fokus-).+\.ts$/;
 
 function git(args: string[]): string {
   return execFileSync("git", args, {
@@ -145,7 +146,7 @@ function validateAutonomousContract(
       issues.push(
         fail(
           "publication-date",
-          "Autonomous morning articles must use the current Europe/Stockholm calendar date.",
+          "Autonomous articles must use the current Europe/Stockholm calendar date.",
           "publishedAt",
         ),
       );
@@ -226,6 +227,12 @@ function printIssues(file: string, issues: readonly ValidationIssue[]) {
   }
 }
 
+function seriesForFile(file: string): EditorialSeries {
+  if (file.includes("/borssverige-")) return "borssverige";
+  if (file.includes("/norden-i-centrum-")) return "norden-i-centrum";
+  return "usa-i-fokus";
+}
+
 async function main() {
   const base = baseSha();
   const changed = git(["diff", "--name-only", `${base}...HEAD`])
@@ -235,7 +242,7 @@ async function main() {
   const articleFiles = changed.filter((file) => SERIES_FILE.test(file));
 
   if (articleFiles.length === 0) {
-    console.log("Autoredaktion changed-article gate: no BörsSverige/Norden module changed.");
+    console.log("Autoredaktion changed-article gate: no managed series module changed.");
     return;
   }
 
@@ -276,9 +283,7 @@ async function main() {
     const moduleName = file
       .replace(/^data\/news-articles\//, "")
       .replace(/\.ts$/, "");
-    const series: EditorialSeries = file.includes("/borssverige-")
-      ? "borssverige"
-      : "norden-i-centrum";
+    const series = seriesForFile(file);
 
     const imageValidation = await validateDeclaredGeneratedImage(
       article,
