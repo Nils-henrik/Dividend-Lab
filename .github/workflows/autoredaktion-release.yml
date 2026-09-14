@@ -21,7 +21,10 @@ permissions:
 jobs:
   release:
     name: Bounded repair or merge
-    if: startsWith(github.event.workflow_run.head_branch, 'autoredaktion/')
+    if: >
+      startsWith(github.event.workflow_run.head_branch, 'autoredaktion/borssverige-') ||
+      startsWith(github.event.workflow_run.head_branch, 'autoredaktion/norden-i-centrum-') ||
+      startsWith(github.event.workflow_run.head_branch, 'autoredaktion/usa-i-fokus-')
     runs-on: ubuntu-latest
     timeout-minutes: 12
     outputs:
