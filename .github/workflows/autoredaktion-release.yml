@@ -1,0 +1,175 @@
+name: Autoredaktion Release State Machine
+
+on:
+  workflow_run:
+    workflows: ["Quality Gate"]
+    types: [completed]
+
+concurrency:
+  group: autoredaktion-release-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  statuses: write
+  actions: write
+
+jobs:
+  release:
+    name: Bounded repair or merge
+    if: startsWith(github.event.workflow_run.head_branch, 'autoredaktion/')
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      GH_TOKEN: ${{ github.token }}
+      HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+      RUN_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+      RUN_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+      EVENT_PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+
+    steps:
+      - name: Checkout release code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Resolve the one managed PR
+        id: resolve
+        shell: bash
+        run: |
+          set -euo pipefail
+          pr="$EVENT_PR_NUMBER"
+          if [[ -z "$pr" ]]; then
+            matches="$(gh pr list --state open --base main --head "$HEAD_BRANCH" --json number --jq '.[].number')"
+            count="$(printf '%s\n' "$matches" | sed '/^$/d' | wc -l | tr -d ' ')"
+            if [[ "$count" != "1" ]]; then
+              echo "Expected exactly one open PR for $HEAD_BRANCH, found $count."
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            pr="$matches"
+          fi
+
+          gh pr view "$pr" --json number,state,isDraft,headRefName,baseRefName,headRefOid,labels,files,commits,title,body > /tmp/autoredaktion-pr.json
+          pr_head="$(jq -r '.headRefOid' /tmp/autoredaktion-pr.json)"
+          if [[ "$pr_head" != "$RUN_HEAD_SHA" ]]; then
+            echo "Ignoring stale Quality Gate result $RUN_HEAD_SHA; PR head is $pr_head."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "pr_number=$pr" >> "$GITHUB_OUTPUT"
+          echo "pr_head=$pr_head" >> "$GITHUB_OUTPUT"
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+
+      - name: Enforce strict managed-PR identity
+        if: steps.resolve.outputs.skip == 'false'
+        run: npm run autoredaktion:pr-policy -- /tmp/autoredaktion-pr.json
+
+      - name: Require successful pre-PR status on exact head
+        if: steps.resolve.outputs.skip == 'false'
+        shell: bash
+        run: |
+          set -euo pipefail
+          pr_head="${{ steps.resolve.outputs.pr_head }}"
+          state="$(gh api "repos/$GITHUB_REPOSITORY/commits/$pr_head/status" --jq '[.statuses[] | select(.context == "autoredaktion/preflight")][0].state // ""')"
+          if [[ "$state" != "success" ]]; then
+            echo "Missing successful autoredaktion/preflight status on $pr_head." >&2
+            exit 1
+          fi
+
+      - name: Green gate -> ready and merge exact head
+        if: steps.resolve.outputs.skip == 'false' && env.RUN_CONCLUSION == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          pr="${{ steps.resolve.outputs.pr_number }}"
+          head="${{ steps.resolve.outputs.pr_head }}"
+          gh pr ready "$pr"
+          result="$(gh api --method PUT "repos/$GITHUB_REPOSITORY/pulls/$pr/merge" \
+            -f merge_method='merge' \
+            -f sha="$head" \
+            -f commit_title="Autoredaktion: merge managed publication PR #$pr")"
+          merged="$(printf '%s' "$result" | jq -r '.merged')"
+          if [[ "$merged" != "true" ]]; then
+            printf '%s\n' "$result" >&2
+            exit 1
+          fi
+
+      - name: Failed gate -> at most one deterministic repair
+        if: steps.resolve.outputs.skip == 'false' && env.RUN_CONCLUSION == 'failure'
+        shell: bash
+        run: |
+          set -euo pipefail
+          pr="${{ steps.resolve.outputs.pr_number }}"
+          if jq -r '.commits[].messageHeadline // empty' /tmp/autoredaktion-pr.json | grep -Fq '[autoredaktion-ci-repair]'; then
+            gh pr comment "$pr" --body 'Autoredaktion STOPP: det enda tillåtna CI-reparationsförsöket är redan förbrukat. Ingen ny commit, PR eller deployment skapas automatiskt.'
+            exit 0
+          fi
+
+          git fetch origin main "$HEAD_BRANCH" --no-tags
+          git checkout -B "$HEAD_BRANCH" "origin/$HEAD_BRANCH"
+          BASE_SHA="$(git rev-parse origin/main)"
+          if ! git merge-base --is-ancestor "$BASE_SHA" HEAD; then
+            gh pr comment "$pr" --body 'Autoredaktion STOPP: PR-branchen är stale mot senaste main. Automatisk repair görs inte på stale bas.'
+            exit 0
+          fi
+
+          if ! AUTOREDAKTION_BASE_SHA="$BASE_SHA" npm run autoredaktion:prepare-branch; then
+            gh pr comment "$pr" --body 'Autoredaktion STOPP: den deterministiska repair-fasen kunde inte köras säkert.'
+            exit 1
+          fi
+
+          git add -- data/news-articles public/news/generated
+          if git diff --cached --quiet; then
+            gh pr comment "$pr" --body 'Autoredaktion STOPP: Quality Gate är röd men ingen tillåten deterministisk artikel-/bildreparation finns. Ingen retry eller ny deployment skapas.'
+            exit 0
+          fi
+
+          unexpected="$(git diff --cached --name-only | grep -Ev '^(data/news-articles/(borssverige|norden-i-centrum)-.+\.ts|public/news/generated/(borssverige|norden-i-centrum)-[0-9]{4}-[0-9]{2}-[0-9]{2}\.png)$' || true)"
+          if [[ -n "$unexpected" ]]; then
+            echo "Repair touched unexpected files:" >&2
+            echo "$unexpected" >&2
+            exit 1
+          fi
+
+          git config user.name "divlab-autoredaktion"
+          git config user.email "actions@users.noreply.github.com"
+          git commit -m "fix(autoredaktion): [autoredaktion-ci-repair] deterministic publication repair"
+          git push origin "HEAD:$HEAD_BRANCH"
+          NEW_HEAD="$(git rev-parse HEAD)"
+
+          if ! AUTOREDAKTION_BASE_SHA="$BASE_SHA" npm run autoredaktion:preflight; then
+            gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$NEW_HEAD" \
+              -f state='failure' -f context='autoredaktion/preflight' \
+              -f description='Bounded repair still fails preflight'
+            gh pr comment "$pr" --body 'Autoredaktion STOPP: det enda repair-försöket skapades men klarade inte preflight. Ingen andra retry startas.'
+            exit 1
+          fi
+
+          gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$NEW_HEAD" \
+            -f state='success' -f context='autoredaktion/preflight' \
+            -f description='Bounded repair passed preflight'
+
+          gh workflow run quality-gate.yml --ref "$HEAD_BRANCH" \
+            -f base_sha="$BASE_SHA" \
+            -f pr_number="$pr"
+          gh pr comment "$pr" --body 'Autoredaktion: ett och endast ett deterministiskt repair-försök har pushats på samma branch. Quality Gate försök 2 är startat.'
+
+      - name: Non-success/non-failure conclusion stops safely
+        if: steps.resolve.outputs.skip == 'false' && env.RUN_CONCLUSION != 'success' && env.RUN_CONCLUSION != 'failure'
+        shell: bash
+        run: |
+          gh pr comment "${{ steps.resolve.outputs.pr_number }}" --body "Autoredaktion STOPP: Quality Gate avslutades med status $RUN_CONCLUSION. Ingen merge, repair eller extra retry görs."
