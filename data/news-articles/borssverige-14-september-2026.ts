@@ -24,6 +24,9 @@ export const BORSSVERIGE_14_SEPTEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-09-14T10:47:00+02:00",
   url: "/news/borssverige-14-september-2026-hemnet-omxs30",
   featured: true,
+  imageUrl: "/news/generated/borssverige-2026-09-14.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-09-14.png",
+  imageAlt: "BörsSverige 2026-09-14 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "BörsSverige 14 september: Hemnet faller i augusti",
   seoDescription:
