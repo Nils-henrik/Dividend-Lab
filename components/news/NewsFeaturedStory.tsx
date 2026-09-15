@@ -22,7 +22,7 @@ export default function NewsFeaturedStory({
   const listImageUrl = article.thumbnailImageUrl ?? article.imageUrl;
 
   return (
-    <section
+    <article
       aria-labelledby={`news-featured-${article.id}`}
       className="border-b divlab-border-neutral pb-6"
     >
@@ -104,6 +104,6 @@ export default function NewsFeaturedStory({
           </div>
         </div>
       </div>
-    </section>
+    </article>
   );
 }
