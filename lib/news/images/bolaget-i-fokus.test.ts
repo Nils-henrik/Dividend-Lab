@@ -13,7 +13,6 @@ test("Bolaget i fokus renders from the frozen reusable master", async () => {
     series: "bolaget-i-fokus",
     date: "2026-09-16",
     articleSlug: "bolaget-i-fokus-test",
-    companies: ["Volvo"],
   });
 
   assert.equal(result.status, "generated");
