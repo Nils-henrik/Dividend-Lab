@@ -3,6 +3,7 @@ import type { NewsArticle } from "@/types/news";
 export const EDITORIAL_SERIES = [
   "borssverige",
   "norden-i-centrum",
+  "bolaget-i-fokus",
   "usa-i-fokus",
 ] as const;
 
