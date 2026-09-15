@@ -4,7 +4,7 @@ export const AUTOREDAKTION_PR_LABEL = "autoredaktion";
 export const AUTOREDAKTION_PR_MARKER = "<!-- AUTOREDAKTION_MANAGED_V2 -->";
 
 const BRANCH_PATTERN =
-  /^autoredaktion\/(borssverige|norden-i-centrum|usa-i-fokus)-(\d{4}-\d{2}-\d{2})$/;
+  /^autoredaktion\/(borssverige|norden-i-centrum|bolaget-i-fokus|usa-i-fokus)-(\d{4}-\d{2}-\d{2})$/;
 const SWEDISH_MONTHS = [
   "januari",
   "februari",

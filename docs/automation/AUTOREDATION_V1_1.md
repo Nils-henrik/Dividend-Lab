@@ -1,33 +1,37 @@
 # Autoredaktion v1.1 — source of truth
 
 Status: **Autoredaktion v1.1 READY / managed release state machine active**  
-Approved templates: **Norden i centrum PASS ✅ / BörsSverige PASS ✅ / USA i fokus PASS ✅**  
-Scheduler: ChatGPT scheduled jobs are the only editorial scheduler: **08:00 Norden i centrum (weekdays) / 08:20 BörsSverige (weekdays) / 14:00 USA i fokus (daily), Europe/Stockholm**.
+Approved templates: **Norden i centrum PASS ✅ / BörsSverige PASS ✅ / Bolaget i fokus PASS ✅ / USA i fokus PASS ✅**  
+Scheduler: ChatGPT scheduled jobs are the only editorial scheduler: **08:00 Norden i centrum (weekdays) / 08:20 BörsSverige (weekdays) / 11:00 Bolaget i fokus (weekdays) / 14:00 USA i fokus (daily), Europe/Stockholm**.
 
 This document is the authoritative runbook for Autoredaktion v1.1 image production, managed publication handoff, production observation and live verification. It supersedes older v1.1 notes in `AUTOREDATION_V1.md` and `AUTOREDATION_V1_1_VISUAL_REWORK.md` where they differ.
 
 ## Editorial source of truth
 
-`DIVLAB_REDAKTION_MASTER.md` remains authoritative for research, fact-checking, language, SEO and editorial quality. Release automation must never weaken those rules.
+`DIVLAB_REDAKTION_MASTER.md` remains authoritative for general research, fact-checking, language, SEO and editorial quality. `DIVLAB_REDAKTION_P0_FACT_GATE.md` is the mandatory fact gate. The canonical series addendum for the 11:00 series is `DIVLAB_BOLAGET_I_FOKUS_MASTER.md`. Release automation must never weaken those rules.
 
 Series mandates:
 
 - **Norden i centrum:** Sweden, Norway, Denmark and Finland; Nordic market focus.
 - **BörsSverige:** Sweden only; Swedish listed companies, Swedish market and relevant Swedish macro.
+- **Bolaget i fokus:** one single materially newsworthy verified company event. Sweden first, then Nordics; an international company only when exceptionally relevant to DivLab's Swedish readers. No filler, rumor-driven angle or broad market sweep. If no sufficiently strong verified candidate exists, report `BLOCKED: inget tillräckligt nyhetsvärdigt och verifierat bolag` and create no branch.
 - **USA i fokus:** United States only as the primary market; US-listed companies, S&P 500, Nasdaq, Dow Jones, Federal Reserve, US Treasury rates and US macro. Non-US events may be used only when they have a direct, material link to the US market.
 
 USA i fokus at 14:00 must distinguish verified facts from events that have not happened yet. A US data release scheduled after the editorial research cutoff may be previewed with its verified scheduled time, but no result or market reaction may be invented. On Saturday/Sunday the article must explicitly treat the US cash market as closed and use the latest verified session plus the next confirmed US catalysts instead of pretending there is a same-day opening.
+
+Bolaget i fokus at 11:00 must only describe a share-price reaction when current trading has been independently verified close to the editorial research cutoff. A press release, report or secondary headline is never sufficient evidence by itself that a share is rising or falling.
 
 ## Final managed flow
 
 Each scheduled ChatGPT job owns the editorial phase and exactly one initial Git commit:
 
-`research → fact-check → article → SEO → latest-main check → one managed branch + one initial commit`
+`research → fact-check → P0 Fact Gate PASS → article → SEO → latest-main check → one managed branch + one initial commit`
 
 The branch must be named exactly:
 
 - `autoredaktion/norden-i-centrum-YYYY-MM-DD`
 - `autoredaktion/borssverige-YYYY-MM-DD`
+- `autoredaktion/bolaget-i-fokus-YYYY-MM-DD`
 - `autoredaktion/usa-i-fokus-YYYY-MM-DD`
 
 The initial commit contains only the new article module and the additive `lib/news/get-articles.ts` registry change. ChatGPT does **not** create the PR until the branch receives a successful `autoredaktion/preflight` commit status.
@@ -59,7 +63,7 @@ Preflight includes:
 - lint;
 - full TypeScript `tsc --noEmit`;
 - `autoredaktion:validate-changed` including source exactly `DivLab Redaktion`;
-- series/geography validation;
+- series/geography/series-identity validation;
 - Autoredaktion tests;
 - deterministic image render/validation.
 
@@ -75,6 +79,7 @@ Output:
 - exactly 1280×720;
 - `/news/generated/norden-i-centrum-YYYY-MM-DD.png`;
 - `/news/generated/borssverige-YYYY-MM-DD.png`;
+- `/news/generated/bolaget-i-fokus-YYYY-MM-DD.png`;
 - `/news/generated/usa-i-fokus-YYYY-MM-DD.png`.
 
 The binary PNG is produced inside GitHub Actions. The generated image and normalized article source are committed together in the one preparation commit marked `[autoredaktion-prepared]`.
@@ -103,6 +108,16 @@ Company selection is deterministic from the final article's `internalLinking.com
 
 Template version: `norden-v2-source-of-truth`.
 
+## Bolaget i fokus — approved and frozen
+
+Canonical master: `public/news-demo/bolaget-i-fokus-2026-09-15.png`.
+
+The exact approved Stockholm/lunch composition is reused for every weekday article. The DivLab logo, title/subtitle, waterfront scene and ferry Emelie are part of the frozen series identity. There is **no daily dynamic region** for date, company logo, article headline or other editorial text.
+
+Daily automation must not call image generation, live image search or logo fetching for this series. The deterministic renderer only creates the date-specific canonical 1280×720 PNG output from the frozen master so social metadata and the publication diff remain canonical.
+
+Template version: `bolaget-i-fokus-v1-2026-09-15-static-master`.
+
 ## USA i fokus — approved and frozen
 
 Canonical master: `public/news-demo/usa-i-fokus-2026-09-07.png`.
@@ -127,14 +142,14 @@ A declared generated image must pass:
 - approved local asset availability for every used Norden company;
 - masked static-region regression outside declared dynamic areas.
 
-BörsSverige and USA i fokus have no dynamic company row. Norden has maximum four company marks.
+BörsSverige and USA i fokus have no dynamic company row. Norden has maximum four company marks. Bolaget i fokus has no editorially dynamic content; its reusable master is static and any technical mask is non-content-bearing only.
 
 ## Strict PR identity
 
 A PR can be managed/merged automatically only when **all** of these are true:
 
 - base is `main`;
-- head matches exactly `autoredaktion/(borssverige|norden-i-centrum|usa-i-fokus)-YYYY-MM-DD`;
+- head matches exactly `autoredaktion/(borssverige|norden-i-centrum|bolaget-i-fokus|usa-i-fokus)-YYYY-MM-DD`;
 - PR is still open and draft;
 - PR body contains `<!-- AUTOREDAKTION_MANAGED_V2 -->`;
 - PR has label `autoredaktion`;
@@ -148,11 +163,12 @@ The release workflow verifies the successful Quality Gate SHA equals the current
 
 ## Daily-series sequencing
 
-Weekdays use three lanes:
+Weekdays use four lanes:
 
 1. Norden i centrum — 08:00 Europe/Stockholm.
 2. BörsSverige — 08:20 Europe/Stockholm, after same-day Norden reaches a terminal state.
-3. USA i fokus — 14:00 Europe/Stockholm, after any earlier same-day managed publication has reached a terminal state and after refreshing latest `main`.
+3. Bolaget i fokus — 11:00 Europe/Stockholm, after same-day Norden and BörsSverige have reached terminal states and after refreshing latest `main`.
+4. USA i fokus — 14:00 Europe/Stockholm, after all earlier same-day managed publications have reached terminal states and after refreshing latest `main`.
 
 On weekends only the daily USA i fokus scheduler runs. It must refresh latest `main` before creating its one branch.
 
@@ -206,8 +222,8 @@ The ordinary Quality Gate runs the complete repository checks: lint, typecheck, 
 
 Every scheduled prompt must use this handoff:
 
-1. read latest `main`, `DIVLAB_REDAKTION_MASTER.md`, `AUTOREDATION_V1.md` and this document;
-2. research broadly, prefer primary sources, and fact-check the final copy against the research cutoff;
+1. read latest `main`, `DIVLAB_REDAKTION_MASTER.md`, `DIVLAB_REDAKTION_P0_FACT_GATE.md`, `AUTOREDATION_V1.md` and this document; `Bolaget i fokus` must additionally read `DIVLAB_BOLAGET_I_FOKUS_MASTER.md`;
+2. research broadly, prefer primary sources, run a separate fact-check and require P0 Fact Gate PASS before handoff;
 3. set source exactly `DivLab Redaktion`;
 4. do not attempt the daily binary PNG upload from ChatGPT;
 5. use one canonical managed branch and one initial commit containing article + additive registry change;
@@ -217,4 +233,4 @@ Every scheduled prompt must use this handoff:
 9. later series must wait for earlier same-day managed publications to reach terminal state and then refresh latest `main` before creating their branch;
 10. never trigger a Vercel deployment or redeploy manually as part of the daily publication.
 
-A failed preflight means no PR. A failed second Quality Gate means no merge. A failed Vercel/live verification means no automatic hotfix/redeploy. Never bypass any gate.
+A failed P0 Fact Gate means no branch. A failed preflight means no PR. A failed second Quality Gate means no merge. A failed Vercel/live verification means no automatic hotfix/redeploy. Never bypass any gate.

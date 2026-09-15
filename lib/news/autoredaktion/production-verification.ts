@@ -77,7 +77,9 @@ export function buildAutoredaktionXCopy(
       ? `Dagens #BörsSverige är live: ${article.title}. Läs hela genomgången på DivLab:`
       : series === "norden-i-centrum"
         ? `Dagens #NordenICentrum är live: ${article.title}. Läs den nordiska morgongenomgången på DivLab:`
-        : `Dagens #USAiFokus är live: ${article.title}. Läs USA-genomgången på DivLab:`;
+        : series === "bolaget-i-fokus"
+          ? `Dagens #BolagetIFokus är live: ${article.title}. Läs hela bolagsgenomgången på DivLab:`
+          : `Dagens #USAiFokus är live: ${article.title}. Läs USA-genomgången på DivLab:`;
   const maxLeadLength = Math.max(32, 275 - url.length);
   const clipped =
     lead.length <= maxLeadLength
@@ -92,6 +94,9 @@ export function seriesFromManagedArticlePath(path: string): EditorialSeries | nu
   }
   if (/^data\/news-articles\/norden-i-centrum-.+\.ts$/.test(path)) {
     return "norden-i-centrum";
+  }
+  if (/^data\/news-articles\/bolaget-i-fokus-.+\.ts$/.test(path)) {
+    return "bolaget-i-fokus";
   }
   if (/^data\/news-articles\/usa-i-fokus-.+\.ts$/.test(path)) {
     return "usa-i-fokus";

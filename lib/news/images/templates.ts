@@ -51,6 +51,8 @@ export type SeriesImageTemplate = {
   templateVersion: string;
   referencePath: string;
   canonicalDivLabLogoSource: string;
+  /** Frozen templates are copied pixel-for-pixel after canonical 1280×720 resize. */
+  staticOnly?: boolean;
   dynamicRegions: {
     date: PixelRegion;
     companyRow?: PixelRegion;
@@ -189,8 +191,45 @@ export const USA_I_FOKUS_TEMPLATE_V1: SeriesImageTemplate = {
   },
 };
 
+/**
+ * Bolaget i fokus uses the exact user-approved lunch/Stockholm cover as a
+ * frozen reusable master. There is deliberately no daily date, company logo or
+ * article-specific text mutation. The date-specific output filename exists only
+ * so every managed publication has one canonical immutable social asset.
+ */
+export const BOLAGET_I_FOKUS_TEMPLATE_V1: SeriesImageTemplate = {
+  series: "bolaget-i-fokus",
+  templateVersion: "bolaget-i-fokus-v1-2026-09-15-static-master",
+  referencePath: "public/news-demo/bolaget-i-fokus-2026-09-15.png",
+  canonicalDivLabLogoSource:
+    "public/news-demo/file_000000009cf48246883ae568fc196154.png",
+  staticOnly: true,
+  // Required by the shared template type but never read for staticOnly masters.
+  dynamicRegions: {
+    date: { x: 0, y: 0, width: 1, height: 1 },
+  },
+  dateTypography: {
+    x: 0,
+    baseline: 1,
+    textAnchor: "start",
+    fontFamily: "Arial, sans-serif",
+    fontSize: 1,
+    fontWeight: 400,
+    letterSpacing: 0,
+    fill: "#000000",
+  },
+  dateFormat: "day-month-year",
+  maxCompanyLogos: 0,
+  staticRegression: {
+    pixelChannelTolerance: 0,
+    maxChangedPixelRatio: 0,
+    maxMeanAbsoluteError: 0,
+  },
+};
+
 export function getSeriesImageTemplate(series: EditorialSeries): SeriesImageTemplate {
   if (series === "borssverige") return BORSSVERIGE_TEMPLATE_V2;
   if (series === "norden-i-centrum") return NORDEN_I_CENTRUM_TEMPLATE_V2;
+  if (series === "bolaget-i-fokus") return BOLAGET_I_FOKUS_TEMPLATE_V1;
   return USA_I_FOKUS_TEMPLATE_V1;
 }

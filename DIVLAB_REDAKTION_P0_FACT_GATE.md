@@ -1,7 +1,7 @@
 # DivLab Redaktion — P0 Fact Gate
 
 **Status:** Obligatorisk redaktionell P0-regel  
-**Gäller:** All autonom och manuell redaktionell publicering, inklusive Norden i centrum, BörsSverige och USA i fokus.  
+**Gäller:** All autonom och manuell redaktionell publicering, inklusive Norden i centrum, BörsSverige, Bolaget i fokus och USA i fokus.  
 **Relation:** Detta dokument skärper faktakraven i `DIVLAB_REDAKTION_MASTER.md`. Vid oklarhet gäller den striktare fail-closed-regeln här.
 
 ## P0 — verifierade fakta före publicering

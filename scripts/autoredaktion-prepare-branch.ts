@@ -9,7 +9,7 @@ import { renderSeriesImageForArticle } from "@/lib/news/images";
 import type { NewsArticle } from "@/types/news";
 
 const SERIES_FILE =
-  /^data\/news-articles\/(borssverige-|norden-i-centrum-|usa-i-fokus-).+\.ts$/;
+  /^data\/news-articles\/(borssverige-|norden-i-centrum-|bolaget-i-fokus-|usa-i-fokus-).+\.ts$/;
 
 function git(args: string[]): string {
   return execFileSync("git", args, { cwd: process.cwd(), encoding: "utf8" }).trim();
@@ -24,6 +24,7 @@ function baseSha(): string {
 function seriesFromFile(file: string): EditorialSeries {
   if (file.startsWith("data/news-articles/borssverige-")) return "borssverige";
   if (file.startsWith("data/news-articles/norden-i-centrum-")) return "norden-i-centrum";
+  if (file.startsWith("data/news-articles/bolaget-i-fokus-")) return "bolaget-i-fokus";
   if (file.startsWith("data/news-articles/usa-i-fokus-")) return "usa-i-fokus";
   throw new Error(`Unsupported autonomous article file: ${file}`);
 }
@@ -74,7 +75,7 @@ async function main() {
   const articleFiles = changed.filter((file) => SERIES_FILE.test(file));
   if (articleFiles.length !== 1) {
     throw new Error(
-      `Managed publication must contain exactly one BörsSverige/Norden/USA i fokus article; found ${articleFiles.length}`,
+      `Managed publication must contain exactly one BörsSverige/Norden/Bolaget i fokus/USA i fokus article; found ${articleFiles.length}`,
     );
   }
 
