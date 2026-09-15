@@ -5,6 +5,7 @@ on:
     branches:
       - "autoredaktion/borssverige-*"
       - "autoredaktion/norden-i-centrum-*"
+      - "autoredaktion/bolaget-i-fokus-*"
       - "autoredaktion/usa-i-fokus-*"
 
 concurrency:
@@ -42,7 +43,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if [[ ! "$GITHUB_REF_NAME" =~ ^autoredaktion/(borssverige|norden-i-centrum|usa-i-fokus)-[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+          if [[ ! "$GITHUB_REF_NAME" =~ ^autoredaktion/(borssverige|norden-i-centrum|bolaget-i-fokus|usa-i-fokus)-[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
             echo "Unsupported Autoredaktion branch: $GITHUB_REF_NAME" >&2
             exit 1
           fi
@@ -64,7 +65,7 @@ jobs:
             AUTOREDAKTION_BASE_SHA="$AUTOREDAKTION_BASE_SHA" npm run autoredaktion:prepare-branch
             git add -- data/news-articles public/news/generated
             if ! git diff --cached --quiet; then
-              unexpected="$(git diff --cached --name-only | grep -Ev '^(data/news-articles/(borssverige|norden-i-centrum|usa-i-fokus)-.+\.ts|public/news/generated/(borssverige|norden-i-centrum|usa-i-fokus)-[0-9]{4}-[0-9]{2}-[0-9]{2}\.png)$' || true)"
+              unexpected="$(git diff --cached --name-only | grep -Ev '^(data/news-articles/(borssverige|norden-i-centrum|bolaget-i-fokus|usa-i-fokus)-.+\.ts|public/news/generated/(borssverige|norden-i-centrum|bolaget-i-fokus|usa-i-fokus)-[0-9]{4}-[0-9]{2}-[0-9]{2}\.png)$' || true)"
               if [[ -n "$unexpected" ]]; then
                 echo "Preparation touched unexpected files:" >&2
                 echo "$unexpected" >&2
