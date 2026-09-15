@@ -173,6 +173,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Mark exact merge SHA LIVE
+        id: mark_live
         shell: bash
         run: |
           gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$MERGE_SHA" \
@@ -182,8 +183,10 @@ jobs:
             -f description='Exact Vercel SHA and divlab.se live checks passed'
 
       - name: Report success on managed PR
+        continue-on-error: true
         shell: bash
         run: |
+          set +e
           pr='${{ steps.detect.outputs.pr }}'
           cat > /tmp/autoredaktion-success.md <<'EOF'
           Autoredaktion LIVE ✅
@@ -197,10 +200,13 @@ jobs:
 
           **X-förslag:** ${{ steps.live.outputs.x_text }}
           EOF
-          gh pr comment "$pr" --body-file /tmp/autoredaktion-success.md
+          body="$(cat /tmp/autoredaktion-success.md)"
+          gh api --method POST "repos/$GITHUB_REPOSITORY/issues/$pr/comments" -f body="$body" || \
+            echo "Warning: LIVE is verified but the optional PR success comment could not be posted." >&2
+          exit 0
 
       - name: Fail closed without retry or redeploy
-        if: failure()
+        if: failure() && steps.mark_live.outcome != 'success'
         shell: bash
         run: |
           set +e
@@ -210,6 +216,7 @@ jobs:
             -f description='Live verification failed; no automatic redeploy or hotfix allowed'
           pr='${{ steps.detect.outputs.pr }}'
           if [[ -n "$pr" ]]; then
-            gh pr comment "$pr" --body 'Autoredaktion BLOCKED ❌ efter merge. Production- eller live-verifieringen klarade inte fail-closed-kedjan. Ingen extra commit, hotfix, redeploy eller andra production-deployment har skapats av workflowet. Kontrollera körningen `Autoredaktion Production Verify` för exakt blockerare.'
+            gh api --method POST "repos/$GITHUB_REPOSITORY/issues/$pr/comments" \
+              -f body='Autoredaktion BLOCKED ❌ efter merge. Production- eller live-verifieringen klarade inte fail-closed-kedjan. Ingen extra commit, hotfix, redeploy eller andra production-deployment har skapats av workflowet. Kontrollera körningen `Autoredaktion Production Verify` för exakt blockerare.' || true
           fi
           exit 1
