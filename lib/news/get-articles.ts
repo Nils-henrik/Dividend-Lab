@@ -1,3 +1,4 @@
+import { BORSSVERIGE_15_SEPTEMBER_2026_ARTICLE } from "@/data/news-articles/borssverige-15-september-2026";
 import { NORDEN_I_CENTRUM_15_SEPTEMBER_2026_ARTICLE } from "@/data/news-articles/norden-i-centrum-15-september-2026";
 import { USA_I_FOKUS_14_SEPTEMBER_2026_ARTICLE } from "@/data/news-articles/usa-i-fokus-14-september-2026";
 import { BORSSVERIGE_14_SEPTEMBER_2026_ARTICLE } from "@/data/news-articles/borssverige-14-september-2026";
@@ -43,7 +44,7 @@ const NEWS_IMAGE_ASSET_ALIASES: Readonly<Record<string, string>> = {
   "/news-demo/file_00000000d078820a93662e7928a9d5cf.png": "/news-demo/borssverige-lunch-2026-08-19.png",
   "/news-demo/file_0000000023fc8246bf8e4c00765736b3.png": "/news-demo/latour-q2-2026-08-19.png",
   "/news-demo/file_0000000013e481f49e37dbf50e4ef5b8.png": "/news-demo/borssverige-2026-08-19.png",
-  "/news-demo/file_00000000e114820ab7fe53313df8d3ee.png": "/news-demo/techfrossa-wall-street-nvidia-2026-08-18.png",
+  "/news-demo/file_00000000e114820ab7fe53313df8d3ee25.png": "/news-demo/techfrossa-wall-street-nvidia-2026-08-18.png",
   "/news-demo/file_000000004b1081f4bc3de58d4eeb387b.png": "/news-demo/hemnet-jp-morgan-2026-08-18.png",
   "/news-demo/file_00000000bdfc81f496784f507593fadb.png": "/news-demo/bahnhof-q2-2026-08-18.png",
   "/news-demo/file_0000000035a4820a9bdf5f37dbbf7bb9.png": "/news-demo/norden-i-centrum-2026-08-18.png",
@@ -59,6 +60,7 @@ function resolveNewsImagePath(path: string): string { return NEWS_IMAGE_ASSET_AL
 function resolveOptionalNewsImagePath(path: string | null | undefined): string | null | undefined { return path ? resolveNewsImagePath(path) : path; }
 function resolveNewsArticleImages(article: NewsArticle): NewsArticle { return { ...article, imageUrl: resolveOptionalNewsImagePath(article.imageUrl), thumbnailImageUrl: resolveOptionalNewsImagePath(article.thumbnailImageUrl), sections: article.sections?.map((section) => section.inlineImage ? { ...section, inlineImage: { ...section.inlineImage, src: resolveNewsImagePath(section.inlineImage.src) } } : section) }; }
 const PUBLISHED_NEWS_ARTICLES: NewsArticle[] = [
+  applyNewsSearchSeo(BORSSVERIGE_15_SEPTEMBER_2026_ARTICLE),
   applyNewsSearchSeo(NORDEN_I_CENTRUM_15_SEPTEMBER_2026_ARTICLE),
   applyNewsSearchSeo(USA_I_FOKUS_14_SEPTEMBER_2026_ARTICLE),
   applyNewsSearchSeo(BORSSVERIGE_14_SEPTEMBER_2026_ARTICLE),
