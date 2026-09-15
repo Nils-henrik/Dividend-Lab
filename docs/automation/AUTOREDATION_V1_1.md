@@ -2,7 +2,7 @@
 
 Status: **Autoredaktion v1.1 READY / managed release state machine active**  
 Approved templates: **Norden i centrum PASS ✅ / BörsSverige PASS ✅ / Bolaget i fokus PASS ✅ / USA i fokus PASS ✅**  
-Scheduler: ChatGPT scheduled jobs are the only editorial scheduler: **08:00 Norden i centrum (weekdays) / 08:20 BörsSverige (weekdays) / 11:00 Bolaget i fokus (weekdays) / 14:00 USA i fokus (daily), Europe/Stockholm**.
+Scheduler: ChatGPT scheduled jobs are the only editorial scheduler: **08:00 Norden i centrum (daily) / 08:20 BörsSverige (daily) / 11:00 Bolaget i fokus (weekdays) / 14:00 USA i fokus (daily), Europe/Stockholm**.
 
 This document is the authoritative runbook for Autoredaktion v1.1 image production, managed publication handoff, production observation and live verification. It supersedes older v1.1 notes in `AUTOREDATION_V1.md` and `AUTOREDATION_V1_1_VISUAL_REWORK.md` where they differ.
 
@@ -163,16 +163,31 @@ The release workflow verifies the successful Quality Gate SHA equals the current
 
 ## Daily-series sequencing
 
-Weekdays use four lanes:
+The scheduler calendar is evaluated for the concrete Europe/Stockholm date before predecessor checks. A lane that is explicitly not scheduled for that date because of weekday/weekend rules or scheduler activation date is `NOT_SCHEDULED` and must never block a later lane.
+
+**Monday–Friday** uses four lanes:
 
 1. Norden i centrum — 08:00 Europe/Stockholm.
 2. BörsSverige — 08:20 Europe/Stockholm, after same-day Norden reaches a terminal state.
 3. Bolaget i fokus — 11:00 Europe/Stockholm, after same-day Norden and BörsSverige have reached terminal states and after refreshing latest `main`.
-4. USA i fokus — 14:00 Europe/Stockholm, after all earlier same-day managed publications have reached terminal states and after refreshing latest `main`.
+4. USA i fokus — 14:00 Europe/Stockholm, after all earlier scheduled same-day managed publications have reached terminal states and after refreshing latest `main`.
 
-On weekends only the daily USA i fokus scheduler runs. It must refresh latest `main` before creating its one branch.
+**Saturday–Sunday** uses three lanes:
 
-If an earlier same-day series is still actively moving through preflight/PR/Quality Gate when a later job starts, the later job may wait only within its bounded job window. It must never create a stale registry write. If it cannot safely establish a terminal predecessor state and latest main, it reports BLOCKED and creates no duplicate branch/PR/deployment.
+1. Norden i centrum — 08:00 Europe/Stockholm.
+2. BörsSverige — 08:20 Europe/Stockholm, after same-day Norden reaches a terminal state.
+3. USA i fokus — 14:00 Europe/Stockholm, after same-day Norden and BörsSverige have reached terminal states and after refreshing latest `main`.
+
+Bolaget i fokus is `NOT_SCHEDULED` on weekends and must not block USA i fokus.
+
+A scheduled predecessor is terminal when either:
+
+- it is `LIVE` with `autoredaktion/production=success`; or
+- it has definitively failed closed / become `BLOCKED` and no further mutation in its canonical branch/PR/production chain is active.
+
+A terminal failure does not freeze every later lane for the remainder of the day. Later lanes must refresh latest `main` and may continue safely. If an earlier same-day series is still actively moving through preflight/PR/Quality Gate/merge/production verification when a later job starts, the later job may wait only within its bounded job window. It must never create a stale registry write.
+
+If a predecessor is scheduled for the date but its canonical run/result is completely missing after its scheduled time plus bounded waiting, the later lane reports `BLOCKED: schemalagd föregångare saknas` and creates no branch. If the predecessor is `NOT_SCHEDULED`, absence is expected and the later lane proceeds.
 
 GitHub additionally serializes managed release handling through one global `autoredaktion-release-global` concurrency lane. The latest-main ancestor check is the final defense if jobs still overlap.
 
@@ -224,13 +239,14 @@ Every scheduled prompt must use this handoff:
 
 1. read latest `main`, `DIVLAB_REDAKTION_MASTER.md`, `DIVLAB_REDAKTION_P0_FACT_GATE.md`, `AUTOREDATION_V1.md` and this document; `Bolaget i fokus` must additionally read `DIVLAB_BOLAGET_I_FOKUS_MASTER.md`;
 2. research broadly, prefer primary sources, run a separate fact-check and require P0 Fact Gate PASS before handoff;
-3. set source exactly `DivLab Redaktion`;
-4. do not attempt the daily binary PNG upload from ChatGPT;
-5. use one canonical managed branch and one initial commit containing article + additive registry change;
-6. wait for `autoredaktion/preflight=success` on the latest branch head;
-7. create one **draft** PR with marker `<!-- AUTOREDAKTION_MANAGED_V2 -->` and label `autoredaktion`;
-8. stop controlling CI/repair/Ready/merge/deployment; GitHub state machines own the rest;
-9. later series must wait for earlier same-day managed publications to reach terminal state and then refresh latest `main` before creating their branch;
-10. never trigger a Vercel deployment or redeploy manually as part of the daily publication.
+3. evaluate the actual scheduler calendar/start date for the concrete Europe/Stockholm date and mark explicitly unscheduled predecessor lanes `NOT_SCHEDULED`;
+4. require every predecessor that actually is scheduled for the date to reach a terminal state, then refresh latest `main` before creating the next branch;
+5. set source exactly `DivLab Redaktion`;
+6. do not attempt the daily binary PNG upload from ChatGPT;
+7. use one canonical managed branch and one initial commit containing article + additive registry change;
+8. wait for `autoredaktion/preflight=success` on the latest branch head;
+9. create one **draft** PR with marker `<!-- AUTOREDAKTION_MANAGED_V2 -->` and label `autoredaktion`;
+10. stop controlling CI/repair/Ready/merge/deployment; GitHub state machines own the rest;
+11. never trigger a Vercel deployment or redeploy manually as part of the daily publication.
 
 A failed P0 Fact Gate means no branch. A failed preflight means no PR. A failed second Quality Gate means no merge. A failed Vercel/live verification means no automatic hotfix/redeploy. Never bypass any gate.
