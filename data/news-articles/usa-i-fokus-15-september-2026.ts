@@ -25,6 +25,9 @@ export const USA_I_FOKUS_15_SEPTEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-09-15T14:20:00+02:00",
   url: "/news/usa-i-fokus-15-september-2026-fed-rantor-ai-olja",
   featured: true,
+  imageUrl: "/news/generated/usa-i-fokus-2026-09-15.png",
+  thumbnailImageUrl: "/news/generated/usa-i-fokus-2026-09-15.png",
+  imageAlt: "USA i fokus 2026-09-15 – DivLabs översikt över den amerikanska börsmarknaden inför Wall Streets öppning.",
   readingMinutes: 5,
   seoTitle: "USA i fokus: räntan över 5 procent inför Fed",
   seoDescription:
