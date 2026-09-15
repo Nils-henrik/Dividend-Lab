@@ -92,7 +92,9 @@ export function plannedExportName(series: EditorialSeries, date: Date): string {
       ? "BORSSVERIGE"
       : series === "norden-i-centrum"
         ? "NORDEN_I_CENTRUM"
-        : "USA_I_FOKUS";
+        : series === "bolaget-i-fokus"
+          ? "BOLAGET_I_FOKUS"
+          : "USA_I_FOKUS";
   return `${prefix}_${day}_${ENGLISH_MONTHS[monthIndex]}_${year}_ARTICLE`;
 }
 
