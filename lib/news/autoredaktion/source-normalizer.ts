@@ -1,7 +1,7 @@
 import type { EditorialSeries } from "./types";
 
 const GENERATED_IMAGE_PATH =
-  /^\/news\/generated\/(borssverige|norden-i-centrum|usa-i-fokus)-(\d{4}-\d{2}-\d{2})\.png$/;
+  /^\/news\/generated\/(borssverige|norden-i-centrum|bolaget-i-fokus|usa-i-fokus)-(\d{4}-\d{2}-\d{2})\.png$/;
 
 const IMAGE_PATH_FIELDS = new Set(["imageUrl", "thumbnailImageUrl"]);
 const IMAGE_METADATA_FIELDS = new Set([
@@ -27,6 +27,9 @@ function generatedImageAlt(series: EditorialSeries, date: string): string {
   }
   if (series === "norden-i-centrum") {
     return `Norden i centrum ${date} – DivLabs morgonöversikt över nordiska börsnyheter.`;
+  }
+  if (series === "bolaget-i-fokus") {
+    return `Bolaget i fokus ${date} – DivLabs artikel om dagens mest intressanta bolagshändelse.`;
   }
   return `USA i fokus ${date} – DivLabs översikt över den amerikanska börsmarknaden inför Wall Streets öppning.`;
 }
