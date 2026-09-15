@@ -17,7 +17,7 @@ import type { NewsArticle } from "@/types/news";
 
 const REGISTRY_PATH = "lib/news/get-articles.ts";
 const SERIES_FILE =
-  /^data\/news-articles\/(borssverige-|norden-i-centrum-|usa-i-fokus-).+\.ts$/;
+  /^data\/news-articles\/(borssverige-|norden-i-centrum-|bolaget-i-fokus-|usa-i-fokus-).+\.ts$/;
 
 function git(args: string[]): string {
   return execFileSync("git", args, {
@@ -230,7 +230,9 @@ function printIssues(file: string, issues: readonly ValidationIssue[]) {
 function seriesForFile(file: string): EditorialSeries {
   if (file.includes("/borssverige-")) return "borssverige";
   if (file.includes("/norden-i-centrum-")) return "norden-i-centrum";
-  return "usa-i-fokus";
+  if (file.includes("/bolaget-i-fokus-")) return "bolaget-i-fokus";
+  if (file.includes("/usa-i-fokus-")) return "usa-i-fokus";
+  throw new Error(`Unsupported autonomous article file: ${file}`);
 }
 
 async function main() {
