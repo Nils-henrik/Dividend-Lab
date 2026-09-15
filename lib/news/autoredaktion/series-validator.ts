@@ -201,6 +201,9 @@ function looksLikeSeries(article: NewsArticle, series: EditorialSeries): boolean
   if (series === "norden-i-centrum") {
     return haystack.includes("norden i centrum") || haystack.includes("norden-i-centrum");
   }
+  if (series === "bolaget-i-fokus") {
+    return haystack.includes("bolaget i fokus") || haystack.includes("bolaget-i-fokus");
+  }
   return haystack.includes("usa i fokus") || haystack.includes("usa-i-fokus");
 }
 
@@ -299,6 +302,44 @@ function validateNorden(article: NewsArticle): ValidationIssue[] {
   return issues;
 }
 
+function validateBolagetIFokus(article: NewsArticle): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+
+  if (!looksLikeSeries(article, "bolaget-i-fokus")) {
+    issues.push(
+      fail(
+        "series-identity",
+        "Bolaget i fokus articles must identify the series in title, slug or id",
+        "title",
+      ),
+    );
+  }
+
+  if (article.category !== "company") {
+    issues.push(
+      fail(
+        "company-focus",
+        'Bolaget i fokus must use the "company" category and focus on one company event.',
+        "category",
+      ),
+    );
+  }
+
+  const companies = article.internalLinking?.companies ?? [];
+  const tickers = article.internalLinking?.tickers ?? [];
+  if (companies.length === 0 && tickers.length === 0) {
+    issues.push(
+      fail(
+        "company-identity",
+        "Bolaget i fokus must identify the main company in internalLinking.companies or tickers.",
+        "internalLinking",
+      ),
+    );
+  }
+
+  return issues;
+}
+
 function validateUsa(article: NewsArticle): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const body = articlePlainText(article);
@@ -355,6 +396,9 @@ export function validateEditorialSeries(
   }
   if (series === "norden-i-centrum") {
     return resultFromIssues(validateNorden(article));
+  }
+  if (series === "bolaget-i-fokus") {
+    return resultFromIssues(validateBolagetIFokus(article));
   }
   return resultFromIssues(validateUsa(article));
 }
