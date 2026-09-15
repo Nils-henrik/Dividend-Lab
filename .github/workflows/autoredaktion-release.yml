@@ -24,6 +24,7 @@ jobs:
     if: >
       startsWith(github.event.workflow_run.head_branch, 'autoredaktion/borssverige-') ||
       startsWith(github.event.workflow_run.head_branch, 'autoredaktion/norden-i-centrum-') ||
+      startsWith(github.event.workflow_run.head_branch, 'autoredaktion/bolaget-i-fokus-') ||
       startsWith(github.event.workflow_run.head_branch, 'autoredaktion/usa-i-fokus-')
     runs-on: ubuntu-latest
     timeout-minutes: 12
@@ -159,7 +160,7 @@ jobs:
             exit 0
           fi
 
-          unexpected="$(git diff --cached --name-only | grep -Ev '^(data/news-articles/(borssverige|norden-i-centrum|usa-i-fokus)-.+\.ts|public/news/generated/(borssverige|norden-i-centrum|usa-i-fokus)-[0-9]{4}-[0-9]{2}-[0-9]{2}\.png)$' || true)"
+          unexpected="$(git diff --cached --name-only | grep -Ev '^(data/news-articles/(borssverige|norden-i-centrum|bolaget-i-fokus|usa-i-fokus)-.+\.ts|public/news/generated/(borssverige|norden-i-centrum|bolaget-i-fokus|usa-i-fokus)-[0-9]{4}-[0-9]{2}-[0-9]{2}\.png)$' || true)"
           if [[ -n "$unexpected" ]]; then
             echo "Repair touched unexpected files:" >&2
             echo "$unexpected" >&2
