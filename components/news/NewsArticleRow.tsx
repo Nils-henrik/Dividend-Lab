@@ -68,7 +68,7 @@ export default function NewsArticleRow({
           </div>
 
           <h3
-            className={`${article.mobileHeadlineFirst ? "hidden md:block" : "block"} mt-2 text-[15px] font-medium leading-snug text-divlab-text`}
+            className={`${article.mobileHeadlineFirst ? "hidden md:block" : "block"} mt-2 text-[15px] font-semibold leading-snug text-divlab-text`}
           >
             {titleContent}
           </h3>
