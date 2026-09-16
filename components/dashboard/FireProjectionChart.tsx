@@ -22,10 +22,10 @@ type Props = {
   exceedsHorizon: boolean;
 };
 
-type HoverValueDotProps = {
-  cx?: number;
-  cy?: number;
-  payload?: CapitalProjectionPoint;
+type HoverValueLabelProps = {
+  active?: boolean;
+  payload?: Array<{ value?: number }>;
+  label?: string | number;
   currentAge: number;
 };
 
@@ -39,58 +39,29 @@ function formatAxisValue(value: number) {
   return `${Math.round(value / 1_000).toLocaleString("sv-SE")}k`;
 }
 
-function HoverValueDot({
-  cx,
-  cy,
+function HoverValueLabel({
+  active,
   payload,
+  label,
   currentAge,
-}: HoverValueDotProps) {
-  if (
-    typeof cx !== "number" ||
-    typeof cy !== "number" ||
-    !payload ||
-    typeof payload.capital !== "number" ||
-    typeof payload.year !== "number"
-  ) {
+}: HoverValueLabelProps) {
+  const capital = payload?.[0]?.value;
+
+  if (!active || typeof capital !== "number") {
     return null;
   }
 
-  const age = Math.round(currentAge + payload.year);
-  const showBelow = cy < 44;
-  const labelY = showBelow ? cy + 22 : cy - 18;
-  const textAnchor = cx < 104 ? "start" : "end";
-  const labelX = cx < 104 ? cx + 8 : cx - 8;
+  const age = Math.round(currentAge + Number(label ?? 0));
 
   return (
-    <g pointerEvents="none">
-      <circle
-        cx={cx}
-        cy={cy}
-        r={4}
-        fill="var(--divlab-blue)"
-        stroke="var(--divlab-surface)"
-        strokeWidth={2}
-      />
-      <text
-        x={labelX}
-        y={labelY}
-        textAnchor={textAnchor}
-        fill="var(--divlab-text)"
-        fontSize={12}
-        fontWeight={600}
-      >
-        {formatSek(payload.capital)}
-      </text>
-      <text
-        x={labelX}
-        y={labelY + 14}
-        textAnchor={textAnchor}
-        fill="var(--divlab-chart-axis)"
-        fontSize={10}
-      >
+    <div className="pointer-events-none whitespace-nowrap">
+      <p className="text-xs font-semibold text-divlab-text tabular-nums drop-shadow-sm">
+        {formatSek(capital)}
+      </p>
+      <p className="mt-0.5 text-[10px] text-divlab-text-muted tabular-nums">
         {age} år
-      </text>
-    </g>
+      </p>
+    </div>
   );
 }
 
@@ -186,7 +157,12 @@ export default function FireProjectionChart({
               tickLine={false}
               tickFormatter={formatAxisValue}
             />
-            <Tooltip cursor={false} content={() => null} />
+            <Tooltip
+              cursor={false}
+              offset={12}
+              wrapperStyle={{ outline: "none", pointerEvents: "none" }}
+              content={<HoverValueLabel currentAge={currentAge} />}
+            />
             <Area
               type="monotone"
               dataKey="capital"
@@ -195,7 +171,12 @@ export default function FireProjectionChart({
               fill="url(#freedomProjectionBlue)"
               dot={false}
               isAnimationActive={false}
-              activeDot={<HoverValueDot currentAge={currentAge} />}
+              activeDot={{
+                r: 4,
+                fill: "var(--divlab-blue)",
+                stroke: "var(--divlab-surface)",
+                strokeWidth: 2,
+              }}
             />
             {goalPoint && targetReachYear !== null && (
               <ReferenceDot
