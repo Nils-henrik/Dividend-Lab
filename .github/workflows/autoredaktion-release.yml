@@ -86,6 +86,19 @@ jobs:
         if: steps.resolve.outputs.skip == 'false'
         run: npm run autoredaktion:pr-policy -- /tmp/autoredaktion-pr.json
 
+      - name: Enforce immutable managed branch history
+        if: steps.resolve.outputs.skip == 'false'
+        shell: bash
+        run: |
+          set -euo pipefail
+          head="${{ steps.resolve.outputs.pr_head }}"
+          git fetch origin main "$HEAD_BRANCH" --no-tags
+          base="$(git merge-base origin/main "$head")"
+          AUTOREDAKTION_BRANCH_NAME="$HEAD_BRANCH" \
+            AUTOREDAKTION_BASE_SHA="$base" \
+            AUTOREDAKTION_HEAD_SHA="$head" \
+            npm run autoredaktion:validate-history
+
       - name: Require successful pre-PR status on exact head
         if: steps.resolve.outputs.skip == 'false'
         shell: bash
@@ -136,10 +149,20 @@ jobs:
         run: |
           set -euo pipefail
           pr="${{ steps.resolve.outputs.pr_number }}"
-          if jq -r '.commits[].messageHeadline // empty' /tmp/autoredaktion-pr.json | grep -Fq '[autoredaktion-ci-repair]'; then
+          if jq -e '.labels[]? | select(.name == "autoredaktion-repair-used")' /tmp/autoredaktion-pr.json >/dev/null || \
+            jq -r '.commits[].messageHeadline // empty' /tmp/autoredaktion-pr.json | grep -Fq '[autoredaktion-ci-repair]'; then
             gh pr comment "$pr" --body 'Autoredaktion STOPP: det enda tillåtna CI-reparationsförsöket är redan förbrukat. Ingen ny commit, PR eller deployment skapas automatiskt.'
             exit 0
           fi
+
+          if ! gh api "repos/$GITHUB_REPOSITORY/labels/autoredaktion-repair-used" >/dev/null 2>&1; then
+            gh api --method POST "repos/$GITHUB_REPOSITORY/labels" \
+              -f name='autoredaktion-repair-used' \
+              -f color='B60205' \
+              -f description='Durable marker that the one bounded Autoredaktion repair was consumed'
+          fi
+          jq -n '{labels:["autoredaktion-repair-used"]}' | \
+            gh api --method POST "repos/$GITHUB_REPOSITORY/issues/$pr/labels" --input - >/dev/null
 
           git fetch origin main "$HEAD_BRANCH" --no-tags
           git checkout -B "$HEAD_BRANCH" "origin/$HEAD_BRANCH"
@@ -172,6 +195,11 @@ jobs:
           git commit -m "fix(autoredaktion): [autoredaktion-ci-repair] deterministic publication repair"
           git push origin "HEAD:$HEAD_BRANCH"
           NEW_HEAD="$(git rev-parse HEAD)"
+
+          AUTOREDAKTION_BRANCH_NAME="$HEAD_BRANCH" \
+            AUTOREDAKTION_BASE_SHA="$BASE_SHA" \
+            AUTOREDAKTION_HEAD_SHA="$NEW_HEAD" \
+            npm run autoredaktion:validate-history
 
           if ! AUTOREDAKTION_BASE_SHA="$BASE_SHA" npm run autoredaktion:preflight; then
             gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$NEW_HEAD" \

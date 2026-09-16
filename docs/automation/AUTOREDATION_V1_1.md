@@ -2,7 +2,7 @@
 
 Status: **Autoredaktion v1.1 READY / managed release state machine active**  
 Approved templates: **Norden i centrum PASS ✅ / BörsSverige PASS ✅ / Bolaget i fokus PASS ✅ / USA i fokus PASS ✅**  
-Scheduler: ChatGPT scheduled jobs are the only editorial scheduler: **08:00 Norden i centrum (weekdays) / 08:20 BörsSverige (weekdays) / 11:00 Bolaget i fokus (weekdays) / 14:00 USA i fokus (daily), Europe/Stockholm**.
+Scheduler: ChatGPT scheduled jobs are the only editorial scheduler: **08:00 Norden i centrum (daily) / 08:20 BörsSverige (daily) / 11:00 Bolaget i fokus (Monday–Friday) / 14:00 USA i fokus (daily), Europe/Stockholm**.
 
 This document is the authoritative runbook for Autoredaktion v1.1 image production, managed publication handoff, production observation and live verification. It supersedes older v1.1 notes in `AUTOREDATION_V1.md` and `AUTOREDATION_V1_1_VISUAL_REWORK.md` where they differ.
 
@@ -12,14 +12,20 @@ This document is the authoritative runbook for Autoredaktion v1.1 image producti
 
 Series mandates:
 
-- **Norden i centrum:** Sweden, Norway, Denmark and Finland; Nordic market focus.
-- **BörsSverige:** Sweden only; Swedish listed companies, Swedish market and relevant Swedish macro.
+- **Norden i centrum:** Sweden, Norway, Denmark and Finland; Nordic market focus. Saturday uses `Veckan som gått`; Sunday uses `Veckan som kommer`.
+- **BörsSverige:** Sweden only; Swedish listed companies, Swedish market and relevant Swedish macro. Saturday uses `Veckan som gått`; Sunday uses `Veckan som kommer`.
 - **Bolaget i fokus:** one single materially newsworthy verified company event. Sweden first, then Nordics; an international company only when exceptionally relevant to DivLab's Swedish readers. No filler, rumor-driven angle or broad market sweep. If no sufficiently strong verified candidate exists, report `BLOCKED: inget tillräckligt nyhetsvärdigt och verifierat bolag` and create no branch.
 - **USA i fokus:** United States only as the primary market; US-listed companies, S&P 500, Nasdaq, Dow Jones, Federal Reserve, US Treasury rates and US macro. Non-US events may be used only when they have a direct, material link to the US market.
 
 USA i fokus at 14:00 must distinguish verified facts from events that have not happened yet. A US data release scheduled after the editorial research cutoff may be previewed with its verified scheduled time, but no result or market reaction may be invented. On Saturday/Sunday the article must explicitly treat the US cash market as closed and use the latest verified session plus the next confirmed US catalysts instead of pretending there is a same-day opening.
 
 Bolaget i fokus at 11:00 must only describe a share-price reaction when current trading has been independently verified close to the editorial research cutoff. A press release, report or secondary headline is never sufficient evidence by itself that a share is rising or falling.
+
+### Machine-readable P0 handoff
+
+Every managed article in all four series must use the exact cutoff/PASS/source declaration contract in `DIVLAB_REDAKTION_P0_FACT_GATE.md`: one ISO 8601 cutoff with seconds and explicit UTC offset, one literal `P0_FACT_GATE=PASS`, and unique `P0_SOURCE[primary|secondary]` HTTPS declarations that match `article.sources` exactly. At least one declared primary source is mandatory.
+
+The cutoff must not be later than `publishedAt` or the committer timestamp of the initial canonical article+registry commit. Candidate validation enforces this before deterministic preparation. This is technical contract enforcement only; editorial research and truth assessment remain a separate human/agent responsibility.
 
 ## Final managed flow
 
@@ -34,7 +40,15 @@ The branch must be named exactly:
 - `autoredaktion/bolaget-i-fokus-YYYY-MM-DD`
 - `autoredaktion/usa-i-fokus-YYYY-MM-DD`
 
-The initial commit contains only the new article module and the additive `lib/news/get-articles.ts` registry change. ChatGPT does **not** create the PR until the branch receives a successful `autoredaktion/preflight` commit status.
+The branch date resolves through one shared contract to:
+
+`data/news-articles/{series}-{D}-{svenskt-månadsnamn}-{YYYY}.ts`
+
+Examples for 17 September 2026 are `data/news-articles/norden-i-centrum-17-september-2026.ts`, `data/news-articles/borssverige-17-september-2026.ts`, `data/news-articles/bolaget-i-fokus-17-september-2026.ts` and `data/news-articles/usa-i-fokus-17-september-2026.ts`. No company name or other extra filename segment is allowed.
+
+The initial commit contains only the one canonical series/date article module and the additive `lib/news/get-articles.ts` registry change. The canonical article path is resolved by the shared path contract in `lib/news/autoredaktion/path-contract.ts`; no earlier stage may accept a path a later stage will reject. ChatGPT does **not** create the PR until the branch receives a successful `autoredaktion/preflight` commit status.
+
+When the GitHub client permits it, create the branch and initial two-file commit as one uninterrupted handoff. If GitHub emits an unavoidable branch-create push before the two-file commit exists, Branch Preflight classifies it as neutral: no preparation, no publication status and no failure on the inherited `main` SHA.
 
 GitHub then owns deterministic release preparation:
 
@@ -60,6 +74,9 @@ No managed PR may be opened until the latest branch head has status:
 
 Preflight includes:
 
+- exact canonical branch/article/image path resolution from the shared series/date contract;
+- initial two-file and managed commit-history validation;
+- machine-readable P0 cutoff/PASS/source validation before preparation;
 - lint;
 - full TypeScript `tsc --noEmit`;
 - `autoredaktion:validate-changed` including source exactly `DivLab Redaktion`;
@@ -157,20 +174,31 @@ A PR can be managed/merged automatically only when **all** of these are true:
 - diff contains exactly the canonical article file + `lib/news/get-articles.ts` + optional canonical generated PNG;
 - no unrelated code/docs/workflow files are present;
 - commit budget is at most three commits: initial publication, optional preparation, optional single CI repair;
-- no more than one `[autoredaktion-ci-repair]` commit exists.
+- no more than one `[autoredaktion-ci-repair]` commit exists;
+- the durable `autoredaktion-repair-used` PR label and the single repair commit must either both exist or both be absent, so a history rewrite cannot silently reset the repair budget.
+
+The initial commit must contain exactly canonical article + registry. A possible second commit must be the one `[autoredaktion-prepared]` mutation; a possible final commit must be the one `[autoredaktion-ci-repair]` mutation. Both automated mutations are limited to the canonical article and generated-image paths. Any other post-initial commit fails the shared history policy.
+
+Once the managed PR exists, Branch Preflight treats the branch as frozen and performs no mutation and writes no new preflight status for push events. The Release State Machine alone may create the bounded repair, revalidate the complete linear history and write success for that exact repaired SHA. An unrelated/manual head therefore lacks the exact-head preflight success required for release.
 
 The release workflow verifies the successful Quality Gate SHA equals the current PR head and verifies that current `main` is still an ancestor of that head immediately before merge. A stale green run or stale registry base can never be merged.
 
 ## Daily-series sequencing
 
-Weekdays use four lanes:
+Monday–Friday use four lanes:
 
 1. Norden i centrum — 08:00 Europe/Stockholm.
 2. BörsSverige — 08:20 Europe/Stockholm, after same-day Norden reaches a terminal state.
 3. Bolaget i fokus — 11:00 Europe/Stockholm, after same-day Norden and BörsSverige have reached terminal states and after refreshing latest `main`.
 4. USA i fokus — 14:00 Europe/Stockholm, after all earlier same-day managed publications have reached terminal states and after refreshing latest `main`.
 
-On weekends only the daily USA i fokus scheduler runs. It must refresh latest `main` before creating its one branch.
+Saturday and Sunday use three lanes:
+
+1. Norden i centrum — 08:00 Europe/Stockholm; Saturday `Veckan som gått`, Sunday `Veckan som kommer`.
+2. BörsSverige — 08:20 Europe/Stockholm, with the same weekend format and after same-day Norden reaches a terminal state.
+3. USA i fokus — 14:00 Europe/Stockholm, after the two same-day morning series have reached terminal states and after refreshing latest `main`.
+
+Bolaget i fokus does not run on weekends. The existing daily Norden/BörsSverige scheduler rules are intentional and must not be reduced to weekdays.
 
 If an earlier same-day series is still actively moving through preflight/PR/Quality Gate when a later job starts, the later job may wait only within its bounded job window. It must never create a stale registry write. If it cannot safely establish a terminal predecessor state and latest main, it reports BLOCKED and creates no duplicate branch/PR/deployment.
 
@@ -191,6 +219,8 @@ Per series + Europe/Stockholm date:
 - max one merge to `main`;
 - max one production deployment caused by the managed publication;
 - no automated post-merge hotfix or redeploy.
+
+Before PR creation, an empty branch event is neutral. After PR creation, every ordinary branch push is frozen out of Branch Preflight. Release additionally requires a linear history anchored in current base, the exact commit order above, canonical per-commit file scopes, a durable PR-level repair-budget marker and successful `autoredaktion/preflight` on the exact current head. These workflow guards fail closed, but repository-level force-push prevention still requires a separately reviewed GitHub ruleset with an explicit Actions bypass design.
 
 Expected deterministic repairs are intentionally narrow: exact `DivLab Redaktion` source, canonical image wiring, removal of invalid no-image fields and deterministic image regeneration. Editorial facts/prose, unrelated code failures and stale-main conflicts are never auto-rewritten by the repair stage.
 
@@ -224,7 +254,7 @@ Every scheduled prompt must use this handoff:
 
 1. read latest `main`, `DIVLAB_REDAKTION_MASTER.md`, `DIVLAB_REDAKTION_P0_FACT_GATE.md`, `AUTOREDATION_V1.md` and this document; `Bolaget i fokus` must additionally read `DIVLAB_BOLAGET_I_FOKUS_MASTER.md`;
 2. research broadly, prefer primary sources, run a separate fact-check and require P0 Fact Gate PASS before handoff;
-3. set source exactly `DivLab Redaktion`;
+3. write the exact ISO cutoff, literal `P0_FACT_GATE=PASS`, matching `P0_SOURCE[...]` declarations and `article.sources`, and set source exactly `DivLab Redaktion`;
 4. do not attempt the daily binary PNG upload from ChatGPT;
 5. use one canonical managed branch and one initial commit containing article + additive registry change;
 6. wait for `autoredaktion/preflight=success` on the latest branch head;

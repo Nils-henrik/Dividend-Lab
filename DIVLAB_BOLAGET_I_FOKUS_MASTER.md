@@ -155,10 +155,22 @@ Canonical branch per datum:
 
 `autoredaktion/bolaget-i-fokus-YYYY-MM-DD`
 
+Canonical artikelmodul per Europe/Stockholm-datum:
+
+`data/news-articles/bolaget-i-fokus-D-MÅNAD-YYYY.ts`
+
+Exempel för 16 september 2026:
+
+`data/news-articles/bolaget-i-fokus-16-september-2026.ts`
+
+Bolagsnamn får finnas i artikelns id, slug, titel och innehåll men får **inte** läggas in som ett extra led i filnamnet. Samma gemensamma path-contract används av preflight, validator, PR-policy och Release State Machine.
+
 Initial ChatGPT-commit får endast innehålla:
 
 - dagens artikelmodul,
 - additiv registrering i `lib/news/get-articles.ts`.
+
+Artikelkommentaren ska samtidigt uppfylla det maskinläsbara cutoff-, `P0_FACT_GATE=PASS`- och `P0_SOURCE[...]`-kontraktet i `DIVLAB_REDAKTION_P0_FACT_GATE.md`.
 
 GitHub Actions äger därefter deterministisk bildförberedelse, preflight, PR/Quality Gate, bounded repair, merge och produktionsverifiering enligt `AUTOREDATION_V1_1.md`.
 

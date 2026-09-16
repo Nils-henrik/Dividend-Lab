@@ -4,6 +4,7 @@ import { describe, it } from "node:test";
 import {
   AUTOREDAKTION_PR_LABEL,
   AUTOREDAKTION_PR_MARKER,
+  AUTOREDAKTION_REPAIR_USED_LABEL,
   type ManagedPrSnapshot,
   validateManagedPublicationPr,
 } from "./pr-policy";
@@ -131,5 +132,33 @@ describe("managed publication PR policy", () => {
     );
     assert.equal(result.ok, false);
     assert.ok(result.issues.includes("repair-budget"));
+  });
+
+  it("requires the durable repair-used label and repair commit to agree", () => {
+    const repaired = validateManagedPublicationPr(
+      managedPr({
+        labels: [
+          { name: AUTOREDAKTION_PR_LABEL },
+          { name: AUTOREDAKTION_REPAIR_USED_LABEL },
+        ],
+        commits: [
+          { messageHeadline: "news: initial" },
+          { messageHeadline: "chore: [autoredaktion-prepared] image" },
+          { messageHeadline: "fix: [autoredaktion-ci-repair] deterministic repair" },
+        ],
+      }),
+    );
+    assert.equal(repaired.ok, true, repaired.issues.join(", "));
+
+    const rewritten = validateManagedPublicationPr(
+      managedPr({
+        labels: [
+          { name: AUTOREDAKTION_PR_LABEL },
+          { name: AUTOREDAKTION_REPAIR_USED_LABEL },
+        ],
+      }),
+    );
+    assert.equal(rewritten.ok, false);
+    assert.ok(rewritten.issues.includes("repair-budget-marker"));
   });
 });

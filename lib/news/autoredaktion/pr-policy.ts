@@ -1,24 +1,12 @@
 import type { EditorialSeries } from "./types";
+import {
+  managedPublicationPaths,
+  parseManagedBranchName,
+} from "./path-contract";
 
 export const AUTOREDAKTION_PR_LABEL = "autoredaktion";
+export const AUTOREDAKTION_REPAIR_USED_LABEL = "autoredaktion-repair-used";
 export const AUTOREDAKTION_PR_MARKER = "<!-- AUTOREDAKTION_MANAGED_V2 -->";
-
-const BRANCH_PATTERN =
-  /^autoredaktion\/(borssverige|norden-i-centrum|bolaget-i-fokus|usa-i-fokus)-(\d{4}-\d{2}-\d{2})$/;
-const SWEDISH_MONTHS = [
-  "januari",
-  "februari",
-  "mars",
-  "april",
-  "maj",
-  "juni",
-  "juli",
-  "augusti",
-  "september",
-  "oktober",
-  "november",
-  "december",
-] as const;
 
 export type ManagedPrSnapshot = {
   number: number;
@@ -42,26 +30,18 @@ export type ManagedPrPolicyResult = {
   expectedImagePath: string | null;
 };
 
-function expectedArticlePath(series: EditorialSeries, date: string): string | null {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
-  if (!match) return null;
-  const month = Number(match[2]);
-  const day = Number(match[3]);
-  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
-  return `data/news-articles/${series}-${day}-${SWEDISH_MONTHS[month - 1]}-${match[1]}.ts`;
-}
-
 export function validateManagedPublicationPr(
   snapshot: ManagedPrSnapshot,
 ): ManagedPrPolicyResult {
   const issues: string[] = [];
-  const branch = BRANCH_PATTERN.exec(snapshot.headRefName);
-  const series = (branch?.[1] as EditorialSeries | undefined) ?? null;
-  const date = branch?.[2] ?? null;
-  const articlePath = series && date ? expectedArticlePath(series, date) : null;
-  const imagePath = series && date ? `public/news/generated/${series}-${date}.png` : null;
+  const branch = parseManagedBranchName(snapshot.headRefName);
+  const series = branch?.series ?? null;
+  const date = branch?.date ?? null;
+  const paths = series && date ? managedPublicationPaths(series, date) : null;
+  const articlePath = paths?.articlePath ?? null;
+  const imagePath = paths?.imagePath ?? null;
 
-  if (!branch || !series || !date || !articlePath || !imagePath) {
+  if (!branch || !series || !date || !paths || !articlePath || !imagePath) {
     issues.push("branch-identity");
   }
   if (snapshot.baseRefName !== "main") issues.push("base-main");
@@ -76,14 +56,49 @@ export function validateManagedPublicationPr(
   if (snapshot.commits.length < 1 || snapshot.commits.length > 3) {
     issues.push("commit-budget");
   }
+  const initialMessage = `${snapshot.commits[0]?.messageHeadline ?? ""} ${
+    snapshot.commits[0]?.message ?? ""
+  }`;
+  if (
+    initialMessage.includes("[autoredaktion-prepared]") ||
+    initialMessage.includes("[autoredaktion-ci-repair]")
+  ) {
+    issues.push("initial-marker");
+  }
   const repairCommits = snapshot.commits.filter((commit) =>
     `${commit.messageHeadline ?? ""} ${commit.message ?? ""}`.includes(
       "[autoredaktion-ci-repair]",
     ),
   );
+  const preparationCommits = snapshot.commits.filter((commit) =>
+    `${commit.messageHeadline ?? ""} ${commit.message ?? ""}`.includes(
+      "[autoredaktion-prepared]",
+    ),
+  );
   if (repairCommits.length > 1) issues.push("repair-budget");
+  if (preparationCommits.length > 1) issues.push("preparation-budget");
+  const repairBudgetMarked = snapshot.labels.some(
+    (label) => label.name === AUTOREDAKTION_REPAIR_USED_LABEL,
+  );
+  if (repairBudgetMarked !== (repairCommits.length === 1)) {
+    issues.push("repair-budget-marker");
+  }
 
-  if (articlePath && imagePath) {
+  const controlMarkers = snapshot.commits.slice(1).map((commit) => {
+    const message = `${commit.messageHeadline ?? ""} ${commit.message ?? ""}`;
+    const prepared = message.includes("[autoredaktion-prepared]");
+    const repair = message.includes("[autoredaktion-ci-repair]");
+    return prepared === repair ? "invalid" : prepared ? "prepared" : "repair";
+  });
+  if (controlMarkers.includes("invalid")) issues.push("unauthorized-mutation");
+  if (
+    controlMarkers.indexOf("repair") >= 0 &&
+    controlMarkers.lastIndexOf("prepared") > controlMarkers.indexOf("repair")
+  ) {
+    issues.push("preparation-after-repair");
+  }
+
+  if (paths && articlePath && imagePath) {
     const paths = snapshot.files.map((file) => file.path);
     const allowed = new Set([articlePath, "lib/news/get-articles.ts", imagePath]);
     const unexpected = paths.filter((file) => !allowed.has(file));

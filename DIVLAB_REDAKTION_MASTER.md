@@ -1,9 +1,9 @@
 # DIVLAB_REDAKTION_MASTER.md
 
-**Version:** 1.3  
+**Version:** 1.4
 **Status:** Aktiv redaktionell master / CURRENT  
 **Projekt:** DivLab Redaktion  
-**Senast uppdaterad:** 4 september 2026  
+**Senast uppdaterad:** 16 september 2026
 **Ägare:** DivLab
 
 ---
@@ -280,6 +280,7 @@ Fördjupningen ska fortfarande vara lättläst och tydligt skilja mellan:
 
 **Marknad:** endast Sverige.  
 **Primärt fokus:** Stockholmsbörsen, svenska bolag och svensk ekonomisk information som direkt påverkar marknaden.
+**Publicering:** dagligen 08.20 Europe/Stockholm. Lördagens format är `Veckan som gått`; söndagens format är `Veckan som kommer`.
 
 BörsSverige ska inte fyllas ut med USA-material om inte händelsen har en tydlig och nödvändig koppling till den svenska börsdagen.
 
@@ -319,6 +320,7 @@ Kort regel: **samma arbetsmetod, samma kvalitetskrav – men BörsSverige är Sv
 ## 6.2 Norden i centrum
 
 **Marknader:** Sverige, Norge, Danmark och Finland.
+**Publicering:** dagligen 08.00 Europe/Stockholm. Lördagens format är `Veckan som gått`; söndagens format är `Veckan som kommer`.
 
 Artikeln ska leta efter de viktigaste ekonomiska och börsrelaterade händelserna i Norden och inte bli Sverige plus några utfyllnadsnotiser.
 
@@ -1084,6 +1086,11 @@ Exempel på rätt princip:
 ---
 
 ## Versionshistorik
+
+### 1.4 – 16 september 2026
+
+- Norden i centrum och BörsSverige bekräftade som dagliga sjudagarsserier med oförändrade tider 08.00 respektive 08.20 Europe/Stockholm.
+- Lördag låst till `Veckan som gått` och söndag till `Veckan som kommer` för båda serierna.
 
 ### 1.3 – 4 september 2026
 

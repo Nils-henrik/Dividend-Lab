@@ -1,4 +1,5 @@
 import type { NewsArticle } from "@/types/news";
+import { parseCanonicalArticlePath } from "./path-contract";
 import type { EditorialSeries } from "./types";
 
 export const AUTOREDAKTION_PRODUCTION_STATUS_CONTEXT =
@@ -89,17 +90,5 @@ export function buildAutoredaktionXCopy(
 }
 
 export function seriesFromManagedArticlePath(path: string): EditorialSeries | null {
-  if (/^data\/news-articles\/borssverige-.+\.ts$/.test(path)) {
-    return "borssverige";
-  }
-  if (/^data\/news-articles\/norden-i-centrum-.+\.ts$/.test(path)) {
-    return "norden-i-centrum";
-  }
-  if (/^data\/news-articles\/bolaget-i-fokus-.+\.ts$/.test(path)) {
-    return "bolaget-i-fokus";
-  }
-  if (/^data\/news-articles\/usa-i-fokus-.+\.ts$/.test(path)) {
-    return "usa-i-fokus";
-  }
-  return null;
+  return parseCanonicalArticlePath(path)?.series ?? null;
 }

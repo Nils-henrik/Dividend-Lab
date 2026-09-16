@@ -14,6 +14,8 @@
     "autoredaktion:dry-run": "tsx scripts/autoredaktion-dry-run.ts",
     "autoredaktion:validate": "tsx scripts/autoredaktion-validate.ts",
     "autoredaktion:validate-changed": "tsx scripts/autoredaktion-validate-changed.ts",
+    "autoredaktion:validate-candidate": "tsx scripts/autoredaktion-validate-candidate.ts",
+    "autoredaktion:validate-history": "tsx scripts/autoredaktion-validate-history.ts",
     "autoredaktion:prepare-branch": "tsx scripts/autoredaktion-prepare-branch.ts",
     "autoredaktion:preflight": "npm run lint && npm run typecheck && npm run autoredaktion:validate-changed && npm run test:autoredaktion && npm run test:news-images",
     "autoredaktion:pr-policy": "tsx scripts/autoredaktion-pr-policy.ts",
