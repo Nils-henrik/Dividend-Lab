@@ -1,6 +1,7 @@
 "use server";
 
 import { getSafeRedirectPath } from "@/lib/auth/redirects";
+import { validateRegistrationPassword } from "@/lib/auth/password";
 import { getRequestOrigin } from "@/lib/auth/site-url";
 import {
   LEGAL_ACCEPTANCE_METADATA_KEY,
@@ -29,7 +30,7 @@ function mapSignUpErrorMessage(message: string) {
   }
 
   if (normalized.includes("username_invalid")) {
-    return "Användarnamnet måste vara 3–20 tecken och får bara innehålla a–z, 0–9 och _.";
+    return "Användarnamnet måste vara 3–20 tecken och får bara innehålla A–Z, a–z, 0–9 och _.";
   }
 
   if (normalized.includes("username_reserved")) {
@@ -52,8 +53,24 @@ function mapSignUpErrorMessage(message: string) {
     return "Kunde inte skapa kontot med de uppgifterna. Prova att logga in eller återställa lösenordet.";
   }
 
+  if (
+    normalized.includes("known to be weak") ||
+    normalized.includes("pwned") ||
+    normalized.includes("leaked") ||
+    normalized.includes("breach")
+  ) {
+    return "Lösenordet finns med i kända lösenordsläckor. Välj ett annat lösenord.";
+  }
+
+  if (
+    normalized.includes("72") &&
+    (normalized.includes("character") || normalized.includes("byte"))
+  ) {
+    return "Lösenordet är för långt. Det får vara högst 72 byte i UTF-8.";
+  }
+
   if (normalized.includes("password")) {
-    return "Lösenordet uppfyller inte kraven. Använd minst 8 tecken.";
+    return "Lösenordet uppfyller inte kraven. Kontrollera kraven under lösenordsfältet.";
   }
 
   if (normalized.includes("rate") || normalized.includes("too many")) {
@@ -78,7 +95,10 @@ export async function registerUser(input: {
     };
   }
 
-  const usernameResult = validateUsername(input.username, { required: true });
+  const usernameResult = validateUsername(input.username, {
+    required: true,
+    preserveCase: true,
+  });
 
   if (!usernameResult.ok) {
     return {
@@ -98,11 +118,13 @@ export async function registerUser(input: {
     };
   }
 
-  if (input.password.length < 8) {
+  const passwordResult = validateRegistrationPassword(input.password);
+
+  if (!passwordResult.ok) {
     return {
       ok: false,
       reason: "validation",
-      message: "Använd minst 8 tecken i lösenordet.",
+      message: passwordResult.error,
     };
   }
 
