@@ -5,7 +5,14 @@ import { pathToFileURL } from "node:url";
 
 import { getNewsArticles } from "@/lib/news/get-articles";
 import { validateNewsArticle } from "@/lib/news/autoredaktion/article-validator";
+import { parseIsoDateTime, stockholmCalendarDate } from "@/lib/news/autoredaktion/dates";
+import { validateP0FactGate } from "@/lib/news/autoredaktion/fact-gate";
 import { defaultPublicDir } from "@/lib/news/autoredaktion/images";
+import {
+  canonicalArticlePath,
+  managedSeriesFromArticlePathPrefix,
+  parseManagedBranchName,
+} from "@/lib/news/autoredaktion/path-contract";
 import { validateEditorialSeries } from "@/lib/news/autoredaktion/series-validator";
 import {
   fail,
@@ -16,8 +23,6 @@ import { validateDeclaredGeneratedImage } from "@/lib/news/images/validate-gener
 import type { NewsArticle } from "@/types/news";
 
 const REGISTRY_PATH = "lib/news/get-articles.ts";
-const SERIES_FILE =
-  /^data\/news-articles\/(borssverige-|norden-i-centrum-|bolaget-i-fokus-|usa-i-fokus-).+\.ts$/;
 
 function git(args: string[]): string {
   return execFileSync("git", args, {
@@ -75,19 +80,9 @@ function articleText(article: NewsArticle): string {
 
 function validateAutonomousContract(
   article: NewsArticle,
-  sourceText: string,
   now = new Date(),
 ): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
-
-  if (!/Editorial research cutoff:\s*[^\n]+/i.test(sourceText)) {
-    issues.push(
-      fail(
-        "research-cutoff",
-        "Article module must contain an Editorial research cutoff comment.",
-      ),
-    );
-  }
 
   if (article.source !== "DivLab Redaktion") {
     issues.push(
@@ -228,11 +223,24 @@ function printIssues(file: string, issues: readonly ValidationIssue[]) {
 }
 
 function seriesForFile(file: string): EditorialSeries {
-  if (file.includes("/borssverige-")) return "borssverige";
-  if (file.includes("/norden-i-centrum-")) return "norden-i-centrum";
-  if (file.includes("/bolaget-i-fokus-")) return "bolaget-i-fokus";
-  if (file.includes("/usa-i-fokus-")) return "usa-i-fokus";
+  const series = managedSeriesFromArticlePathPrefix(file);
+  if (series) return series;
   throw new Error(`Unsupported autonomous article file: ${file}`);
+}
+
+function initialHandoffAt(base: string, file: string): Date {
+  const initialCommit = git([
+    "rev-list",
+    "--reverse",
+    `${base}..HEAD`,
+    "--",
+    file,
+  ])
+    .split("\n")
+    .map((value) => value.trim())
+    .find(Boolean);
+  if (!initialCommit) return new Date(Number.NaN);
+  return new Date(git(["show", "-s", "--format=%cI", initialCommit]));
 }
 
 async function main() {
@@ -241,7 +249,9 @@ async function main() {
     .split("\n")
     .map((file) => file.trim())
     .filter(Boolean);
-  const articleFiles = changed.filter((file) => SERIES_FILE.test(file));
+  const articleFiles = changed.filter(
+    (file) => managedSeriesFromArticlePathPrefix(file) !== null,
+  );
 
   if (articleFiles.length === 0) {
     console.log("Autoredaktion changed-article gate: no managed series module changed.");
@@ -286,6 +296,18 @@ async function main() {
       .replace(/^data\/news-articles\//, "")
       .replace(/\.ts$/, "");
     const series = seriesForFile(file);
+    const publishedAt = parseIsoDateTime(article.publishedAt);
+    const publicationDate = publishedAt
+      ? stockholmCalendarDate(publishedAt)
+      : null;
+    const expectedPath = publicationDate
+      ? canonicalArticlePath(series, publicationDate)
+      : null;
+    const branchName =
+      process.env.GITHUB_HEAD_REF?.trim() ||
+      process.env.GITHUB_REF_NAME?.trim() ||
+      "";
+    const branchIdentity = parseManagedBranchName(branchName);
 
     const imageValidation = await validateDeclaredGeneratedImage(
       article,
@@ -306,9 +328,38 @@ async function main() {
         publicDir: defaultPublicDir(),
       }).issues,
       ...validateEditorialSeries(article, series).issues,
-      ...validateAutonomousContract(article, sourceText),
+      ...validateAutonomousContract(article),
+      ...validateP0FactGate({
+        article,
+        sourceText,
+        handoffAt: initialHandoffAt(base, file),
+      }).issues,
       ...imageIssues,
     ];
+
+    if (!expectedPath || file !== expectedPath) {
+      issues.push(
+        fail(
+          "canonical-article-path",
+          `Managed ${series} article must use ${expectedPath ?? "a valid canonical date path"}; received ${file}.`,
+          file,
+        ),
+      );
+    }
+    if (
+      branchIdentity &&
+      (branchIdentity.series !== series ||
+        branchIdentity.date !== publicationDate ||
+        file !== canonicalArticlePath(branchIdentity.series, branchIdentity.date))
+    ) {
+      issues.push(
+        fail(
+          "branch-article-identity",
+          `Managed branch ${branchName} does not match article path/date ${file}.`,
+          file,
+        ),
+      );
+    }
 
     if (imports.get(exportName) !== moduleName) {
       issues.push(

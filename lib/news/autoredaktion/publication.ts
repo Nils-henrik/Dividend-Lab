@@ -2,25 +2,14 @@ import type { NewsArticle } from "@/types/news";
 
 import { stockholmCalendarDate } from "./dates";
 import {
+  canonicalArticleModuleName,
+  canonicalArticlePath,
+} from "./path-contract";
+import {
   fail,
   type EditorialSeries,
   type ValidationIssue,
 } from "./types";
-
-const SWEDISH_MONTHS = [
-  "januari",
-  "februari",
-  "mars",
-  "april",
-  "maj",
-  "juni",
-  "juli",
-  "augusti",
-  "september",
-  "oktober",
-  "november",
-  "december",
-] as const;
 
 const ENGLISH_MONTHS = [
   "JANUARY",
@@ -81,8 +70,7 @@ function stockholmParts(date: Date): { year: number; monthIndex: number; day: nu
 }
 
 export function plannedModuleName(series: EditorialSeries, date: Date): string {
-  const { year, monthIndex, day } = stockholmParts(date);
-  return `${series}-${day}-${SWEDISH_MONTHS[monthIndex]}-${year}`;
+  return canonicalArticleModuleName(series, stockholmCalendarDate(date));
 }
 
 export function plannedExportName(series: EditorialSeries, date: Date): string {
@@ -99,7 +87,7 @@ export function plannedExportName(series: EditorialSeries, date: Date): string {
 }
 
 export function plannedFilePath(series: EditorialSeries, date: Date): string {
-  return `data/news-articles/${plannedModuleName(series, date)}.ts`;
+  return canonicalArticlePath(series, stockholmCalendarDate(date));
 }
 
 export function buildPublicationPlan(

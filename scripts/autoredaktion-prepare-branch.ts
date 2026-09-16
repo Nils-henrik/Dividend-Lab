@@ -4,12 +4,12 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 
 import { normalizeAutonomousArticleSource } from "@/lib/news/autoredaktion/source-normalizer";
-import type { EditorialSeries } from "@/lib/news/autoredaktion/types";
+import {
+  managedPublicationPaths,
+  parseManagedBranchName,
+} from "@/lib/news/autoredaktion/path-contract";
 import { renderSeriesImageForArticle } from "@/lib/news/images";
 import type { NewsArticle } from "@/types/news";
-
-const SERIES_FILE =
-  /^data\/news-articles\/(borssverige-|norden-i-centrum-|bolaget-i-fokus-|usa-i-fokus-).+\.ts$/;
 
 function git(args: string[]): string {
   return execFileSync("git", args, { cwd: process.cwd(), encoding: "utf8" }).trim();
@@ -19,14 +19,6 @@ function baseSha(): string {
   const configured = process.env.AUTOREDAKTION_BASE_SHA?.trim();
   if (configured && !/^0+$/.test(configured)) return configured;
   return git(["merge-base", "origin/main", "HEAD"]);
-}
-
-function seriesFromFile(file: string): EditorialSeries {
-  if (file.startsWith("data/news-articles/borssverige-")) return "borssverige";
-  if (file.startsWith("data/news-articles/norden-i-centrum-")) return "norden-i-centrum";
-  if (file.startsWith("data/news-articles/bolaget-i-fokus-")) return "bolaget-i-fokus";
-  if (file.startsWith("data/news-articles/usa-i-fokus-")) return "usa-i-fokus";
-  throw new Error(`Unsupported autonomous article file: ${file}`);
 }
 
 function isNewsArticle(value: unknown): value is NewsArticle {
@@ -68,19 +60,35 @@ function writeIfChanged(file: string, next: string) {
 
 async function main() {
   const base = baseSha();
+  const branchName =
+    process.env.AUTOREDAKTION_BRANCH_NAME?.trim() ||
+    process.env.GITHUB_REF_NAME?.trim() ||
+    git(["branch", "--show-current"]);
+  const identity = parseManagedBranchName(branchName);
+  if (!identity) {
+    throw new Error(`Unsupported managed branch identity: ${branchName}`);
+  }
+  const paths = managedPublicationPaths(identity.series, identity.date);
   const changed = git(["diff", "--name-only", `${base}...HEAD`])
     .split("\n")
     .map((file) => file.trim())
     .filter(Boolean);
-  const articleFiles = changed.filter((file) => SERIES_FILE.test(file));
-  if (articleFiles.length !== 1) {
+  const allowed = new Set([paths.articlePath, paths.registryPath, paths.imagePath]);
+  const unexpected = changed.filter((file) => !allowed.has(file));
+  if (
+    !changed.includes(paths.articlePath) ||
+    !changed.includes(paths.registryPath) ||
+    unexpected.length > 0
+  ) {
     throw new Error(
-      `Managed publication must contain exactly one BörsSverige/Norden/Bolaget i fokus/USA i fokus article; found ${articleFiles.length}`,
+      `Managed publication files do not match the canonical ${identity.series} ${identity.date} contract${
+        unexpected.length > 0 ? `; unexpected: ${unexpected.join(", ")}` : ""
+      }`,
     );
   }
 
-  const file = articleFiles[0];
-  const series = seriesFromFile(file);
+  const file = paths.articlePath;
+  const series = identity.series;
 
   // Repair deterministic contract errors before TypeScript/validator gates:
   // exact author and omission-based no-image fallback. Editorial prose is untouched.
@@ -93,14 +101,13 @@ async function main() {
 
   const article = await loadArticle(file);
   const date = stockholmDate(article.publishedAt);
+  if (date !== identity.date) {
+    throw new Error(
+      `Article publishedAt date ${date} does not match managed branch date ${identity.date}`,
+    );
+  }
   const rendered = await renderSeriesImageForArticle(article, series, { mode: "publish" });
-  const canonicalOutput = path.join(
-    process.cwd(),
-    "public",
-    "news",
-    "generated",
-    `${series}-${date}.png`,
-  );
+  const canonicalOutput = path.join(process.cwd(), paths.imagePath);
 
   let publicPath: string | null = null;
   if (rendered.image.status === "generated" && rendered.image.publicPath) {

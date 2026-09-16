@@ -34,6 +34,29 @@ Vid FAIL får ingen canonical artikel-commit/managed handoff skapas förrän slu
 
 P0 Fact Gate kontrollerar redaktionell evidens och sanningshalt. GitHubs tekniska Quality Gate kontrollerar kod-/artikelkontraktet. Ett tekniskt grönt CI-resultat får aldrig tolkas som ersättning för P0 Fact Gate.
 
+## Maskinläsbart tekniskt kontrakt för managed Autoredaktion
+
+Alla fyra managed serier — Norden i centrum, BörsSverige, Bolaget i fokus och USA i fokus — ska före canonical handoff ha exakt följande typ av deklaration i artikelmodulens redaktionella kommentar:
+
+```text
+Editorial research cutoff: 2026-09-17T08:10:00+02:00
+P0_FACT_GATE=PASS
+P0_SOURCE[primary]: https://example.com/originalkalla
+P0_SOURCE[secondary]: https://example.com/korsverifiering
+```
+
+Teknisk enforcement är fail-closed:
+
+- exakt en cutoff krävs och den ska vara fullständig ISO 8601 med sekunder och explicit UTC-offset,
+- ogiltig, ungefärlig eller oparsbar cutoff ger FAIL,
+- cutoff ska ligga på samma Europe/Stockholm-datum som `publishedAt`, får inte ligga efter `publishedAt` och får aldrig ligga efter committer-tidpunkten för den första canonical artikel+registry-commit som lämnas till GitHub,
+- exakt en literal `P0_FACT_GATE=PASS` krävs,
+- minst en unik `P0_SOURCE[primary]` krävs; ytterligare källor klassas som `primary` eller `secondary`,
+- varje deklarerad källa ska vara en giltig credential-fri HTTPS-URL och URL-mängden ska överensstämma exakt med artikelns publicerade `sources`, där varje post också måste ha beskrivande text,
+- fel path, saknad artikel, saknad registry-diff, saknat PASS, saknat källunderlag eller tidsbrott stoppar körningen innan deterministic preparation och före managed PR.
+
+`P0_FACT_GATE=PASS` är redaktionens attest efter separat research och fact-check. Validatorn bevisar endast att den tekniska attesten, tidsordningen och det deklarerade källunderlaget är kompletta och konsekventa. Den kan inte automatiskt bevisa att en extern källa är sann, att en källa verkligen är primär eller att varje formulering i brödtexten stöds korrekt. Den redaktionella kontrollen i detta dokument förblir därför obligatorisk och separat.
+
 ## Rapportering
 
 Den autonoma körningen ska internt kunna redovisa `P0_FACT_GATE=PASS` före managed handoff. Om gate inte kan passera ska slutstatus vara `BLOCKED` med den konkreta verifieringsorsaken, inte ett försök att publicera ändå.

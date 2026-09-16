@@ -3,6 +3,10 @@ import path from "node:path";
 import sharp from "sharp";
 
 import { parseIsoDateTime, stockholmCalendarDate } from "@/lib/news/autoredaktion/dates";
+import {
+  canonicalImagePath,
+  canonicalPublicImagePath,
+} from "@/lib/news/autoredaktion/path-contract";
 import type { EditorialSeries } from "@/lib/news/autoredaktion/types";
 import type { NewsArticle } from "@/types/news";
 
@@ -23,7 +27,7 @@ export type ValidateGeneratedImageOptions = {
 };
 
 function canonicalFilename(metadata: SeriesImageRenderMetadata): string {
-  return `${metadata.series}-${metadata.date}.png`;
+  return path.basename(canonicalImagePath(metadata.series, metadata.date));
 }
 
 async function validateReadablePng(
@@ -83,7 +87,7 @@ export async function validateGeneratedSeriesImage(
   if (path.basename(metadata.outputPath) !== canonicalFilename(metadata)) {
     issues.push("output-filename");
   }
-  if (metadata.publicPath !== `/news/generated/${canonicalFilename(metadata)}`) {
+  if (metadata.publicPath !== canonicalPublicImagePath(metadata.series, metadata.date)) {
     issues.push("public-path");
   }
 
@@ -151,7 +155,7 @@ export async function validateDeclaredGeneratedImage(
   const published = parseIsoDateTime(article.publishedAt);
   if (!published) return { ok: false, issues: ["published-at-invalid"] };
   const date = stockholmCalendarDate(published);
-  const expectedPublicPath = `/news/generated/${series}-${date}.png`;
+  const expectedPublicPath = canonicalPublicImagePath(series, date);
   if (article.imageUrl !== expectedPublicPath) issues.push("declared-public-path");
   if (article.thumbnailImageUrl != null && article.thumbnailImageUrl !== article.imageUrl) {
     issues.push("thumbnail-image-mismatch");

@@ -1,4 +1,5 @@
 import type { EditorialSeries } from "./types";
+import { canonicalPublicImagePath } from "./path-contract";
 
 const GENERATED_IMAGE_PATH =
   /^\/news\/generated\/(borssverige|norden-i-centrum|bolaget-i-fokus|usa-i-fokus)-(\d{4}-\d{2}-\d{2})\.png$/;
@@ -38,10 +39,7 @@ export function canonicalGeneratedImagePath(
   series: EditorialSeries,
   date: string,
 ): string {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-    throw new Error(`Invalid canonical image date: ${date}`);
-  }
-  return `/news/generated/${series}-${date}.png`;
+  return canonicalPublicImagePath(series, date);
 }
 
 /**

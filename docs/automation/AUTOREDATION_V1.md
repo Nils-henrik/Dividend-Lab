@@ -1,11 +1,12 @@
-# Autoredaktion v1 — fail-closed weekday publishing
+# Autoredaktion v1 — fail-closed daily publishing
 
 Status: Active  
 Series: **BörsSverige**, **Norden i centrum**  
 Product Owner: Henrik Karlsson
 
-This is the operational contract for the existing ChatGPT weekday jobs
-(Europe/Stockholm: Norden i centrum 08:00, BörsSverige 08:20). It does **not**
+This is the operational contract for the existing ChatGPT daily jobs
+(Europe/Stockholm: Norden i centrum 08:00, BörsSverige 08:20). Saturday uses
+`Veckan som gått` and Sunday uses `Veckan som kommer` for both series. It does **not**
 add a scheduler, a public publication endpoint, or a second news architecture.
 
 Editorial source of truth remains `DIVLAB_REDAKTION_MASTER.md` on latest
@@ -33,8 +34,8 @@ There is no HTTP publish API and no secrets in this flow.
 
 1. Read latest `main` and `DIVLAB_REDAKTION_MASTER.md`.
 2. Inspect the latest relevant DivLab articles for duplicate/new-angle control.
-3. Do current-morning research, then a **separate** fact-check against primary sources.
-4. Generate the article module with an `Editorial research cutoff` comment.
+3. Do current research for the applicable weekday/weekend format, then a **separate** fact-check against primary sources.
+4. Generate the article module with the exact machine-readable cutoff, `P0_FACT_GATE=PASS` and `P0_SOURCE[...]` contract in `DIVLAB_REDAKTION_P0_FACT_GATE.md`.
 5. Use `imageUrl: null` if no safe image exists. Never invent a path.
 6. Update the registry from **latest main**. If `main` moved after the run
    started (typical 08:00 → 08:20 window), refresh/rebase and rebuild only the
@@ -162,9 +163,9 @@ Existing Vercel Git integration remains the deploy mechanism.
 
 # Autoredaktion v1.1 — deterministic series images
 
-Status: **implementation / template review only**. Do not enable v1.1 in the
-08:00 or 08:20 jobs until the one-time visual review has approved both template
-families. This review is for the templates, not a new daily manual approval.
+Status: **historical implementation/template-review record**. The approval was
+completed and v1.1 is now active; `AUTOREDATION_V1_1.md` is the authoritative
+operational runbook. The material below records the original review contract.
 
 ## Image architecture
 
@@ -331,8 +332,9 @@ change. Dry-run images are never production assets.
 
 ## v1.1 activation gate
 
-Do not mark v1.1 READY and do not wire it into the weekday jobs until all of the
-following are true:
+This historical activation gate was completed before the current v1.1 state
+machine became READY. Current operational status is defined only in
+`AUTOREDATION_V1_1.md`; the original approval criteria were:
 
 1. implementation Quality Gate is green;
 2. visual-review artifact has been generated;

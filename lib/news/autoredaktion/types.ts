@@ -46,6 +46,7 @@ export type SeriesValidatorOptions = {
 };
 
 export type AutoredaktionGateName =
+  | "p0-fact-gate"
   | "article-validator"
   | "series-validator"
   | "image-validator"

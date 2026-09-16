@@ -18,7 +18,7 @@ The X publication should:
 
 Publishing the article on DivLab without completing the X distribution step means the editorial publication workflow is not fully complete.
 
-Autonomous weekday publication for **BörsSverige** and **Norden i centrum** must also follow `docs/automation/AUTOREDATION_V1.md`. Those jobs still obey this standard and `DIVLAB_REDAKTION_MASTER.md`; the autoredaktion layer only makes publication fail-closed.
+Autonomous daily publication for **BörsSverige** and **Norden i centrum** must also follow `docs/automation/AUTOREDATION_V1.md` and the authoritative v1.1 runbook. Both series run seven days per week: Saturday uses `Veckan som gått` and Sunday uses `Veckan som kommer`. Those jobs still obey this standard and `DIVLAB_REDAKTION_MASTER.md`; the autoredaktion layer only makes publication fail-closed.
 
 ## 2. Order of operations
 

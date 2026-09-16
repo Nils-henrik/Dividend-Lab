@@ -16,6 +16,7 @@ permissions:
   contents: write
   statuses: write
   issues: write
+  pull-requests: read
 
 jobs:
   prepare-and-preflight:
@@ -30,16 +31,10 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
 
-      - name: Setup Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version: "22"
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Validate managed branch and latest main
+      - name: Classify branch event before publication work
+        id: candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
@@ -47,15 +42,58 @@ jobs:
             echo "Unsupported Autoredaktion branch: $GITHUB_REF_NAME" >&2
             exit 1
           fi
+
           git fetch origin main --no-tags
-          BASE_SHA="$(git rev-parse origin/main)"
-          if ! git merge-base --is-ancestor "$BASE_SHA" HEAD; then
+          base_sha="$(git rev-parse origin/main)"
+          head_sha="$(git rev-parse HEAD)"
+          merge_base="$(git merge-base "$base_sha" "$head_sha")"
+          changed_files="$(git diff --name-only "$merge_base"..."$head_sha")"
+          existing_prs="$(gh pr list --state all --base main --head "$GITHUB_REF_NAME" --limit 1 --json number --jq 'length')"
+
+          echo "base_sha=$base_sha" >> "$GITHUB_OUTPUT"
+          echo "head_sha=$head_sha" >> "$GITHUB_OUTPUT"
+          echo "AUTOREDAKTION_BASE_SHA=$base_sha" >> "$GITHUB_ENV"
+          echo "AUTOREDAKTION_BRANCH_NAME=$GITHUB_REF_NAME" >> "$GITHUB_ENV"
+
+          if [[ "$existing_prs" != "0" ]]; then
+            echo "mode=frozen" >> "$GITHUB_OUTPUT"
+            echo "Managed PR already exists; branch is frozen and this push receives no preflight status or mutation."
+            exit 0
+          fi
+
+          if [[ -z "$changed_files" ]]; then
+            echo "mode=empty" >> "$GITHUB_OUTPUT"
+            echo "No branch-side publication diff exists; branch-create event is neutral."
+            exit 0
+          fi
+
+          echo "mode=candidate" >> "$GITHUB_OUTPUT"
+          if ! git merge-base --is-ancestor "$base_sha" "$head_sha"; then
             echo "Publication branch is stale relative to current main. Refresh before PR creation." >&2
             exit 1
           fi
-          echo "AUTOREDAKTION_BASE_SHA=$BASE_SHA" >> "$GITHUB_ENV"
+
+      - name: Setup Node.js
+        if: steps.candidate.outputs.mode == 'candidate'
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        if: steps.candidate.outputs.mode == 'candidate'
+        run: npm ci
+
+      - name: Validate initial path, P0 and history contracts
+        if: steps.candidate.outputs.mode == 'candidate'
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run autoredaktion:validate-history
+          npm run autoredaktion:validate-candidate
 
       - name: Deterministic one-time preparation
+        if: steps.candidate.outputs.mode == 'candidate'
         shell: bash
         run: |
           set -euo pipefail
@@ -79,13 +117,22 @@ jobs:
           fi
           echo "AUTOREDAKTION_PREPARED_HEAD=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
 
+      - name: Revalidate bounded history after preparation
+        if: steps.candidate.outputs.mode == 'candidate'
+        shell: bash
+        run: |
+          set -euo pipefail
+          AUTOREDAKTION_HEAD_SHA="$(git rev-parse HEAD)" npm run autoredaktion:validate-history
+
       - name: Exact pre-PR gates
+        if: steps.candidate.outputs.mode == 'candidate'
         shell: bash
         run: |
           set -euo pipefail
           AUTOREDAKTION_BASE_SHA="$AUTOREDAKTION_BASE_SHA" npm run autoredaktion:preflight
 
       - name: Ensure managed PR label exists
+        if: steps.candidate.outputs.mode == 'candidate'
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
@@ -99,6 +146,7 @@ jobs:
           fi
 
       - name: Mark prepared head safe to open PR
+        if: steps.candidate.outputs.mode == 'candidate'
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
@@ -110,13 +158,19 @@ jobs:
             -f description='Pre-PR typecheck, validators and image gates passed'
 
       - name: Mark preflight failure on current head
-        if: failure()
+        if: failure() && steps.candidate.outputs.mode == 'candidate'
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set +e
           sha="$(git rev-parse HEAD 2>/dev/null || echo "$GITHUB_SHA")"
+          git fetch origin main --no-tags >/dev/null 2>&1
+          main_sha="$(git rev-parse origin/main 2>/dev/null || true)"
+          if [[ -n "$main_sha" && "$sha" == "$main_sha" ]]; then
+            echo "Refusing to write Autoredaktion failure status on current main SHA $sha."
+            exit 0
+          fi
           gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$sha" \
             -f state='failure' \
             -f context='autoredaktion/preflight' \

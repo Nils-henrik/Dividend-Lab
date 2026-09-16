@@ -15,6 +15,43 @@ function executableWorkflowText(source: string): string {
 }
 
 describe("Autoredaktion workflow handoff contract", () => {
+  it("keeps empty branch-create events neutral and never marks current main failed", () => {
+    const preflight = workflow(
+      ".github/workflows/autoredaktion-branch-preflight.yml",
+    );
+    assert.match(preflight, /echo "mode=empty"/);
+    assert.match(preflight, /echo "mode=frozen"/);
+    assert.match(
+      preflight,
+      /if:\s*failure\(\) && steps\.candidate\.outputs\.mode == 'candidate'/,
+    );
+    assert.match(preflight, /"\$sha" == "\$main_sha"/);
+    assert.match(preflight, /Refusing to write Autoredaktion failure status on current main SHA/);
+  });
+
+  it("runs path, P0 and history validation before deterministic preparation", () => {
+    const preflight = workflow(
+      ".github/workflows/autoredaktion-branch-preflight.yml",
+    );
+    const candidate = preflight.indexOf("npm run autoredaktion:validate-candidate");
+    const preparation = preflight.indexOf("npm run autoredaktion:prepare-branch");
+    assert.ok(candidate >= 0);
+    assert.ok(preparation > candidate);
+    assert.match(preflight, /npm run autoredaktion:validate-history/);
+  });
+
+  it("freezes post-handoff pushes and revalidates exact managed history before release", () => {
+    const preflight = workflow(
+      ".github/workflows/autoredaktion-branch-preflight.yml",
+    );
+    const release = workflow(".github/workflows/autoredaktion-release.yml");
+    assert.match(preflight, /Managed PR already exists; branch is frozen/);
+    assert.match(release, /Enforce immutable managed branch history/);
+    assert.match(release, /AUTOREDAKTION_HEAD_SHA="\$head"/);
+    assert.match(release, /Missing successful autoredaktion\/preflight status on \$pr_head/);
+    assert.match(release, /autoredaktion-repair-used/);
+  });
+
   it("calls production verification directly from the release state machine", () => {
     const release = workflow(".github/workflows/autoredaktion-release.yml");
     assert.match(
