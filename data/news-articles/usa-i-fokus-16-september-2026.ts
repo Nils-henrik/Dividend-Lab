@@ -29,6 +29,9 @@ export const USA_I_FOKUS_16_SEPTEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-09-16T14:10:00+02:00",
   url: "/news/usa-i-fokus-16-september-2026-fed-besked-detaljhandel",
   featured: true,
+  imageUrl: "/news/generated/usa-i-fokus-2026-09-16.png",
+  thumbnailImageUrl: "/news/generated/usa-i-fokus-2026-09-16.png",
+  imageAlt: "USA i fokus 2026-09-16 – DivLabs översikt över den amerikanska börsmarknaden inför Wall Streets öppning.",
   readingMinutes: 5,
   seoTitle: "USA i fokus: Wall Street inför Feds räntebesked",
   seoDescription:
