@@ -5,9 +5,7 @@ import {
   AreaChart,
   CartesianGrid,
   ReferenceDot,
-  ReferenceLine,
   ResponsiveContainer,
-  Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
@@ -23,14 +21,6 @@ type Props = {
   exceedsHorizon: boolean;
 };
 
-type TooltipProps = {
-  active?: boolean;
-  payload?: Array<{ value?: number }>;
-  label?: string | number;
-  currentAge: number;
-  targetCapital: number;
-};
-
 function formatAxisValue(value: number) {
   if (Math.abs(value) >= 1_000_000) {
     return `${(value / 1_000_000).toLocaleString("sv-SE", {
@@ -39,38 +29,6 @@ function formatAxisValue(value: number) {
   }
 
   return `${Math.round(value / 1_000).toLocaleString("sv-SE")}k`;
-}
-
-function ProjectionTooltip({
-  active,
-  payload,
-  label,
-  currentAge,
-  targetCapital,
-}: TooltipProps) {
-  const capital = payload?.[0]?.value;
-
-  if (!active || typeof capital !== "number") {
-    return null;
-  }
-
-  const age = Math.round(currentAge + Number(label ?? 0));
-  const progress =
-    targetCapital > 0 ? Math.min(100, (capital / targetCapital) * 100) : null;
-
-  return (
-    <div className="rounded-lg border border-divlab-blue/35 bg-divlab-elevated px-3 py-2 shadow-sm">
-      <p className="text-[11px] text-divlab-text-muted">Ålder {age} år</p>
-      <p className="text-sm font-semibold text-divlab-text tabular-nums">
-        {formatSek(capital)}
-      </p>
-      {progress !== null && (
-        <p className="mt-1 text-[11px] text-divlab-text-muted tabular-nums">
-          {Math.round(progress)}% av kapitalmålet
-        </p>
-      )}
-    </div>
-  );
 }
 
 export default function FireProjectionChart({
@@ -165,33 +123,6 @@ export default function FireProjectionChart({
               tickLine={false}
               tickFormatter={formatAxisValue}
             />
-            <Tooltip
-              cursor={{
-                stroke: "var(--divlab-chart-axis)",
-                strokeDasharray: "3 3",
-                strokeOpacity: 0.2,
-              }}
-              content={
-                <ProjectionTooltip
-                  currentAge={currentAge}
-                  targetCapital={targetCapital}
-                />
-              }
-            />
-            {targetCapital > 0 && (
-              <ReferenceLine
-                y={targetCapital}
-                stroke="var(--divlab-blue)"
-                strokeDasharray="5 5"
-                strokeOpacity={0.55}
-                label={{
-                  value: "Kapitalmål",
-                  position: "insideTopRight",
-                  fill: "var(--divlab-chart-axis)",
-                  fontSize: 10,
-                }}
-              />
-            )}
             <Area
               type="monotone"
               dataKey="capital"
@@ -200,12 +131,6 @@ export default function FireProjectionChart({
               fill="url(#freedomProjectionBlue)"
               dot={false}
               isAnimationActive={false}
-              activeDot={{
-                r: 4,
-                fill: "var(--divlab-blue)",
-                stroke: "var(--divlab-surface)",
-                strokeWidth: 2,
-              }}
             />
             {goalPoint && targetReachYear !== null && (
               <ReferenceDot
