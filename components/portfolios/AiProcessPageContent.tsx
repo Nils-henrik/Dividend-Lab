@@ -52,7 +52,7 @@ export default function AiProcessPageContent() {
       <header className="space-y-4">
         <p className="divlab-section-label text-divlab-blue-muted">AI-portföljer</p>
         <h1 className="text-3xl font-semibold tracking-[-0.04em] text-divlab-text sm:text-4xl">
-          Så arbetar DivLabs AI-portföljer
+          Så fungerar DivLabs AI-portföljer
         </h1>
         <p className="max-w-2xl text-sm leading-7 text-divlab-text-secondary sm:text-base">
           DivLab använder fyra olika AI-förvaltare med fyra olika mål: Försiktig,
@@ -133,6 +133,18 @@ export default function AiProcessPageContent() {
           strategierna är nyligen lanserade, och säger ingenting om framtida resultat.
           Förbättringar i förvaltningslogiken gäller kommande körningar och skriver
           inte om redan bokförda portföljbeslut.
+        </p>
+      </section>
+
+      <section className="space-y-3 border-t divlab-border-neutral pt-8 text-sm leading-7 text-divlab-text-secondary">
+        <h2 className="text-xl font-semibold tracking-[-0.03em] text-divlab-text">
+          Hur mäts portföljernas resultat?
+        </h2>
+        <p>
+          Det verkliga modellportföljvärdet är kassa plus marknadsvärdet på alla innehav. Prestationsgrafen mäter något annat: kedjad investeringsutveckling där förändringar i bidraget kapital behandlas som externa kassaflöden.
+        </p>
+        <p>
+          En månatlig insättning höjer därför portföljvärdet men skapar ingen avkastning. Marknadsrörelser, realiserade och orealiserade resultat, utdelningar, avgifter och courtage ligger däremot kvar i utvecklingen. Historiska snapshots och affärer skrivs inte om för att förbättra utfallet.
         </p>
       </section>
 

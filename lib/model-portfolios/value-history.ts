@@ -30,10 +30,10 @@ function rangeCutoff(range: ModelPortfolioChartRange, latestTimestamp: string): 
  * If a range contains only one saved point, include the immediately preceding
  * point so the chart can still show the move into the selected period.
  */
-export function filterPortfolioValueHistory(
-  points: readonly PortfolioValuePoint[],
+export function filterPortfolioValueHistory<T extends PortfolioValuePoint>(
+  points: readonly T[],
   range: ModelPortfolioChartRange,
-): PortfolioValuePoint[] {
+): T[] {
   if (range === "ALL" || points.length <= 1) return [...points];
 
   const latest = points.at(-1);

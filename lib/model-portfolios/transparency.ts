@@ -1,5 +1,9 @@
 import "server-only";
 
+import {
+  buildCashFlowAdjustedPerformanceSeries,
+  type CashFlowAdjustedFields,
+} from "@/lib/model-portfolios/performance";
 import { getModelPortfolioReadContext } from "@/lib/model-portfolios/read-client";
 import type { ModelPortfolioStrategyKey } from "./engine/policy";
 
@@ -31,7 +35,7 @@ export type PortfolioTransparencyTrade = {
   fillLabel: string | null;
 };
 
-export type PortfolioValuePoint = {
+export type PortfolioValuePoint = CashFlowAdjustedFields & {
   snapshotAt: string;
   totalValueMinor: number;
   cashValueMinor: number;
@@ -142,7 +146,7 @@ function mapTrade(row: Record<string, unknown>): PortfolioTransparencyTrade {
   };
 }
 
-function mapValuePoint(row: Record<string, unknown>): PortfolioValuePoint {
+function mapValuePoint(row: Record<string, unknown>): Omit<PortfolioValuePoint, keyof CashFlowAdjustedFields> {
   return {
     snapshotAt: String(row.snapshot_at),
     totalValueMinor: Number(row.total_value_minor),
@@ -269,7 +273,7 @@ export async function loadPortfolioTransparencyDetail(
           createdAt: String(decisionResult.data.created_at),
         }
       : null,
-    valueHistory: snapshotRows.map(mapValuePoint),
+    valueHistory: buildCashFlowAdjustedPerformanceSeries(snapshotRows.map(mapValuePoint)),
     holdings,
     trades: ((tradeResult.data ?? []) as Record<string, unknown>[]).map(mapTrade),
     tradeCount,

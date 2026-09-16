@@ -33,21 +33,20 @@ export default function ModelPortfoliosOverview({ portfolios, recentTransactions
   return (
     <div className="mx-auto w-full max-w-[1560px] space-y-5 pb-4">
       <section className="px-0.5 pt-1">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-divlab-blue-muted">Nyligen lanserade · Live sedan {MODEL_PORTFOLIO_PUBLIC_LAUNCH_LABEL}</p>
-        <h1 className="mt-2 text-[28px] font-semibold tracking-[-0.04em] text-divlab-text sm:text-[32px]">Kan AI slå en traditionell aktieförvaltare?</h1>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-divlab-blue-muted">AI-portföljer · Live experiment</p>
+        <h1 className="mt-2 text-[28px] font-semibold tracking-[-0.04em] text-divlab-text sm:text-[32px]">Kan AI slå börsen?</h1>
         <p className="mt-3 max-w-3xl text-sm leading-7 text-divlab-text-secondary">
-          På DivLab testar vi en enkel men spännande fråga: kan AI över tid fatta investeringsbeslut som står sig mot traditionell aktiv aktieförvaltning?
+          Följ fyra AI-portföljer med olika strategier. Se aktuella aktier, AI-beslut, affärer och kassaflödesjusterade resultat öppet över tid.
         </p>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-divlab-text-muted">Detta är allmän information om simulerade modellportföljer – inte personlig investeringsrådgivning eller verkliga mäklaraffärer. Historiken är fortfarande kort och ska inte tolkas som ett långsiktigt track record.</p>
+        <p className="mt-2 max-w-3xl text-sm leading-6 text-divlab-text-muted">Ett publikt experiment med simulerade modellportföljer – inte personlig investeringsrådgivning eller verkliga mäklaraffärer. Historiken är fortfarande kort och tidigare utveckling garanterar inte framtida resultat.</p>
       </section>
 
-      <AiPortfolioProjectDescription />
-
-      <section className="grid overflow-hidden border divlab-border-neutral bg-divlab-surface/55 lg:grid-cols-[1fr_1fr_1.2fr]">
+      <section className="grid overflow-hidden border divlab-border-neutral bg-divlab-surface/55 sm:grid-cols-2 xl:grid-cols-4">
+        <TopMetric label="AI-portföljer" value="4 strategier" sub="Försiktig till utdelning" />
         <TopMetric label="Startkapital" value="10 000 kr" sub="Per portfölj" />
         <TopMetric label="Månadsspar" value="5 000 kr" sub="Den 25:e varje månad" />
-        <div className="flex min-h-[96px] items-center justify-between gap-4 px-5 py-4 lg:border-l divlab-border-neutral">
-          <div><p className="text-[10px] font-medium uppercase tracking-[0.16em] text-divlab-text-muted">Beslutsprincip</p><p className="mt-1 text-lg font-semibold text-divlab-text">AI + verifierade källor</p><p className="mt-1 text-xs text-divlab-text-muted">Transparens i varje beslut</p></div>
+        <div className="flex min-h-[96px] items-center justify-between gap-4 px-5 py-4 xl:border-l divlab-border-neutral">
+          <div><p className="text-[10px] font-medium uppercase tracking-[0.16em] text-divlab-text-muted">Experimentstart</p><p className="mt-1 text-lg font-semibold text-divlab-text">{MODEL_PORTFOLIO_PUBLIC_LAUNCH_LABEL}</p><p className="mt-1 text-xs text-divlab-text-muted">Historiken ändras inte i efterhand</p></div>
           <Link href={MODEL_PORTFOLIO_PROCESS_PATH} className="hidden shrink-0 items-center gap-2 border divlab-border-neutral px-3.5 py-2 text-xs font-semibold text-divlab-text transition hover:border-divlab-blue/50 hover:text-divlab-blue sm:inline-flex"><InfoIcon />Så fungerar det</Link>
         </div>
       </section>
@@ -55,6 +54,8 @@ export default function ModelPortfoliosOverview({ portfolios, recentTransactions
       <section className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
         {portfolios.map((portfolio) => <PortfolioCard key={portfolio.id} portfolio={portfolio} marketStatus={marketStatus} isAuthenticated={isAuthenticated} />)}
       </section>
+
+      <AiPortfolioProjectDescription />
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
         <div id="historik" className="border divlab-border-neutral bg-divlab-surface/45">
@@ -74,6 +75,8 @@ export default function ModelPortfoliosOverview({ portfolios, recentTransactions
       </section>
 
       <section className="flex items-start gap-3 border border-divlab-blue/20 bg-divlab-blue/[0.08] px-4 py-3 text-xs leading-5 text-divlab-text-secondary"><span className="mt-0.5 text-divlab-blue"><InfoIcon /></span><p>Modellportföljerna är simulerade och uppdateras i fyra schemalagda pass per handelsdag. Sökfrekvensen är inte samma sak som portföljernas innehavstid: varje AI bedömer samma marknad genom sin egen tidshorisont. Varje köp belastar kassan med 10 kr i simulerad courtage. Vid materiella händelser kan AI:n göra riktade omprövningar, med en hård gräns på totalt 4 beslutskörningar per portfölj och dag. Alla genomförda affärer sparas i historiken. Detta är inte personlig investeringsrådgivning.</p></section>
+
+      <PortfolioSeoGuide />
     </div>
   );
 }
@@ -91,7 +94,7 @@ function PortfolioCard({ portfolio, marketStatus, isAuthenticated }: { portfolio
       <div className={`absolute inset-x-0 top-0 h-px ${style.border} border-t`} />
       <div className="pointer-events-none relative z-10 px-5 pb-4 pt-5">
         <div className="flex items-center gap-3"><span className={style.accent}><PortfolioIcon type={style.icon} /></span><h2 className="text-xl font-semibold tracking-[-0.03em] text-divlab-text group-hover:text-white">{portfolio.name}</h2><div className="ml-auto flex flex-wrap items-center justify-end gap-1.5"><MarketLiveBadge initialStatus={marketStatus} /><span className={`border px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] ${style.badge}`}>{portfolio.riskLabel}</span></div></div>
-        <div className="mt-7 flex items-end justify-between gap-4"><div><p className="text-[31px] font-semibold leading-none tracking-[-0.04em] tabular-nums text-divlab-text">{formatSek(portfolio.totalValueMinor)}</p><div className="mt-2 flex items-center gap-2"><span className={`text-sm font-semibold ${positive ? "text-emerald-400" : "text-red-400"}`}>{positive ? "+" : ""}{portfolio.performancePct.toFixed(2).replace(".", ",")}%</span><span className="text-xs text-divlab-text-muted">sedan start (kort historik)</span></div></div><MiniSparkline accent={style.accent} points={portfolio.valueHistory} /></div>
+        <div className="mt-7 flex items-end justify-between gap-4"><div><p className="text-[31px] font-semibold leading-none tracking-[-0.04em] tabular-nums text-divlab-text">{formatSek(portfolio.totalValueMinor)}</p><p className="mt-1 text-[10px] uppercase tracking-[0.12em] text-divlab-text-muted">Verkligt modellportföljvärde</p><div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1"><span className={`text-sm font-semibold ${positive ? "text-emerald-400" : "text-red-400"}`}>{positive ? "+" : ""}{portfolio.performancePct.toFixed(2).replace(".", ",")}%</span><span className="text-xs text-divlab-text-muted">utveckling exkl. insättningar</span></div></div><MiniSparkline accent={style.accent} points={portfolio.valueHistory} /></div>
         <dl className="mt-7 space-y-1 text-xs"><MetricRow label="Tidshorisont" value={catalog?.horizonLabel ?? "—"} /><MetricRow label="Kontanter" value={formatSek(portfolio.cashMinor)} /><MetricRow label="Investerat" value={formatSek(portfolio.investedMinor)} /><MetricRow label="Antal innehav" value={`${portfolio.holdingsCount} st`} /><MetricRow label="Senaste AI-beslut" value={portfolio.latestDecision ? formatDate(portfolio.latestDecision.createdAt) : statusLabel(portfolio.status)} /></dl>
         <div className="mt-5 pt-2"><p className="line-clamp-3 min-h-[60px] text-xs leading-5 text-divlab-text-secondary">{catalog?.workStyle ?? portfolio.latestDecision?.rationale ?? portfolio.objective}</p><p className={`mt-2 text-[11px] font-semibold ${style.accent}`}>Öppna strategi och historik →</p></div>
         {isAuthenticated ? <form action={setModelPortfolioFollowAction} className="pointer-events-auto mt-4"><input type="hidden" name="portfolioId" value={portfolio.id} /><input type="hidden" name="follow" value={portfolio.isFollowing ? "false" : "true"} /><button type="submit" className={`w-full border py-2.5 text-xs font-semibold transition ${style.border} ${style.accent} hover:bg-white/[0.03]`}>{portfolio.isFollowing ? "Följer portföljen ✓" : "Följ portfölj →"}</button></form> : <Link href={`/login?redirect=${encodeURIComponent(href)}`} className={`pointer-events-auto mt-4 block w-full border py-2.5 text-center text-xs font-semibold transition ${style.border} ${style.accent} hover:bg-white/[0.03]`}>Logga in för att följa →</Link>}
@@ -105,7 +108,7 @@ function TransactionRow({ transaction }: { transaction: ModelPortfolioTransactio
 function TradeCell({ href, children, className = "", title }: { href: string; children: React.ReactNode; className?: string; title?: string }) { return <td className={`p-0 ${className}`} title={title}><Link href={href} className="block py-3 pr-4">{children}</Link></td>; }
 function ProcessStep({ number, title, text }: { number: string; title: string; text: string }) { return <div className="grid grid-cols-[30px_1fr] gap-3"><div className="flex h-7 w-7 items-center justify-center border border-divlab-blue/35 bg-divlab-blue/10 text-xs font-semibold text-divlab-blue">{number}</div><div><p className="text-xs font-semibold text-divlab-text">{number}. {title}</p><p className="mt-1 text-[11px] leading-4 text-divlab-text-muted">{text}</p></div></div>; }
 function MiniSparkline({ accent, points }: { accent: string; points: ModelPortfolioOverview["valueHistory"] }) {
-  const values = points.map((point) => point.totalValueMinor);
+  const values = points.map((point) => point.performancePct);
   const min = values.length ? Math.min(...values) : 0;
   const max = values.length ? Math.max(...values) : 0;
   const span = max - min;
@@ -121,6 +124,33 @@ function MiniSparkline({ accent, points }: { accent: string; points: ModelPortfo
         return `${index === 0 ? "M" : "L"}${x.toFixed(2)} ${y.toFixed(2)}`;
       }).join(" ");
   return <svg aria-hidden="true" viewBox="0 0 112 44" className={`h-11 w-28 ${accent}`} fill="none"><path d={path} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>;
+}
+
+export function PortfolioSeoGuide() {
+  return (
+    <section className="border-t divlab-border-neutral pt-7">
+      <div className="grid gap-x-10 gap-y-8 lg:grid-cols-2">
+        <div>
+          <h2 className="text-xl font-semibold tracking-[-0.03em] text-divlab-text">Vad är en AI-portfölj?</h2>
+          <p className="mt-3 text-sm leading-7 text-divlab-text-secondary">En AI-portfölj är här en simulerad modellportfölj där en AI analyserar aktier och lämnar förslag inom fasta regler. DivLabs fyra förvaltare har olika mål, riskramar och tidshorisonter, men alla affärer och aktuella innehav visas öppet.</p>
+        </div>
+        <div>
+          <h2 className="text-xl font-semibold tracking-[-0.03em] text-divlab-text">Hur väljer AI:n aktier?</h2>
+          <p className="mt-3 text-sm leading-7 text-divlab-text-secondary">AI-analysen kombinerar marknadsdata, bolagsinformation och nyheter från tillåtna källor. Förslag måste därefter klara deterministiska risk- och datakontroller innan en simulerad affär kan bokföras.</p>
+          <Link href={MODEL_PORTFOLIO_PROCESS_PATH} className="mt-2 inline-flex text-sm font-semibold text-divlab-blue hover:text-divlab-blue-muted">Läs hela AI-processen →</Link>
+        </div>
+        <div>
+          <h2 className="text-xl font-semibold tracking-[-0.03em] text-divlab-text">Hur mäts portföljernas resultat?</h2>
+          <p className="mt-3 text-sm leading-7 text-divlab-text-secondary">Portföljvärdet visar kassa plus marknadsvärdet på innehaven. Utvecklingen beräknas separat och kedjas över tid med externa insättningar borträknade. Därför skapar månadssparandet den 25:e inget konstgjort avkastningshopp, medan kursrörelser, utdelningar, avgifter och courtage fortfarande påverkar resultatet.</p>
+        </div>
+        <div>
+          <h2 className="text-xl font-semibold tracking-[-0.03em] text-divlab-text">Kan AI slå börsen?</h2>
+          <p className="mt-3 text-sm leading-7 text-divlab-text-secondary">Det är frågan experimentet ska undersöka över flera år – inte ett löfte. Historiken är kort, portföljerna är simulerade och alla resultat måste läsas tillsammans med respektive strategi och risknivå.</p>
+          <p className="mt-2 text-sm leading-6 text-divlab-text-muted">Lär dig mer om <Link href="/learning/vad-ar-en-aktie" className="font-semibold text-divlab-text hover:text-divlab-blue">aktier</Link>, <Link href="/learning/teknisk-analys-for-nyborjare" className="font-semibold text-divlab-text hover:text-divlab-blue">teknisk analys</Link> och <Link href="/learning/direktavkastning-och-utdelningssakerhet" className="font-semibold text-divlab-text hover:text-divlab-blue">utdelningssäkerhet</Link> i DivLabs utbildning.</p>
+        </div>
+      </div>
+    </section>
+  );
 }
 function PortfolioIcon({ type }: { type: "shield" | "balance" | "rocket" | "diamond" }) { if (type === "balance") return <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 3v18M5 6h14M7 6l-4 7h8L7 6Zm10 0-4 7h8l-4-7ZM7 17h10" /></svg>; if (type === "rocket") return <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M14 4c3-2 6-1 6-1s1 3-1 6l-6 6-4-4 5-7Z"/><path d="m9 11-4 1-2 3 5 1m5-1 1 5-3 2-1-5"/><circle cx="15.5" cy="7.5" r="1.5" /></svg>; if (type === "diamond") return <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="m3 8 4-5h10l4 5-9 13L3 8Z"/><path d="M3 8h18M7 3l5 18 5-18"/></svg>; return <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 3 5 6v5c0 5 3 8 7 10 4-2 7-5 7-10V6l-7-3Z"/><path d="M12 7v10"/></svg>; }
 function InfoIcon() { return <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 10v6M12 7h.01"/></svg>; }

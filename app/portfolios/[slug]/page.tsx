@@ -9,7 +9,7 @@ import {
   getModelPortfolioPublicEntry,
 } from "@/lib/model-portfolios/public";
 import { loadPortfolioTransparencyDetail } from "@/lib/model-portfolios/transparency";
-import { breadcrumbJsonLd } from "@/lib/seo/json-ld";
+import { breadcrumbJsonLd, webPageJsonLd } from "@/lib/seo/json-ld";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -41,11 +41,18 @@ export default async function PortfolioDetailPage({ params, searchParams }: Prop
   return (
     <PublicContentShell>
       <JsonLdScript
-        data={breadcrumbJsonLd([
-          { name: "Hem", path: "/" },
-          { name: "AI-portföljer", path: "/portfolios" },
-          { name: catalogEntry.name, path: `/portfolios/${catalogEntry.slug}` },
-        ])}
+        data={[
+          breadcrumbJsonLd([
+            { name: "Hem", path: "/" },
+            { name: "AI-portföljer", path: "/portfolios" },
+            { name: catalogEntry.name, path: `/portfolios/${catalogEntry.slug}` },
+          ]),
+          webPageJsonLd({
+            name: catalogEntry.title.replace(" | DivLab", ""),
+            description: catalogEntry.description,
+            path: `/portfolios/${catalogEntry.slug}`,
+          }),
+        ]}
       />
       {detail ? (
         <PortfolioDetailView detail={detail} />
