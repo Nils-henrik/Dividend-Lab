@@ -4,7 +4,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useId, useState } from "react";
 import { registerUser } from "@/app/register/actions";
+import AppIcon from "@/components/layout/AppIcon";
 import PrimaryButton from "@/components/ui/Button";
+import {
+  getPasswordRequirements,
+  validateRegistrationPassword,
+} from "@/lib/auth/password";
 import { LEGAL_ACCEPTANCE_VALIDATION_MESSAGE } from "@/lib/legal/acceptance";
 import { validateUsername } from "@/lib/profiles/username";
 import { DIVLAB_BRAND_NAME } from "@/lib/site/brand";
@@ -16,6 +21,7 @@ type Props = {
 export default function RegisterForm({ redirectTo }: Props) {
   const router = useRouter();
   const errorId = useId();
+  const passwordRequirementsId = useId();
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -29,7 +35,10 @@ export default function RegisterForm({ redirectTo }: Props) {
     setError("");
 
     const normalizedEmail = email.trim().toLowerCase();
-    const usernameResult = validateUsername(username, { required: true });
+    const usernameResult = validateUsername(username, {
+      required: true,
+      preserveCase: true,
+    });
 
     if (!normalizedEmail.includes("@")) {
       setError("Ange en giltig e-postadress.");
@@ -41,8 +50,10 @@ export default function RegisterForm({ redirectTo }: Props) {
       return;
     }
 
-    if (password.length < 8) {
-      setError("Använd minst 8 tecken i lösenordet.");
+    const passwordResult = validateRegistrationPassword(password);
+
+    if (!passwordResult.ok) {
+      setError(passwordResult.error);
       return;
     }
 
@@ -140,7 +151,9 @@ export default function RegisterForm({ redirectTo }: Props) {
             />
           </div>
           <span className="mt-2 block text-xs leading-5 text-divlab-text-muted">
-            Ditt offentliga namn på DivLab. 3–20 tecken: a–z, 0–9 eller _.
+            Ditt offentliga namn på DivLab. 3–20 tecken: A–Z, a–z, 0–9 eller
+            _. Stora och små bokstäver visas som du skriver dem, men räknas som
+            samma användarnamn.
           </span>
         </label>
 
@@ -160,7 +173,7 @@ export default function RegisterForm({ redirectTo }: Props) {
               minLength={8}
               required
               aria-invalid={Boolean(error)}
-              aria-describedby={error ? errorId : undefined}
+              aria-describedby={`${passwordRequirementsId}${error ? ` ${errorId}` : ""}`}
               className="divlab-input w-full px-4 py-3 pr-24"
             />
             <button
@@ -171,9 +184,50 @@ export default function RegisterForm({ redirectTo }: Props) {
               {showPassword ? "Dölj" : "Visa"}
             </button>
           </div>
-          <span className="mt-2 block text-xs leading-5 text-divlab-text-muted">
-            Minst 8 tecken.
-          </span>
+          <div
+            id={passwordRequirementsId}
+            className="mt-3 rounded-xl border divlab-border-neutral divlab-inset px-4 py-3"
+          >
+            <p className="text-xs font-medium text-divlab-text-secondary">
+              Lösenordskrav:
+            </p>
+            <ul className="mt-2 space-y-1.5">
+              {getPasswordRequirements(password).map((requirement) => (
+                <li
+                  key={requirement.key}
+                  className={`flex items-center gap-2 text-xs leading-5 ${
+                    requirement.met
+                      ? "text-divlab-green"
+                      : "text-divlab-text-muted"
+                  }`}
+                >
+                  {requirement.met ? (
+                    <AppIcon
+                      name="check"
+                      className="h-3.5 w-3.5 shrink-0"
+                      strokeWidth={2}
+                    />
+                  ) : (
+                    <span
+                      aria-hidden="true"
+                      className="mx-1 h-1.5 w-1.5 shrink-0 rounded-full bg-current"
+                    />
+                  )}
+                  <span>
+                    <span className="sr-only">
+                      {requirement.met ? "Uppfyllt: " : "Återstår: "}
+                    </span>
+                    {requirement.label}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-2 text-xs leading-5 text-divlab-text-muted">
+              Specialtecken och Unicode är tillåtna. Vissa tecken använder mer
+              än en byte. Lösenord som finns i kända läckor nekas när
+              formuläret skickas.
+            </p>
+          </div>
         </label>
 
         <div className="flex items-start gap-3">

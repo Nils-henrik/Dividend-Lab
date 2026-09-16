@@ -1,4 +1,4 @@
-export const USERNAME_PATTERN = /^[a-z0-9_]{3,20}$/;
+export const USERNAME_PATTERN = /^[A-Za-z0-9_]{3,20}$/;
 export const TEMPORARY_USERNAME_PATTERN = /^u_[0-9a-f]{12}$/;
 
 export const RESERVED_USERNAMES = [
@@ -38,8 +38,17 @@ export function normalizeUsername(value: string | null | undefined): string | nu
   return trimmed.toLowerCase();
 }
 
+export function normalizeUsernamePreservingCase(
+  value: string | null | undefined,
+): string | null {
+  const trimmed = value?.trim() ?? "";
+  return trimmed || null;
+}
+
 export function isReservedUsername(username: string) {
-  return (RESERVED_USERNAMES as readonly string[]).includes(username);
+  return (RESERVED_USERNAMES as readonly string[]).includes(
+    username.trim().toLowerCase(),
+  );
 }
 
 export function isTemporaryUsername(value: string | null | undefined): boolean {
@@ -54,9 +63,14 @@ export function createTemporaryUsername() {
 
 export function validateUsername(
   value: string | null | undefined,
-  { required = true }: { required?: boolean } = {},
+  {
+    required = true,
+    preserveCase = false,
+  }: { required?: boolean; preserveCase?: boolean } = {},
 ): UsernameValidationResult {
-  const username = normalizeUsername(value);
+  const username = preserveCase
+    ? normalizeUsernamePreservingCase(value)
+    : normalizeUsername(value);
 
   if (!username) {
     if (!required) {
@@ -73,7 +87,7 @@ export function validateUsername(
     return {
       ok: false,
       error:
-        "Användarnamnet måste vara 3–20 tecken och får bara innehålla a–z, 0–9 och _.",
+        "Användarnamnet måste vara 3–20 tecken och får bara innehålla A–Z, a–z, 0–9 och _.",
     };
   }
 

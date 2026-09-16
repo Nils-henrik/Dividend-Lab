@@ -56,6 +56,19 @@ describe("username validation", () => {
     }
   });
 
+  it("preserves letter casing for registration while reserving names case-insensitively", () => {
+    for (const value of ["Henke92", "henke92", "HENKE92"]) {
+      const result = validateUsername(value, { preserveCase: true });
+      assert.equal(result.ok, true);
+      if (result.ok) {
+        assert.equal(result.username, value);
+      }
+    }
+
+    assert.equal(validateUsername("ADMIN", { preserveCase: true }).ok, false);
+    assert.equal(isReservedUsername("DivLab_Mod"), true);
+  });
+
   it("blocks reserved system names", () => {
     for (const reserved of reservedUsernames) {
       assert.equal(isReservedUsername(reserved), true);
