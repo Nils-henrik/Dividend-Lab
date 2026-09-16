@@ -1,5 +1,9 @@
 import "server-only";
 
+import {
+  buildCashFlowAdjustedPerformanceSeries,
+  type CashFlowAdjustedFields,
+} from "@/lib/model-portfolios/performance";
 import { getModelPortfolioReadContext } from "@/lib/model-portfolios/read-client";
 
 export type ModelPortfolioTransaction = {
@@ -19,7 +23,7 @@ export type ModelPortfolioTransaction = {
   rationale: string;
 };
 
-export type ModelPortfolioValuePoint = {
+export type ModelPortfolioValuePoint = CashFlowAdjustedFields & {
   snapshotAt: string;
   totalValueMinor: number;
   cashValueMinor: number;
@@ -27,6 +31,11 @@ export type ModelPortfolioValuePoint = {
   contributedCapitalMinor: number;
   marketDataAsOf: string | null;
 };
+
+type ModelPortfolioValueSourcePoint = Omit<
+  ModelPortfolioValuePoint,
+  keyof CashFlowAdjustedFields
+>;
 
 export type ModelPortfolioOverview = {
   id: string;
@@ -134,7 +143,7 @@ type SnapshotRow = {
   market_data_as_of: string | null;
 };
 
-function mapSnapshot(row: SnapshotRow): ModelPortfolioValuePoint {
+function mapSnapshot(row: SnapshotRow): ModelPortfolioValueSourcePoint {
   return {
     snapshotAt: row.snapshot_at,
     totalValueMinor: Number(row.total_value_minor),
@@ -251,7 +260,7 @@ export async function loadModelPortfoliosOverview(): Promise<ModelPortfoliosOver
     );
   }
 
-  const valueHistoryByPortfolio = new Map<string, ModelPortfolioValuePoint[]>();
+  const valueHistoryByPortfolio = new Map<string, ModelPortfolioValueSourcePoint[]>();
   for (const row of (snapshotsResult.data ?? []) as SnapshotRow[]) {
     const points = valueHistoryByPortfolio.get(row.portfolio_id) ?? [];
     points.push(mapSnapshot(row));
@@ -281,7 +290,9 @@ export async function loadModelPortfoliosOverview(): Promise<ModelPortfoliosOver
   const portfolioMeta = new Map<string, { name: string; slug: string }>();
   const portfolios = ((portfolioResult.data ?? []) as PortfolioRow[]).map((row) => {
     portfolioMeta.set(row.id, { name: row.name, slug: row.slug });
-    const valueHistory = valueHistoryByPortfolio.get(row.id) ?? [];
+    const valueHistory = buildCashFlowAdjustedPerformanceSeries(
+      valueHistoryByPortfolio.get(row.id) ?? [],
+    );
     const latestSnapshot = valueHistory.at(-1) ?? null;
     const fallbackCashMinor = cashByPortfolio.get(row.id) ?? 0;
     const fallbackInvestedMinor = investedByPortfolio.get(row.id) ?? 0;
@@ -290,9 +301,7 @@ export async function loadModelPortfoliosOverview(): Promise<ModelPortfoliosOver
     const investedMinor = latestSnapshot?.investedValueMinor ?? fallbackInvestedMinor;
     const totalValueMinor = latestSnapshot?.totalValueMinor ?? (fallbackCashMinor + fallbackInvestedMinor);
     const contributedCapitalMinor = latestSnapshot?.contributedCapitalMinor ?? fallbackContributedMinor;
-    const performancePct = contributedCapitalMinor > 0
-      ? ((totalValueMinor - contributedCapitalMinor) / contributedCapitalMinor) * 100
-      : 0;
+    const performancePct = valueHistory.at(-1)?.performancePct ?? 0;
     const latest = latestDecisionByPortfolio.get(row.id);
 
     return {

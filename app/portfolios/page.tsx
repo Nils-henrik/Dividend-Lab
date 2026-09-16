@@ -3,9 +3,15 @@ import PublicContentShell from "@/components/layout/PublicContentShell";
 import ModelPortfoliosOverview from "@/components/portfolios/ModelPortfoliosOverview";
 import { ModelPortfoliosPublicFallback } from "@/components/portfolios/ModelPortfoliosPublicFallback";
 import JsonLdScript from "@/components/seo/JsonLd";
-import { buildModelPortfolioHubMetadata } from "@/lib/model-portfolios/public";
+import {
+  MODEL_PORTFOLIO_PUBLIC_CATALOG,
+  buildModelPortfolioHubMetadata,
+} from "@/lib/model-portfolios/public";
 import { loadModelPortfoliosOverview } from "@/lib/model-portfolios/server";
-import { breadcrumbJsonLd } from "@/lib/seo/json-ld";
+import {
+  breadcrumbJsonLd,
+  modelPortfolioCollectionJsonLd,
+} from "@/lib/seo/json-ld";
 
 export const metadata: Metadata = buildModelPortfolioHubMetadata();
 
@@ -17,10 +23,13 @@ export default async function ModelPortfoliosPage() {
   return (
     <PublicContentShell>
       <JsonLdScript
-        data={breadcrumbJsonLd([
-          { name: "Hem", path: "/" },
-          { name: "AI-portföljer", path: "/portfolios" },
-        ])}
+        data={[
+          breadcrumbJsonLd([
+            { name: "Hem", path: "/" },
+            { name: "AI-portföljer", path: "/portfolios" },
+          ]),
+          modelPortfolioCollectionJsonLd(MODEL_PORTFOLIO_PUBLIC_CATALOG),
+        ]}
       />
       {result.ok ? (
         <ModelPortfoliosOverview

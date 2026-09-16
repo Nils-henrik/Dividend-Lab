@@ -14,6 +14,7 @@ import {
   buildModelPortfolioProcessMetadata,
 } from "@/lib/model-portfolios/public";
 import { STATIC_PUBLIC_PATHS } from "@/lib/seo/sitemap-entries";
+import { modelPortfolioCollectionJsonLd } from "@/lib/seo/json-ld";
 import { absoluteUrl } from "@/lib/seo/site";
 
 function metadataTitle(title: Metadata["title"]): string {
@@ -42,6 +43,13 @@ const processSource = readFileSync(
 const overviewSource = readFileSync(
   new URL(
     "../../components/portfolios/ModelPortfoliosOverview.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const chartSource = readFileSync(
+  new URL(
+    "../../components/portfolios/PortfolioValueChart.tsx",
     import.meta.url,
   ),
   "utf8",
@@ -104,14 +112,17 @@ describe("public AI portfolio SEO routes", () => {
     const hub = buildModelPortfolioHubMetadata();
     const process = buildModelPortfolioProcessMetadata();
 
-    assert.equal(metadataTitle(hub.title), "AI-portföljer för börsen | DivLab");
-    assert.match(String(hub.description), /10 augusti 2026/);
+    assert.equal(
+      metadataTitle(hub.title),
+      "AI-portföljer – aktier, innehav & resultat | DivLab",
+    );
+    assert.match(String(hub.description), /Kan AI slå börsen/);
     assert.equal(hub.alternates?.canonical, absoluteUrl("/portfolios"));
     assert.deepEqual(hub.robots, { index: true, follow: true });
 
     assert.equal(
       metadataTitle(process.title),
-      "Så arbetar DivLabs AI-portföljer | DivLab",
+      "Så fungerar DivLabs AI-portföljer | DivLab",
     );
     assert.equal(
       process.alternates?.canonical,
@@ -128,7 +139,7 @@ describe("public AI portfolio SEO routes", () => {
         absoluteUrl(`/portfolios/${entry.slug}`),
       );
       assert.deepEqual(metadata?.robots, { index: true, follow: true });
-      assert.doesNotMatch(metadataTitle(metadata?.title), new RegExp(entry.slug));
+      assert.doesNotMatch(metadataTitle(metadata?.title), /hog-risk|\/portfolios\//);
     }
 
     assert.doesNotMatch(hubSource, /index:\s*false/);
@@ -153,12 +164,34 @@ describe("public AI portfolio SEO routes", () => {
     assert.equal(MODEL_PORTFOLIO_PUBLIC_LAUNCH_DATE, "2026-08-10");
     assert.equal(MODEL_PORTFOLIO_PUBLIC_LAUNCH_LABEL, "10 augusti 2026");
     assert.match(overviewSource, /MODEL_PORTFOLIO_PUBLIC_LAUNCH_LABEL/);
-    assert.match(overviewSource, /Kan AI slå en traditionell aktieförvaltare\?/);
+    assert.match(overviewSource, /Kan AI slå börsen\?/);
     assert.match(
       overviewSource,
-      /kan AI över tid fatta investeringsbeslut som står sig mot traditionell aktiv aktieförvaltning/,
+      /Följ fyra AI-portföljer med olika strategier/,
     );
     assert.doesNotMatch(overviewSource, /tränat upp/i);
+  });
+
+  it("renders useful indexable copy and cash-flow-adjusted chart labels", () => {
+    assert.match(overviewSource, /Vad är en AI-portfölj\?/);
+    assert.match(overviewSource, /Hur väljer AI:n aktier\?/);
+    assert.match(overviewSource, /Hur mäts portföljernas resultat\?/);
+    assert.match(overviewSource, /utveckling exkl\. insättningar/i);
+    assert.match(chartSource, /dataKey="performancePct"/);
+    assert.doesNotMatch(chartSource, /dataKey="valueSek"/);
+    assert.doesNotMatch(
+      chartSource,
+      /totalValueMinor\s*\/\s*latest\.contributedCapitalMinor/,
+    );
+  });
+
+  it("describes the visible portfolio collection with truthful structured data", () => {
+    const jsonLd = modelPortfolioCollectionJsonLd(MODEL_PORTFOLIO_PUBLIC_CATALOG);
+    assert.equal(jsonLd["@type"], "CollectionPage");
+    const itemList = jsonLd.mainEntity as Record<string, unknown>;
+    assert.equal(itemList["@type"], "ItemList");
+    assert.equal(itemList.numberOfItems, 4);
+    assert.match(hubSource, /modelPortfolioCollectionJsonLd/);
   });
 
   it("links the process CTA to the real public process route", () => {

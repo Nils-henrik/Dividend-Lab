@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PortfolioSeoGuide } from "@/components/portfolios/ModelPortfoliosOverview";
 import {
   MODEL_PORTFOLIO_PROCESS_PATH,
   MODEL_PORTFOLIO_PUBLIC_CATALOG,
@@ -12,13 +13,13 @@ export function ModelPortfoliosPublicFallback() {
   return (
     <div className="mx-auto w-full max-w-3xl space-y-6 px-4 py-8 sm:px-6">
       <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-divlab-blue-muted">
-        Nyligen lanserade · Live sedan {MODEL_PORTFOLIO_PUBLIC_LAUNCH_LABEL}
+        AI-portföljer · Live experiment
       </p>
       <h1 className="text-3xl font-semibold tracking-[-0.04em] text-divlab-text">
-        Kan AI slå en traditionell aktieförvaltare?
+        Kan AI slå börsen?
       </h1>
       <p className="text-sm leading-7 text-divlab-text-secondary">
-        På DivLab testar vi en enkel men spännande fråga: kan AI över tid fatta investeringsbeslut som står sig mot traditionell aktiv aktieförvaltning?
+        Följ fyra AI-portföljer med olika strategier. Se aktuella aktier, AI-beslut, affärer och resultat öppet över tid. Experimentet är live sedan {MODEL_PORTFOLIO_PUBLIC_LAUNCH_LABEL}.
       </p>
       <div className="space-y-4 border divlab-border-neutral bg-divlab-surface/45 px-5 py-6 text-sm leading-7 text-divlab-text-secondary">
         <p>Därför har vi startat ett pilotprojekt med fyra AI-styrda portföljer, där varje portfölj får arbeta utifrån sin egen strategi, risknivå och sina egna regler.</p>
@@ -49,6 +50,7 @@ export function ModelPortfoliosPublicFallback() {
       <Link href={MODEL_PORTFOLIO_PROCESS_PATH} className="inline-flex text-sm font-semibold text-divlab-blue hover:text-divlab-blue-muted">
         Så arbetar DivLabs AI-portföljer →
       </Link>
+      <PortfolioSeoGuide />
     </div>
   );
 }
@@ -64,7 +66,7 @@ export function PortfolioDetailPublicFallback({ entry }: { entry: ModelPortfolio
         <span>/</span>
         <span className="text-divlab-text-secondary">{entry.name}</span>
       </div>
-      <h1 className="text-3xl font-semibold tracking-[-0.04em] text-divlab-text">{entry.name}</h1>
+      <h1 className="text-3xl font-semibold tracking-[-0.04em] text-divlab-text">{entry.name} AI-portfölj</h1>
       <p className="text-sm leading-7 text-divlab-text-secondary">{entry.summary}</p>
       <p className="text-xs leading-5 text-divlab-text-muted">
         Simulerad AI-portfölj, live sedan {MODEL_PORTFOLIO_PUBLIC_LAUNCH_LABEL}. Live-historik är tillfälligt otillgänglig. Inte personlig rådgivning.

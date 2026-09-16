@@ -6,7 +6,7 @@ import {
   buildModelPortfolioProcessMetadata,
   MODEL_PORTFOLIO_PROCESS_PATH,
 } from "@/lib/model-portfolios/public";
-import { breadcrumbJsonLd } from "@/lib/seo/json-ld";
+import { breadcrumbJsonLd, webPageJsonLd } from "@/lib/seo/json-ld";
 
 export const metadata: Metadata = buildModelPortfolioProcessMetadata();
 
@@ -14,14 +14,22 @@ export default function AiPortfolioProcessPage() {
   return (
     <PublicContentShell>
       <JsonLdScript
-        data={breadcrumbJsonLd([
-          { name: "Hem", path: "/" },
-          { name: "AI-portföljer", path: "/portfolios" },
-          {
-            name: "Så arbetar AI-portföljerna",
+        data={[
+          breadcrumbJsonLd([
+            { name: "Hem", path: "/" },
+            { name: "AI-portföljer", path: "/portfolios" },
+            {
+              name: "Så fungerar AI-portföljerna",
+              path: MODEL_PORTFOLIO_PROCESS_PATH,
+            },
+          ]),
+          webPageJsonLd({
+            name: "Så fungerar DivLabs AI-portföljer",
+            description:
+              "Datakällor, AI-analys, riskkontroller, simulerade affärer och kassaflödesjusterad resultatmätning.",
             path: MODEL_PORTFOLIO_PROCESS_PATH,
-          },
-        ])}
+          }),
+        ]}
       />
       <AiProcessPageContent />
     </PublicContentShell>

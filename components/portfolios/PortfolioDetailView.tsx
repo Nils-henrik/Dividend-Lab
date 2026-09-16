@@ -78,7 +78,7 @@ export default function PortfolioDetailView({ detail }: { detail: PortfolioTrans
           <div className="max-w-3xl">
             <div className="flex flex-wrap items-center gap-3">
               <h1 className="text-3xl font-semibold tracking-[-0.04em] text-divlab-text">
-                {detail.name}
+                {detail.name} AI-portfölj
               </h1>
               <MarketLiveBadge initialStatus={marketStatus} />
               <span className="border border-current/40 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em]">
@@ -328,6 +328,21 @@ export default function PortfolioDetailView({ detail }: { detail: PortfolioTrans
           ) : (
             <span />
           )}
+        </div>
+      </section>
+
+      <section className="grid gap-6 border-t divlab-border-neutral pt-7 md:grid-cols-2">
+        <div>
+          <h2 className="text-xl font-semibold tracking-[-0.03em] text-divlab-text">Så ska resultatet läsas</h2>
+          <p className="mt-3 text-sm leading-7 text-divlab-text-secondary">Det aktuella portföljvärdet är kassa plus marknadsvärdet på innehaven. Procentsiffran och grafen visar i stället kedjad investeringsutveckling där externa insättningar räknas bort. Utdelningar, kursrörelser, avgifter och courtage påverkar fortfarande resultatet.</p>
+        </div>
+        <div>
+          <h2 className="text-xl font-semibold tracking-[-0.03em] text-divlab-text">Följ hela AI-experimentet</h2>
+          <p className="mt-3 text-sm leading-7 text-divlab-text-secondary">Jämför {detail.name} med de tre andra modellportföljerna och läs hur data, AI-analys och riskkontroller leder fram till ett simulerat beslut.</p>
+          <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm font-semibold">
+            <Link href="/portfolios" className="text-divlab-blue hover:text-divlab-blue-muted">Alla AI-portföljer →</Link>
+            <Link href={MODEL_PORTFOLIO_PROCESS_PATH} className="text-divlab-blue hover:text-divlab-blue-muted">Så fungerar processen →</Link>
+          </div>
         </div>
       </section>
     </div>

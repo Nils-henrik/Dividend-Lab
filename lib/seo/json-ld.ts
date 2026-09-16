@@ -48,6 +48,46 @@ export function breadcrumbJsonLd(
   };
 }
 
+export function modelPortfolioCollectionJsonLd(
+  portfolios: readonly { name: string; slug: string }[],
+): JsonLd {
+  return {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: "DivLabs AI-portföljer",
+    description:
+      "Fyra transparenta och simulerade AI-portföljer med aktuella innehav, affärer och kassaflödesjusterade resultat.",
+    url: absoluteUrl("/portfolios"),
+    inLanguage: "sv-SE",
+    mainEntity: {
+      "@type": "ItemList",
+      numberOfItems: portfolios.length,
+      itemListElement: portfolios.map((portfolio, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        name: portfolio.name,
+        url: absoluteUrl(`/portfolios/${portfolio.slug}`),
+      })),
+    },
+  };
+}
+
+export function webPageJsonLd(input: {
+  name: string;
+  description: string;
+  path: string;
+}): JsonLd {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    name: input.name,
+    description: input.description,
+    url: absoluteUrl(input.path),
+    inLanguage: "sv-SE",
+    isAccessibleForFree: true,
+  };
+}
+
 export function newsArticleJsonLd(input: {
   title: string;
   description: string;

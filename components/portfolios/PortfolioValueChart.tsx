@@ -32,11 +32,8 @@ function formatSekMinor(minor: number): string {
   }).format(minor / 100);
 }
 
-function formatAxisSek(value: number): string {
-  return new Intl.NumberFormat("sv-SE", {
-    notation: value >= 100_000 ? "compact" : "standard",
-    maximumFractionDigits: 0,
-  }).format(value);
+function formatPerformance(value: number): string {
+  return `${value >= 0 ? "+" : ""}${value.toFixed(2).replace(".", ",")}%`;
 }
 
 function formatChartDate(value: string, expanded: boolean, range: ModelPortfolioChartRange): string {
@@ -78,16 +75,11 @@ export default function PortfolioValueChart({
   const color = colorBySlug[slug] ?? colorBySlug.forsiktig;
   const visiblePoints = useMemo(() => filterPortfolioValueHistory(points, range), [points, range]);
   const chartData = useMemo(
-    () => visiblePoints.map((point) => ({
-      ...point,
-      valueSek: point.totalValueMinor / 100,
-    })),
+    () => visiblePoints,
     [visiblePoints],
   );
   const latest = points.at(-1) ?? null;
-  const returnPct = latest && latest.contributedCapitalMinor > 0
-    ? (latest.totalValueMinor / latest.contributedCapitalMinor - 1) * 100
-    : null;
+  const returnPct = latest?.performancePct ?? null;
 
   useEffect(() => {
     if (!expanded) return;
@@ -108,19 +100,19 @@ export default function PortfolioValueChart({
       <section className="border divlab-border-neutral bg-divlab-surface/45 px-5 py-5 sm:px-7">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-divlab-text-muted">Portföljvärde</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-divlab-text-muted">Portföljvärde och utveckling</p>
             <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
               <h2 className="text-2xl font-semibold tracking-[-0.03em] text-divlab-text">
                 {latest ? formatSekMinor(latest.totalValueMinor) : "Ingen värdering ännu"}
               </h2>
               {returnPct !== null ? (
                 <span className={returnPct >= 0 ? "text-sm font-semibold text-emerald-400" : "text-sm font-semibold text-red-400"}>
-                  {returnPct >= 0 ? "+" : ""}{returnPct.toFixed(2)}% sedan start
+                  {formatPerformance(returnPct)} sedan start
                 </span>
               ) : null}
             </div>
             <p className="mt-1 text-xs leading-5 text-divlab-text-muted">
-              Mark-to-market i SEK. Samma värderingspunkter används här och på portföljöversikten.
+              Värdet är mark-to-market i SEK. Grafen visar utveckling exklusive externa insättningar.
             </p>
           </div>
           <button
@@ -155,7 +147,7 @@ export default function PortfolioValueChart({
           <div className="flex h-[min(820px,92vh)] w-full max-w-[1500px] flex-col border divlab-border-neutral bg-divlab-surface px-4 py-4 shadow-2xl sm:px-7 sm:py-6">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-divlab-text-muted">Portföljvärde · mark-to-market</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-divlab-text-muted">Utveckling exkl. insättningar</p>
                 <h2 className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-divlab-text">{portfolioName}</h2>
                 {latest ? <p className="mt-1 text-sm text-divlab-text-secondary">{formatSekMinor(latest.totalValueMinor)}</p> : null}
               </div>
@@ -173,7 +165,7 @@ export default function PortfolioValueChart({
               <ChartBody data={chartData} color={color} expanded slug={slug} range={range} />
             </div>
             <p className="mt-3 text-xs text-divlab-text-muted">
-              Datum och tid visas längs axeln. Värdet består av kassa plus marknadsvärdet på alla innehav till senast tillgängliga kurs och valutakurs.
+              Grafen visar kedjad investeringsutveckling. Månadssparande påverkar portföljvärdet men skapar ingen avkastning; kursrörelser, utdelningar, avgifter och courtage ingår.
             </p>
           </div>
         </div>
@@ -211,7 +203,7 @@ function ChartBody({
   slug,
   range,
 }: {
-  data: Array<PortfolioValuePoint & { valueSek: number }>;
+  data: PortfolioValuePoint[];
   color: string;
   expanded: boolean;
   slug: string;
@@ -220,7 +212,7 @@ function ChartBody({
   if (!data.length) {
     return (
       <div className="flex h-full items-center justify-center border border-dashed divlab-border-neutral text-sm text-divlab-text-muted">
-        Värdehistorik skapas vid nästa portföljkörning.
+        Utvecklingshistorik skapas vid nästa portföljkörning.
       </div>
     );
   }
@@ -245,7 +237,7 @@ function ChartBody({
           minTickGap={expanded ? 34 : 50}
         />
         <YAxis
-          tickFormatter={(value) => `${formatAxisSek(Number(value))} kr`}
+          tickFormatter={(value) => formatPerformance(Number(value))}
           tick={{ fill: "var(--divlab-chart-axis)", fontSize: expanded ? 12 : 10 }}
           axisLine={false}
           tickLine={false}
@@ -255,7 +247,7 @@ function ChartBody({
         <Tooltip
           cursor={{ stroke: color, strokeOpacity: 0.35 }}
           labelFormatter={(label) => formatFullDate(String(label))}
-          formatter={(value) => [formatSekMinor(Math.round(Number(value) * 100)), "Portföljvärde"]}
+          formatter={(value) => [formatPerformance(Number(value)), "Utveckling exkl. insättningar"]}
           contentStyle={{
             background: "var(--divlab-chart-tooltip)",
             border: "1px solid var(--divlab-chart-tooltip-border)",
@@ -266,7 +258,7 @@ function ChartBody({
         />
         <Area
           type="monotone"
-          dataKey="valueSek"
+          dataKey="performancePct"
           stroke={color}
           strokeWidth={expanded ? 2.5 : 2}
           fill={`url(#${gradientId})`}

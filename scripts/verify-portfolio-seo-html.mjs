@@ -9,42 +9,44 @@ const base = `http://127.0.0.1:${process.env.PORT || "3000"}`;
 const routes = [
   {
     path: "/portfolios",
-    title: "AI-portföljer för börsen | DivLab",
+    title: "AI-portföljer – aktier, innehav &amp; resultat | DivLab",
     canonical: "https://divlab.se/portfolios",
     mustInclude: [
-      "Fyra AI-portföljer",
+      "Vad är en AI-portfölj?",
       "10 augusti 2026",
       "/portfolios/sa-fungerar-ai-processen",
+      '"@type":"CollectionPage"',
+      '"@type":"ItemList"',
       "index, follow",
     ],
   },
   {
     path: "/portfolios/forsiktig",
-    title: "Försiktig AI-portfölj | DivLab",
+    title: "Försiktig AI-portfölj – innehav &amp; resultat | DivLab",
     canonical: "https://divlab.se/portfolios/forsiktig",
-    mustInclude: ["Försiktig", "10 augusti 2026", "index, follow"],
+    mustInclude: ["Försiktig", "10 augusti 2026", '"@type":"WebPage"', "index, follow"],
   },
   {
     path: "/portfolios/medelrisk",
-    title: "Medelrisk AI-portfölj | DivLab",
+    title: "AI-portfölj med medelrisk – aktier &amp; resultat | DivLab",
     canonical: "https://divlab.se/portfolios/medelrisk",
     mustInclude: ["Medelrisk", "index, follow"],
   },
   {
     path: "/portfolios/hog-risk",
-    title: "Högrisk AI-portfölj | DivLab",
+    title: "AI-portfölj med hög risk – aktier &amp; resultat | DivLab",
     canonical: "https://divlab.se/portfolios/hog-risk",
     mustInclude: ["Högrisk", "index, follow"],
   },
   {
     path: "/portfolios/utdelning",
-    title: "Utdelning AI-portfölj | DivLab",
+    title: "Utdelningsportfölj med AI – innehav &amp; resultat | DivLab",
     canonical: "https://divlab.se/portfolios/utdelning",
     mustInclude: ["Utdelning", "index, follow"],
   },
   {
     path: "/portfolios/sa-fungerar-ai-processen",
-    title: "Så arbetar DivLabs AI-portföljer | DivLab",
+    title: "Så fungerar DivLabs AI-portföljer | DivLab",
     canonical: "https://divlab.se/portfolios/sa-fungerar-ai-processen",
     mustInclude: [
       "Data &amp; nyheter",
