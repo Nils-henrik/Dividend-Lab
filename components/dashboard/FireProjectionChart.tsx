@@ -6,6 +6,7 @@ import {
   CartesianGrid,
   ReferenceDot,
   ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
@@ -21,6 +22,13 @@ type Props = {
   exceedsHorizon: boolean;
 };
 
+type HoverValueDotProps = {
+  cx?: number;
+  cy?: number;
+  payload?: CapitalProjectionPoint;
+  currentAge: number;
+};
+
 function formatAxisValue(value: number) {
   if (Math.abs(value) >= 1_000_000) {
     return `${(value / 1_000_000).toLocaleString("sv-SE", {
@@ -29,6 +37,61 @@ function formatAxisValue(value: number) {
   }
 
   return `${Math.round(value / 1_000).toLocaleString("sv-SE")}k`;
+}
+
+function HoverValueDot({
+  cx,
+  cy,
+  payload,
+  currentAge,
+}: HoverValueDotProps) {
+  if (
+    typeof cx !== "number" ||
+    typeof cy !== "number" ||
+    !payload ||
+    typeof payload.capital !== "number" ||
+    typeof payload.year !== "number"
+  ) {
+    return null;
+  }
+
+  const age = Math.round(currentAge + payload.year);
+  const showBelow = cy < 44;
+  const labelY = showBelow ? cy + 22 : cy - 18;
+  const textAnchor = cx < 104 ? "start" : "end";
+  const labelX = cx < 104 ? cx + 8 : cx - 8;
+
+  return (
+    <g pointerEvents="none">
+      <circle
+        cx={cx}
+        cy={cy}
+        r={4}
+        fill="var(--divlab-blue)"
+        stroke="var(--divlab-surface)"
+        strokeWidth={2}
+      />
+      <text
+        x={labelX}
+        y={labelY}
+        textAnchor={textAnchor}
+        fill="var(--divlab-text)"
+        fontSize={12}
+        fontWeight={600}
+      >
+        {formatSek(payload.capital)}
+      </text>
+      <text
+        x={labelX}
+        y={labelY + 14}
+        textAnchor={textAnchor}
+        fill="var(--divlab-chart-axis)"
+        fontSize={10}
+      >
+        {age} år
+      </text>
+    </g>
+  );
 }
 
 export default function FireProjectionChart({
@@ -123,6 +186,7 @@ export default function FireProjectionChart({
               tickLine={false}
               tickFormatter={formatAxisValue}
             />
+            <Tooltip cursor={false} content={() => null} />
             <Area
               type="monotone"
               dataKey="capital"
@@ -131,6 +195,7 @@ export default function FireProjectionChart({
               fill="url(#freedomProjectionBlue)"
               dot={false}
               isAnimationActive={false}
+              activeDot={<HoverValueDot currentAge={currentAge} />}
             />
             {goalPoint && targetReachYear !== null && (
               <ReferenceDot
