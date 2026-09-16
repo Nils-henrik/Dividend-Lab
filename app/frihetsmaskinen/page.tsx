@@ -7,9 +7,9 @@ import { getCanonicalUrl } from "@/lib/seo/canonical";
 import { breadcrumbJsonLd, webApplicationJsonLd } from "@/lib/seo/json-ld";
 import { DIVLAB_BRAND_NAME } from "@/lib/site/brand";
 
-const title = `Frihetsmaskinen – räkna på ekonomisk frihet | ${DIVLAB_BRAND_NAME}`;
+const title = `Ekonomiskt oberoende kalkylator – FIRE | ${DIVLAB_BRAND_NAME}`;
 const description =
-  "Frihetsmaskinen är DivLabs FIRE-kalkylator. Uppskatta hur mycket kapital du kan behöva för ekonomisk frihet och hur sparkvot, avkastning och utgifter påverkar tidslinjen.";
+  "Gratis FIRE-kalkylator för ekonomiskt oberoende. Se hur kapital, månadssparande, avkastning och mål påverkar tiden till ekonomisk frihet.";
 
 export const metadata: Metadata = {
   title: {
@@ -17,6 +17,7 @@ export const metadata: Metadata = {
   },
   description,
   keywords: [
+    "ekonomiskt oberoende kalkylator",
     "ekonomisk frihet",
     "FIRE-kalkylator",
     "räkna på ekonomisk frihet",
@@ -29,11 +30,16 @@ export const metadata: Metadata = {
     canonical: getCanonicalUrl("/frihetsmaskinen"),
   },
   openGraph: {
-    title: `Frihetsmaskinen | ${DIVLAB_BRAND_NAME}`,
+    title,
     description,
     url: getCanonicalUrl("/frihetsmaskinen"),
     type: "website",
     locale: "sv_SE",
+  },
+  twitter: {
+    card: "summary",
+    title,
+    description,
   },
 };
 

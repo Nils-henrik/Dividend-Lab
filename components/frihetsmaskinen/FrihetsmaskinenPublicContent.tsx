@@ -13,18 +13,22 @@ export default function FrihetsmaskinenPublicContent({
     <div className="mx-auto max-w-5xl space-y-10 px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
       <header className="max-w-3xl space-y-5">
         <p className="divlab-section-label text-divlab-blue-muted">
-          FIRE-kalkylator
+          Gratis FIRE-kalkylator
         </p>
         <h1 className="text-3xl font-semibold tracking-[-0.04em] text-divlab-text sm:text-4xl lg:text-5xl lg:leading-[1.08]">
-          Räkna på ekonomisk frihet
+          Räkna på ekonomiskt oberoende
         </h1>
         <p className="text-lg leading-8 text-divlab-text-secondary">
-          Frihetsmaskinen hjälper dig uppskatta hur mycket kapital du kan behöva
-          för större ekonomiskt oberoende — och hur sparkvot, avkastning och
-          levnadskostnader påverkar tidslinjen. Det är en modell för reflektion,
-          inte en garanti för tidig pension eller framtida avkastning.
+          Frihetsmaskinen är DivLabs kalkylator för ekonomisk frihet. Se hur
+          nuvarande kapital, månadssparande, avkastning och ditt mål påverkar
+          tiden till större ekonomiskt oberoende. Kalkylatorn är gratis och
+          kräver inget konto.
         </p>
       </header>
+
+      <div id="kalkylator">
+        <FreedomPlanCard />
+      </div>
 
       <section
         aria-labelledby="frihetsmaskinen-how-heading"
@@ -35,39 +39,35 @@ export default function FrihetsmaskinenPublicContent({
             id="frihetsmaskinen-how-heading"
             className="text-sm font-semibold text-divlab-text"
           >
-            Vad verktyget gör
+            Så fungerar FIRE-kalkylatorn
           </h2>
           <p className="mt-2 text-sm leading-6 text-divlab-text-secondary">
-            Du anger kapital, månadssparande, önskad inkomst eller kapitalmål
-            samt antaganden om direktavkastning och kursutveckling. Resultatet
-            visar en förenklad tidslinje och uppskattad utdelning.
+            Ange ålder, kapital och månadssparande. Välj sedan om du vill räkna
+            mot en viss månadsutdelning eller ett eget kapitalmål. Resultatet
+            och kapitalgrafen uppdateras direkt när du ändrar ett värde.
           </p>
         </div>
         <div>
           <h2 className="text-sm font-semibold text-divlab-text">
-            Exempelantaganden
+            Vad påverkar tiden till målet?
           </h2>
           <p className="mt-2 text-sm leading-6 text-divlab-text-secondary">
-            Startvärdena är illustrativa: 35 års ålder, 250&nbsp;000&nbsp;kr i
-            kapital, 5&nbsp;000&nbsp;kr i månadssparande och 25&nbsp;000&nbsp;kr
-            i önskad månadsutdelning. Justera siffrorna till din egen situation.
+            Ett högre månadssparande eller större startkapital kan förkorta
+            tidslinjen, medan ett högre kapitalmål kan förlänga den. Testa flera
+            scenarier för att se vilka antaganden som gör störst skillnad.
           </p>
         </div>
         <div>
           <h2 className="text-sm font-semibold text-divlab-text">
-            Begränsningar
+            Viktigt att veta
           </h2>
           <p className="mt-2 text-sm leading-6 text-divlab-text-secondary">
             Inflation, skatt, avgifter, marknadsavkastning och ändrade utgifter
-            påverkar verkligheten. Beräkningen är en uppskattning — inte ett
-            löfte om när du kan sluta jobba.
+            påverkar verkligheten. Beräkningen är en pedagogisk uppskattning —
+            inte ett löfte om framtida avkastning eller när du kan sluta jobba.
           </p>
         </div>
       </section>
-
-      <div id="kalkylator">
-        <FreedomPlanCard />
-      </div>
 
       <FrihetsmaskinenInspirationSection />
 
@@ -82,8 +82,8 @@ export default function FrihetsmaskinenPublicContent({
           Lär dig mer om ekonomisk frihet
         </h2>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-divlab-text-secondary">
-          Kombinera kalkylen med DivLabs guider om FIRE, sparkvot och långsiktigt
-          sparande.
+          Kombinera kalkylen med DivLabs guider om FIRE, sparkvot, ränta på
+          ränta och långsiktigt sparande.
         </p>
         <ul className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <li>
@@ -112,10 +112,18 @@ export default function FrihetsmaskinenPublicContent({
           </li>
           <li>
             <Link
-              href="/learning/sparande-i-borjan"
+              href="/learning/ranta-pa-ranta"
               className="divlab-link text-sm font-medium underline decoration-divlab-blue/30 underline-offset-4"
             >
-              Sparande i början
+              Ränta på ränta
+            </Link>
+          </li>
+          <li>
+            <Link
+              href="/learning/leva-pa-utdelningar-kapital"
+              className="divlab-link text-sm font-medium underline decoration-divlab-blue/30 underline-offset-4"
+            >
+              Hur mycket kapital krävs för utdelningar?
             </Link>
           </li>
         </ul>
@@ -157,18 +165,19 @@ export default function FrihetsmaskinenPublicContent({
             id="frihetsmaskinen-account-heading"
             className="text-xl font-semibold tracking-[-0.02em] text-divlab-text"
           >
-            Spara och fortsätt i din DivLab-miljö
+            Fortsätt i din DivLab-miljö
           </h2>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-divlab-text-secondary">
-            Kalkylen fungerar utan konto. Skapa konto om du vill använda forum,
-            kommentarer, kontakter, meddelanden och din personliga DivLab-miljö.
+            Frihetsmaskinen fungerar utan konto. Skapa ett kostnadsfritt konto
+            om du också vill använda forum, kommentarer, kontakter, meddelanden
+            och din personliga DivLab-miljö.
           </p>
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
             <Link
               href="/register?redirect=/frihetsmaskinen"
               className="divlab-btn-primary inline-flex min-h-11 items-center justify-center px-6 py-3 text-sm font-semibold"
             >
-              Skapa konto
+              Skapa konto gratis
             </Link>
             <Link
               href="/login?redirect=/frihetsmaskinen"
