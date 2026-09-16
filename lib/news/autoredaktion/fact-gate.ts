@@ -1,16 +1,17 @@
 import type { NewsArticle } from "@/types/news";
+import ts from "typescript";
 
 import { parseIsoDateTime, stockholmCalendarDate } from "./dates";
 import { fail, type ValidationIssue } from "./types";
 
 const ISO_CUTOFF_PATTERN =
-  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?(?:Z|[+-]\d{2}:\d{2})$/;
-
-const CUTOFF_LINE =
-  /^\s*\*\s*Editorial research cutoff:\s*(\S+)\s*$/gm;
-const P0_PASS_LINE = /^\s*\*\s*P0_FACT_GATE=PASS\s*$/gm;
-const P0_SOURCE_LINE =
-  /^\s*\*\s*P0_SOURCE\[(primary|secondary)\]:\s*(https:\/\/\S+)\s*$/gm;
+  /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{3}))?(Z|([+-])(\d{2}):(\d{2}))$/;
+const CUTOFF_DECLARATION = /^Editorial research cutoff:\s+(\S+)$/;
+const P0_PASS_DECLARATION = /^P0_FACT_GATE=PASS$/;
+const P0_SOURCE_DECLARATION =
+  /^P0_SOURCE\[(primary|secondary)\]:\s+(\S+)$/;
+const RESERVED_P0_PREFIX = /Editorial research cutoff|P0_/i;
+const RESERVED_P0_OCCURRENCE = /Editorial research cutoff|P0_/gi;
 
 export type P0SourceKind = "primary" | "secondary";
 
@@ -26,8 +27,237 @@ export type P0FactGateResult = {
   sources: P0SourceDeclaration[];
 };
 
-function matches(sourceText: string, pattern: RegExp): RegExpMatchArray[] {
-  return [...sourceText.matchAll(pattern)];
+type P0Declarations = {
+  cutoffValues: string[];
+  passCount: number;
+  sources: P0SourceDeclaration[];
+};
+
+function exportedArticleDeclarations(
+  sourceFile: ts.SourceFile,
+): Array<{ statement: ts.VariableStatement; declaration: ts.VariableDeclaration }> {
+  return sourceFile.statements.flatMap((statement) => {
+    if (
+      !ts.isVariableStatement(statement) ||
+      !statement.modifiers?.some(
+        (modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword,
+      )
+    ) {
+      return [];
+    }
+
+    return statement.declarationList.declarations.flatMap((declaration) => {
+      let initializer = declaration.initializer;
+      while (initializer) {
+        if (
+          ts.isParenthesizedExpression(initializer) ||
+          ts.isAsExpression(initializer) ||
+          ts.isTypeAssertionExpression(initializer) ||
+          ts.isSatisfiesExpression(initializer)
+        ) {
+          initializer = initializer.expression;
+          continue;
+        }
+        break;
+      }
+      if (!initializer || !ts.isObjectLiteralExpression(initializer)) return [];
+
+      const propertyNames = new Set(
+        initializer.properties.flatMap((property) => {
+          const name = property.name;
+          if (
+            name &&
+            (ts.isIdentifier(name) ||
+              ts.isStringLiteral(name) ||
+              ts.isNoSubstitutionTemplateLiteral(name))
+          ) {
+            return [name.text];
+          }
+          return [];
+        }),
+      );
+      return ["id", "title", "publishedAt"].every((name) => propertyNames.has(name))
+        ? [{ statement, declaration }]
+        : [];
+    });
+  });
+}
+
+function canonicalEditorialComment(input: {
+  sourceText: string;
+  issues: ValidationIssue[];
+}): string | null {
+  const sourceFile = ts.createSourceFile(
+    "managed-article.ts",
+    input.sourceText,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TS,
+  );
+  const articleDeclarations = exportedArticleDeclarations(sourceFile);
+  if (articleDeclarations.length !== 1) {
+    input.issues.push(
+      fail(
+        "p0-article-declaration",
+        `Expected exactly one exported article object for the editorial P0 comment; found ${articleDeclarations.length}.`,
+      ),
+    );
+  }
+
+  const statement = articleDeclarations[0]?.statement;
+  const leadingComments = statement
+    ? (ts.getLeadingCommentRanges(
+        input.sourceText,
+        statement.getFullStart(),
+      ) ?? [])
+    : [];
+  const nearestLeadingComment = leadingComments.at(-1);
+  const canonicalRange =
+    nearestLeadingComment?.kind === ts.SyntaxKind.MultiLineCommentTrivia &&
+    RESERVED_P0_PREFIX.test(
+      input.sourceText.slice(
+        nearestLeadingComment.pos,
+        nearestLeadingComment.end,
+      ),
+    )
+      ? nearestLeadingComment
+      : null;
+
+  if (!canonicalRange) {
+    input.issues.push(
+      fail(
+        "p0-editorial-comment",
+        "P0 declarations must be in the canonical block comment immediately preceding the exported article object.",
+      ),
+    );
+  }
+
+  const outsideOccurrences = [
+    ...input.sourceText.matchAll(RESERVED_P0_OCCURRENCE),
+  ].filter((match) => {
+    const index = match.index;
+    return (
+      index === undefined ||
+      !canonicalRange ||
+      index < canonicalRange.pos ||
+      index >= canonicalRange.end
+    );
+  });
+  if (outsideOccurrences.length > 0) {
+    input.issues.push(
+      fail(
+        "p0-reserved-outside-comment",
+        `Reserved P0 declarations are allowed only in the canonical editorial block comment; found ${outsideOccurrences.length} outside it.`,
+      ),
+    );
+  }
+
+  return canonicalRange
+    ? input.sourceText.slice(canonicalRange.pos, canonicalRange.end)
+    : null;
+}
+
+function parseDeclarations(
+  comment: string | null,
+  issues: ValidationIssue[],
+): P0Declarations {
+  const declarations: P0Declarations = {
+    cutoffValues: [],
+    passCount: 0,
+    sources: [],
+  };
+  if (!comment) return declarations;
+
+  const body = comment.slice(2, -2);
+  for (const rawLine of body.split(/\r\n|[\n\r\u2028\u2029]/)) {
+    const line = rawLine.replace(/^\s*\*\s?/, "").trim();
+    if (!RESERVED_P0_PREFIX.test(line)) continue;
+
+    const cutoff = CUTOFF_DECLARATION.exec(line);
+    if (cutoff) {
+      declarations.cutoffValues.push(cutoff[1]);
+      continue;
+    }
+    if (P0_PASS_DECLARATION.test(line)) {
+      declarations.passCount += 1;
+      continue;
+    }
+    const source = P0_SOURCE_DECLARATION.exec(line);
+    if (source) {
+      declarations.sources.push({
+        kind: source[1] as P0SourceKind,
+        href: source[2],
+      });
+      continue;
+    }
+
+    issues.push(
+      fail(
+        "p0-declaration-invalid",
+        `Malformed, unknown or conflicting reserved P0 declaration: ${line}`,
+      ),
+    );
+  }
+
+  return declarations;
+}
+
+function isLeapYear(year: number): boolean {
+  return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+}
+
+function parseStrictCutoff(value: string): Date | null {
+  const match = ISO_CUTOFF_PATTERN.exec(value);
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const hour = Number(match[4]);
+  const minute = Number(match[5]);
+  const second = Number(match[6]);
+  const millisecond = Number(match[7] ?? "0");
+  const offsetHour = Number(match[10] ?? "0");
+  const offsetMinute = Number(match[11] ?? "0");
+  const daysInMonth = [
+    31,
+    isLeapYear(year) ? 29 : 28,
+    31,
+    30,
+    31,
+    30,
+    31,
+    31,
+    30,
+    31,
+    30,
+    31,
+  ];
+
+  if (
+    year === 0 ||
+    month < 1 ||
+    month > 12 ||
+    day < 1 ||
+    day > (daysInMonth[month - 1] ?? 0) ||
+    hour > 23 ||
+    minute > 59 ||
+    second > 59 ||
+    offsetHour > 14 ||
+    offsetMinute > 59 ||
+    (offsetHour === 14 && offsetMinute !== 0)
+  ) {
+    return null;
+  }
+
+  const local = new Date(0);
+  local.setUTCFullYear(year, month - 1, day);
+  local.setUTCHours(hour, minute, second, millisecond);
+  const offsetSign = match[9] === "-" ? -1 : 1;
+  const offsetMilliseconds =
+    offsetSign * (offsetHour * 60 + offsetMinute) * 60_000;
+  const parsed = new Date(local.getTime() - offsetMilliseconds);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
 function isValidHttpsUrl(value: string): boolean {
@@ -57,23 +287,23 @@ export function validateP0FactGate(input: {
   handoffAt: Date;
 }): P0FactGateResult {
   const issues: ValidationIssue[] = [];
-  const cutoffMatches = matches(input.sourceText, CUTOFF_LINE);
-  const passMatches = matches(input.sourceText, P0_PASS_LINE);
-  const sourceMatches = matches(input.sourceText, P0_SOURCE_LINE);
+  const editorialComment = canonicalEditorialComment({
+    sourceText: input.sourceText,
+    issues,
+  });
+  const declarations = parseDeclarations(editorialComment, issues);
 
   let cutoff: Date | null = null;
-  if (cutoffMatches.length !== 1) {
+  if (declarations.cutoffValues.length !== 1) {
     issues.push(
       fail(
         "p0-cutoff-count",
-        `Expected exactly one machine-readable Editorial research cutoff; found ${cutoffMatches.length}.`,
+        `Expected exactly one machine-readable Editorial research cutoff; found ${declarations.cutoffValues.length}.`,
       ),
     );
   } else {
-    const rawCutoff = cutoffMatches[0][1];
-    cutoff = ISO_CUTOFF_PATTERN.test(rawCutoff)
-      ? parseIsoDateTime(rawCutoff)
-      : null;
+    const rawCutoff = declarations.cutoffValues[0];
+    cutoff = parseStrictCutoff(rawCutoff);
     if (!cutoff) {
       issues.push(
         fail(
@@ -84,19 +314,16 @@ export function validateP0FactGate(input: {
     }
   }
 
-  if (passMatches.length !== 1) {
+  if (declarations.passCount !== 1) {
     issues.push(
       fail(
         "p0-pass",
-        `Expected exactly one literal P0_FACT_GATE=PASS attestation; found ${passMatches.length}.`,
+        `Expected exactly one literal P0_FACT_GATE=PASS attestation; found ${declarations.passCount}.`,
       ),
     );
   }
 
-  const declaredSources: P0SourceDeclaration[] = sourceMatches.map((match) => ({
-    kind: match[1] as P0SourceKind,
-    href: match[2],
-  }));
+  const declaredSources = declarations.sources;
   if (declaredSources.length === 0) {
     issues.push(
       fail(
