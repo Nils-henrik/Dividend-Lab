@@ -18,6 +18,7 @@ import sparkvot from "./articles/sparkvot-budgetera-lonen-i-procent";
 import tekniskAnalys from "./articles/teknisk-analys-for-nyborjare";
 import tidTillFrihet from "./articles/tid-till-ekonomisk-frihet";
 import vadArEnAktie from "./articles/vad-ar-en-aktie";
+import vadBestammerAktiepriset from "./articles/vad-bestammer-priset-pa-en-aktie";
 import vadArEnIndexfond from "./articles/vad-ar-en-indexfond";
 import { withReadingTime, type LearningArticleWithReadingTime } from "./reading-time";
 import type { LearningArticle } from "./types";
@@ -68,6 +69,7 @@ const rawArticles: LearningArticle[] = [
   fireEkonomiskFrihet,
   sparkvot,
   vadArEnAktie,
+  vadBestammerAktiepriset,
   borjaInvestera,
   vadArEnIndexfond,
   tidTillFrihet,
