@@ -2,7 +2,7 @@ import type { NewsArticle } from "@/types/news";
 
 /**
  * USA i fokus — 17 september 2026.
- * Editorial research cutoff: 2026-09-17T18:50:53+02:00
+ * Editorial research cutoff: 2026-09-17T18:26:44+02:00
  * P0_FACT_GATE=PASS
  * P0_SOURCE[primary]: https://www.federalreserve.gov/newsevents/pressreleases/monetary20260916a.htm
  * P0_SOURCE[primary]: https://www.sec.gov/newsroom/press-releases/2026-90-sec-issues-innovation-exemption-facilitate-trading-tokenized-nms-stock-request-comment
@@ -12,6 +12,7 @@ import type { NewsArticle } from "@/types/news";
  * P0_SOURCE[secondary]: https://www.reuters.com/technology/nebius-hikes-ai-cloud-prices-again-demand-computing-power-soars-2026-09-17/
  *
  * Material same-day editorial update after publication.
+ * Editorial update verified at 2026-09-17T18:50:53+02:00 using sources published before the canonical cutoff.
  * The article now prioritizes current-session market moves and same-day company news.
  * The prior day's Fed decision remains only as market context.
  */
