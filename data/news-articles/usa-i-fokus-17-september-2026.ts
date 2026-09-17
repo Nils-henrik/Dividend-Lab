@@ -28,6 +28,9 @@ export const USA_I_FOKUS_17_SEPTEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-09-17T18:26:44+02:00",
   url: "/news/usa-i-fokus-17-september-2026-wall-street-fed-olja",
   featured: true,
+  imageUrl: "/news/generated/usa-i-fokus-2026-09-17.png",
+  thumbnailImageUrl: "/news/generated/usa-i-fokus-2026-09-17.png",
+  imageAlt: "USA i fokus 2026-09-17 – DivLabs översikt över den amerikanska börsmarknaden inför Wall Streets öppning.",
   readingMinutes: 5,
   seoTitle: "USA i fokus: Wall Street stiger efter Fed och lägre olja",
   seoDescription:
