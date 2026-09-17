@@ -46,15 +46,15 @@ The branch date resolves through one shared contract to:
 
 Examples for 17 September 2026 are `data/news-articles/norden-i-centrum-17-september-2026.ts`, `data/news-articles/borssverige-17-september-2026.ts`, `data/news-articles/bolaget-i-fokus-17-september-2026.ts` and `data/news-articles/usa-i-fokus-17-september-2026.ts`. No company name or other extra filename segment is allowed.
 
-The initial commit contains only the one canonical series/date article module and the additive `lib/news/get-articles.ts` registry change. The canonical article path is resolved by the shared path contract in `lib/news/autoredaktion/path-contract.ts`; no earlier stage may accept a path a later stage will reject. ChatGPT does **not** create the PR until the branch receives a successful `autoredaktion/preflight` commit status.
+The initial commit contains only the one canonical series/date article module and the additive `lib/news/get-articles.ts` registry change. The canonical article path is resolved by the shared path contract in `lib/news/autoredaktion/path-contract.ts`; no earlier stage may accept a path a later stage will reject. ChatGPT never creates the managed PR. After the initial push, GitHub owns the complete technical handoff.
 
 When the GitHub client permits it, create the branch and initial two-file commit as one uninterrupted handoff. If GitHub emits an unavoidable branch-create push before the two-file commit exists, Branch Preflight classifies it as neutral: no preparation, no publication status and no failure on the inherited `main` SHA.
 
-GitHub then owns deterministic release preparation:
+GitHub then owns deterministic release preparation and the PR handoff:
 
-`branch push → normalize controlled fields → render/validate PNG in GitHub Actions → exact pre-PR lint/typecheck/article/image gates → preflight status → draft PR → Quality Gate`
+`branch push → normalize controlled fields → render/validate PNG in GitHub Actions → exact pre-PR lint/typecheck/article/image gates → preflight status → exactly one draft PR → explicit Quality Gate dispatch`
 
-After the PR exists, ChatGPT is no longer required to stay alive. `Autoredaktion Release State Machine` reacts to the completed Quality Gate:
+The Branch Preflight workflow creates or verifies the one managed draft PR only after successful `autoredaktion/preflight` on the exact prepared head. It then dispatches Quality Gate explicitly because a PR created with GitHub's workflow token does not itself start another workflow. The handoff is idempotent: an already existing valid PR or exact-head Quality Gate run is reused, never duplicated. ChatGPT is not required to stay alive after the initial push. `Autoredaktion Release State Machine` reacts to the completed Quality Gate:
 
 - green exact-head gate → strict PR-policy check → latest-main check → draft becomes Ready → merge exact SHA;
 - red gate → at most **one** deterministic repair commit on the **same branch**, then exactly one manually dispatched Quality Gate retry;
@@ -179,7 +179,7 @@ A PR can be managed/merged automatically only when **all** of these are true:
 
 The initial commit must contain exactly canonical article + registry. A possible second commit must be the one `[autoredaktion-prepared]` mutation; a possible final commit must be the one `[autoredaktion-ci-repair]` mutation. Both automated mutations are limited to the canonical article and generated-image paths. Any other post-initial commit fails the shared history policy.
 
-Once the managed PR exists, Branch Preflight treats the branch as frozen and performs no mutation and writes no new preflight status for push events. The Release State Machine alone may create the bounded repair, revalidate the complete linear history and write success for that exact repaired SHA. An unrelated/manual head therefore lacks the exact-head preflight success required for release.
+Once the managed PR exists, Branch Preflight treats the branch as frozen and performs no article/image mutation and writes no new preflight status for push events. It may idempotently verify the existing PR/Quality Gate handoff for the already successful exact head. The Release State Machine alone may create the bounded repair, revalidate the complete linear history and write success for that exact repaired SHA. An unrelated/manual head therefore lacks the exact-head preflight success required for release.
 
 The release workflow verifies the successful Quality Gate SHA equals the current PR head and verifies that current `main` is still an ancestor of that head immediately before merge. A stale green run or stale registry base can never be merged.
 
@@ -257,9 +257,9 @@ Every scheduled prompt must use this handoff:
 3. write the exact ISO cutoff, literal `P0_FACT_GATE=PASS`, matching `P0_SOURCE[...]` declarations and `article.sources`, and set source exactly `DivLab Redaktion`;
 4. do not attempt the daily binary PNG upload from ChatGPT;
 5. use one canonical managed branch and one initial commit containing article + additive registry change;
-6. wait for `autoredaktion/preflight=success` on the latest branch head;
-7. create one **draft** PR with marker `<!-- AUTOREDAKTION_MANAGED_V2 -->` and label `autoredaktion`;
-8. stop controlling CI/repair/Ready/merge/deployment; GitHub state machines own the rest;
+6. stop after the initial push and report `HANDOFF_TO_GITHUB`; Branch Preflight owns preparation, exact-head status, the one **draft** PR with marker `<!-- AUTOREDAKTION_MANAGED_V2 -->`, label `autoredaktion` and explicit Quality Gate dispatch;
+7. do not poll preflight, create/update a PR, dispatch Quality Gate, repair, mark Ready, merge or deploy from the scheduled ChatGPT job;
+8. GitHub state machines own the complete technical handoff and release after the initial push;
 9. later series must wait for earlier same-day managed publications to reach terminal state and then refresh latest `main` before creating their branch;
 10. never trigger a Vercel deployment or redeploy manually as part of the daily publication.
 
