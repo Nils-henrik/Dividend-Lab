@@ -40,6 +40,30 @@ describe("Autoredaktion workflow handoff contract", () => {
     assert.match(preflight, /npm run autoredaktion:validate-history/);
   });
 
+  it("creates the one managed draft PR and explicitly dispatches Quality Gate after preflight success", () => {
+    const preflight = workflow(
+      ".github/workflows/autoredaktion-branch-preflight.yml",
+    );
+    const successStatus = preflight.indexOf(
+      "Mark prepared head safe to open PR",
+    );
+    const handoff = preflight.indexOf(
+      "Ensure one managed draft PR and Quality Gate handoff",
+    );
+
+    assert.ok(successStatus >= 0);
+    assert.ok(handoff > successStatus);
+    assert.match(preflight, /actions:\s*write/);
+    assert.match(preflight, /pull-requests:\s*write/);
+    assert.match(preflight, /gh pr create/);
+    assert.match(preflight, /AUTOREDAKTION_MANAGED_V2/);
+    assert.match(preflight, /--draft/);
+    assert.match(preflight, /--label autoredaktion/);
+    assert.match(preflight, /gh workflow run quality-gate\.yml/);
+    assert.match(preflight, /select\(\.head_sha ==/);
+    assert.match(preflight, /no duplicate dispatch/i);
+  });
+
   it("freezes post-handoff pushes and revalidates exact managed history before release", () => {
     const preflight = workflow(
       ".github/workflows/autoredaktion-branch-preflight.yml",

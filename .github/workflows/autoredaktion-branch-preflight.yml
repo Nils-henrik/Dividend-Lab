@@ -13,10 +13,11 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
+  actions: write
   contents: write
   statuses: write
   issues: write
-  pull-requests: read
+  pull-requests: write
 
 jobs:
   prepare-and-preflight:
@@ -175,3 +176,98 @@ jobs:
             -f state='failure' \
             -f context='autoredaktion/preflight' \
             -f description='Pre-PR gate failed; do not open or merge a publication PR'
+
+      - name: Ensure one managed draft PR and Quality Gate handoff
+        if: >
+          steps.candidate.outputs.mode == 'candidate' ||
+          steps.candidate.outputs.mode == 'frozen'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          head="$(git rev-parse HEAD)"
+          preflight_state="$(gh api "repos/$GITHUB_REPOSITORY/commits/$head/status" \
+            --jq '[.statuses[] | select(.context == "autoredaktion/preflight")] | sort_by(.updated_at) | last.state // ""')"
+          if [[ "$preflight_state" != "success" ]]; then
+            echo "No managed handoff: exact head $head lacks successful autoredaktion/preflight status."
+            exit 0
+          fi
+
+          mapfile -t matches < <(gh pr list --state all --base main --head "$GITHUB_REF_NAME" \
+            --limit 10 --json number --jq '.[].number')
+          if (( ${#matches[@]} > 1 )); then
+            echo "Expected at most one managed PR for $GITHUB_REF_NAME; found ${#matches[@]}." >&2
+            exit 1
+          fi
+
+          created_pr=false
+          if (( ${#matches[@]} == 0 )); then
+            series="${GITHUB_REF_NAME#autoredaktion/}"
+            date="${series: -10}"
+            series="${series:0:${#series}-11}"
+            case "$series" in
+              borssverige) title="BörsSverige – $date" ;;
+              norden-i-centrum) title="Norden i centrum – $date" ;;
+              bolaget-i-fokus) title="Bolaget i fokus – $date" ;;
+              usa-i-fokus) title="USA i fokus – $date" ;;
+              *)
+                echo "Unsupported managed series in $GITHUB_REF_NAME." >&2
+                exit 1
+                ;;
+            esac
+
+            gh pr create \
+              --base main \
+              --head "$GITHUB_REF_NAME" \
+              --draft \
+              --label autoredaktion \
+              --title "$title" \
+              --body "<!-- AUTOREDAKTION_MANAGED_V2 -->
+
+          Managed Autoredaktion publication prepared and validated by GitHub Actions.
+
+          Prepared head: \`$head\`"
+            created_pr=true
+            mapfile -t matches < <(gh pr list --state open --base main --head "$GITHUB_REF_NAME" \
+              --limit 10 --json number --jq '.[].number')
+          fi
+
+          if (( ${#matches[@]} != 1 )); then
+            echo "Expected exactly one open managed PR for $GITHUB_REF_NAME; found ${#matches[@]}." >&2
+            exit 1
+          fi
+
+          pr="${matches[0]}"
+          gh pr view "$pr" \
+            --json number,state,isDraft,headRefName,baseRefName,headRefOid,labels,files,commits,title,body \
+            > /tmp/autoredaktion-pr.json
+          npm run autoredaktion:pr-policy -- /tmp/autoredaktion-pr.json
+
+          quality_runs_for_head() {
+            gh api --method GET "repos/$GITHUB_REPOSITORY/actions/workflows/quality-gate.yml/runs" \
+              -f branch="$GITHUB_REF_NAME" \
+              -f per_page=20 \
+              --jq "[.workflow_runs[] | select(.head_sha == \"$head\")] | length"
+          }
+
+          run_count="$(quality_runs_for_head)"
+          if [[ "$created_pr" != "true" && "$run_count" == "0" ]]; then
+            for _ in 1 2 3 4; do
+              sleep 5
+              run_count="$(quality_runs_for_head)"
+              [[ "$run_count" != "0" ]] && break
+            done
+          fi
+
+          if [[ "$run_count" == "0" ]]; then
+            base_sha="${AUTOREDAKTION_BASE_SHA:-$(git merge-base origin/main "$head")}"
+            gh workflow run quality-gate.yml \
+              --ref "$GITHUB_REF_NAME" \
+              -f base_sha="$base_sha" \
+              -f pr_number="$pr"
+            echo "Managed draft PR #$pr created/verified and Quality Gate dispatched for $head."
+          else
+            echo "Managed draft PR #$pr already has $run_count Quality Gate run(s) for exact head $head; no duplicate dispatch."
+          fi
