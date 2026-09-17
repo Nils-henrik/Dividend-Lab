@@ -16,6 +16,7 @@ const article: LearningArticle = {
   coverImage: "/learning/vad-bestammer-priset-pa-en-aktie.png",
   coverImageAlt:
     "Omslagsbild till DivLabs guide om vad som bestämmer priset på en aktie och hur aktiekursen sätts.",
+  thumbnailObjectPosition: "left center",
   searchTerms: [
     "vad bestämmer priset på en aktie",
     "vad påverkar aktiekursen",
