@@ -33,11 +33,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       160,
     );
 
-  return buildForumMetadata({
-    title: `${company.name} (${company.primaryTicker})`,
-    description,
-    path: `/forum/bolag/${company.slug}`,
-  });
+  return {
+    ...buildForumMetadata({
+      title: `${company.name} (${company.primaryTicker})`,
+      description,
+      path: `/forum/bolag/${company.slug}`,
+    }),
+    // These pages are placeholders until company-specific forum content launches.
+    robots: {
+      index: false,
+      follow: true,
+    },
+  };
 }
 
 export default async function ForumCompanyPage({ params }: Props) {
