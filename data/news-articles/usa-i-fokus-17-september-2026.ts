@@ -5,36 +5,36 @@ import type { NewsArticle } from "@/types/news";
  * Editorial research cutoff: 2026-09-17T18:26:44+02:00
  * P0_FACT_GATE=PASS
  * P0_SOURCE[primary]: https://www.federalreserve.gov/newsevents/pressreleases/monetary20260916a.htm
- * P0_SOURCE[primary]: https://www.sec.gov/Archives/edgar/data/1474735/000143774926030550/gnrc20260915_8k.htm
+ * P0_SOURCE[primary]: https://www.sec.gov/newsroom/press-releases/2026-90-sec-issues-innovation-exemption-facilitate-trading-tokenized-nms-stock-request-comment
  * P0_SOURCE[primary]: https://ir.fluenceenergy.com/news-releases/news-release-details/fluence-energy-announces-revised-guidance-fiscal-year-2026
  * P0_SOURCE[secondary]: https://www.reuters.com/business/wall-st-futures-rise-fed-rate-hike-lifts-long-standing-overhang-2026-09-17/
- * P0_SOURCE[secondary]: https://www.reuters.com/business/us-weekly-jobless-claims-unexpectedly-fall-2026-09-17/
- * P0_SOURCE[secondary]: https://www.reuters.com/business/energy/oil-prices-extend-losses-fears-middle-east-supply-disruptions-ease-2026-09-17/
  * P0_SOURCE[secondary]: https://www.reuters.com/legal/transactional/coreweave-launches-3-billion-convertible-debt-sale-2026-09-17/
+ * P0_SOURCE[secondary]: https://www.reuters.com/technology/nebius-hikes-ai-cloud-prices-again-demand-computing-power-soars-2026-09-17/
  *
- * Manual same-day recovery after the original scheduler branch failed closed before PR creation.
- * This replacement is rebuilt from latest main with refreshed research and a valid timing order.
- * Managed Autoredaktion v1.1 initial publication intentionally omits image fields.
- * GitHub owns deterministic USA i fokus image preparation and validation.
+ * Material same-day editorial update after publication.
+ * Editorial update verified at 2026-09-17T18:50:53+02:00 using sources published before the canonical cutoff.
+ * The article now prioritizes current-session market moves and same-day company news.
+ * The prior day's Fed decision remains only as market context.
  */
 export const USA_I_FOKUS_17_SEPTEMBER_2026_ARTICLE: NewsArticle = {
   id: "usa-i-fokus-17-september-2026-wall-street-fed-olja",
   slug: "usa-i-fokus-17-september-2026-wall-street-fed-olja",
-  title: "USA i fokus 17 september: Wall Street stiger när oljepriset faller efter Fed",
+  title: "USA i fokus 17 september: Nasdaq lyfter – Nvidia, Amazon och kryptobolag stiger",
   summary:
-    "Wall Street stiger efter Feds första räntehöjning sedan 2023. Lägre oljepris och mjukare långräntor ger stöd, medan Generac, CoreWeave och Fluence står för några av dagens tydligaste bolagsrörelser.",
+    "Nasdaq leder uppgången på Wall Street. Nvidia och Amazon stiger över 2 procent, kryptobolag lyfter efter ett nytt SEC-besked och AI-infrastrukturbolagen rör sig kraftigt åt olika håll.",
   category: "market",
   source: "DivLab Redaktion",
   publishedAt: "2026-09-17T18:26:44+02:00",
+  updatedAt: "2026-09-17T18:50:53+02:00",
   url: "/news/usa-i-fokus-17-september-2026-wall-street-fed-olja",
   featured: true,
   imageUrl: "/news/generated/usa-i-fokus-2026-09-17.png",
   thumbnailImageUrl: "/news/generated/usa-i-fokus-2026-09-17.png",
-  imageAlt: "USA i fokus 2026-09-17 – DivLabs översikt över den amerikanska börsmarknaden inför Wall Streets öppning.",
+  imageAlt: "USA i fokus 2026-09-17 – DivLabs översikt över den amerikanska börsmarknaden under pågående handel på Wall Street.",
   readingMinutes: 5,
-  seoTitle: "USA i fokus: Wall Street stiger efter Fed och lägre olja",
+  seoTitle: "USA i fokus: Nasdaq lyfter – Nvidia, Amazon och kryptobolag stiger",
   seoDescription:
-    "Wall Street stiger den 17 september efter Feds räntehöjning. Lägre olja ger stöd medan Generac, CoreWeave och Fluence står i fokus.",
+    "Nasdaq leder Wall Street uppåt den 17 september. Nvidia och Amazon stiger, kryptobolag lyfter efter SEC-besked och CoreWeave samt Fluence faller.",
   seoKeywords: [
     "USA i fokus",
     "Wall Street idag",
@@ -42,20 +42,22 @@ export const USA_I_FOKUS_17_SEPTEMBER_2026_ARTICLE: NewsArticle = {
     "S&P 500",
     "Nasdaq",
     "Dow Jones",
-    "Federal Reserve",
-    "Fed räntehöjning",
-    "amerikanska räntor",
-    "Generac",
+    "Nvidia",
     "Amazon",
+    "Robinhood",
+    "Circle",
+    "Coinbase",
+    "Nebius",
+    "IREN",
     "CoreWeave",
     "Fluence Energy",
-    "olja",
+    "Federal Reserve",
     "17 september 2026",
   ],
   internalLinking: {
-    topics: ["Wall Street", "Federal Reserve", "amerikanska räntor", "AI-infrastruktur", "olja"],
-    companies: ["Amazon", "Generac", "CoreWeave", "Fluence Energy"],
-    tickers: ["AMZN", "GNRC", "CRWV", "FLNC"],
+    topics: ["Wall Street", "teknikaktier", "AI-infrastruktur", "tokeniserade aktier", "Federal Reserve"],
+    companies: ["Nvidia", "Amazon", "Robinhood", "Circle", "Coinbase", "Nebius", "IREN", "CoreWeave", "Fluence Energy"],
+    tickers: ["NVDA", "AMZN", "HOOD", "CRCL", "COIN", "NBIS", "IREN", "CRWV", "FLNC"],
     relatedNewsSlugs: [
       "usa-i-fokus-16-september-2026-fed-besked-detaljhandel",
       "usa-i-fokus-15-september-2026-fed-rantor-ai-olja",
@@ -63,74 +65,71 @@ export const USA_I_FOKUS_17_SEPTEMBER_2026_ARTICLE: NewsArticle = {
   },
   showDisclaimer: true,
   intro: [
-    "Wall Street handlas tydligt högre under torsdagen efter onsdagens räntehöjning från Federal Reserve. I Reuters senaste verifierade marknadsbild före DivLabs research-cutoff var Dow Jones upp omkring 0,6 procent, S&P 500 omkring 0,9 procent och Nasdaq omkring 1,3 procent.",
-    "Uppgången kommer samtidigt som oljepriset faller tillbaka och längre amerikanska marknadsräntor lättar från de senaste toppnivåerna. Det ger särskilt stöd åt teknik- och tillväxtaktier, men marknaden måste samtidigt förhålla sig till att Fed nu har inlett en ny åtstramningsfas.",
+    "Wall Street handlas tydligt högre under torsdagen och Nasdaq leder uppgången. I Reuters senaste verifierade marknadsbild före DivLabs uppdatering var Dow Jones upp 0,61 procent, S&P 500 1,06 procent och Nasdaq 1,59 procent.",
+    "Dagens handel drivs framför allt av styrka i teknikaktier, fallande oljepris och något lägre amerikanska långräntor. Gårdagens Fed-besked finns kvar i bakgrunden, men dagens börsrörelser och bolagsnyheter står i centrum.",
   ],
   sections: [
     {
-      heading: "Fed höjde till 3,75–4,00 procent",
+      heading: "Teknik leder uppgången – Nvidia och Amazon över 2 procent",
       paragraphs: [
-        "Federal Reserve höjde målintervallet för federal funds-räntan med 0,25 procentenheter till 3,75–4,00 procent. Beslutet fattades med röstsiffrorna 12–0.",
-        "Fed beskriver den ekonomiska aktiviteten som fortsatt solid, den inhemska efterfrågan som motståndskraftig och investeringarna som robusta. Samtidigt konstaterar centralbanken att inflationen fortfarande är förhöjd och att räntehöjningen ska bidra till en snabbare återgång mot tvåprocentsmålet.",
-        "För börsen innebär det att fokus nu flyttas från själva septemberbeskedet till hur många ytterligare höjningar som kan krävas och hur snabbt inflationen svarar på den stramare penningpolitiken.",
+        "Nvidia och Amazon steg båda mer än 2 procent i Reuters marknadsbild klockan 11.42 lokal tid i New York. Uppgången bidrog till att Nasdaq utvecklades starkare än både S&P 500 och Dow Jones.",
+        "Även det mindre bolagsindexet Russell 2000 steg mer än 1 procent. Åtta av elva större sektorer i S&P 500 låg på plus, vilket visar att uppgången var bredare än enbart de största teknikbolagen.",
+        "För tekniksektorn har nedgången i den amerikanska tioårsräntan varit viktig. Lägre marknadsräntor minskar trycket på högt värderade tillväxtbolag och har gett sektorn andrum efter den senaste tidens ränteuppgång.",
       ],
     },
     {
-      heading: "Arbetsmarknaden håller emot",
+      heading: "Robinhood, Circle och Coinbase stiger efter nytt SEC-besked",
       paragraphs: [
-        "Nya amerikanska ansökningar om arbetslöshetsersättning föll med 10 000 till 196 000 under veckan som avslutades den 12 september, enligt Reuters.",
-        "Siffran stärker bilden av en arbetsmarknad som fortfarande är relativt stabil. Reuters noterade samtidigt att Labor Day kan ha påverkat säsongsjusteringen, vilket gör att en enskild veckosiffra ska tolkas försiktigt.",
-        "En fortsatt motståndskraftig arbetsmarknad ger Fed större utrymme att prioritera inflationsbekämpningen utan att behöva reagera på en snabb försämring i sysselsättningen.",
+        "Den amerikanska finansinspektionen SEC presenterade på torsdagen en tillfällig så kallad Innovation Exemption för handel med tokeniserade amerikanska aktier på särskilda handelsplattformar.",
+        "I Reuters marknadsbild steg Robinhood omkring 3 procent, Circle omkring 4 procent och Coinbase cirka 3 procent efter beskedet.",
+        "SEC:s undantag är tidsbegränsat och förenat med villkor. Bland annat ska tokeniserade aktier ge innehavarna samma rättigheter som motsvarande vanliga aktier, och emittenten ska kunna invända mot att en tredjepart tokeniserar bolagets aktie för handel på en sådan plattform.",
       ],
     },
     {
-      heading: "Lägre oljepris ger marknaden andrum",
+      heading: "Nebius och IREN upp – CoreWeave backar",
       paragraphs: [
-        "Brentoljan föll omkring 3 procent till 102,72 dollar per fat i Reuters senaste verifierade oljeuppdatering före cutoff. Amerikansk WTI handlades samtidigt kring 100,47 dollar.",
-        "Oljepriset ligger fortfarande över 100 dollar fatet och är därför fortsatt en inflationsrisk. Men torsdagens nedgång minskar åtminstone tillfälligt trycket från energisidan och har bidragit till ett bättre riskklimat på aktiemarknaden.",
-        "Reuters kopplade prisfallet till minskad oro för långvariga leveransstörningar när mer saudisk olja styrs via Oman och förväntningarna ökat om att skadad infrastruktur kan återgå i drift inom kort.",
+        "AI-infrastruktur fortsätter att vara ett av dagens mest rörliga teman. Nebius och IREN steg omkring 2 procent vardera i Reuters senaste marknadsbild före uppdateringen.",
+        "Nebius meddelade samtidigt att bolaget höjer pay-as-you-go-priserna för uthyrning av utvalda Nvidia-chip från den 1 oktober. Det är andra prisökningen på tre månader och speglar fortsatt stark efterfrågan på beräkningskapacitet för AI.",
+        "CoreWeave gick åt motsatt håll och föll omkring 4 procent. Bolaget meddelade på torsdagen att det planerar att ta in 3 miljarder dollar genom konvertibla skuldebrev, samtidigt som Reuters rapporterade om ytterligare kapitalanskaffning via aktier.",
       ],
     },
     {
-      heading: "Generac får mångmiljardavtal med Amazon",
+      heading: "Fluence faller över 14 procent efter sänkt prognos",
       paragraphs: [
-        "Generac och Amazon har tecknat ett långsiktigt leveransavtal för reservkraft till Amazons datacenter. Generacs SEC-anmälan visar att de första leveranserna väntas uppgå till cirka 2,4 miljarder dollar under 2027 och 2028.",
-        "Amazon har samtidigt fått en warrant som kan ge rätt att köpa upp till 1 693 745 Generac-aktier. En stor del av warranterna tjänas in stegvis utifrån betalningar från Amazon och dess närstående bolag, upp till sammanlagt 8 miljarder dollar.",
-        "Affären visar hur AI- och datacenterinvesteringarna fortsätter sprida sig från halvledare till fysisk infrastruktur som elförsörjning, kylning och reservkraft.",
+        "Fluence Energy hör till dagens tydligaste förlorare och föll mer än 14 procent i Reuters marknadsbild.",
+        "Bolaget har sänkt sin prognos för räkenskapsåret 2026 till en omsättning på omkring 2,4 miljarder dollar, jämfört med den tidigare prognosmittpunkten på cirka 3,0 miljarder.",
+        "Den justerade EBITDA-förlusten väntas bli omkring 200 miljoner dollar, jämfört med den tidigare prognosmittpunkten på en förlust kring 10 miljoner. Fluence pekar främst på problem i leveranskedjan och förseningar i uppskalningen av produktionen i Houston.",
       ],
     },
     {
-      heading: "CoreWeave tar in 3 miljarder dollar",
+      heading: "Lägre olja ger börsen ytterligare stöd",
       paragraphs: [
-        "AI-infrastrukturbolaget CoreWeave meddelade på torsdagen att bolaget planerar att ta in 3 miljarder dollar genom konvertibla skuldebrev.",
-        "Aktien föll mer än 3 procent i den tidiga handeln efter beskedet enligt Reuters. Finansieringen understryker samtidigt hur kapitalintensiv den fortsatta utbyggnaden av AI- och molninfrastruktur är.",
-        "För investerare blir frågan därför inte bara hur snabbt efterfrågan växer, utan även hur dyrt det blir att finansiera kapaciteten när ränteläget är högre.",
+        "Oljepriset föll för andra dagen i rad. Brent var ned mer än 2 procent till 103,43 dollar per fat och amerikansk WTI omkring 2 procent till 100,66 dollar i Reuters marknadsbild.",
+        "Det är fortfarande höga nivåer, men nedgången minskar för stunden inflationsoron från energisidan. Kombinationen av lägre olja och lägre långräntor har därför varit en viktig del av dagens förbättrade riskklimat.",
       ],
     },
     {
-      heading: "Fluence faller efter kraftigt sänkt prognos",
+      heading: "Gårdagens Fed-besked ligger i bakgrunden",
       paragraphs: [
-        "Fluence Energy sänkte på onsdagen sin prognos för räkenskapsåret 2026. Bolaget räknar nu med en omsättning på omkring 2,4 miljarder dollar, jämfört med den tidigare prognosmittpunkten på cirka 3,0 miljarder.",
-        "Den justerade EBITDA-förlusten väntas bli omkring 200 miljoner dollar, jämfört med den tidigare prognosmittpunkten på en förlust kring 10 miljoner. Bolaget pekar främst på fortsatta problem i leveranskedjan och förseningar i uppskalningen av produktionen i Houston.",
-        "Fluence-aktien föll mer än 16 procent i Reuters verifierade marknadsbild. Det är en tydlig påminnelse om att stark efterfrågan inom el och datacenter inte automatiskt betyder att alla leverantörer kan omvandla order till lönsam tillväxt.",
+        "Federal Reserve höjde på onsdagen målintervallet för federal funds-räntan med 0,25 procentenheter, från 3,50–3,75 procent till 3,75–4,00 procent.",
+        "Det är alltså gårdagens besked, inte en ny torsdagshändelse. Det relevanta för dagens handel är hur marknaden reagerar: teknikaktier stiger, långräntan har lättat och investerarna väger risken för fler höjningar mot en ekonomi som fortfarande visar motståndskraft.",
       ],
     },
     {
       heading: "DivLabs blick",
       paragraphs: [
-        "Dagens uppgång handlar framför allt om lättnad. Fed har höjt räntan, men fallande oljepris och mjukare långräntor gör att investerarna för stunden kan fokusera på en ekonomi som fortfarande visar motståndskraft.",
-        "Samtidigt har spelplanen förändrats. Marknaden behöver nu väga stark tillväxt och AI-investeringar mot högre finansieringskostnader och risken för fler räntehöjningar.",
-        "Resten av USA-dagen blir därför en balans mellan tre krafter: om indexuppgången håller, om oljepriset fortsätter ned och om obligationsmarknaden fortsätter ge tekniksektorn andrum.",
+        "Torsdagens USA-handel är framför allt en bolags- och riskaptitsdriven börsdag. Nvidia och Amazon ger stöd åt Nasdaq, kryptorelaterade aktier reagerar på ett färskt SEC-besked och AI-infrastrukturbolagen visar stora skillnader mellan vinnare och förlorare.",
+        "Resten av handelsdagen blir det främst tre saker att följa: om Nasdaq kan behålla sitt försprång, om oljepriset fortsätter ned och om den amerikanska tioårsräntan fortsätter ge tekniksektorn andrum.",
+        "Indexnivåerna och procentförändringarna ovan är ögonblicksbilder från pågående handel och kan förändras innan Wall Street stänger.",
       ],
     },
   ],
   sources: [
     { text: "Federal Reserve: FOMC-besked 16 september 2026", href: "https://www.federalreserve.gov/newsevents/pressreleases/monetary20260916a.htm" },
-    { text: "SEC: Generac 8-K om Amazon-avtal och warrant", href: "https://www.sec.gov/Archives/edgar/data/1474735/000143774926030550/gnrc20260915_8k.htm" },
+    { text: "SEC: Innovation Exemption för handel med tokeniserade aktier", href: "https://www.sec.gov/newsroom/press-releases/2026-90-sec-issues-innovation-exemption-facilitate-trading-tokenized-nms-stock-request-comment" },
     { text: "Fluence Energy: reviderad guidning för räkenskapsåret 2026", href: "https://ir.fluenceenergy.com/news-releases/news-release-details/fluence-energy-announces-revised-guidance-fiscal-year-2026" },
-    { text: "Reuters: Wall Street efter Feds räntehöjning", href: "https://www.reuters.com/business/wall-st-futures-rise-fed-rate-hike-lifts-long-standing-overhang-2026-09-17/" },
-    { text: "Reuters: amerikanska arbetslöshetsansökningar", href: "https://www.reuters.com/business/us-weekly-jobless-claims-unexpectedly-fall-2026-09-17/" },
-    { text: "Reuters: oljepris 17 september 2026", href: "https://www.reuters.com/business/energy/oil-prices-extend-losses-fears-middle-east-supply-disruptions-ease-2026-09-17/" },
+    { text: "Reuters: Wall Street stiger när oljepriset faller", href: "https://www.reuters.com/business/wall-st-futures-rise-fed-rate-hike-lifts-long-standing-overhang-2026-09-17/" },
     { text: "Reuters: CoreWeave planerar konvertibelemission på 3 miljarder dollar", href: "https://www.reuters.com/legal/transactional/coreweave-launches-3-billion-convertible-debt-sale-2026-09-17/" },
+    { text: "Reuters: Nebius höjer priserna för AI-kapacitet", href: "https://www.reuters.com/technology/nebius-hikes-ai-cloud-prices-again-demand-computing-power-soars-2026-09-17/" },
   ],
 };
