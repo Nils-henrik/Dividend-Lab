@@ -3,9 +3,9 @@ import type { LearningArticle } from "../types";
 const article: LearningArticle = {
   slug: "vad-bestammer-priset-pa-en-aktie",
   title: "Vad bestämmer priset på en aktie?",
-  seoTitle: "Vad bestämmer priset på en aktie? Så sätts aktiekursen",
+  seoTitle: "Vad bestämmer priset på en aktie? Så sätts kursen",
   description:
-    "Vad avgör priset på en aktie? Lär dig hur utbud, efterfrågan, rapporter, räntor och förväntningar påverkar aktiekursen.",
+    "Vad bestämmer priset på en aktie? Se hur utbud, efterfrågan, rapporter, räntor och förväntningar får aktiekursen att stiga eller falla.",
   excerpt:
     "Aktiekursen ändras när köpare och säljare möts på marknaden. Här förklarar vi enkelt vad som faktiskt får priset på en aktie att stiga eller falla.",
   category: "Aktier",
@@ -13,10 +13,16 @@ const article: LearningArticle = {
   publishedAt: "2026-09-17",
   updatedAt: "2026-09-17",
   authorName: "DivLab Redaktion",
+  coverImage: "/learning/vad-bestammer-priset-pa-en-aktie.png",
+  coverImageAlt:
+    "Omslagsbild till DivLabs guide om vad som bestämmer priset på en aktie och hur aktiekursen sätts.",
   searchTerms: [
     "vad bestämmer priset på en aktie",
     "vad påverkar aktiekursen",
     "hur sätts aktiekursen",
+    "vad styr aktiekursen",
+    "varför stiger aktier",
+    "varför faller aktier",
     "aktiepris",
     "aktiekurs",
     "hur fungerar orderboken",
@@ -140,7 +146,7 @@ const article: LearningArticle = {
       ],
     },
     {
-      heading: "Ett enkelt exempel",
+      heading: "Ett enkelt exempel: från 100 till 105 kronor",
       paragraphs: [
         "Anta att en aktie handlas kring 100 kronor. Bolaget presenterar sedan en rapport som visar starkare försäljning och högre vinst än marknaden väntat sig.",
         "Fler investerare kan då vilja köpa aktien. Om säljarna samtidigt inte vill sälja för 100 kronor måste köparna erbjuda ett högre pris för att få till en affär. Nya avslut kanske sker på 102, 103 och till slut 105 kronor.",
