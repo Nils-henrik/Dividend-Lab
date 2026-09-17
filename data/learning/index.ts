@@ -38,6 +38,7 @@ export {
 } from "./reading-time";
 
 const rawArticles: LearningArticle[] = [
+  vadBestammerAktiepriset,
   {
     ...nyemission,
     thumbnailObjectPosition: "left center",
@@ -69,7 +70,6 @@ const rawArticles: LearningArticle[] = [
   fireEkonomiskFrihet,
   sparkvot,
   vadArEnAktie,
-  vadBestammerAktiepriset,
   borjaInvestera,
   vadArEnIndexfond,
   tidTillFrihet,
