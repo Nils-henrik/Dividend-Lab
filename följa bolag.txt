@@ -1,0 +1,116 @@
+DIVLAB – HANDOFF / ÅTERSTÄLLNING
+Bolagssidor / bolagsuniversum
+Datum: 2026-09-18
+
+SYFTE
+Den här filen är en checkpoint för att nästa Work-agent ska kunna återuppta arbetet utan att börja om från noll.
+
+VIKTIGT
+- Gör INGA ändringar innan arbetsytan har verifierats read-only.
+- Gör INGEN commit, push, PR eller deploy innan befintligt lokalt arbete har identifierats.
+- Source of truth är den befintliga Work-arbetsytan + GitHub-repot Nils-henrik/Dividend-Lab.
+- Den här filen dokumenterar stoppunkten enligt den återställningsinformation som finns i chatten. Den ersätter inte verifiering av den faktiska Work-arbetsytan.
+
+PROJEKTMÅL
+Bygg en gemensam bolagssida/layout som kan återanvändas för cirka 200 bolag.
+
+Designinspiration:
+- Avanza
+- Marketmate
+
+Gemensamma delar som ska finnas på bolagssidan:
+- Bolagets logga
+- Bolagsnamn
+- Ticker
+- TradingView-graf
+- Senaste DivLab-artiklar om bolaget
+- Senaste officiella pressmeddelanden
+- Kommande rapportdatum
+- Senaste kvartalsrapport
+- Knapp: “Följ bolaget”
+- PM och rapporter från officiella källor
+- Rapportkalender
+- Personlig följlista
+
+ÅTERSTÄLLD STOPPPUNKT FRÅN FÖREGÅENDE WORK-KÖRNING
+Enligt informationen i chatten hann agenten:
+
+1. Göra en read-only audit av relevant DivLab-arkitektur.
+2. Identifiera befintliga delar som kunde återanvändas, bland annat:
+   - bolagskatalog
+   - koppling mellan bolag och DivLab-artiklar
+   - TradingView-hantering
+   - auth/redirect-mönster
+   - befintliga följmönster från portföljfunktioner
+3. Konstatera att /watchlist fortfarande var en placeholder.
+4. Konstatera att kalenderns Event Core använde mockdata.
+5. Påbörja/implementera en första vertikal bolagssida lokalt med:
+   - publik SEO-vänlig bolagsroute
+   - bolagshuvud
+   - bolagslogotyp
+   - bolagsnamn/ticker
+   - TradingView-graf
+   - automatisk koppling till relevanta DivLab-artiklar
+6. Enligt chatten hade denna första del verifierats med:
+   - TypeScript
+   - lint
+   - två matchningstester
+   - production build
+7. Nästa planerade steg var databasdelen för riktig Följ/Avfölj-funktion.
+8. Agenten hade börjat granska Postgres-upplägg för nycklar, index och RLS men migrationen var inte klar.
+
+KVARVARANDE ARBETE
+- Verifiera att de lokala filändringarna verkligen finns kvar i Work-arbetsytan.
+- Riktig “Följ bolaget” / “Avfölj”.
+- Databasmigration.
+- RLS.
+- Personlig följlista.
+- Officiella pressmeddelanden.
+- Officiella rapporter.
+- Senaste kvartalsrapport.
+- Kommande rapportdatum.
+- Rapportkalenderkoppling.
+- Fullständigt inloggat användarflöde.
+- Utrullning av samma bolagssidesstruktur till hela bolagsuniversumet.
+- Slutlig QA desktop + mobile.
+- Därefter normal DivLab releaseprocess.
+
+VERIFIERAD GITHUB-STATUS VID ÅTERSTÄLLNINGEN
+Vid read-only kontroll efter tokenstoppet syntes:
+- Ingen ny bolagsside-PR.
+- Ingen ny bolagsside-commit.
+- Ingen ny bolagsside-branch som tydligt hörde till detta arbete.
+- Senaste observerade repoarbete var tidigare AstraZeneca-relaterat arbete.
+Det innebär att eventuell bolagssideimplementation sannolikt låg lokalt i Work-arbetsytan och inte var sparad i GitHub vid kontrolltillfället.
+
+FÖRSTA INSTRUKTION TILL NÄSTA WORK-AGENT
+Gör först ENDAST read-only verifiering.
+
+Kontrollera:
+1. aktuell arbetskatalog/projektmapp
+2. git status
+3. alla modifierade och otrackade filer
+4. eventuell checkpoint/handofffil
+5. aktuell branch
+6. diff mot HEAD
+7. vilka bolagssidefiler som faktiskt finns lokalt
+8. om tester/build-resultat från föregående körning går att härleda
+9. om någon databas-/migrationfil redan påbörjats
+
+Rapportera sedan:
+- exakt vilka lokala ändringar som finns
+- vilka delar som är färdiga
+- vilka delar som är halvfärdiga
+- exakt nästa säkra steg
+
+FORTSÄTT INTE implementationen förrän denna rapport är klar.
+
+SCOPE-SKYDD
+- Samma layout/designsystem ska återanvändas för alla bolag.
+- Undvik 200 separata speciallösningar.
+- Minsta möjliga säkra ändring.
+- Ingen orelaterad redesign.
+- Ingen orelaterad refaktorering.
+- Behåll DivLabs befintliga arkitektur och Engineering Standard.
+- Officiella PM/rapporter ska komma från officiella källor.
+- SEO ska byggas in i den gemensamma bolagssidans struktur.
