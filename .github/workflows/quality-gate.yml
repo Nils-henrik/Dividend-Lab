@@ -106,3 +106,35 @@ jobs:
 
       - name: Production build
         run: npm run build
+
+  handoff_managed_release:
+    name: Handoff managed gate result
+    needs: quality
+    if: >
+      always() &&
+      github.event_name == 'workflow_dispatch' &&
+      inputs.pr_number != '' &&
+      (startsWith(github.ref_name, 'autoredaktion/borssverige-') ||
+      startsWith(github.ref_name, 'autoredaktion/norden-i-centrum-') ||
+      startsWith(github.ref_name, 'autoredaktion/bolaget-i-fokus-') ||
+      startsWith(github.ref_name, 'autoredaktion/usa-i-fokus-'))
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      HEAD_BRANCH: ${{ github.ref_name }}
+      HEAD_SHA: ${{ github.sha }}
+      GATE_CONCLUSION: ${{ needs.quality.result }}
+      PR_NUMBER: ${{ inputs.pr_number }}
+    steps:
+      - name: Dispatch exact gate result to Release State Machine
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh workflow run autoredaktion-release.yml --ref main \
+            -f head_branch="$HEAD_BRANCH" \
+            -f head_sha="$HEAD_SHA" \
+            -f run_conclusion="$GATE_CONCLUSION" \
+            -f pr_number="$PR_NUMBER"

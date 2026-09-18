@@ -64,6 +64,29 @@ describe("Autoredaktion workflow handoff contract", () => {
     assert.match(preflight, /no duplicate dispatch/i);
   });
 
+  it("hands an explicitly dispatched Quality Gate result to release without relying on a suppressed token event", () => {
+    const quality = workflow(".github/workflows/quality-gate.yml");
+    const release = workflow(".github/workflows/autoredaktion-release.yml");
+
+    assert.match(quality, /handoff_managed_release:/);
+    assert.match(quality, /needs:\s*quality/);
+    assert.match(quality, /always\(\)/);
+    assert.match(quality, /actions:\s*write/);
+    assert.match(quality, /gh workflow run autoredaktion-release\.yml/);
+    assert.match(quality, /-f head_branch="\$HEAD_BRANCH"/);
+    assert.match(quality, /-f head_sha="\$HEAD_SHA"/);
+    assert.match(quality, /-f run_conclusion="\$GATE_CONCLUSION"/);
+    assert.match(release, /workflow_dispatch:/);
+    assert.match(
+      release,
+      /HEAD_BRANCH:\s*\$\{\{ inputs\.head_branch \|\| github\.event\.workflow_run\.head_branch \}\}/,
+    );
+    assert.match(
+      release,
+      /RUN_HEAD_SHA:\s*\$\{\{ inputs\.head_sha \|\| github\.event\.workflow_run\.head_sha \}\}/,
+    );
+  });
+
   it("freezes post-handoff pushes and revalidates exact managed history before release", () => {
     const preflight = workflow(
       ".github/workflows/autoredaktion-branch-preflight.yml",
