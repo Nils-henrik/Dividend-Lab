@@ -56,6 +56,8 @@ GitHub then owns deterministic release preparation and the PR handoff:
 
 The Branch Preflight workflow creates or verifies the one managed draft PR only after successful `autoredaktion/preflight` on the exact prepared head. It then dispatches Quality Gate explicitly because a PR created with GitHub's workflow token does not itself start another workflow. The handoff is idempotent: an already existing valid PR or exact-head Quality Gate run is reused, never duplicated. ChatGPT is not required to stay alive after the initial push. `Autoredaktion Release State Machine` reacts to the completed Quality Gate:
 
+For the explicitly dispatched managed Quality Gate, a dedicated least-privilege handoff job dispatches `Autoredaktion Release State Machine` with the exact branch, head SHA, PR number and gate result. This explicit dispatch is required because GitHub suppresses ordinary downstream events caused by `GITHUB_TOKEN`; relying only on `workflow_run` would leave an automatically created PR with a completed Quality Gate but no release run. The existing `workflow_run` entry remains for ordinary user-originated Quality Gate runs.
+
 - green exact-head gate → strict PR-policy check → latest-main check → draft becomes Ready → merge exact SHA;
 - red gate → at most **one** deterministic repair commit on the **same branch**, then exactly one manually dispatched Quality Gate retry;
 - second failure, stale head, stale main, unrelated diff or non-repairable error → STOPP / fail closed.

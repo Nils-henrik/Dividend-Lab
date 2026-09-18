@@ -4,6 +4,24 @@ on:
   workflow_run:
     workflows: ["Quality Gate"]
     types: [completed]
+  workflow_dispatch:
+    inputs:
+      head_branch:
+        description: "Exact managed branch whose Quality Gate completed"
+        required: true
+        type: string
+      head_sha:
+        description: "Exact managed head SHA validated by Quality Gate"
+        required: true
+        type: string
+      run_conclusion:
+        description: "Quality Gate job result"
+        required: true
+        type: string
+      pr_number:
+        description: "Managed Autoredaktion PR number"
+        required: true
+        type: string
 
 concurrency:
   # One global release lane for all managed daily series. This prevents
@@ -22,20 +40,20 @@ jobs:
   release:
     name: Bounded repair or merge
     if: >
-      startsWith(github.event.workflow_run.head_branch, 'autoredaktion/borssverige-') ||
-      startsWith(github.event.workflow_run.head_branch, 'autoredaktion/norden-i-centrum-') ||
-      startsWith(github.event.workflow_run.head_branch, 'autoredaktion/bolaget-i-fokus-') ||
-      startsWith(github.event.workflow_run.head_branch, 'autoredaktion/usa-i-fokus-')
+      startsWith(inputs.head_branch || github.event.workflow_run.head_branch, 'autoredaktion/borssverige-') ||
+      startsWith(inputs.head_branch || github.event.workflow_run.head_branch, 'autoredaktion/norden-i-centrum-') ||
+      startsWith(inputs.head_branch || github.event.workflow_run.head_branch, 'autoredaktion/bolaget-i-fokus-') ||
+      startsWith(inputs.head_branch || github.event.workflow_run.head_branch, 'autoredaktion/usa-i-fokus-')
     runs-on: ubuntu-latest
     timeout-minutes: 12
     outputs:
       merge_sha: ${{ steps.merge.outputs.merge_sha }}
     env:
       GH_TOKEN: ${{ github.token }}
-      HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
-      RUN_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
-      RUN_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
-      EVENT_PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+      HEAD_BRANCH: ${{ inputs.head_branch || github.event.workflow_run.head_branch }}
+      RUN_HEAD_SHA: ${{ inputs.head_sha || github.event.workflow_run.head_sha }}
+      RUN_CONCLUSION: ${{ inputs.run_conclusion || github.event.workflow_run.conclusion }}
+      EVENT_PR_NUMBER: ${{ inputs.pr_number || github.event.workflow_run.pull_requests[0].number }}
 
     steps:
       - name: Checkout release code
