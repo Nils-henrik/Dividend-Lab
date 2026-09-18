@@ -11,7 +11,7 @@ import type { NewsArticle } from "@/types/news";
  * P0_SOURCE[primary]: https://www.astrazeneca.com/media-centre/press-releases/2026/efzimfotase-alfa-granted-priority-review-us-as-treatment-for-patients-with-hypophosphatasia-aged-2-years-and-older.html
  * P0_SOURCE[primary]: https://news.cision.com/astrazeneca/r/director-pdmr-shareholding%2Cc4397674
  * P0_SOURCE[secondary]: https://ph.investing.com/equities/astrazeneca-historical-data?cid=478
- * P0_SOURCE[secondary]: https://www.borskollen.se/nyheter/27/analytikerkaren-har-ar-aktierna-vi-satter-kop-och-salj-pa-idag-1789736400
+ * P0_SOURCE[secondary]: https://se.marketscreener.com/nyheter/kepler-cheuvreux-hojer-riktkursen-for-astra-zeneca-till-129-pund-113-upprepar-beh-ll-ce785adad889f320
  */
 export const ASTRAZENECA_VECKANS_UPPGANG_18_SEPTEMBER_2026_ARTICLE: NewsArticle = {
   id: "astrazeneca-veckans-uppgang-18-september-2026",
@@ -78,7 +78,7 @@ export const ASTRAZENECA_VECKANS_UPPGANG_18_SEPTEMBER_2026_ARTICLE: NewsArticle 
     {
       heading: "Riktkursen höjs – men rekommendationen är fortsatt behåll",
       paragraphs: [
-        "På fredagen rapporterade Börskollen, med hänvisning till dagens analytikeruppdateringar, att Kepler Cheuvreux höjde sin riktkurs för AstraZeneca från 113 till 129 pund. Rekommendationen behåll upprepades.",
+        "På fredagen höjde Kepler Cheuvreux sin riktkurs för AstraZeneca från 113 till 129 pund. Rekommendationen behåll upprepades.",
         "Det är viktigt att skilja en riktkurshöjning från en köprekommendation. Keplers besked innebär en högre bedömd värderingsnivå än tidigare, men analytikern ändrade inte sin övergripande rekommendation."
       ]
     },
@@ -127,8 +127,8 @@ export const ASTRAZENECA_VECKANS_UPPGANG_18_SEPTEMBER_2026_ARTICLE: NewsArticle 
       href: "https://ph.investing.com/equities/astrazeneca-historical-data?cid=478"
     },
     {
-      text: "Börskollen: Kepler Cheuvreux höjer riktkursen för AstraZeneca, 18 september 2026",
-      href: "https://www.borskollen.se/nyheter/27/analytikerkaren-har-ar-aktierna-vi-satter-kop-och-salj-pa-idag-1789736400"
+      text: "MarketScreener / Finwire: Kepler Cheuvreux höjer riktkursen för AstraZeneca, 18 september 2026",
+      href: "https://se.marketscreener.com/nyheter/kepler-cheuvreux-hojer-riktkursen-for-astra-zeneca-till-129-pund-113-upprepar-beh-ll-ce785adad889f320"
     }
   ]
 };
