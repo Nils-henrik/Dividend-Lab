@@ -12,8 +12,8 @@ import type { NewsArticle } from "@/types/news";
 export const BORSSVERIGE_19_SEPTEMBER_2026_ARTICLE: NewsArticle = {
   id: "borssverige-19-september-2026",
   slug: "borssverige-19-september-2026",
-  title: "BörsSverige – Veckan som gått: Volvo Cars, BioArctic och Peab",
-  summary: "Volvo Cars satte ett långsiktigt mål om över 8 procents EBIT-marginal, BioArctic fick ett nytt Leqembi-godkännande i Japan, Peab tog en order på 349 miljoner kronor och Scandi Standard fulltecknade sin företrädesemission.",
+  title: "BörsSverige – Veckan som gått: fyra svenska besked att ta med sig",
+  summary: "Volvo Cars nya marginalmål, BioArctics Leqembi-besked, Peabs order på 349 miljoner kronor och Scandi Standards fulltecknade emission satte avtryck under veckan. Här är fyra svenska besked att bära med sig vidare.",
   category: "market",
   source: "DivLab Redaktion",
   publishedAt: "2026-09-19T08:38:30+02:00",
@@ -21,9 +21,11 @@ export const BORSSVERIGE_19_SEPTEMBER_2026_ARTICLE: NewsArticle = {
   featured: true,
   imageUrl: "/news/generated/borssverige-2026-09-19.png",
   thumbnailImageUrl: "/news/generated/borssverige-2026-09-19.png",
-  imageAlt: "BörsSverige 2026-09-19 – DivLabs morgonöversikt över svenska börsnyheter.",
+  imageAlt: "BörsSverige – Veckan som gått, DivLabs helgsammanfattning av de viktigaste svenska börsnyheterna.",
+  imageCaption: "Helgutgåva: Veckan som gått på Stockholmsbörsen.",
+  mobileHeadlineFirst: true,
   readingMinutes: 5,
-  seoTitle: "BörsSverige: Veckan som gått 19 september 2026",
+  seoTitle: "BörsSverige – Veckan som gått 19 september 2026",
   seoDescription: "Veckans svenska börsnyheter: Volvo Cars nya marginalmål, BioArctics Leqembi-besked, Peabs order på 349 Mkr och Scandi Standards fulltecknade emission.",
   seoKeywords: [
     "BörsSverige",
@@ -47,8 +49,8 @@ export const BORSSVERIGE_19_SEPTEMBER_2026_ARTICLE: NewsArticle = {
   },
   showDisclaimer: true,
   intro: [
-    "Veckan på Stockholmsbörsen innehöll flera tydliga bolagshändelser. Volvo Cars presenterade en ny långsiktig lönsamhetsfärdplan, BioArctic fick ett regulatoriskt framsteg för Leqembi i Japan och Peab fyllde på orderboken med ett nytt projekt åt Hitachi Energy.",
-    "Samtidigt slutförde Scandi Standard sin företrädesemission med full teckning. Lördagens BörsSverige summerar de viktigaste verifierade svenska bolagsbeskeden från veckan utan att blanda in nya kursrörelser från en stängd marknad."
+    "Lördagens BörsSverige är inte en vanlig morgonartikel. Här samlar vi i stället de svenska bolagsbesked från veckan som är mest värda att komma ihåg när nästa börsvecka tar vid.",
+    "Volvo Cars presenterade nya långsiktiga mål, BioArctic nådde ett nytt regulatoriskt steg för Leqembi, Peab tog en order på 349 miljoner kronor och Scandi Standard slutförde sin företrädesemission. Fyra besked med olika betydelse – och fyra saker att följa vidare."
   ],
   sections: [
     {
