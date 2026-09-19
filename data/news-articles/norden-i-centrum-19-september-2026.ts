@@ -12,8 +12,8 @@ import type { NewsArticle } from "@/types/news";
 export const NORDEN_I_CENTRUM_19_SEPTEMBER_2026_ARTICLE: NewsArticle = {
   id: "norden-i-centrum-19-september-2026",
   slug: "norden-i-centrum-19-september-2026",
-  title: "Norden i centrum – Veckan som gått: Volvo Cars, Telenor och Etteplan",
-  summary: "Volvo Cars lade fram nya lönsamhetsmål och 13 nya modeller, Telenor hamnade i två norska utredningar, Etteplan sänkte sin guidning och TORM fick en stor ägarpost utbjuden. Här är veckans viktigaste nordiska bolagshändelser.",
+  title: "Norden i centrum – Veckan som gått: fyra besked som satte tonen",
+  summary: "Volvo Cars nya lönsamhetsmål, Telenors norska utredningar, Etteplans sänkta guidning och en stor TORM-affär präglade veckan. DivLab samlar de fyra nordiska besked som är viktigast att ta med sig in i nästa vecka.",
   category: "market",
   source: "DivLab Redaktion",
   publishedAt: "2026-09-19T08:31:00+02:00",
@@ -21,9 +21,11 @@ export const NORDEN_I_CENTRUM_19_SEPTEMBER_2026_ARTICLE: NewsArticle = {
   featured: true,
   imageUrl: "/news/generated/norden-i-centrum-2026-09-19.png",
   thumbnailImageUrl: "/news/generated/norden-i-centrum-2026-09-19.png",
-  imageAlt: "Norden i centrum 2026-09-19 – DivLabs morgonöversikt över nordiska börsnyheter.",
+  imageAlt: "Norden i centrum – Veckan som gått, DivLabs helgsammanfattning av de viktigaste nordiska börsnyheterna.",
+  imageCaption: "Helgutgåva: Veckan som gått i Norden.",
+  mobileHeadlineFirst: true,
   readingMinutes: 5,
-  seoTitle: "Norden i centrum: Veckan som gått 19 september 2026",
+  seoTitle: "Norden i centrum – Veckan som gått 19 september 2026",
   seoDescription: "Veckans viktigaste nordiska börsnyheter: Volvo Cars strategi, Telenors Myanmar-utredningar, Etteplans vinstvarning och TORMs stora aktieförsäljning.",
   seoKeywords: [
     "Norden i centrum",
@@ -47,8 +49,8 @@ export const NORDEN_I_CENTRUM_19_SEPTEMBER_2026_ARTICLE: NewsArticle = {
   },
   showDisclaimer: true,
   intro: [
-    "Veckan som gått gav flera tydliga nordiska bolagshändelser snarare än en enda gemensam marknadsberättelse. Volvo Cars presenterade en stor produktoffensiv och ett långsiktigt mål om en EBIT-marginal över 8 procent. I Norge öppnades två utredningar mot Telenor kopplade till den tidigare verksamheten i Myanmar.",
-    "I Finland sänkte Etteplan sin prognos för 2026 efter svagare efterfrågan och försenade projektstarter. I Danmark stod ägarbilden i TORM i fokus när Oaktree-kontrollerade OCM Njord annonserade en sekundär försäljning av 9 miljoner A-aktier. Här sammanfattar vi de fyra händelser som bäst fångar veckans nordiska bolagsflöde."
+    "Lördagen är till för att lyfta blicken. I stället för ännu en vanlig morgonöversikt samlar Norden i centrum de besked från veckan som faktiskt förändrade bilden för nordiska börsbolag.",
+    "Volvo Cars satte nya långsiktiga lönsamhetsmål, Telenor hamnade i juridiskt fokus, Etteplan sänkte sin prognos och TORM fick en stor ägartransaktion. Fyra olika händelser – men tillsammans en tydlig bild av vad investerare tar med sig från Norden in i nästa vecka."
   ],
   sections: [
     {
