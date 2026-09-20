@@ -2,55 +2,59 @@ import type { NewsArticle } from "@/types/news";
 
 /**
  * Norden i centrum — 20 september 2026.
- * Editorial research cutoff: 2026-09-20T09:37:30+02:00
+ * Editorial research cutoff: 2026-09-20T09:52:00+02:00
  * P0_FACT_GATE=PASS
  * P0_SOURCE[primary]: https://www.novonordisk.com/investors/financial-results.html
+ * P0_SOURCE[secondary]: https://www.ft.com/content/e560fd8c-5cc2-4743-90eb-eab71b899ce6
  * P0_SOURCE[primary]: https://investor.maersk.com/events-and-presentations/events
+ * P0_SOURCE[secondary]: https://www.reuters.com/business/maersk-hapag-lloyd-resume-further-services-through-suez-canal-2026-09-14/
  * P0_SOURCE[primary]: https://hmgroup.com/investors-sv/finansiell-kalender/kommunikation-i-samband-med-kvartalsrapporten/
+ * P0_SOURCE[secondary]: https://se.marketscreener.com/nyheter/h-m-vantas-redovisa-5-095-miljoner-i-rorelseresultat-modular-ce785adada8df423
  * P0_SOURCE[primary]: https://www.astrazeneca.com/investor-relations/events.html
+ * P0_SOURCE[secondary]: https://www.reuters.com/business/healthcare-pharmaceuticals/astrazenecas-breast-cancer-drug-fails-late-stage-trial-2026-09-11/
  * P0_SOURCE[primary]: https://www.riksbank.se/sv/press-och-publicerat/kalender/kalender-2026/2026-09-242/
- * P0_SOURCE[primary]: https://www.riksbank.se/sv/penningpolitik/penningpolitisk-rapport/2026/penningpolitiskt-beslut-augusti-2026/
+ * P0_SOURCE[secondary]: https://se.marketscreener.com/nyheter/riksbanken-swedbank-och-nordea-raknar-med-oforandrad-ranta-a-hojning-vantas-i-november-ce785adad98ef225
+ * P0_SOURCE[secondary]: https://se.marketscreener.com/nyheter/ing-raknar-med-att-riksbanken-lamnar-styrrantan-oforandrad-a-hojning-vantas-i-november-ce785adada81f020
  * P0_SOURCE[primary]: https://ir.dnb.no/financial-calendar
  * P0_SOURCE[primary]: https://www.equinor.com/investors
+ * P0_SOURCE[secondary]: https://www.reuters.com/business/energy-market-shock-absorbers-weakening-shell-equinor-warn-2026-09-16/
  * P0_SOURCE[primary]: https://www.norges-bank.no/aktuelt/kalender/rentemoter/26-09-24/
- * P0_SOURCE[primary]: https://www.norges-bank.no/en/topics/monetary-policy/Monetary-policy-meetings/2026/august-2026/
+ * P0_SOURCE[secondary]: https://e24.no/norsk-oekonomi/i/zO3z54/nervepirrende-rentethriller-kan-vippe-det
+ * P0_SOURCE[secondary]: https://www.reuters.com/world/asia-pacific/global-markets-central-banks-graphic-2026-09-17/
  * P0_SOURCE[primary]: https://www.nokia.com/about-us/investors/investor-relations-events/
  * P0_SOURCE[primary]: https://www.nordea.com/en/press/2025-10-01/nordea-bank-abps-financial-reporting-in-2026?translation=sv
- * P0_SOURCE[primary]: https://stat.fi/en
- * P0_SOURCE[primary]: https://www.dst.dk/en/Statistik/planlagte
- * P0_SOURCE[primary]: https://www.scb.se/hitta-statistik/publiceringskalendern/
  */
 export const NORDEN_I_CENTRUM_20_SEPTEMBER_2026_ARTICLE: NewsArticle = {
   id: "norden-i-centrum-20-september-2026",
   slug: "norden-i-centrum-20-september-2026",
-  title: "Norden i centrum – inför V.39: Novo Nordisk, H&M, DNB och Nokia i en vecka med dubbla räntebesked",
-  summary: "Vecka 39 kombinerar flera stora nordiska bolag med två tunga räntebesked. Novo Nordisk håller kapitalmarknadsdag, H&M rapporterar, DNB har Q3 pre-close call och AstraZeneca möter investerare – samtidigt som Riksbanken och Norges Bank publicerar nya penningpolitiska besked.",
+  title: "Norden i centrum – inför V.39: H&M:s marginaler, Novos nya väg och dubbla räntebesked",
+  summary: "Vecka 39 handlar mindre om klockslag och mer om tre stora frågor: kan H&M lyfta lönsamheten, kan Novo Nordisk övertyga om nästa tillväxtfas och hur hökaktiga blir Riksbanken och Norges Bank? DivLab går igenom marknadens förväntningar och vad som faktiskt kan överraska.",
   category: "market",
   source: "DivLab Redaktion",
-  publishedAt: "2026-09-20T09:37:30+02:00",
-  updatedAt: "2026-09-20T09:37:30+02:00",
+  publishedAt: "2026-09-20T09:52:00+02:00",
+  updatedAt: "2026-09-20T09:52:00+02:00",
   url: "/news/norden-i-centrum-20-september-2026",
   featured: true,
   imageUrl: "/news/manual/norden-i-centrum-v39-2026-09-20.png",
   thumbnailImageUrl: "/news/manual/norden-i-centrum-v39-2026-09-20.png",
-  imageAlt: "Norden i centrum – inför vecka 39 med nordiska bolag, räntebesked och viktiga marknadshändelser.",
-  readingMinutes: 9,
-  seoTitle: "Norden V.39: Novo Nordisk, H&M, DNB, Nokia och räntebesked",
-  seoDescription: "Inför vecka 39: Novo Nordisk, H&M, AstraZeneca, DNB, Equinor, Mærsk, Nokia och Nordea – plus räntebesked från Riksbanken och Norges Bank.",
+  imageAlt: "Norden i centrum – inför vecka 39 med nordiska bolag, marknadsförväntningar och räntebesked.",
+  readingMinutes: 10,
+  seoTitle: "Inför V.39: H&M, Novo Nordisk och nordiska räntebesked",
+  seoDescription: "Marknadens förväntningar inför vecka 39: H&M:s Q3, Novo Nordisks kapitalmarknadsdag, Riksbanken, Norges Bank samt DNB, Equinor, Nokia, Nordea, AstraZeneca och Mærsk.",
   seoKeywords: [
-    "Norden vecka 39 börsen",
-    "nordiska börser",
+    "vecka 39 börsen",
+    "nordiska börser vecka 39",
+    "H&M rapport prognos 24 september 2026",
+    "H&M konsensus Q3 2026",
     "Novo Nordisk kapitalmarknadsdag 2026",
-    "H&M rapport 24 september 2026",
-    "AstraZeneca september 2026",
-    "DNB Q3 pre-close 2026",
+    "Riksbanken prognos september 2026",
+    "Norges Bank ränta prognos september 2026",
+    "DNB aktie",
     "Equinor aktie",
+    "AstraZeneca aktie",
     "Mærsk aktie",
     "Nokia aktie",
-    "Nordea aktie",
-    "Riksbanken ränta september 2026",
-    "Norges Bank ränta september 2026",
-    "20 september 2026"
+    "Nordea aktie"
   ],
   internalLinking: {
     topics: [
@@ -69,105 +73,112 @@ export const NORDEN_I_CENTRUM_20_SEPTEMBER_2026_ARTICLE: NewsArticle = {
       "sjöfart"
     ],
     companies: [
-      "Novo Nordisk",
-      "A.P. Møller–Mærsk",
       "H&M",
       "AstraZeneca",
       "DNB",
       "Equinor",
+      "Novo Nordisk",
+      "A.P. Møller–Mærsk",
       "Nokia",
       "Nordea"
     ],
-    tickers: ["NOVO B", "MAERSK B", "HM B", "AZN", "DNB", "EQNR", "NOKIA", "NDA FI"],
+    tickers: ["HM B", "AZN", "DNB", "EQNR", "NOVO B", "MAERSK B", "NOKIA", "NDA FI"],
     relatedNewsSlugs: [
+      "astrazeneca-veckans-uppgang-18-september-2026",
       "norden-i-centrum-19-september-2026",
-      "norden-i-centrum-18-september-2026",
-      "norden-i-centrum-17-september-2026"
+      "norden-i-centrum-18-september-2026"
     ]
   },
   showDisclaimer: true,
   intro: [
-    "Vecka 39 ger Norden en ovanligt tydlig blandning av bolagshändelser och penningpolitik. Novo Nordisk öppnar veckan med kapitalmarknadsdag, H&M rapporterar på torsdagen och DNB har sin Q3 pre-close call samma dag som både Riksbanken och Norges Bank lämnar nya besked om räntan.",
-    "DivLab breddar därför veckans bevakning till två stora börsnamn per land: H&M och AstraZeneca i Sverige, DNB och Equinor i Norge, Novo Nordisk och A.P. Møller–Mærsk i Danmark samt Nokia och Nordea i Finland. Alla åtta har inte en rapport under V.39, men tillsammans fångar de läkemedel, detaljhandel, bank, energi, telekom och världshandel – sektorer som ger en bredare bild av vad som kan sätta tonen på de nordiska börserna."
+    "Vecka 39 ser på pappret ut som en kalendervecka fylld av presentationer, rapporter och centralbanksbesked. Men för marknaden är den mer koncentrerad än så. Tre frågor sticker ut: om H&M kan förbättra marginalerna, om Novo Nordisk kan visa en trovärdig väg bortom dagens beroende av semaglutid och om de nordiska centralbankerna blir mer hökaktiga när energi och inflation åter pressar upp räntediskussionen.",
+    "Det är där den verkliga potentialen för överraskningar finns. Ett räntebesked helt enligt förväntan kan bli odramatiskt, medan en ny räntebana, en oväntad marginal hos H&M eller en mer offensiv strategi från Novo Nordisk kan förändra marknadens syn betydligt mer än själva tidpunkten för publiceringen."
   ],
   sections: [
     {
-      heading: "Danmark: Novo Nordisk öppnar veckan – Mærsk ger handelskopplingen",
+      heading: "H&M: marknaden räknar med ett litet marginallyft",
       paragraphs: [
-        "Novo Nordisk håller kapitalmarknadsdag i London måndagen den 21 september. Enligt bolagets investerarkalender pågår programmet 09.00–15.30 brittisk tid, motsvarande 10.00–16.30 centraleuropeisk tid, och sänds även digitalt. Bolaget ska gå igenom strategi, forsknings- och utvecklingsportfölj, verksamhet och utveckling.",
-        "Det gör Novo Nordisk till veckans tydligaste danska bolagshändelse. Det andra stora danska bolaget i DivLabs bevakning är A.P. Møller–Mærsk. Mærsk har ingen kvartalsrapport under V.39 – nästa Q3-rapport är planerad till den 5 november – men bolaget ger en direkt koppling till världshandel, fraktmarknad och energikostnader. Därför är Mærsk ett relevant namn att följa om den globala marknadsbilden förändras under veckan.",
-        "På makrosidan publicerar Danmarks Statistik konsumentförväntningar för september den 22 september och konjunkturbarometrar för bland annat industri, bygg, detaljhandel och tjänster den 23 september. De ger ytterligare signaler om efterfrågan i dansk ekonomi."
+        "H&M:s Q3-rapport på torsdag är veckans tydligaste svenska rapportsiffra. Konsensus från Modular Finance, baserad på 27 analytikerestimat, pekar på en nettoomsättning på 57,12 miljarder kronor. Det är i stort sett oförändrat mot 57,02 miljarder kronor samma kvartal i fjol.",
+        "Den viktigare förväntningen ligger i lönsamheten. Analytikerna räknar med ett rörelseresultat på 5,10 miljarder kronor, jämfört med 4,91 miljarder ett år tidigare. Rörelsemarginalen väntas därmed stiga till 8,91 procent från 8,6 procent och bruttomarginalen till 53,37 procent från 52,9 procent.",
+        "DivLabs tolkning är därför att försäljningen i sig inte behöver bli veckans stora H&M-fråga. Det mer intressanta blir om bolaget verkligen visar den marginalförbättring som redan ligger i förväntningarna. Ett resultat nära konsensus men med svagare marginaler skulle ge en annan signal än samma omsättning kombinerad med tydligt bättre lönsamhet."
       ]
     },
     {
-      heading: "Sverige: H&M rapporterar – AstraZeneca möter investerare",
+      heading: "Riksbanken: oförändrat är baslinjen – tonen kan bli viktigare än räntan",
       paragraphs: [
-        "H&M Group publicerar sin niomånadersrapport för perioden 1 december 2025–31 augusti 2026 torsdagen den 24 september klockan 08.00 CEST. En webbsändning och telefonkonferens följer klockan 09.00. Rapporten blir en av veckans tydligaste svenska bolagshändelser och ger en ny avläsning av försäljning och lönsamhet inom detaljhandeln.",
-        "AstraZeneca har samtidigt två schemalagda investerarevent under veckan. Bolaget deltar i Bank of America Global Healthcare Conference i London den 23 september och i UBS Pharma Bus Tour i London den 25 september. Det är inte kvartalsrapporter, men de gör AstraZeneca till ytterligare ett stort svenskt börsnamn att följa under V.39.",
-        "Samma torsdag som H&M rapporterar publicerar Riksbanken sitt penningpolitiska beslut, inklusive styrräntan, klockan 09.30 tillsammans med den penningpolitiska rapporten. Pressträffen börjar 10.30. Vid det föregående beslutet i augusti lämnades styrräntan oförändrad på 1,75 procent. Utfallet den 24 september är ännu inte känt och föregrips därför inte."
+        "Inför Riksbankens besked är marknadens huvudscenario att styrräntan lämnas oförändrad på 1,75 procent. Både Swedbank och Nordea räknar med oförändrat i september men en höjning med 25 punkter i november. ING har en liknande huvudbild och beskriver ett oförändrat men tydligt mer hökaktigt besked som det mest sannolika utfallet.",
+        "Skillnaden mellan prognoserna ligger alltså mindre i torsdagens räntenivå och mer i vad Riksbanken signalerar därefter. Swedbank räknar med att räntebanan höjs så att sannolikheten för en novemberhöjning närmar sig 40 procent, medan Nordea ser en betydligt tydligare signal och bedömer att den nya banan kan peka mot omkring 70 procents sannolikhet till novembermötet.",
+        "Det gör räntebanan och kommunikationen till den verkliga marknadsfrågan. Om Riksbanken lämnar räntan still men tydligt öppnar för en snabb höjning senare i höst blir beskedet i praktiken stramare än rubriken 'oförändrad ränta' antyder."
       ]
     },
     {
-      heading: "Norge: Norges Bank, DNB och Equinor står i centrum",
+      heading: "Norges Bank: här är osäkerheten större",
       paragraphs: [
-        "Norges Bank offentliggör sitt räntebeslut och en ny penningpolitisk rapport torsdagen den 24 september klockan 10.00. Presskonferensen börjar 10.30. Vid mötet i augusti lämnades styrräntan oförändrad på 4,25 procent, medan nya prognoser ska presenteras tillsammans med septemberbeskedet.",
-        "Samma dag håller DNB sin Q3 pre-close call enligt bankens finansiella kalender. Det är inte själva Q3-rapporten – den publiceras den 21 oktober – men samtalet gör DNB till ett naturligt norskt bolagsfokus när ränteläget samtidigt står högt på marknadens agenda.",
-        "Equinor är det andra stora norska bolaget i veckans bevakning. Bolaget rapporterar inte under V.39; nästa Q3-resultat är planerat till den 28 oktober. Under veckan blir Equinor i stället ett viktigt energinamn att följa om olje- och gasmarknaden rör sig tydligt, eftersom energisektorn väger tungt på Oslobörsen."
+        "I Norge är förväntningarna betydligt mindre samlade. Styrräntan ligger på 4,25 procent och ekonomer är delade mellan en höjning till 4,50 procent redan i september och att Norges Bank väntar till november. Nordea hör till dem som räknar med oförändrat på torsdag och en senare höjning.",
+        "Osäkerheten har ökat efter att norsk inflation i augusti landade på 3,3 procent. Samtidigt har Norges Bank tidigare sagt att ytterligare en höjning fortfarande kan bli nödvändig, medan tillväxten varit svagare än väntat. Reuters beskriver marknaden som prissatt för ytterligare en höjning på 25 punkter före årsskiftet.",
+        "Det betyder att ett oförändrat besked inte automatiskt är mjukt och en höjning inte automatiskt är starten på en lång ny höjningscykel. Det centrala blir hur Norges Bank beskriver balansen mellan inflation och avtagande aktivitet – och var den nya räntebanan placerar nästa steg."
       ]
     },
     {
-      heading: "Finland: Nokia går in i stängd period – Nordea närmar sig Q3",
+      heading: "Novo Nordisk: investerarna vill se vad som kommer efter dagens storsäljare",
       paragraphs: [
-        "Nokia går in i sin stängda period inför Q3 den 22 september. Perioden löper fram till rapportdagen den 22 oktober. Det innebär ingen ny rapport under V.39, men datumet markerar starten på den sista månaden före Nokias nästa kvartalsbesked.",
-        "Nordea publicerar sina Q3- och niomånadersresultat den 15 oktober. Banken har alltså ingen rapport under V.39, men är ändå ett relevant finländskt bolag att följa när räntor och banksektorn står i centrum i både Sverige och Norge. Nordea är dessutom noterat i Helsingfors, Stockholm och Köpenhamn, vilket gör bolaget särskilt nordiskt i sin börsexponering.",
-        "Statistikcentralen i Finland har också nya publiceringar under veckan. Den 22 september kommer bland annat statistik från arbetsförmedlingen för augusti. Den typen av arbetsmarknadsdata ger ytterligare kontext till den finländska konjunkturbilden."
+        "Novo Nordisks kapitalmarknadsdag på måndag har en annan typ av förväntansbild. Här finns inget enkelt konsensustal att slå. I stället ligger pressen på strategin. Inför mötet har stora investerare efterlyst tydligare besked om hur bolaget ska bredda läkemedelsportföljen och minska beroendet av semaglutidbaserade Ozempic och Wegovy.",
+        "Konkurrensen från Eli Lilly har skärpts samtidigt som investerare vill se fler tillväxtben, både genom egen forskning och genom partnerskap eller förvärv. Därför blir kapitalmarknadsdagen ett test av om ledningen kan visa en trovärdig pipeline bortom dagens kärnprodukter och samtidigt förklara hur Novo ska återta fart inom fetmabehandlingar.",
+        "Det som sannolikt spelar störst roll är alltså inte ännu en genomgång av den nuvarande verksamheten. Marknaden behöver få bättre svar på hur nästa tillväxtfas ska se ut."
       ]
     },
     {
-      heading: "Dubbla räntebesked gör torsdagen till veckans makrodag",
+      heading: "AstraZeneca och Mærsk: två bolag där omvärlden redan flyttat spelplanen",
       paragraphs: [
-        "Torsdagen den 24 september blir den mest koncentrerade dagen i den nordiska kalendern. H&M rapporterar 08.00, Riksbanken publicerar sitt beslut 09.30, Norges Bank följer 10.00 och DNB har sin Q3 pre-close call samma dag.",
-        "Räntebeskeden är särskilt viktiga eftersom de kommer med bara 30 minuters mellanrum. Sverige och Norge befinner sig samtidigt på olika räntenivåer: Riksbankens styrränta var 1,75 procent efter augustimötet, medan Norges Banks styrränta var 4,25 procent efter sitt augustimöte. Veckans nya beslut ska bedömas var för sig och inga utfall antas i förväg."
+        "AstraZeneca går in i veckan efter ett bakslag i en sen fas-studie för bröstcancerläkemedlet camizestrant i kombination med Ibrance. Kombinationen nådde inte studiens primära mål, men analytiker från bland annat RBC och Barclays beskrev beskedet som hanterbart respektive i stor utsträckning väntat. När AstraZeneca möter investerare under veckan blir därför pipelinekommentarer och hur bolaget sätter bakslaget i ett större sammanhang mer intressanta än själva kalenderpunkten.",
+        "För A.P. Møller–Mærsk är frågan i stället global handel och frakt. Bolaget och Hapag-Lloyd har beslutat att återföra ytterligare fyra gemensamma linjer till Suezkanalen, vilket kortar transporttiderna jämfört med rutten runt Afrika. Samtidigt har bolagen varit tydliga med att fortsatt återgång beror på att säkerhetsläget i Mellanöstern inte försämras.",
+        "Mærsk blir därmed ett av veckans tydligaste nordiska bolag för att läsa av hur geopolitik slår igenom i transportkostnader och leveranskedjor."
       ]
     },
     {
-      heading: "Fler viktiga händelser under V.39",
+      heading: "DNB och Equinor: Norge handlar om både ränta och energi",
       paragraphs: [
-        "Utöver bolagshändelserna och centralbanksbeskeden finns flera makropunkter att hålla koll på. Danmarks Statistik publicerar konsumentförväntningar den 22 september och konjunkturbarometrar den 23 september. I Finland kommer ny arbetsmarknadsstatistik den 22 september.",
-        "I Sverige publicerar SCB producent- och importprisindex för augusti den 25 september. Tillsammans med Riksbankens nya penningpolitiska rapport ger det ytterligare information om prisutvecklingen och kostnadstrycket i svensk ekonomi."
+        "DNB håller sin Q3 pre-close call samma dag som Norges Bank lämnar räntebesked. Det är ingen resultatrapport, men kombinationen gör banken intressant eftersom en förändrad norsk räntebana snabbt kan påverka marknadens antaganden om bankernas räntenetto och kreditmiljö inför Q3.",
+        "Equinor går in i veckan i ett helt annat läge. Bolagets vd Anders Opedal varnade i veckan för att energimarknadens 'stötdämpare' håller på att försvagas när störningarna i Mellanöstern drar ut på tiden. Reuters beskrev oljepriset som nära 110 dollar per fat under veckan och europeiska gaslager som låga inför vintern.",
+        "För Equinor är det därför mindre relevant att ingen kvartalsrapport kommer under V.39. Bolaget fungerar i stället som en direkt nordisk temperaturmätare på en energimarknad där priser, tillgång och geopolitik åter blivit centrala börsfrågor."
       ]
     },
     {
-      heading: "Åtta stora nordiska bolag att ha på radarn",
+      heading: "Nokia och Nordea: färre egna katalysatorer – men tydliga sektorsignaler",
       paragraphs: [
-        "Sverige: H&M och AstraZeneca. Norge: DNB och Equinor. Danmark: Novo Nordisk och A.P. Møller–Mærsk. Finland: Nokia och Nordea. Urvalet ger artikeln ett tydligare bolagsperspektiv utan att blanda ihop schemalagda händelser med allmän bevakning.",
-        "Novo Nordisk, H&M, DNB och AstraZeneca har konkreta kalenderpunkter under veckan. Nokia går in i stängd period inför Q3. Mærsk, Equinor och Nordea har sina nästa rapporter senare, men fungerar som relevanta bevakningsbolag för världshandel, energi och bank/ränta. Det gör att bolagsnamnen har en faktisk redaktionell roll och inte bara läggs in som sökord."
+        "I Finland är bolagskalendern lugnare. Nokia går in i stängd period inför Q3 den 22 september och rapporterar först den 22 oktober. Det betyder att veckan sannolikt ger färre bolagsspecifika besked, men Nokia förblir ett relevant namn när marknaden omvärderar tempot i AI- och infrastrukturinvesteringar.",
+        "Nordea rapporterar Q3 den 15 oktober. För banken blir vecka 39 därför mer en fråga om sektorsignaler än en egen rapport. Räntebeskeden i Sverige och Norge påverkar inte direkt ECB:s styrränta, men de ger ny information om hur den nordiska räntecykeln utvecklas och hur olika centralbanker bedömer inflationstrycket.",
+        "Finland blir därmed mindre av en resultatmarknad den här veckan och mer av en plats där Nokia och Nordea kan spegla två större teman: teknik/infrastruktur och bank/ränta."
       ]
     },
     {
-      heading: "Veckans hållpunkter – dag för dag",
+      heading: "Det här kan faktiskt överraska marknaden under V.39",
       paragraphs: [
-        "Måndag 21 september: Novo Nordisk håller kapitalmarknadsdag. Tisdag 22 september: dansk konsumentstatistik publiceras och Nokia går in i stängd period inför Q3. Onsdag 23 september: AstraZeneca deltar i Bank of America Global Healthcare Conference och Danmark publicerar nya konjunkturbarometrar.",
-        "Torsdag 24 september: H&M rapporterar 08.00, Riksbanken lämnar penningpolitiskt besked 09.30, Norges Bank följer 10.00 och DNB har Q3 pre-close call. Fredag 25 september: AstraZeneca deltar i UBS Pharma Bus Tour och SCB publicerar producent- och importprisindex för augusti.",
-        "Det är de faktiska rapporterna, presentationerna, räntebeskeden och statistikutfallen som avgör hur veckan utvecklas. DivLabs fortsatta bevakning utgår därför från verifierade primärkällor när informationen publiceras."
+        "Den största möjliga svenska överraskningen är inte att Riksbanken publicerar 09.30, utan om den nya räntebanan blir tydligt mer hökaktig än marknaden räknat med. För H&M ligger ribban i marginalerna: konsensus räknar redan med förbättrad lönsamhet trots nästan oförändrad omsättning.",
+        "I Norge är själva räntebeslutet mer öppet. En höjning till 4,50 procent skulle bekräfta den stramare linjen direkt, medan oförändrat tillsammans med en tydlig signal om november fortfarande kan hålla höjningsscenariot levande.",
+        "Och i Danmark är Novo Nordisks kapitalmarknadsdag ett strategitest snarare än ett siffertest. Om ledningen kan ge marknaden bättre synlighet kring nya läkemedel, affärsutveckling och konkurrensen med Eli Lilly kan det väga tyngre än någon enskild presentationsslide."
       ]
     }
   ],
   sources: [
     { text: "Novo Nordisk: Capital Markets Day 21 september 2026", href: "https://www.novonordisk.com/investors/financial-results.html" },
-    { text: "A.P. Møller–Mærsk: finansiella event och Q3-rapport 5 november 2026", href: "https://investor.maersk.com/events-and-presentations/events" },
-    { text: "H&M Group: niomånadersrapport 24 september 2026 kl. 08.00 CEST", href: "https://hmgroup.com/investors-sv/finansiell-kalender/kommunikation-i-samband-med-kvartalsrapporten/" },
-    { text: "AstraZeneca: investerarevent 23 och 25 september 2026", href: "https://www.astrazeneca.com/investor-relations/events.html" },
-    { text: "Riksbanken: penningpolitiskt beslut och rapport 24 september 2026 kl. 09.30", href: "https://www.riksbank.se/sv/press-och-publicerat/kalender/kalender-2026/2026-09-242/" },
-    { text: "Riksbanken: augustibeslut 2026 – styrränta 1,75 procent", href: "https://www.riksbank.se/sv/penningpolitik/penningpolitisk-rapport/2026/penningpolitiskt-beslut-augusti-2026/" },
-    { text: "DNB: Q3 pre-close call 24 september och Q3-resultat 21 oktober 2026", href: "https://ir.dnb.no/financial-calendar" },
-    { text: "Equinor: investerarkalender och Q3-resultat 28 oktober 2026", href: "https://www.equinor.com/investors" },
-    { text: "Norges Bank: räntebeslut och Pengepolitisk rapport 24 september 2026 kl. 10.00", href: "https://www.norges-bank.no/aktuelt/kalender/rentemoter/26-09-24/" },
-    { text: "Norges Bank: augustibeslut 2026 – styrränta 4,25 procent", href: "https://www.norges-bank.no/en/topics/monetary-policy/Monetary-policy-meetings/2026/august-2026/" },
-    { text: "Nokia: Q3-stängd period från 22 september och Q3-resultat 22 oktober 2026", href: "https://www.nokia.com/about-us/investors/investor-relations-events/" },
-    { text: "Nordea: finansiell rapportering 2026 – Q3 den 15 oktober", href: "https://www.nordea.com/en/press/2025-10-01/nordea-bank-abps-financial-reporting-in-2026?translation=sv" },
-    { text: "Statistics Finland: aktuella och kommande statistikpubliceringar", href: "https://stat.fi/en" },
-    { text: "Danmarks Statistik: planerade publiceringar under vecka 39", href: "https://www.dst.dk/en/Statistik/planlagte" },
-    { text: "SCB: publiceringskalender – producent- och importprisindex 25 september 2026", href: "https://www.scb.se/hitta-statistik/publiceringskalendern/" }
+    { text: "Financial Times: investerare efterlyser fler läkemedel och affärer inför Novo Nordisks kapitalmarknadsdag", href: "https://www.ft.com/content/e560fd8c-5cc2-4743-90eb-eab71b899ce6" },
+    { text: "A.P. Møller–Mærsk: investerarkalender", href: "https://investor.maersk.com/events-and-presentations/events" },
+    { text: "Reuters: Mærsk och Hapag-Lloyd återför fler linjer till Suezkanalen", href: "https://www.reuters.com/business/maersk-hapag-lloyd-resume-further-services-through-suez-canal-2026-09-14/" },
+    { text: "H&M Group: niomånadersrapport 24 september 2026", href: "https://hmgroup.com/investors-sv/finansiell-kalender/kommunikation-i-samband-med-kvartalsrapporten/" },
+    { text: "Modular Finance via MarketScreener: H&M-konsensus inför Q3", href: "https://se.marketscreener.com/nyheter/h-m-vantas-redovisa-5-095-miljoner-i-rorelseresultat-modular-ce785adada8df423" },
+    { text: "AstraZeneca: investerarevent under vecka 39", href: "https://www.astrazeneca.com/investor-relations/events.html" },
+    { text: "Reuters: AstraZenecas camizestrant-studie nådde inte primärt mål", href: "https://www.reuters.com/business/healthcare-pharmaceuticals/astrazenecas-breast-cancer-drug-fails-late-stage-trial-2026-09-11/" },
+    { text: "Riksbanken: penningpolitiskt beslut 24 september 2026", href: "https://www.riksbank.se/sv/press-och-publicerat/kalender/kalender-2026/2026-09-242/" },
+    { text: "MarketScreener/Finwire: Swedbank och Nordea räknar med oförändrad Riksbanksränta i september", href: "https://se.marketscreener.com/nyheter/riksbanken-swedbank-och-nordea-raknar-med-oforandrad-ranta-a-hojning-vantas-i-november-ce785adad98ef225" },
+    { text: "MarketScreener/Finwire: ING räknar med oförändrad Riksbanksränta och hökaktigare signal", href: "https://se.marketscreener.com/nyheter/ing-raknar-med-att-riksbanken-lamnar-styrrantan-oforandrad-a-hojning-vantas-i-november-ce785adada81f020" },
+    { text: "DNB: finansiell kalender och Q3 pre-close call", href: "https://ir.dnb.no/financial-calendar" },
+    { text: "Equinor: investerarkalender", href: "https://www.equinor.com/investors" },
+    { text: "Reuters: Equinor varnar för fortsatt stram och volatil energimarknad", href: "https://www.reuters.com/business/energy-market-shock-absorbers-weakening-shell-equinor-warn-2026-09-16/" },
+    { text: "Norges Bank: räntebeslut 24 september 2026", href: "https://www.norges-bank.no/aktuelt/kalender/rentemoter/26-09-24/" },
+    { text: "E24: ekonomer splittrade inför Norges Banks septemberbesked", href: "https://e24.no/norsk-oekonomi/i/zO3z54/nervepirrende-rentethriller-kan-vippe-det" },
+    { text: "Reuters: marknaden prisar ytterligare en norsk räntehöjning före årsskiftet", href: "https://www.reuters.com/world/asia-pacific/global-markets-central-banks-graphic-2026-09-17/" },
+    { text: "Nokia: investerarkalender och stängd period inför Q3", href: "https://www.nokia.com/about-us/investors/investor-relations-events/" },
+    { text: "Nordea: finansiell rapportering 2026", href: "https://www.nordea.com/en/press/2025-10-01/nordea-bank-abps-financial-reporting-in-2026?translation=sv" }
   ]
 };
