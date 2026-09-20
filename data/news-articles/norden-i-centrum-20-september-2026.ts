@@ -2,17 +2,19 @@ import type { NewsArticle } from "@/types/news";
 
 /**
  * Norden i centrum — 20 september 2026.
- * Editorial research cutoff: 2026-09-20T08:08:09+02:00
+ * Editorial research cutoff: 2026-09-20T09:10:00+02:00
  * P0_FACT_GATE=PASS
- * P0_SOURCE[primary]: https://www.riksbank.se/sv/press-och-publicerat/nyheter-och-pressmeddelanden/pressmeddelanden/2026/det-penningpolitiska-motet-i-september-ager-rum-i-goteborg/
+ * P0_SOURCE[primary]: https://www.novonordisk.com/investors/financial-results.html
+ * P0_SOURCE[primary]: https://www.riksbank.se/sv/press-och-publicerat/kalender/kalender-2026/2026-09-242/
  * P0_SOURCE[primary]: https://www.norges-bank.no/aktuelt/kalender/rentemoter/26-09-24/
  * P0_SOURCE[primary]: https://hmgroup.com/investors-sv/finansiell-kalender/kommunikation-i-samband-med-kvartalsrapporten/
+ * P0_SOURCE[primary]: https://stat.fi/en
  */
 export const NORDEN_I_CENTRUM_20_SEPTEMBER_2026_ARTICLE: NewsArticle = {
   id: "norden-i-centrum-20-september-2026",
   slug: "norden-i-centrum-20-september-2026",
-  title: "Norden i centrum – Veckan som kommer: H&M och dubbla räntebesked",
-  summary: "Torsdagen blir veckans tydliga nordiska nav. H&M rapporterar på morgonen, Riksbanken publicerar sitt septemberbesked 09.30 och Norges Bank följer med räntebeslut och ny penningpolitisk rapport 10.00.",
+  title: "Norden i centrum – Inför V.39: räntor, Novo Nordisk och H&M sätter tonen",
+  summary: "Vecka 39 bjuder på flera tydliga hållpunkter i Norden. Novo Nordisk inleder veckan med kapitalmarknadsdag, medan torsdagen samlar H&M:s niomånadersrapport och penningpolitiska besked från både Riksbanken och Norges Bank.",
   category: "market",
   source: "DivLab Redaktion",
   publishedAt: "2026-09-20T08:08:09+02:00",
@@ -20,23 +22,25 @@ export const NORDEN_I_CENTRUM_20_SEPTEMBER_2026_ARTICLE: NewsArticle = {
   featured: true,
   imageUrl: "/news/generated/norden-i-centrum-2026-09-20.png",
   thumbnailImageUrl: "/news/generated/norden-i-centrum-2026-09-20.png",
-  imageAlt: "Norden i centrum 2026-09-20 – DivLabs morgonöversikt över nordiska börsnyheter.",
-  readingMinutes: 4,
-  seoTitle: "Norden i centrum – Veckan som kommer 20 september 2026",
-  seoDescription: "Veckan i Norden: H&M:s niomånadersrapport samt nya penningpolitiska besked från Riksbanken och Norges Bank står i centrum den 24 september.",
+  imageAlt: "Norden i centrum – Inför vecka 39 med nordiska börser, räntor och bolag i fokus.",
+  readingMinutes: 6,
+  seoTitle: "Norden i centrum inför V.39 – räntor, Novo Nordisk och H&M",
+  seoDescription: "Inför vecka 39: Novo Nordisks kapitalmarknadsdag, H&M:s rapport och räntebesked från Riksbanken och Norges Bank. DivLab samlar veckans nordiska hållpunkter.",
   seoKeywords: [
     "Norden i centrum",
-    "veckan som kommer börsen",
+    "vecka 39 börsen",
     "nordiska börser",
+    "Novo Nordisk kapitalmarknadsdag 2026",
     "H&M rapport 24 september 2026",
     "Riksbanken ränta september 2026",
     "Norges Bank ränta september 2026",
+    "Finland ekonomi",
     "20 september 2026"
   ],
   internalLinking: {
-    topics: ["Norden", "penningpolitik", "Riksbanken", "Norges Bank", "detaljhandel"],
-    companies: ["H&M"],
-    tickers: ["HM B"],
+    topics: ["Norden", "Sverige", "Norge", "Danmark", "Finland", "penningpolitik", "Riksbanken", "Norges Bank"],
+    companies: ["Novo Nordisk", "H&M"],
+    tickers: ["NOVO B", "HM B"],
     relatedNewsSlugs: [
       "norden-i-centrum-19-september-2026",
       "norden-i-centrum-18-september-2026",
@@ -45,42 +49,60 @@ export const NORDEN_I_CENTRUM_20_SEPTEMBER_2026_ARTICLE: NewsArticle = {
   },
   showDisclaimer: true,
   intro: [
-    "Söndagens Norden i centrum blickar framåt. Nästa vecka samlas tre tydliga marknadshändelser på torsdagen den 24 september: H&M:s niomånadersrapport och nya penningpolitiska besked från både Sverige och Norge.",
-    "Det viktiga inför veckan är tidpunkterna – inte att föregripa utfallet. H&M publicerar 08.00 CEST, Riksbankens beslut offentliggörs 09.30 och Norges Banks räntebeslut samt penningpolitiska rapport kommer 10.00."
+    "Vecka 39 ger Norden flera tydliga marknadshändelser att följa. Danmark öppnar veckan med Novo Nordisks kapitalmarknadsdag i London på måndagen. På torsdagen flyttas tyngdpunkten till Sverige och Norge när H&M rapporterar före börsöppning och de båda centralbankerna publicerar nya penningpolitiska besked.",
+    "Det gör veckan bredare än en enskild svensk rapportdag. Läkemedel i Danmark, räntor och valutor i Sverige och Norge samt den finländska konjunkturbilden ger tillsammans flera pusselbitar för den som följer nordiska aktier. Här är de verifierade hållpunkterna inför veckan – utan att föregripa ännu okända utfall."
   ],
   sections: [
     {
-      heading: "H&M öppnar torsdagen med niomånadersrapport",
+      heading: "Danmark: Novo Nordisk öppnar veckan",
       paragraphs: [
-        "H&M Group publicerar sin niomånadersrapport för perioden 1 december 2025–31 augusti 2026 torsdagen den 24 september klockan 08.00 CEST. Bolaget har också lagt en webbsändning och telefonkonferens till 09.00.",
-        "För Stockholmsbörsen blir rapporten en av veckans tydligaste bolagshändelser. DivLab föregriper inte siffrorna; det som är verifierat på söndagsmorgonen är rapportdatumet, perioden och publiceringstiden."
+        "Novo Nordisk håller kapitalmarknadsdag i London måndagen den 21 september. Enligt bolagets investerarkalender pågår programmet 09.00–15.30 brittisk tid, motsvarande 10.00–16.30 centraleuropeisk tid, och sänds även digitalt.",
+        "Bolagsledningen ska ge en samlad genomgång av strategi, forsknings- och utvecklingsportfölj, verksamhet och utveckling. För Köpenhamnsbörsen gör det Novo Nordisk till en naturlig dansk hållpunkt redan under veckans första handelsdag. Fokus ligger på vad bolaget faktiskt presenterar – inte på förhandsgissningar om marknadens reaktion."
       ]
     },
     {
-      heading: "Riksbanken publicerar septemberbeskedet 09.30",
+      heading: "Sverige: H&M och Riksbanken delar på torsdagen",
       paragraphs: [
-        "Riksbankens direktion håller sitt penningpolitiska möte onsdagen den 23 september. Beslutet om penningpolitiken, inklusive styrräntan, publiceras torsdagen den 24 september klockan 09.30.",
-        "Samma dag hålls en pressträff 10.30. För svenska aktier, räntor och kronan blir beskedet en central hållpunkt, men själva ränteutfallet är ännu inte känt och beskrivs därför inte i förväg."
+        "Torsdagen den 24 september blir veckans mest koncentrerade svenska börsdag. H&M Group publicerar sin niomånadersrapport för perioden 1 december 2025–31 augusti 2026 klockan 08.00 CEST. En webbsändning och telefonkonferens följer klockan 09.00.",
+        "Klockan 09.30 publicerar Riksbanken sitt penningpolitiska beslut, inklusive styrräntan, tillsammans med den penningpolitiska rapporten för september. Pressträffen hålls 10.30. Det senaste beslutet i augusti lämnade styrräntan oförändrad på 1,75 procent, men torsdagens utfall är ännu inte känt och föregrips därför inte här.",
+        "För svenska marknaden innebär kalendern att bolagsrapportering och penningpolitik kommer tätt efter varandra. H&M ger en konkret avläsning från detaljhandeln, medan Riksbankens besked ger ny information om synen på inflation, konjunktur och ränteläge."
       ]
     },
     {
-      heading: "Norges Bank följer 10.00 med räntebeslut och ny rapport",
+      heading: "Norge: nytt räntebesked och ny penningpolitisk rapport",
       paragraphs: [
-        "Norges Bank offentliggör sitt räntebeslut och Pengepolitisk rapport torsdagen den 24 september klockan 10.00 efter kommitténs möte dagen före. Presskonferensen startar 10.30.",
-        "Det gör att Sverige och Norge får penningpolitiska besked inom en halvtimme på torsdagsförmiddagen. Norges Banks publicering innehåller dessutom en ny penningpolitisk rapport, vilket ger marknaden uppdaterade prognoser att analysera."
+        "Bara 30 minuter efter Riksbankens publicering följer Norges Bank. Torsdagen den 24 september klockan 10.00 offentliggörs det norska räntebeslutet tillsammans med Pengepolitisk rapport efter kommitténs möte dagen före. Presskonferensen börjar 10.30.",
+        "Den täta tidtabellen gör torsdagens förmiddag särskilt relevant för den som följer både svenska och norska räntor och valutor. Beskeden ska samtidigt bedömas var för sig: centralbankerna arbetar utifrån olika ekonomiska förutsättningar och inget av veckans beslut är känt på förhand."
       ]
     },
     {
-      heading: "DivLabs blick: torsdagen avgör veckans rytm",
+      heading: "Finland: konjunkturen är en viktig del av Nordenbilden",
       paragraphs: [
-        "Nästa nordiska börsvecka har därför en ovanligt tydlig koncentration. H&M kommer först, därefter Riksbanken och sedan Norges Bank – allt inom två timmar.",
-        "För läsaren är den säkra planen enkel: skilj mellan verifierade tider och ännu okända utfall. Veckans uppföljning ska bygga på de faktiska rapport- och räntebesked som publiceras, inte på förhandsgissningar."
+        "Finland har inte samma koncentration av stora bolags- och centralbankshändelser i den verifierade kalendern som Danmark, Sverige och Norge, men den finländska ekonomin hör ändå hemma i veckans nordiska helhetsbild.",
+        "Statistikcentralens senast publicerade nyckeltal visar att konsumentprisinflationen var 2,2 procent i augusti och att arbetslösheten uppgick till 9,9 procent i juli. På måndagens sida över kommande publiceringar finns dessutom nya finländska statistiksläpp under veckan. För Helsingforsbörsen är det därför värt att följa om ny statistik förändrar bilden av efterfrågan och konjunkturen."
+      ]
+    },
+    {
+      heading: "Fyra nordiska perspektiv – en gemensam vecka",
+      paragraphs: [
+        "Vecka 39 visar varför Norden bör betraktas som mer än Stockholmsbörsen. Danmark får ett tungt bolagsevent genom Novo Nordisk. Sverige kombinerar H&M:s rapport med ett nytt räntebesked. Norge publicerar både räntebeslut och ny penningpolitisk rapport. Finland bidrar med den bredare konjunkturbilden och kommande statistik.",
+        "Gemensamt är att räntor, valutor och stora bolag kan sätta tonen samtidigt. För investerare med nordiska innehav blir det därför viktigare att följa hur informationen skiljer sig mellan länderna än att försöka pressa in hela regionen i en enda marknadsberättelse."
+      ]
+    },
+    {
+      heading: "Fem saker att hålla koll på under V.39",
+      paragraphs: [
+        "Måndag: Novo Nordisks kapitalmarknadsdag ger Danmark veckans första stora bolagshändelse. Torsdag 08.00: H&M publicerar niomånadersrapport. Torsdag 09.30: Riksbanken publicerar penningpolitiskt beslut och rapport. Torsdag 10.00: Norges Bank följer med räntebeslut och Pengepolitisk rapport. Under veckan: följ även nya finländska statistiksläpp och hur den nordiska konjunkturbilden utvecklas.",
+        "Det är de faktiska publiceringarna som avgör nästa steg. DivLabs uppföljning under veckan utgår därför från verifierade rapporter, centralbanksbesked och officiell statistik när de finns publicerade."
       ]
     }
   ],
   sources: [
-    { text: "Riksbanken: septembermötet 23 september och publicering av penningpolitiskt beslut 24 september 09.30", href: "https://www.riksbank.se/sv/press-och-publicerat/nyheter-och-pressmeddelanden/pressmeddelanden/2026/det-penningpolitiska-motet-i-september-ager-rum-i-goteborg/" },
+    { text: "Novo Nordisk: Capital Markets Day 21 september 2026", href: "https://www.novonordisk.com/investors/financial-results.html" },
+    { text: "H&M Group: niomånadersrapport 24 september 2026 kl. 08.00 CEST", href: "https://hmgroup.com/investors-sv/finansiell-kalender/kommunikation-i-samband-med-kvartalsrapporten/" },
+    { text: "Riksbanken: penningpolitiskt beslut och rapport 24 september 2026 kl. 09.30", href: "https://www.riksbank.se/sv/press-och-publicerat/kalender/kalender-2026/2026-09-242/" },
+    { text: "Riksbanken: penningpolitiskt beslut augusti 2026 – styrränta 1,75 procent", href: "https://www.riksbank.se/sv/penningpolitik/penningpolitisk-rapport/2026/penningpolitiskt-beslut-augusti-2026/" },
     { text: "Norges Bank: räntebeslut och Pengepolitisk rapport 24 september 2026 kl. 10.00", href: "https://www.norges-bank.no/aktuelt/kalender/rentemoter/26-09-24/" },
-    { text: "H&M Group: niomånadersrapport 2026 publiceras 24 september kl. 08.00 CEST", href: "https://hmgroup.com/investors-sv/finansiell-kalender/kommunikation-i-samband-med-kvartalsrapporten/" }
+    { text: "Statistics Finland: aktuella nyckeltal och kommande statistikpubliceringar", href: "https://stat.fi/en" }
   ]
 };
