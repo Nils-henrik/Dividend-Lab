@@ -133,7 +133,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          gh workflow run autoredaktion-release.yml --ref main \
+          gh workflow run autoredaktion-release.yml --repo "$GITHUB_REPOSITORY" --ref main \
             -f head_branch="$HEAD_BRANCH" \
             -f head_sha="$HEAD_SHA" \
             -f run_conclusion="$GATE_CONCLUSION" \
