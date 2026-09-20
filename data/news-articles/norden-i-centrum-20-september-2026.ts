@@ -2,7 +2,7 @@ import type { NewsArticle } from "@/types/news";
 
 /**
  * Norden i centrum — 20 september 2026.
- * Editorial research cutoff: 2026-09-20T09:40:10+02:00
+ * Editorial research cutoff: 2026-09-20T09:37:30+02:00
  * P0_FACT_GATE=PASS
  * P0_SOURCE[primary]: https://www.novonordisk.com/investors/financial-results.html
  * P0_SOURCE[primary]: https://investor.maersk.com/events-and-presentations/events
@@ -27,8 +27,8 @@ export const NORDEN_I_CENTRUM_20_SEPTEMBER_2026_ARTICLE: NewsArticle = {
   summary: "Vecka 39 kombinerar flera stora nordiska bolag med två tunga räntebesked. Novo Nordisk håller kapitalmarknadsdag, H&M rapporterar, DNB har Q3 pre-close call och AstraZeneca möter investerare – samtidigt som Riksbanken och Norges Bank publicerar nya penningpolitiska besked.",
   category: "market",
   source: "DivLab Redaktion",
-  publishedAt: "2026-09-20T09:40:10+02:00",
-  updatedAt: "2026-09-20T09:40:10+02:00",
+  publishedAt: "2026-09-20T09:37:30+02:00",
+  updatedAt: "2026-09-20T09:37:30+02:00",
   url: "/news/norden-i-centrum-20-september-2026",
   featured: true,
   imageUrl: "/news/manual/norden-i-centrum-v39-2026-09-20.png",
