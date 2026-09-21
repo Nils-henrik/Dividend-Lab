@@ -18,6 +18,9 @@ export const BOLAGET_I_FOKUS_NOVO_NORDISK_21_SEPTEMBER_2026_ARTICLE: NewsArticle
   publishedAt: "2026-09-21T14:39:30+02:00",
   url: "/news/bolaget-i-fokus-novo-nordisk-cagrisema-21-september-2026",
   featured: true,
+  imageUrl: "/news/generated/bolaget-i-fokus-2026-09-21.png",
+  thumbnailImageUrl: "/news/generated/bolaget-i-fokus-2026-09-21.png",
+  imageAlt: "Bolaget i fokus 2026-09-21 – DivLabs artikel om dagens mest intressanta bolagshändelse.",
   readingMinutes: 4,
   seoTitle: "Novo Nordisk: CagriSema slår tirzepatid 5 mg i fas 3",
   seoDescription:
