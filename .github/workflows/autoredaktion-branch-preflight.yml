@@ -49,6 +49,7 @@ jobs:
           head_sha="$(git rev-parse HEAD)"
           merge_base="$(git merge-base "$base_sha" "$head_sha")"
           changed_files="$(git diff --name-only "$merge_base"..."$head_sha")"
+          commit_count="$(git rev-list --count "$base_sha".."$head_sha")"
           existing_prs="$(gh pr list --state all --base main --head "$GITHUB_REF_NAME" --limit 1 --json number --jq 'length')"
 
           echo "base_sha=$base_sha" >> "$GITHUB_OUTPUT"
@@ -56,23 +57,28 @@ jobs:
           echo "AUTOREDAKTION_BASE_SHA=$base_sha" >> "$GITHUB_ENV"
           echo "AUTOREDAKTION_BRANCH_NAME=$GITHUB_REF_NAME" >> "$GITHUB_ENV"
 
-          if [[ "$existing_prs" != "0" ]]; then
-            echo "mode=frozen" >> "$GITHUB_OUTPUT"
-            echo "Managed PR already exists; branch is frozen and this push receives no preflight status or mutation."
-            exit 0
-          fi
-
           if [[ -z "$changed_files" ]]; then
             echo "mode=empty" >> "$GITHUB_OUTPUT"
             echo "No branch-side publication diff exists; branch-create event is neutral."
             exit 0
           fi
 
-          echo "mode=candidate" >> "$GITHUB_OUTPUT"
           if ! git merge-base --is-ancestor "$base_sha" "$head_sha"; then
             echo "Publication branch is stale relative to current main. Refresh before PR creation." >&2
             exit 1
           fi
+
+          if [[ "$existing_prs" != "0" && "$commit_count" != "1" ]]; then
+            echo "mode=frozen" >> "$GITHUB_OUTPUT"
+            echo "Managed PR already exists; branch is frozen and this push receives no preflight status or mutation."
+            exit 0
+          fi
+
+          if [[ "$existing_prs" != "0" ]]; then
+            echo "Existing managed PR has one refreshed initial commit; deterministic preparation may resume on the same PR."
+          fi
+
+          echo "mode=candidate" >> "$GITHUB_OUTPUT"
 
       - name: Setup Node.js
         if: steps.candidate.outputs.mode == 'candidate'
