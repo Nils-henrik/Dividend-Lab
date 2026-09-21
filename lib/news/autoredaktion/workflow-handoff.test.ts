@@ -97,6 +97,8 @@ describe("Autoredaktion workflow handoff contract", () => {
     );
     const release = workflow(".github/workflows/autoredaktion-release.yml");
     assert.match(preflight, /Managed PR already exists; branch is frozen/);
+    assert.match(preflight, /existing_prs.*commit_count.*!=.*1/);
+    assert.match(preflight, /one refreshed initial commit/);
     assert.match(release, /Enforce immutable managed branch history/);
     assert.match(release, /AUTOREDAKTION_HEAD_SHA="\$head"/);
     assert.match(release, /Missing successful autoredaktion\/preflight status on \$pr_head/);
