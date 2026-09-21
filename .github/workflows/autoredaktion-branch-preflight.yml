@@ -245,18 +245,21 @@ jobs:
             > /tmp/autoredaktion-pr.json
           npm run autoredaktion:pr-policy -- /tmp/autoredaktion-pr.json
 
-          quality_runs_for_head() {
+          quality_dispatch_runs_for_head() {
             gh api --method GET "repos/$GITHUB_REPOSITORY/actions/workflows/quality-gate.yml/runs" \
               -f branch="$GITHUB_REF_NAME" \
               -f per_page=20 \
-              --jq "[.workflow_runs[] | select(.head_sha == \"$head\")] | length"
+              --jq "[.workflow_runs[] | select(.head_sha == \"$head\" and .event == \"workflow_dispatch\")] | length"
           }
 
-          run_count="$(quality_runs_for_head)"
+          # A PR opened with GITHUB_TOKEN may create a suppressed pull_request run
+          # before this step can inspect the run list. That run is not a handoff.
+          # Only an explicit workflow_dispatch proves that Quality Gate was started.
+          run_count="$(quality_dispatch_runs_for_head)"
           if [[ "$created_pr" != "true" && "$run_count" == "0" ]]; then
             for _ in 1 2 3 4; do
               sleep 5
-              run_count="$(quality_runs_for_head)"
+              run_count="$(quality_dispatch_runs_for_head)"
               [[ "$run_count" != "0" ]] && break
             done
           fi
@@ -269,5 +272,5 @@ jobs:
               -f pr_number="$pr"
             echo "Managed draft PR #$pr created/verified and Quality Gate dispatched for $head."
           else
-            echo "Managed draft PR #$pr already has $run_count Quality Gate run(s) for exact head $head; no duplicate dispatch."
+            echo "Managed draft PR #$pr already has $run_count explicitly dispatched Quality Gate run(s) for exact head $head; no duplicate dispatch."
           fi
