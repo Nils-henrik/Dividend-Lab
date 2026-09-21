@@ -61,6 +61,10 @@ describe("Autoredaktion workflow handoff contract", () => {
     assert.match(preflight, /--label autoredaktion/);
     assert.match(preflight, /gh workflow run quality-gate\.yml/);
     assert.match(preflight, /select\(\.head_sha ==/);
+    assert.match(
+      preflight,
+      /select\(\.head_sha == .* and \.event == \\"workflow_dispatch\\"\)/,
+    );
     assert.match(preflight, /no duplicate dispatch/i);
   });
 
