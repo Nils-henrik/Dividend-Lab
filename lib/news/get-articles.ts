@@ -1,3 +1,4 @@
+import { BOLAGET_I_FOKUS_NOVO_NORDISK_21_SEPTEMBER_2026_ARTICLE } from "@/data/news-articles/bolaget-i-fokus-21-september-2026";
 import { BORSSVERIGE_21_SEPTEMBER_2026_ARTICLE } from "@/data/news-articles/borssverige-21-september-2026";
 import { NORDEN_I_CENTRUM_21_SEPTEMBER_2026_ARTICLE } from "@/data/news-articles/norden-i-centrum-21-september-2026";
 import { NORDEN_I_CENTRUM_20_SEPTEMBER_2026_ARTICLE } from "@/data/news-articles/norden-i-centrum-20-september-2026";
@@ -80,6 +81,7 @@ function resolveNewsImagePath(path: string): string { return NEWS_IMAGE_ASSET_AL
 function resolveOptionalNewsImagePath(path: string | null | undefined): string | null | undefined { return path ? resolveNewsImagePath(path) : path; }
 function resolveNewsArticleImages(article: NewsArticle): NewsArticle { return { ...article, imageUrl: resolveOptionalNewsImagePath(article.imageUrl), thumbnailImageUrl: resolveOptionalNewsImagePath(article.thumbnailImageUrl), sections: article.sections?.map((section) => section.inlineImage ? { ...section, inlineImage: { ...section.inlineImage, src: resolveNewsImagePath(section.inlineImage.src) } } : section) }; }
 const PUBLISHED_NEWS_ARTICLES: NewsArticle[] = [
+  applyNewsSearchSeo(BOLAGET_I_FOKUS_NOVO_NORDISK_21_SEPTEMBER_2026_ARTICLE),
   applyNewsSearchSeo(BORSSVERIGE_21_SEPTEMBER_2026_ARTICLE),
   applyNewsSearchSeo(NORDEN_I_CENTRUM_21_SEPTEMBER_2026_ARTICLE),
   applyNewsSearchSeo(NORDEN_I_CENTRUM_20_SEPTEMBER_2026_ARTICLE),
