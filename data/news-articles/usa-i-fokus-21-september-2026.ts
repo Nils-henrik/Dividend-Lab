@@ -18,6 +18,9 @@ export const USA_I_FOKUS_21_SEPTEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-09-21T14:48:30+02:00",
   url: "/news/usa-i-fokus-21-september-2026-ai-olja-fed",
   featured: true,
+  imageUrl: "/news/generated/usa-i-fokus-2026-09-21.png",
+  thumbnailImageUrl: "/news/generated/usa-i-fokus-2026-09-21.png",
+  imageAlt: "USA i fokus 2026-09-21 – DivLabs översikt över den amerikanska börsmarknaden inför Wall Streets öppning.",
   readingMinutes: 4,
   seoTitle: "USA i fokus: Nasdaq-terminen upp när AI-aktier lyfter",
   seoDescription:
