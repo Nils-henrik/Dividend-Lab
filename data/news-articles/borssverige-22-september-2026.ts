@@ -21,7 +21,9 @@ export const BORSSVERIGE_22_SEPTEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-09-22T09:42:00+02:00",
   url: "/news/borssverige-22-september-2026",
   featured: true,
-  imageAlt: "BörsSverige 2026-09-22 – DivLabs översikt över svenska börsnyheter med Evolution, Viva Wine, H&M och Riksbanken.",
+  imageUrl: "/news/generated/borssverige-2026-09-22.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-09-22.png",
+  imageAlt: "BörsSverige 2026-09-22 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "BörsSverige 22 september: Evolution, Viva Wine och Riksbanken",
   seoDescription:
