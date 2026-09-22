@@ -6,7 +6,7 @@ import { useState } from "react";
 type Props = {
   name: string;
   logoPath: string | null;
-  size?: "compact" | "large";
+  size?: "compact" | "large" | "hero";
 };
 
 function getInitials(name: string) {
@@ -26,7 +26,12 @@ export default function CompanyLogo({
 }: Props) {
   const [failedPath, setFailedPath] = useState<string | null>(null);
   const showLogo = Boolean(logoPath && logoPath !== failedPath);
-  const dimensions = size === "large" ? "h-20 w-20" : "h-12 w-12";
+  const dimensions =
+    size === "hero"
+      ? "h-24 w-24 sm:h-28 sm:w-28"
+      : size === "large"
+        ? "h-20 w-20"
+        : "h-12 w-12";
 
   return (
     <span
@@ -37,8 +42,8 @@ export default function CompanyLogo({
         <Image
           src={logoPath ?? ""}
           alt=""
-          width={80}
-          height={80}
+          width={112}
+          height={112}
           className="h-full w-full object-contain p-3"
           onError={() => setFailedPath(logoPath)}
         />
@@ -50,4 +55,3 @@ export default function CompanyLogo({
     </span>
   );
 }
-

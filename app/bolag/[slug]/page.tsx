@@ -6,6 +6,7 @@ import { getAuthenticatedUser } from "@/lib/auth/session";
 import {
   getCompanyProfile,
   getPilotCompanies,
+  getRelatedCompanies,
 } from "@/lib/companies/catalog";
 import { getCompanyNews } from "@/lib/companies/news";
 import { getCompanyFollowState } from "@/lib/companies/server";
@@ -67,6 +68,7 @@ export default async function CompanyPage({ params }: Props) {
     Promise.resolve(getCompanyNews(company, getNewsArticles())),
     getCompanyFollowState(company.slug, user?.id),
   ]);
+  const relatedCompanies = getRelatedCompanies(company);
 
   return (
     <PublicContentShell>
@@ -75,6 +77,7 @@ export default async function CompanyPage({ params }: Props) {
         articles={articles}
         isAuthenticated={Boolean(user)}
         followState={followState}
+        relatedCompanies={relatedCompanies}
       />
     </PublicContentShell>
   );

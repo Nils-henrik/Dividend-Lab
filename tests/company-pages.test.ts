@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import { getCompanyProfile, getPilotCompanies } from "../lib/companies/catalog";
+import {
+  getCompanyProfile,
+  getPilotCompanies,
+  getRelatedCompanies,
+} from "../lib/companies/catalog";
 import { articleMatchesCompany, getCompanyNews } from "../lib/companies/news";
 import type { NewsArticle } from "../types/news";
 
@@ -29,6 +33,18 @@ test("pilotkatalogen har fem unika bolag och TradingView-symboler", () => {
   assert.equal(companies.length, 5);
   assert.equal(new Set(companies.map((company) => company.slug)).size, 5);
   assert.ok(companies.every((company) => company.tradingViewSymbol.includes(":")));
+  assert.ok(companies.every((company) => company.websiteUrl.startsWith("https://")));
+  assert.ok(companies.every((company) => company.description.length > 60));
+});
+
+test("relaterade bolag ger säkra interna länkar utan självreferenser", () => {
+  for (const company of getPilotCompanies()) {
+    const relatedCompanies = getRelatedCompanies(company);
+
+    assert.equal(relatedCompanies.length, 3);
+    assert.equal(new Set(relatedCompanies.map((item) => item.slug)).size, 3);
+    assert.ok(relatedCompanies.every((item) => item.slug !== company.slug));
+  }
 });
 
 test("bolagsartiklar matchas endast via explicit metadata", () => {
