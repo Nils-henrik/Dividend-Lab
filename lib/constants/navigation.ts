@@ -4,6 +4,12 @@ import type { NavigationItem } from "@/types/navigation";
 export const appNavigation: NavigationItem[] = [
   { label: "Översikt", href: "/dashboard", icon: "dashboard" },
   { label: "Börsnyheter", href: "/news", icon: "news" },
+  {
+    label: "Följda bolag",
+    href: "/watchlist",
+    icon: "watchlist",
+    statusLabel: "Ny",
+  },
   { label: "Portföljer", href: "/portfolios", icon: "portfolio", statusLabel: "Ny" },
   { label: "Forum", href: "/forum", icon: "forum" },
   { label: "Utbildning", href: "/learning", icon: "learning" },
@@ -62,7 +68,7 @@ export const pageTitles: Record<string, string> = {
   "/portfolio": "Modellportföljer",
   "/portfolios": "Modellportföljer",
   "/settings": "Inställningar",
-  "/watchlist": "Bevakningslista",
+  "/watchlist": "Följda bolag",
   "/profile": "Profil",
   "/dashboard/account": "Investeraridentitet",
   "/dashboard/brain": "DivBrain",
@@ -71,7 +77,7 @@ export const pageTitles: Record<string, string> = {
   "/dashboard/learning": "Utbildning",
   "/dashboard/portfolio": "Modellportföljer",
   "/dashboard/settings": "Inställningar",
-  "/dashboard/watchlist": "Bevakningslista",
+  "/dashboard/watchlist": "Följda bolag",
 };
 
 export function getPageTitle(pathname: string) {

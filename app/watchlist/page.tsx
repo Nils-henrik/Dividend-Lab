@@ -1,19 +1,23 @@
 import type { Metadata } from "next";
 import AppShell from "@/components/layout/AppShell";
-import PlaceholderPage from "@/components/dashboard/PlaceholderPage";
+import CompanyWatchlist from "@/components/companies/CompanyWatchlist";
+import { requireAuthenticatedUser } from "@/lib/auth/session";
+import { getFollowedCompanies } from "@/lib/companies/server";
 import { noIndexMetadata } from "@/lib/seo/robots-metadata";
 
 export const metadata: Metadata = noIndexMetadata("Bevakningslista");
 
-export default function WatchlistPage() {
+export const dynamic = "force-dynamic";
+
+export default async function WatchlistPage() {
+  const user = await requireAuthenticatedUser();
+  const watchlist = await getFollowedCompanies(user.id);
+
   return (
-    <AppShell>
-      <PlaceholderPage
-        title="Bevakningslista"
-        statusLabel="Planerat"
-        description="Bevakningslistan är under planering. När den lanseras hjälper den dig följa bolag över tid — utan att förvandla DivLab till ett handelsverktyg."
-        backHref="/news"
-        backLabel="Till Börsnyheter"
+    <AppShell user={user}>
+      <CompanyWatchlist
+        companies={watchlist.companies}
+        isAvailable={watchlist.isAvailable}
       />
     </AppShell>
   );
