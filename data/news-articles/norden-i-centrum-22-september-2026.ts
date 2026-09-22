@@ -19,6 +19,8 @@ export const NORDEN_I_CENTRUM_22_SEPTEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-09-22T09:31:00+02:00",
   url: "/news/norden-i-centrum-22-september-2026",
   featured: true,
+  imageUrl: "/news/generated/norden-i-centrum-2026-09-22.png",
+  thumbnailImageUrl: "/news/generated/norden-i-centrum-2026-09-22.png",
   imageAlt: "Norden i centrum 2026-09-22 – DivLabs morgonöversikt över nordiska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Norden i centrum 22 september: Novo, Vestas och AI-rally",
