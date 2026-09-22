@@ -234,3 +234,18 @@ test("första följningen köar privat import och sista avföljningen avbryter v
     /grant execute on function public\.recover_stale_company_ingestion_jobs\(\)\s+to service_role/,
   );
 });
+
+test("dokumentkällans sammansatta FK har ett täckande index", () => {
+  const migration = readFileSync(
+    new URL(
+      "../supabase/migrations/20260922160607_index_company_documents_source.sql",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+
+  assert.match(
+    migration,
+    /create index company_documents_source_company_idx\s+on public\.company_documents \(company_id, source_id\)/,
+  );
+});
