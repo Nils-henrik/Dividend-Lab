@@ -4,9 +4,21 @@ export type CompanyProfile = {
   ticker: string;
   exchange: string;
   countryCode: string;
+  countryName: string;
+  segment: string;
+  sector: string;
+  founded: string;
+  headquarters: string;
+  shortDescription: string;
+  description: string;
+  websiteLabel: string;
+  websiteUrl: string;
+  pressReleasesUrl: string;
+  reportsUrl: string;
+  calendarUrl: string;
+  relatedSlugs: readonly string[];
   tradingViewSymbol: string;
   logoPath: string | null;
   aliases: string[];
   tickerAliases: string[];
 };
-
