@@ -1,6 +1,7 @@
 export type CompanyProfile = {
   slug: string;
   name: string;
+  displayName: string;
   ticker: string;
   exchange: string;
   countryCode: string;
@@ -16,8 +17,13 @@ export type CompanyProfile = {
   pressReleasesUrl: string;
   reportsUrl: string;
   calendarUrl: string;
+  ownershipUrl?: string;
+  governanceUrl?: string;
+  linkedinUrl?: string;
+  xUrl?: string;
   relatedSlugs: readonly string[];
   tradingViewSymbol: string;
+  marketDataSymbol: string;
   logoPath: string | null;
   aliases: string[];
   tickerAliases: string[];

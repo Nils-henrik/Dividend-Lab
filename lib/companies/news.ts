@@ -26,7 +26,10 @@ export function articleMatchesCompany(
     ) === true ||
     article.internalLinking?.tickers?.some((ticker) =>
       tickerKeys.has(normalize(ticker)),
-    ) === true
+    ) === true ||
+    [...companyKeys].some((key) =>
+      key.length >= 5 && normalize(article.title).includes(key),
+    )
   );
 }
 
@@ -39,4 +42,3 @@ export function getCompanyNews(
     .filter((article) => articleMatchesCompany(article, company))
     .slice(0, limit);
 }
-

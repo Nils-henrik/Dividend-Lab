@@ -4,6 +4,7 @@ const PILOT_COMPANIES = [
   {
     slug: "investor",
     name: "Investor",
+    displayName: "Investor B",
     ticker: "INVE B",
     exchange: "Nasdaq Stockholm",
     countryCode: "SE",
@@ -24,8 +25,14 @@ const PILOT_COMPANIES = [
       "https://www.investorab.com/investors-media/reports-presentations/",
     calendarUrl:
       "https://www.investorab.com/investors-media/events-calendar",
+    ownershipUrl:
+      "https://www.investorab.com/investors-media/the-investor-share/ownership-structure",
+    governanceUrl:
+      "https://www.investorab.com/about-investor/board-management/executive-leadership-team",
+    linkedinUrl: "https://www.linkedin.com/company/investor-ab",
     relatedSlugs: ["atlas-copco", "ericsson", "volvo"],
     tradingViewSymbol: "OMXSTO:INVE_B",
+    marketDataSymbol: "INVE-B.ST",
     logoPath: "/company-logos/investor.svg",
     aliases: ["Investor", "Investor AB"],
     tickerAliases: ["INVE B", "INVE-B", "INVE_B"],
@@ -33,6 +40,7 @@ const PILOT_COMPANIES = [
   {
     slug: "volvo",
     name: "Volvo",
+    displayName: "Volvo B",
     ticker: "VOLV B",
     exchange: "Nasdaq Stockholm",
     countryCode: "SE",
@@ -54,6 +62,7 @@ const PILOT_COMPANIES = [
       "https://www.volvogroup.com/en/investors/financial-calendar.html",
     relatedSlugs: ["atlas-copco", "ericsson", "investor"],
     tradingViewSymbol: "OMXSTO:VOLV_B",
+    marketDataSymbol: "VOLV-B.ST",
     logoPath: "/company-logos/volvo.svg",
     aliases: ["Volvo", "AB Volvo", "Volvo Group"],
     tickerAliases: ["VOLV B", "VOLV-B", "VOLV_B"],
@@ -61,6 +70,7 @@ const PILOT_COMPANIES = [
   {
     slug: "ericsson",
     name: "Ericsson",
+    displayName: "Ericsson B",
     ticker: "ERIC B",
     exchange: "Nasdaq Stockholm",
     countryCode: "SE",
@@ -82,6 +92,7 @@ const PILOT_COMPANIES = [
     calendarUrl: "https://www.ericsson.com/en/investors/financial-calendar",
     relatedSlugs: ["investor", "volvo", "atlas-copco"],
     tradingViewSymbol: "OMXSTO:ERIC_B",
+    marketDataSymbol: "ERIC-B.ST",
     logoPath: "/company-logos/ericsson.svg",
     aliases: ["Ericsson", "Telefonaktiebolaget LM Ericsson"],
     tickerAliases: ["ERIC B", "ERIC-B", "ERIC_B"],
@@ -89,6 +100,7 @@ const PILOT_COMPANIES = [
   {
     slug: "atlas-copco",
     name: "Atlas Copco",
+    displayName: "Atlas Copco A",
     ticker: "ATCO A",
     exchange: "Nasdaq Stockholm",
     countryCode: "SE",
@@ -111,6 +123,7 @@ const PILOT_COMPANIES = [
       "https://www.atlascopcogroup.com/en/investors/calendar-and-events",
     relatedSlugs: ["volvo", "investor", "ericsson"],
     tradingViewSymbol: "OMXSTO:ATCO_A",
+    marketDataSymbol: "ATCO-A.ST",
     logoPath: null,
     aliases: ["Atlas Copco", "Atlas Copco AB"],
     tickerAliases: ["ATCO A", "ATCO-A", "ATCO_A"],
@@ -118,6 +131,7 @@ const PILOT_COMPANIES = [
   {
     slug: "astrazeneca",
     name: "AstraZeneca",
+    displayName: "AstraZeneca",
     ticker: "AZN",
     exchange: "Nasdaq Stockholm",
     countryCode: "SE",
@@ -140,6 +154,7 @@ const PILOT_COMPANIES = [
       "https://www.astrazeneca.com/investor-relations/events.html",
     relatedSlugs: ["investor", "ericsson", "atlas-copco"],
     tradingViewSymbol: "OMXSTO:AZN",
+    marketDataSymbol: "AZN.ST",
     logoPath: null,
     aliases: ["AstraZeneca", "AstraZeneca PLC"],
     tickerAliases: ["AZN"],
