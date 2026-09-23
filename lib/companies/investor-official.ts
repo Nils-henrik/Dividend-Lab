@@ -1,5 +1,3 @@
-import "server-only";
-
 const INVESTOR_ORIGIN = "https://www.investorab.com";
 const PRESS_RELEASES_URL =
   "https://vp053.alertir.com/v4/en/press-releases?origin=https://investorab-new.euwest01.umbraco.io/investors-media/press-releases";
