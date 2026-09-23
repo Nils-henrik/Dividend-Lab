@@ -21,7 +21,9 @@ export const BORSSVERIGE_23_SEPTEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-09-23T11:58:50+02:00",
   url: "/news/borssverige-23-september-2026",
   featured: true,
-  imageAlt: "BörsSverige 2026-09-23 – DivLabs översikt över svenska börsnyheter.",
+  imageUrl: "/news/generated/borssverige-2026-09-23.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-09-23.png",
+  imageAlt: "BörsSverige 2026-09-23 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "BörsSverige 23 september: Svevik, Evolution och NYAB",
   seoDescription:
