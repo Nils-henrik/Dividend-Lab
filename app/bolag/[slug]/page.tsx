@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import CompanyPageContent from "@/components/companies/CompanyPageContent";
-import PublicContentShell from "@/components/layout/PublicContentShell";
+import AppShell from "@/components/layout/AppShell";
 import { getAuthenticatedUser } from "@/lib/auth/session";
 import {
   getCompanyProfile,
@@ -79,7 +79,7 @@ export default async function CompanyPage({ params }: Props) {
   ]);
 
   return (
-    <PublicContentShell>
+    <AppShell allowGuest>
       <CompanyPageContent
         company={company}
         articles={articles}
@@ -90,6 +90,6 @@ export default async function CompanyPage({ params }: Props) {
         relatedMarketData={relatedMarketData}
         officialData={officialData}
       />
-    </PublicContentShell>
+    </AppShell>
   );
 }

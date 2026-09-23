@@ -41,7 +41,7 @@ function money(value: number | null, currency = "SEK") {
 
 function compactSek(value: number | null) {
   if (value === null) return "—";
-  return `${new Intl.NumberFormat("sv-SE", { notation: "compact", maximumFractionDigits: 1 }).format(value)} SEK`;
+  if (value >= 1_000_000_000) return `${number(value / 1_000_000_000, { maximumFractionDigits: 0 })} md SEK`;\n  return `${number(value / 1_000_000, { maximumFractionDigits: 0 })} mn SEK`;
 }
 
 function percent(value: number | null, signed = false) {
@@ -108,7 +108,7 @@ export default function CompanyPageContent({ company, articles, isAuthenticated,
 
       <section className="divlab-card p-5 sm:p-6">
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-center">
-          <div className="flex min-w-0 flex-col gap-5 sm:flex-row sm:items-center"><CompanyLogo name={company.name} logoPath={company.logoPath} size="hero" /><div className="min-w-0">
+          <div className="flex min-w-0 flex-col gap-5 sm:flex-row sm:items-center">{company.slug === "investor" ? <span aria-hidden="true" className="flex h-24 w-24 shrink-0 items-center justify-center rounded-2xl bg-[#063b78] text-xl font-bold text-white shadow-sm sm:h-28 sm:w-28">Investor</span> : <CompanyLogo name={company.name} logoPath={company.logoPath} size="hero" />}<div className="min-w-0">
             <div className="flex gap-2"><span className="rounded-md bg-divlab-elevated px-2 py-1 text-[10px] font-semibold uppercase text-divlab-text-secondary">Aktie</span><span className="rounded-md bg-divlab-elevated px-2 py-1 text-[10px] font-semibold text-divlab-text-secondary">{company.segment}</span></div>
             <h1 className="mt-2 text-3xl font-bold tracking-[-0.045em] text-divlab-text sm:text-[38px]">{company.displayName}</h1>
             <p className="mt-1 text-sm text-divlab-text-secondary">{company.ticker} <span className="px-1">•</span> {company.exchange}</p>
@@ -125,7 +125,7 @@ export default function CompanyPageContent({ company, articles, isAuthenticated,
         <main className="min-w-0 space-y-4">
           <section id="kursutveckling" className="divlab-card overflow-hidden scroll-mt-28">
             <nav className="flex gap-1 overflow-x-auto border-b divlab-border-neutral px-4 pt-1" aria-label="Bolagsinformation">{PAGE_TABS.map(([label, href], index) => <a key={href} href={href} className={`shrink-0 border-b-2 px-3 py-3 text-[11px] font-semibold ${index === 0 ? "border-divlab-blue text-divlab-blue" : "border-transparent text-divlab-text-muted hover:text-divlab-text"}`}>{label}</a>)}</nav>
-            <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-4"><div className="flex gap-2 overflow-x-auto">{["1D", "1V", "1M", "3M", "1Å", "3Å", "5Å", "MAX"].map((range, index) => <span key={range} className={`shrink-0 rounded-lg px-3 py-2 text-[10px] font-semibold ${index === 0 ? "bg-divlab-blue text-white" : "bg-divlab-elevated text-divlab-text-secondary"}`}>{range}</span>)}</div><a href={marketData.sourceUrl} target="_blank" rel="noopener noreferrer" className="rounded-lg border divlab-border-neutral px-3 py-2 text-[10px] font-medium text-divlab-text-secondary">Källa: Yahoo Finance ↗</a></div>
+            <div className="flex justify-end px-5 pt-4"><a href={marketData.sourceUrl} target="_blank" rel="noopener noreferrer" className="rounded-lg border divlab-border-neutral px-3 py-2 text-[10px] font-medium text-divlab-text-secondary">Källa: Yahoo Finance ↗</a></div>
             <div className="px-2 pb-2 pt-1 sm:px-4"><CompanyPriceChart companyName={company.displayName} symbol={company.tradingViewSymbol} /></div>
           </section>
 
