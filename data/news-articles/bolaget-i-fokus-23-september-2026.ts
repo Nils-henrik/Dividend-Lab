@@ -18,7 +18,9 @@ export const BOLAGET_I_FOKUS_NYAB_23_SEPTEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-09-23T12:07:30+02:00",
   url: "/news/bolaget-i-fokus-nyab-23-september-2026",
   featured: true,
-  imageAlt: "Bolaget i fokus 2026-09-23 – DivLabs fördjupning om NYAB och avtalet med Svenska kraftnät.",
+  imageUrl: "/news/generated/bolaget-i-fokus-2026-09-23.png",
+  thumbnailImageUrl: "/news/generated/bolaget-i-fokus-2026-09-23.png",
+  imageAlt: "Bolaget i fokus 2026-09-23 – DivLabs artikel om dagens mest intressanta bolagshändelse.",
   readingMinutes: 4,
   seoTitle: "NYAB får avtal på 1,6 miljarder med Svenska kraftnät",
   seoDescription:
