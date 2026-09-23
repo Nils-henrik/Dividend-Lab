@@ -23,6 +23,9 @@ export const USA_I_FOKUS_23_SEPTEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-09-23T20:30:30+02:00",
   url: "/news/usa-i-fokus-23-september-2026-ranta-tech-meta-muse",
   featured: true,
+  imageUrl: "/news/generated/usa-i-fokus-2026-09-23.png",
+  thumbnailImageUrl: "/news/generated/usa-i-fokus-2026-09-23.png",
+  imageAlt: "USA i fokus 2026-09-23 – DivLabs översikt över den amerikanska börsmarknaden inför Wall Streets öppning.",
   readingMinutes: 8,
   seoTitle: "USA i fokus: Räntan pressar tech – Meta trotsar fallet",
   seoDescription:
