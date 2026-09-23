@@ -25,7 +25,7 @@ function buildWidgetConfig(
     symbols: [[companyName, `${symbol}|1D`]],
     chartOnly: false,
     width: "100%",
-    height: "460",
+    height: "360",
     locale: "sv",
     colorTheme: theme,
     autosize: false,
@@ -109,7 +109,7 @@ export default function CompanyPriceChart({ companyName, symbol }: Props) {
   return (
     <div
       ref={containerRef}
-      className="min-h-[460px] overflow-hidden rounded-xl bg-divlab-surface"
+      className="min-h-[360px] overflow-hidden rounded-xl bg-divlab-surface"
       aria-label={`Kursgraf för ${companyName}`}
       aria-busy={!theme}
     />

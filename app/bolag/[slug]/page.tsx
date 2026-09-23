@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import CompanyPageContent from "@/components/companies/CompanyPageContent";
-import PublicContentShell from "@/components/layout/PublicContentShell";
+import AppShell from "@/components/layout/AppShell";
 import { getAuthenticatedUser } from "@/lib/auth/session";
 import {
   getCompanyProfile,
@@ -9,6 +9,11 @@ import {
   getRelatedCompanies,
 } from "@/lib/companies/catalog";
 import { getCompanyNews } from "@/lib/companies/news";
+import { getInvestorOfficialData } from "@/lib/companies/investor-official";
+import {
+  getCompanyMarketData,
+  getRelatedCompanyMarketData,
+} from "@/lib/companies/market-data";
 import { getCompanyFollowState } from "@/lib/companies/server";
 import { getNewsArticles } from "@/lib/news/get-articles";
 import { getCanonicalUrl } from "@/lib/seo/canonical";
@@ -64,21 +69,27 @@ export default async function CompanyPage({ params }: Props) {
   }
 
   const user = await getAuthenticatedUser();
-  const [articles, followState] = await Promise.all([
+  const relatedCompanies = getRelatedCompanies(company);
+  const [articles, followState, marketData, relatedMarketData, officialData] = await Promise.all([
     Promise.resolve(getCompanyNews(company, getNewsArticles())),
     getCompanyFollowState(company.slug, user?.id),
+    getCompanyMarketData(company),
+    getRelatedCompanyMarketData(relatedCompanies),
+    company.slug === "investor" ? getInvestorOfficialData() : Promise.resolve(null),
   ]);
-  const relatedCompanies = getRelatedCompanies(company);
 
   return (
-    <PublicContentShell>
+    <AppShell allowGuest>
       <CompanyPageContent
         company={company}
         articles={articles}
         isAuthenticated={Boolean(user)}
         followState={followState}
         relatedCompanies={relatedCompanies}
+        marketData={marketData}
+        relatedMarketData={relatedMarketData}
+        officialData={officialData}
       />
-    </PublicContentShell>
+    </AppShell>
   );
 }
