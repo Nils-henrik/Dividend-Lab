@@ -41,7 +41,8 @@ function money(value: number | null, currency = "SEK") {
 
 function compactSek(value: number | null) {
   if (value === null) return "—";
-  if (value >= 1_000_000_000) return `${number(value / 1_000_000_000, { maximumFractionDigits: 0 })} md SEK`;\n  return `${number(value / 1_000_000, { maximumFractionDigits: 0 })} mn SEK`;
+  if (value >= 1_000_000_000) return `${number(value / 1_000_000_000, { maximumFractionDigits: 0 })} md SEK`;
+  return `${number(value / 1_000_000, { maximumFractionDigits: 0 })} mn SEK`;
 }
 
 function percent(value: number | null, signed = false) {
