@@ -27,14 +27,82 @@ function article(
   };
 }
 
-test("pilotkatalogen har fem unika bolag och TradingView-symboler", () => {
-  const companies = getPilotCompanies();
+const ORIGINAL_PILOT_SLUGS = [
+  "investor",
+  "volvo",
+  "ericsson",
+  "atlas-copco",
+  "astrazeneca",
+] as const;
 
-  assert.equal(companies.length, 5);
-  assert.equal(new Set(companies.map((company) => company.slug)).size, 5);
-  assert.ok(companies.every((company) => company.tradingViewSymbol.includes(":")));
-  assert.ok(companies.every((company) => company.websiteUrl.startsWith("https://")));
-  assert.ok(companies.every((company) => company.description.length > 60));
+const OMXS30_EXPANSION_SLUGS = [
+  "abb",
+  "addtech",
+  "alfa-laval",
+  "assa-abloy",
+  "boliden",
+  "epiroc",
+  "eqt",
+  "essity",
+  "evolution",
+  "handelsbanken",
+  "hexagon",
+  "hm",
+  "industrivarden",
+  "lifco",
+  "nibe",
+  "nordea",
+  "saab",
+  "sandvik",
+  "sca",
+  "seb",
+  "skanska",
+  "skf",
+  "swedbank",
+  "tele2",
+  "telia",
+] as const;
+
+test("följbara bolag är hela OMXS30 utan dubbletter eller påhittad kursdata", () => {
+  const companies = getPilotCompanies();
+  const slugs = companies.map((company) => company.slug);
+  const tickers = companies.map((company) => company.ticker.toUpperCase());
+  const tradingViewPattern = /^[A-Z0-9_.-]+:[A-Z0-9_.-]+$/;
+
+  assert.equal(companies.length, 30);
+  assert.equal(new Set(slugs).size, 30);
+  assert.equal(new Set(tickers).size, 30);
+  assert.deepEqual(
+    ORIGINAL_PILOT_SLUGS.filter((slug) => slugs.includes(slug)),
+    [...ORIGINAL_PILOT_SLUGS],
+  );
+  assert.deepEqual(
+    OMXS30_EXPANSION_SLUGS.filter((slug) => slugs.includes(slug)),
+    [...OMXS30_EXPANSION_SLUGS],
+  );
+
+  for (const company of companies) {
+    assert.match(company.slug, /^[a-z0-9]+(?:-[a-z0-9]+)*$/);
+    assert.match(company.tradingViewSymbol, tradingViewPattern);
+    assert.match(company.marketDataSymbol, /^[A-Z0-9-]+\.ST$/);
+    assert.equal(company.exchange, "Nasdaq Stockholm");
+    assert.equal(company.countryCode, "SE");
+    assert.ok(company.websiteUrl.startsWith("https://"));
+    assert.ok(company.pressReleasesUrl.startsWith("https://"));
+    assert.ok(company.reportsUrl.startsWith("https://"));
+    assert.ok(company.calendarUrl.startsWith("https://"));
+    assert.ok(company.description.length > 60);
+    assert.equal(
+      JSON.stringify(company).match(/placeholder|mock|lorem|fake/i),
+      null,
+    );
+  }
+});
+
+test("okänt bolag saknar profil och kan därför ge 404", () => {
+  assert.equal(getCompanyProfile("does-not-exist"), null);
+  assert.equal(getCompanyProfile("atlas-copco")?.slug, "atlas-copco");
+  assert.equal(getCompanyProfile("addtech")?.slug, "addtech");
 });
 
 test("relaterade bolag ger säkra interna länkar utan självreferenser", () => {
@@ -127,7 +195,9 @@ test("pilotbolagen har tre verifierade officiella källor var", () => {
     "www.astrazeneca.com",
   ];
 
-  for (const company of getPilotCompanies()) {
+  for (const slug of ORIGINAL_PILOT_SLUGS) {
+    const company = getCompanyProfile(slug);
+    assert.ok(company);
     assert.equal(
       migration.match(new RegExp(`'${company.slug}'`, "g"))?.length,
       3,

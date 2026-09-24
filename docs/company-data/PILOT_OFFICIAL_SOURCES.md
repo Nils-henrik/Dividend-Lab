@@ -1,6 +1,12 @@
 # Officiella bolagskällor – pilot
 
-Senast verifierad: 2026-09-21
+Senast verifierad: 2026-09-24
+
+Följbara bolagssidor omfattar hela OMXS30 (30 bolag) via
+`lib/companies/catalog.ts`. De fem bolagen nedan är fortfarande de enda med
+verifierade hämtningsadaptrar och rader i `company_sources`. Övriga OMXS30-bolag
+kan följas, men ett nytt följ skapar inte ett importjobb förrän en officiell
+källa och en testad adapter finns.
 
 Det här registret är startpunkten för DivLabs billiga bolagsbevakning. Varje
 pilotbolag har en officiell sida för pressmeddelanden, finansiella rapporter och
