@@ -140,6 +140,9 @@ describe("company ingestion v2", () => {
       "saab",
       "sandvik",
       "sca",
+      "evolution",
+      "essity",
+      "hm",
     ]);
     assert.equal(isSupportedCompanyIngestionSlug("volvo"), true);
     assert.equal(isSupportedCompanyIngestionSlug("atlas copco"), false);

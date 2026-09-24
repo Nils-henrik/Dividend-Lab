@@ -34,6 +34,30 @@ import {
   parseInvestorIngestionPressReleases,
 } from "@/lib/companies/ingestion/adapters/investor";
 import {
+  ESSITY_CALENDAR_SOURCE_URL,
+  ESSITY_ORIGIN,
+  ESSITY_PRESS_RELEASE_SOURCE_URL,
+  ESSITY_REPORTS_SOURCE_URL,
+  EVOLUTION_CALENDAR_SOURCE_URL,
+  EVOLUTION_DOCUMENT_ORIGIN,
+  EVOLUTION_ORIGIN,
+  EVOLUTION_PRESS_RELEASE_SOURCE_URL,
+  EVOLUTION_REPORTS_SOURCE_URL,
+  HM_CALENDAR_SOURCE_URL,
+  HM_ORIGIN,
+  HM_PRESS_RELEASE_SOURCE_URL,
+  HM_REPORTS_SOURCE_URL,
+  parseEssityCalendar,
+  parseEssityFinancialReports,
+  parseEssityPressReleases,
+  parseEvolutionCalendar,
+  parseEvolutionFinancialReports,
+  parseEvolutionPressReleases,
+  parseHmCalendar,
+  parseHmFinancialReports,
+  parseHmPressReleases,
+} from "@/lib/companies/ingestion/adapters/omxs30-fast-lane";
+import {
   SAAB_CALENDAR_SOURCE_URL,
   SAAB_ORIGIN,
   SAAB_PRESS_RELEASE_SOURCE_URL,
@@ -137,6 +161,21 @@ const EXPECTED_SOURCE_URLS: Record<
     financial_reports: SCA_REPORTS_SOURCE_URL,
     financial_calendar: SCA_CALENDAR_SOURCE_URL,
   },
+  evolution: {
+    press_releases: EVOLUTION_PRESS_RELEASE_SOURCE_URL,
+    financial_reports: EVOLUTION_REPORTS_SOURCE_URL,
+    financial_calendar: EVOLUTION_CALENDAR_SOURCE_URL,
+  },
+  essity: {
+    press_releases: ESSITY_PRESS_RELEASE_SOURCE_URL,
+    financial_reports: ESSITY_REPORTS_SOURCE_URL,
+    financial_calendar: ESSITY_CALENDAR_SOURCE_URL,
+  },
+  hm: {
+    press_releases: HM_PRESS_RELEASE_SOURCE_URL,
+    financial_reports: HM_REPORTS_SOURCE_URL,
+    financial_calendar: HM_CALENDAR_SOURCE_URL,
+  },
 };
 
 const ALLOWED_ORIGINS: Record<SupportedCompanyIngestionSlug, readonly string[]> = {
@@ -148,6 +187,9 @@ const ALLOWED_ORIGINS: Record<SupportedCompanyIngestionSlug, readonly string[]> 
   saab: [SAAB_ORIGIN],
   sandvik: [SANDVIK_ORIGIN],
   sca: [SCA_ORIGIN],
+  evolution: [EVOLUTION_ORIGIN, EVOLUTION_DOCUMENT_ORIGIN],
+  essity: [ESSITY_ORIGIN],
+  hm: [HM_ORIGIN],
 };
 
 function fetchFailure(prefix: string, reason: string): CollectedCompanySource {
@@ -264,6 +306,57 @@ export async function collectCompanySource(
           press_releases: parseSandvikPressReleases,
           financial_reports: parseSandvikFinancialReports,
           financial_calendar: (html) => parseSandvikCalendar(html, context.now),
+        },
+        context,
+        origins,
+      );
+    case "evolution":
+      return collectStaticPage(
+        source.sourceType,
+        EVOLUTION_ORIGIN,
+        {
+          press_releases: EVOLUTION_PRESS_RELEASE_SOURCE_URL,
+          financial_reports: EVOLUTION_REPORTS_SOURCE_URL,
+          financial_calendar: EVOLUTION_CALENDAR_SOURCE_URL,
+        },
+        {
+          press_releases: parseEvolutionPressReleases,
+          financial_reports: parseEvolutionFinancialReports,
+          financial_calendar: (html) => parseEvolutionCalendar(html, context.now),
+        },
+        context,
+        origins,
+      );
+    case "essity":
+      return collectStaticPage(
+        source.sourceType,
+        ESSITY_ORIGIN,
+        {
+          press_releases: ESSITY_PRESS_RELEASE_SOURCE_URL,
+          financial_reports: ESSITY_REPORTS_SOURCE_URL,
+          financial_calendar: ESSITY_CALENDAR_SOURCE_URL,
+        },
+        {
+          press_releases: parseEssityPressReleases,
+          financial_reports: parseEssityFinancialReports,
+          financial_calendar: (html) => parseEssityCalendar(html, context.now),
+        },
+        context,
+        origins,
+      );
+    case "hm":
+      return collectStaticPage(
+        source.sourceType,
+        HM_ORIGIN,
+        {
+          press_releases: HM_PRESS_RELEASE_SOURCE_URL,
+          financial_reports: HM_REPORTS_SOURCE_URL,
+          financial_calendar: HM_CALENDAR_SOURCE_URL,
+        },
+        {
+          press_releases: parseHmPressReleases,
+          financial_reports: parseHmFinancialReports,
+          financial_calendar: (html) => parseHmCalendar(html, context.now),
         },
         context,
         origins,

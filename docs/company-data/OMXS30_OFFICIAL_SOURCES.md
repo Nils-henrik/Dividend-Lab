@@ -58,3 +58,43 @@ eller JavaScript-rendering.
 | Swedbank | Press, rapporter och kalender saknar dokumentlänkar i HTML. |
 | Tele2 | `https://www.tele2.com/investors/` och `/media/` returnerar skal utan dokumentlänkar. |
 | Telia | `https://www.teliacompany.com/en/investors` och nyhetsrummet returnerar skal utan dokumentlänkar. |
+
+## Fast lane 2026-09-24
+
+Migrationen `20260924220000_seed_omxs30_fast_lane_company_sources.sql` aktiverar
+bara bolag där press, rapporter och kalender alla kunde läsas från officiell
+HTML med riktiga datum. Befintliga pilot-, Saab-, Sandvik- och SCA-källor rörs
+inte.
+
+| Bolag | Typ | URL | Dokumentorigin |
+| --- | --- | --- | --- |
+| Evolution | press_releases | https://www.evolution.com/investors/financial-publications/press-releases | https://www.evolution.com |
+| Evolution | financial_reports | https://www.evolution.com/investors/financial-publications/reports | https://www.evolution.com och https://storage.mfn.se |
+| Evolution | financial_calendar | https://www.evolution.com/investors/financial-data/financial-calendar | https://www.evolution.com |
+| Essity | press_releases | https://www.essity.com/media/press-releases/ | https://www.essity.com |
+| Essity | financial_reports | https://www.essity.com/investors/financial-reports/interim-reports/ | https://www.essity.com |
+| Essity | financial_calendar | https://www.essity.com/investors/calendar/ | https://www.essity.com |
+| H&M | press_releases | https://hmgroup.com/media/news/ | https://hmgroup.com |
+| H&M | financial_reports | https://hmgroup.com/investors/ | https://hmgroup.com |
+| H&M | financial_calendar | https://hmgroup.com/investors/financial-calendar/ | https://hmgroup.com |
+
+`storage.mfn.se` är allowlistad bara för Evolution-rapportens PDF när länken
+står på den officiella rapportsidan och saknar query-sträng. Kalenderposter
+utan egen sida pekar på ett fragment av den officiella kalendersidan.
+
+H&M:s arkiv `https://hmgroup.com/investors/reports/` listar PDF:er utan
+publiceringsdatum. De daterade rapporterna står på IR-sidan och är därför den
+verifierade rapportkällan.
+
+## Fortfarande blockerade i fast lane
+
+| Bolag | Förstapartssida | Teknisk orsak |
+| --- | --- | --- |
+| Addtech | https://www.addtech.com/investors-and-media/press-releases | Listan fylls av Cision-widgeten mot `https://publish.ne.cision.com/papi/`. Årsredovisningarna på https://www.addtech.com/investors-and-media/annual-reports har PDF:er men inget publiceringsdatum. |
+| Boliden | https://investors.boliden.com/en | Cloudflare svarar 403 för DivLabBot på IR, rapporter, kalender och `robots.txt`. Ingen alternativ officiell feed svarade under samma hämtningspolicy. |
+| Epiroc | https://www.epirocgroup.com/en/investors/financial-calendar1 | Samma 403 på kalender, `https://www.epirocgroup.com/en/investors` och `robots.txt`. Åtkomstkontrollen kringgås inte. |
+| Industrivärden | https://www.industrivarden.se/en-gb/media/press-releases/ | Press- och kalendersidorna `https://www.industrivarden.se/en-GB/investors/Calendar/` innehåller navigation, inte datumsatta dokumentposter. |
+| Nordea | https://www.nordea.com/en/api/news-list/en/all/305/all/not_fi_sv | Press-API:t har datum och kanoniska URL:er, men rapport-JSON på https://www.nordea.com/en/investors/group-interim-reports har bara årtal i `datetime_format_field`. Kalendern https://www.nordea.com/en/investors/financial-calendar saknar datumsatta händelser i HTML. |
+| SEB | https://sebgroup.com/api/newslist/58972/en-GB?offset=0&pageSize=7&regulatoryOnly=true | Press-API:t är verifierat. Kalendern https://sebgroup.com/investor-relations/reports-and-presentations/financial-calendar har datum. Delårsrapportssidan https://sebgroup.com/investor-relations/reports-and-presentations/interim-reports har titlar men inget publiceringsdatum, och PDF-länkarna ligger på `webapp.sebgroup.com` med query-sträng. |
+| Swedbank | https://www.swedbank.com/newsroom/press-releases.html | Arkivsidan innehåller filter men inga dokument. IR-landningen länkar till enstaka pressmeddelanden utan en komplett daterad rapport- och kalenderlista. |
+| Tele2 | https://www.tele2.com/investors/reports-and-presentations/ | IR, rapporter och https://www.tele2.com/investors/calendar/ returnerar skal utan dokumentlänkar. `https://www.tele2.com/sitemap.xml` svarar 301, vilket den befintliga hämtningen inte följer. |
