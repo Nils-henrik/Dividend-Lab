@@ -10,6 +10,10 @@ import {
   parseAtlasCopcoPressReleaseSitemap,
   type AtlasCopcoPressReleaseDocument,
 } from "@/lib/companies/ingestion/adapters/atlas-copco";
+import {
+  JOB_DEADLINE_EXCEEDED,
+  type JobDeadline,
+} from "@/lib/companies/ingestion/deadline";
 import { fetchBoundedText, waitForCrawlDelay } from "@/lib/companies/ingestion/http";
 import type { CompanyIngestionJob } from "@/lib/companies/ingestion/queue";
 import type { CompanyIngestionStore } from "@/lib/companies/ingestion/store";
@@ -46,6 +50,97 @@ async function recordFailure(
   return { status: "retry_scheduled", reason };
 }
 
+function timeoutWithinBudget(
+  deadline: JobDeadline | undefined,
+  normalTimeoutMs: number,
+): number | null {
+  if (!deadline) {
+    return normalTimeoutMs;
+  }
+
+  return deadline.requestTimeoutMs(normalTimeoutMs);
+}
+
+export async function loadAtlasCopcoPressReleaseDocuments(
+  dependencies: Pick<AtlasCopcoWorkerDependencies, "fetchImpl" | "sleep"> & {
+    deadline?: JobDeadline;
+  },
+): Promise<
+  | { status: "ok"; documents: AtlasCopcoPressReleaseDocument[] }
+  | { status: "error"; reason: string }
+> {
+  const sitemapTimeout = timeoutWithinBudget(dependencies.deadline, REQUEST_TIMEOUT_MS);
+  if (sitemapTimeout === null) {
+    return { status: "error", reason: JOB_DEADLINE_EXCEEDED };
+  }
+
+  const sitemapResponse = await fetchBoundedText(
+    ATLAS_COPCO_PRESS_RELEASE_SITEMAP_URL,
+    {
+      allowedOrigin: ATLAS_COPCO_ORIGIN,
+      acceptedContentTypes: ["application/xml", "text/xml"],
+      maxBytes: ATLAS_COPCO_MAX_SITEMAP_BYTES,
+      timeoutMs: sitemapTimeout,
+      fetchImpl: dependencies.fetchImpl,
+    },
+  );
+  if (sitemapResponse.status === "error") {
+    return { status: "error", reason: `sitemap_${sitemapResponse.reason}` };
+  }
+
+  const sitemap = parseAtlasCopcoPressReleaseSitemap(
+    sitemapResponse.text,
+    ATLAS_COPCO_INITIAL_DISCOVERY_LIMIT,
+  );
+  if (sitemap.status === "invalid" || sitemap.candidates.length === 0) {
+    return { status: "error", reason: "sitemap_invalid" };
+  }
+
+  const documents: AtlasCopcoPressReleaseDocument[] = [];
+  for (const candidate of sitemap.candidates) {
+    if (
+      dependencies.deadline &&
+      !dependencies.deadline.allowDelay(ATLAS_COPCO_MIN_REQUEST_INTERVAL_MS)
+    ) {
+      return { status: "error", reason: JOB_DEADLINE_EXCEEDED };
+    }
+
+    await waitForCrawlDelay(
+      ATLAS_COPCO_MIN_REQUEST_INTERVAL_MS,
+      dependencies.sleep,
+    );
+    const detailTimeout = timeoutWithinBudget(dependencies.deadline, REQUEST_TIMEOUT_MS);
+    if (detailTimeout === null) {
+      return { status: "error", reason: JOB_DEADLINE_EXCEEDED };
+    }
+
+    const detailResponse = await fetchBoundedText(candidate.sourceUrl, {
+      allowedOrigin: ATLAS_COPCO_ORIGIN,
+      acceptedContentTypes: ["text/html"],
+      maxBytes: ATLAS_COPCO_MAX_PRESS_RELEASE_BYTES,
+      timeoutMs: detailTimeout,
+      fetchImpl: dependencies.fetchImpl,
+    });
+    if (detailResponse.status === "error") {
+      return { status: "error", reason: `detail_${detailResponse.reason}` };
+    }
+
+    const detail = parseAtlasCopcoPressRelease(
+      detailResponse.text,
+      candidate.sourceUrl,
+    );
+    if (detail.status === "ok") {
+      documents.push(detail.document);
+    }
+  }
+
+  if (documents.length === 0) {
+    return { status: "error", reason: "no_valid_documents" };
+  }
+
+  return { status: "ok", documents };
+}
+
 async function executeAtlasCopcoIngestionJob(
   job: CompanyIngestionJob,
   dependencies: AtlasCopcoWorkerDependencies,
@@ -59,65 +154,12 @@ async function executeAtlasCopcoIngestionJob(
     return recordFailure(job, "official_source_unavailable", dependencies);
   }
 
-  const sitemapResponse = await fetchBoundedText(
-    ATLAS_COPCO_PRESS_RELEASE_SITEMAP_URL,
-    {
-      allowedOrigin: ATLAS_COPCO_ORIGIN,
-      acceptedContentTypes: ["application/xml", "text/xml"],
-      maxBytes: ATLAS_COPCO_MAX_SITEMAP_BYTES,
-      timeoutMs: REQUEST_TIMEOUT_MS,
-      fetchImpl: dependencies.fetchImpl,
-    },
-  );
-  if (sitemapResponse.status === "error") {
-    return recordFailure(
-      job,
-      `sitemap_${sitemapResponse.reason}`,
-      dependencies,
-    );
+  const loaded = await loadAtlasCopcoPressReleaseDocuments(dependencies);
+  if (loaded.status === "error") {
+    return recordFailure(job, loaded.reason, dependencies);
   }
 
-  const sitemap = parseAtlasCopcoPressReleaseSitemap(
-    sitemapResponse.text,
-    ATLAS_COPCO_INITIAL_DISCOVERY_LIMIT,
-  );
-  if (sitemap.status === "invalid" || sitemap.candidates.length === 0) {
-    return recordFailure(job, "sitemap_invalid", dependencies);
-  }
-
-  const documents: AtlasCopcoPressReleaseDocument[] = [];
-  for (const candidate of sitemap.candidates) {
-    await waitForCrawlDelay(
-      ATLAS_COPCO_MIN_REQUEST_INTERVAL_MS,
-      dependencies.sleep,
-    );
-    const detailResponse = await fetchBoundedText(candidate.sourceUrl, {
-      allowedOrigin: ATLAS_COPCO_ORIGIN,
-      acceptedContentTypes: ["text/html"],
-      maxBytes: ATLAS_COPCO_MAX_PRESS_RELEASE_BYTES,
-      timeoutMs: REQUEST_TIMEOUT_MS,
-      fetchImpl: dependencies.fetchImpl,
-    });
-    if (detailResponse.status === "error") {
-      return recordFailure(
-        job,
-        `detail_${detailResponse.reason}`,
-        dependencies,
-      );
-    }
-
-    const detail = parseAtlasCopcoPressRelease(
-      detailResponse.text,
-      candidate.sourceUrl,
-    );
-    if (detail.status === "ok") {
-      documents.push(detail.document);
-    }
-  }
-
-  if (documents.length === 0) {
-    return recordFailure(job, "no_valid_documents", dependencies);
-  }
+  const documents = loaded.documents;
 
   const completedAt = (dependencies.now ?? (() => new Date()))().toISOString();
   if (

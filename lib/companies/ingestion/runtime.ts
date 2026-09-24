@@ -6,11 +6,8 @@ import {
   recoverStaleCompanyIngestionJobs,
   type ClaimCompanyIngestionJobResult,
 } from "@/lib/companies/ingestion/queue";
+import { runCompanyIngestionJob, type CompanyIngestionWorkerResult } from "@/lib/companies/ingestion/run-job";
 import { createCompanyIngestionStore } from "@/lib/companies/ingestion/store";
-import {
-  runAtlasCopcoIngestionJob,
-  type AtlasCopcoWorkerResult,
-} from "@/lib/companies/ingestion/workers/atlas-copco";
 
 export type ClaimNextCompanyIngestionJobResult =
   | ClaimCompanyIngestionJobResult
@@ -26,7 +23,7 @@ export async function claimNextCompanyIngestionJob(): Promise<ClaimNextCompanyIn
 }
 
 export type RunNextCompanyIngestionJobResult =
-  | AtlasCopcoWorkerResult
+  | CompanyIngestionWorkerResult
   | {
       status:
         | "empty"
@@ -54,7 +51,7 @@ export async function runNextCompanyIngestionJob(): Promise<RunNextCompanyIngest
     return { status: "claim_error" };
   }
 
-  return runAtlasCopcoIngestionJob(claim.job, {
+  return runCompanyIngestionJob(claim.job, {
     store: createCompanyIngestionStore(client),
   });
 }
