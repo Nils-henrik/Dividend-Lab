@@ -169,6 +169,60 @@ async function resolveDirectTarget(
     };
   }
 
+  if (targetType === "company_comment") {
+    const { data, error } = await supabase
+      .from("company_comments")
+      .select("id,company_id,user_id,body,created_at,updated_at,moderation_status")
+      .eq("id", targetId)
+      .maybeSingle();
+
+    if (error) {
+      console.error("[moderation] direct company comment lookup failed", {
+        targetId,
+        code: error.code,
+        message: error.message,
+      });
+      return null;
+    }
+
+    if (!data) return null;
+
+    const { data: company, error: companyError } = await supabase
+      .from("companies")
+      .select("slug,name")
+      .eq("id", data.company_id)
+      .maybeSingle();
+
+    if (companyError) {
+      console.error("[moderation] direct company comment company lookup failed", {
+        targetId,
+        companyId: data.company_id,
+        code: companyError.code,
+        message: companyError.message,
+      });
+      return null;
+    }
+
+    if (!company) return null;
+
+    return {
+      targetId: data.id,
+      targetUrl: `${SITE_URL}/bolag/${encodeURIComponent(company.slug)}#comment-${data.id}`,
+      targetLabel: `Kommentar om ${company.name}`,
+      targetOwnerUserId: data.user_id,
+      targetSnapshot: {
+        id: data.id,
+        companyId: data.company_id,
+        companySlug: company.slug,
+        companyName: company.name,
+        body: data.body,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+        moderationStatus: data.moderation_status,
+      },
+    };
+  }
+
   if (targetType === "profile" || targetType === "profile_avatar") {
     const { data, error } = await supabase
       .from("profiles")

@@ -79,7 +79,7 @@ export function isActionAllowedForTarget(
     return true;
   }
 
-  if (["forum_thread", "forum_reply", "learning_comment"].includes(targetType)) {
+  if (["forum_thread", "forum_reply", "learning_comment", "company_comment"].includes(targetType)) {
     return action === "hide_content" || action === "remove_content";
   }
 

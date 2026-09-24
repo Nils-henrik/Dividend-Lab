@@ -2,7 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { getAuthenticatedUser } from "@/lib/auth/session";
 import { getCompanyProfile } from "@/lib/companies/catalog";
+import {
+  validateCompanyCommentBody,
+  type CompanyCommentActionState,
+} from "@/lib/companies/comments";
+import { ensureProfileForUser } from "@/lib/profiles/profile";
 import { createClient } from "@/lib/supabase/server";
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -59,5 +65,134 @@ export async function setCompanyFollowAction(formData: FormData) {
 
   revalidatePath(companyPath);
   revalidatePath("/watchlist");
+}
+
+function getFormString(formData: FormData, key: string) {
+  const value = formData.get(key);
+  return typeof value === "string" ? value : "";
+}
+
+async function resolveActiveCompany(slug: string) {
+  if (!SLUG_PATTERN.test(slug) || !getCompanyProfile(slug)) {
+    return null;
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("companies")
+    .select("id")
+    .eq("slug", slug)
+    .eq("is_active", true)
+    .maybeSingle();
+
+  if (error || !data) {
+    return null;
+  }
+
+  return { id: data.id as string, slug, path: `/bolag/${slug}` };
+}
+
+export async function publishCompanyCommentAction(
+  _state: CompanyCommentActionState,
+  formData: FormData,
+): Promise<CompanyCommentActionState> {
+  const slug = getFormString(formData, "companySlug").trim();
+  const company = await resolveActiveCompany(slug);
+
+  if (!company) {
+    return {
+      status: "error",
+      message: "Bolaget kunde inte hittas.",
+    };
+  }
+
+  const user = await getAuthenticatedUser();
+
+  if (!user) {
+    redirect(`/login?redirect=${encodeURIComponent(company.path)}`);
+  }
+
+  const profile = await ensureProfileForUser(user.id);
+
+  if (!profile.username?.trim()) {
+    return {
+      status: "error",
+      message: "Välj ett @namn i din profil för att kunna kommentera.",
+    };
+  }
+
+  const bodyValidation = validateCompanyCommentBody(getFormString(formData, "body"));
+
+  if (bodyValidation.error) {
+    return {
+      status: "error",
+      message: bodyValidation.error,
+    };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("company_comments").insert({
+    company_id: company.id,
+    user_id: user.id,
+    body: bodyValidation.body,
+  });
+
+  if (error) {
+    return {
+      status: "error",
+      message: "Kommentaren kunde inte sparas. Försök igen.",
+    };
+  }
+
+  revalidatePath(company.path);
+
+  return {
+    status: "success",
+    message: "",
+  };
+}
+
+export async function deleteCompanyCommentAction(
+  _state: CompanyCommentActionState,
+  formData: FormData,
+): Promise<CompanyCommentActionState> {
+  const slug = getFormString(formData, "companySlug").trim();
+  const commentId = getFormString(formData, "commentId").trim();
+  const company = await resolveActiveCompany(slug);
+
+  if (!company || !commentId) {
+    return {
+      status: "error",
+      message: "Kommentaren kunde inte tas bort.",
+    };
+  }
+
+  const user = await getAuthenticatedUser();
+
+  if (!user) {
+    redirect(`/login?redirect=${encodeURIComponent(company.path)}`);
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("company_comments")
+    .delete()
+    .eq("id", commentId)
+    .eq("user_id", user.id)
+    .select("id");
+
+  if (error || !data?.length) {
+    return {
+      status: "error",
+      message: "Kommentaren kunde inte tas bort.",
+    };
+  }
+
+  revalidatePath(company.path);
+
+  return {
+    status: "success",
+    message: "",
+  };
 }
 

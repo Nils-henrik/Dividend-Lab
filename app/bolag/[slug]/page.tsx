@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import CompanyComments from "@/components/companies/CompanyComments";
 import CompanyPageContent from "@/components/companies/CompanyPageContent";
 import AppShell from "@/components/layout/AppShell";
 import { getAuthenticatedUser } from "@/lib/auth/session";
@@ -15,6 +16,7 @@ import {
   getRelatedCompanyMarketData,
 } from "@/lib/companies/market-data";
 import { getCompanyFollowState } from "@/lib/companies/server";
+import { getProfileForUser } from "@/lib/profiles/profile";
 import { getNewsArticles } from "@/lib/news/get-articles";
 import { getCanonicalUrl } from "@/lib/seo/canonical";
 import { DIVLAB_BRAND_NAME } from "@/lib/site/brand";
@@ -70,12 +72,13 @@ export default async function CompanyPage({ params }: Props) {
 
   const user = await getAuthenticatedUser();
   const relatedCompanies = getRelatedCompanies(company);
-  const [articles, followState, marketData, relatedMarketData, officialData] = await Promise.all([
+  const [articles, followState, marketData, relatedMarketData, officialData, profile] = await Promise.all([
     Promise.resolve(getCompanyNews(company, getNewsArticles())),
     getCompanyFollowState(company.slug, user?.id),
     getCompanyMarketData(company),
     getRelatedCompanyMarketData(relatedCompanies),
     company.slug === "investor" ? getInvestorOfficialData() : Promise.resolve(null),
+    user ? getProfileForUser(user.id) : Promise.resolve(null),
   ]);
 
   return (
@@ -89,7 +92,15 @@ export default async function CompanyPage({ params }: Props) {
         marketData={marketData}
         relatedMarketData={relatedMarketData}
         officialData={officialData}
-      />
+      >
+        <CompanyComments
+          companyId={followState.companyId}
+          companySlug={company.slug}
+          companyName={company.displayName}
+          user={user}
+          hasUsername={Boolean(profile?.username?.trim())}
+        />
+      </CompanyPageContent>
     </AppShell>
   );
 }

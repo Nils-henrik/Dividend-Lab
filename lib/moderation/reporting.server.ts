@@ -155,6 +155,42 @@ async function resolveTarget(
     };
   }
 
+  if (targetType === "company_comment") {
+    if (!rawTargetId) return null;
+    const { data, error } = await supabase
+      .from("company_comments")
+      .select("id,company_id,user_id,body,created_at,updated_at,moderation_status")
+      .eq("id", rawTargetId)
+      .maybeSingle();
+
+    if (error || !data) return null;
+
+    const { data: company, error: companyError } = await supabase
+      .from("companies")
+      .select("slug,name")
+      .eq("id", data.company_id)
+      .maybeSingle();
+
+    if (companyError || !company) return null;
+
+    return {
+      targetId: data.id,
+      targetUrl: `${SITE_URL}/bolag/${encodeURIComponent(company.slug)}#comment-${data.id}`,
+      targetLabel: `Kommentar om ${company.name}`,
+      targetOwnerUserId: data.user_id,
+      targetSnapshot: {
+        id: data.id,
+        companyId: data.company_id,
+        companySlug: company.slug,
+        companyName: company.name,
+        body: data.body,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+        moderationStatus: data.moderation_status,
+      },
+    };
+  }
+
   if (targetType === "profile" || targetType === "profile_avatar") {
     if (!rawTargetId) return null;
     const { data, error } = await supabase

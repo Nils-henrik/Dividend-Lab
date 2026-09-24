@@ -2,6 +2,7 @@ export const CONTENT_REPORT_TARGET_TYPES = [
   "forum_thread",
   "forum_reply",
   "learning_comment",
+  "company_comment",
   "profile",
   "profile_avatar",
   "other",
