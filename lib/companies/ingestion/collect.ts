@@ -73,6 +73,22 @@ import {
   parseNibePressReleases,
 } from "@/lib/companies/ingestion/adapters/omxs30-completion";
 import {
+  ESSITY_CALENDAR_SOURCE_URL,
+  ESSITY_ORIGIN,
+  ESSITY_PRESS_RELEASE_SOURCE_URL,
+  ESSITY_REPORTS_SOURCE_URL,
+  HM_CALENDAR_SOURCE_URL,
+  HM_ORIGIN,
+  HM_PRESS_RELEASE_SOURCE_URL,
+  HM_REPORTS_SOURCE_URL,
+  parseEssityCalendar,
+  parseEssityFinancialReports,
+  parseEssityPressReleases,
+  parseHmCalendar,
+  parseHmFinancialReports,
+  parseHmPressReleases,
+} from "@/lib/companies/ingestion/adapters/omxs30-essity-hm";
+import {
   SAAB_CALENDAR_SOURCE_URL,
   SAAB_ORIGIN,
   SAAB_PRESS_RELEASE_SOURCE_URL,
@@ -197,6 +213,16 @@ const EXPECTED_SOURCE_URLS: Record<
     financial_reports: NIBE_REPORTS_SOURCE_URL,
     financial_calendar: NIBE_CALENDAR_SOURCE_URL,
   },
+  essity: {
+    press_releases: ESSITY_PRESS_RELEASE_SOURCE_URL,
+    financial_reports: ESSITY_REPORTS_SOURCE_URL,
+    financial_calendar: ESSITY_CALENDAR_SOURCE_URL,
+  },
+  hm: {
+    press_releases: HM_PRESS_RELEASE_SOURCE_URL,
+    financial_reports: HM_REPORTS_SOURCE_URL,
+    financial_calendar: HM_CALENDAR_SOURCE_URL,
+  },
 };
 
 const ALLOWED_ORIGINS: Record<SupportedCompanyIngestionSlug, readonly string[]> = {
@@ -212,6 +238,8 @@ const ALLOWED_ORIGINS: Record<SupportedCompanyIngestionSlug, readonly string[]> 
   eqt: [EQT_ORIGIN],
   evolution: [EVOLUTION_ORIGIN],
   nibe: [NIBE_ORIGIN, "https://storage.mfn.se"],
+  essity: [ESSITY_ORIGIN],
+  hm: [HM_ORIGIN],
 };
 
 function fetchFailure(prefix: string, reason: string): CollectedCompanySource {
@@ -355,6 +383,40 @@ export async function collectCompanySource(
       );
     case "nibe":
       return collectNibe(source.sourceType, context, origins);
+    case "essity":
+      return collectStaticPage(
+        source.sourceType,
+        ESSITY_ORIGIN,
+        {
+          press_releases: ESSITY_PRESS_RELEASE_SOURCE_URL,
+          financial_reports: ESSITY_REPORTS_SOURCE_URL,
+          financial_calendar: ESSITY_CALENDAR_SOURCE_URL,
+        },
+        {
+          press_releases: parseEssityPressReleases,
+          financial_reports: parseEssityFinancialReports,
+          financial_calendar: (html) => parseEssityCalendar(html, context.now),
+        },
+        context,
+        origins,
+      );
+    case "hm":
+      return collectStaticPage(
+        source.sourceType,
+        HM_ORIGIN,
+        {
+          press_releases: HM_PRESS_RELEASE_SOURCE_URL,
+          financial_reports: HM_REPORTS_SOURCE_URL,
+          financial_calendar: HM_CALENDAR_SOURCE_URL,
+        },
+        {
+          press_releases: parseHmPressReleases,
+          financial_reports: parseHmFinancialReports,
+          financial_calendar: (html) => parseHmCalendar(html, context.now),
+        },
+        context,
+        origins,
+      );
     case "sca":
       return collectStaticPage(
         source.sourceType,

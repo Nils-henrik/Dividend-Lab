@@ -6,7 +6,7 @@ Registret utökar piloten i `docs/company-data/PILOT_OFFICIAL_SOURCES.md`.
 Endast källor som både svarade med den officiella bolagsdomänen och gav
 bestämbar press-, rapport- och kalendermarkup är aktiverade. Migrationen
 `20260924120000_seed_omxs30_company_sources.sql` och
-`20260924223000_seed_omxs30_completion_company_sources.sql` lägger bara in
+`20260924223000_seed_omxs30_completion_company_sources.sql` och\n`20260924224500_seed_essity_hm_company_sources.sql` lägger bara in
 verifierade rader och rör inte befintliga följningar, dokument eller jobb.
 
 ## Aktiverade utöver piloten
@@ -34,6 +34,12 @@ verifierade rader och rör inte befintliga följningar, dokument eller jobb.
 | NIBE | press_releases | https://www.nibegroup.com/news | https://www.nibegroup.com |
 | NIBE | financial_reports | https://www.nibegroup.com/investors | https://www.nibegroup.com och https://storage.mfn.se |
 | NIBE | financial_calendar | https://www.nibegroup.com/investors | https://www.nibegroup.com |
+| Essity | press_releases | https://www.essity.com/media/press-releases/ | https://www.essity.com |
+| Essity | financial_reports | https://www.essity.com/investors/financial-reports/interim-reports/ | https://www.essity.com |
+| Essity | financial_calendar | https://www.essity.com/investors/calendar/ | https://www.essity.com |
+| H&M | press_releases | https://hmgroup.com/media/news/ | https://hmgroup.com |
+| H&M | financial_reports | https://hmgroup.com/investors/ | https://hmgroup.com |
+| H&M | financial_calendar | https://hmgroup.com/investors/financial-calendar/ | https://hmgroup.com |
 
 Delegering:
 
@@ -50,7 +56,7 @@ Parserstrategi:
 - Addtech: Cision `PRM` för press och `RPT` för rapporter. Kalendern är statiska `<p><strong>dd/mm/åååå</strong>`-poster.
 - EQT: nyhetsobjekt med `publishedDate` och `/news/{slug}`, rapportblock med datum och rapporttitel, samt kalenderevent med `eventType` `interim_reports` eller `annual_reports`.
 - Evolution: `date-stamp` plus förstapartslänk under `/investors/financial-publications/press-releases/`. Kalendern är kort och händelsetext på samma sida.
-- NIBE: `<time dateTime>` och `/news/{slug}` för press. Rapportarkivet och kalendertabellen kommer från de två widget-URL:er som investerarsidan bäddar in.
+- NIBE: `<time dateTime>` och `/news/{slug}` för press. Rapportarkivet och kalendertabellen kommer från de två widget-URL:er som investerarsidan bäddar in.\n- Essity: förstaparts presslista, daterade rapportdetaljer och kommande rapporthändelser från IR-kalendern.\n- H&M: daterade förstapartsnyheter, daterade rapport-PDF:er på IR-sidan och rapporthändelser från finanskalendern.
 
 ## Inte aktiverade
 
@@ -65,9 +71,7 @@ maskinläsbara officiella källor inte kunde verifieras utan att kringgå
 | ASSA ABLOY | `/group/en/news-media/press-releases`, `/group/en/investors/reports-presentations` (200) och `/group/en/investors/calendar` (404) | HTML saknar datumsatta dokumentlänkar och delegerat flöde. |
 | Boliden | `https://www.boliden.com/investor-relations/` och `https://investors.boliden.com/en` | 403 för DivLabBot. Inget publikt flöde hittades utan att kringgå spärren. |
 | Epiroc | `https://www.epirocgroup.com/en/investors` och `/en/media` | 403 för DivLabBot. Ingen officiell feed kunde verifieras. |
-| Essity | `https://www.essity.com/media/press-releases/` och `/investors/calendar/` | Iframes utan dokument eller datum i HTML. |
 | Handelsbanken | `https://www.handelsbanken.com/en/investor-relations` | Hämtad HTML saknar dokumentlänkar. `/investor-relations/reports` svarade 404. |
-| H&M | `https://hmgroup.com/investors/reports/`, `/media/news/` och `/investors/financial-calendar/` | Rapporter har PDF men inget dagdatum. Kalendern listar inga datumsatta händelser. |
 | Hexagon | `https://hexagon.com/investors` och `/sv-se/investors` | 403 för DivLabBot. |
 | Industrivärden | `https://www.industrivarden.se/` (200, MFN-widget utan exponerad token-URL) och `/en/` (404) | Widgetanropet kunde inte bindas till en verifierad, utfärdarspecifik feed. |
 | Lifco | `https://www.lifco.se/investors` och `/investors/press-releases` | Ingen datum satt dokumentlista. `?lang=en` avvisas av den befintliga hämtningen. |
