@@ -21,6 +21,9 @@ export const BORSSVERIGE_24_SEPTEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-09-24T09:50:20+02:00",
   url: "/news/borssverige-24-september-2026",
   featured: true,
+  imageUrl: "/news/generated/borssverige-2026-09-24.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-09-24.png",
+  imageAlt: "BörsSverige 2026-09-24 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "BörsSverige 24 september: H&M rapport och Riksbankens räntebesked",
   seoDescription:
