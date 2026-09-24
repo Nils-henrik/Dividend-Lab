@@ -28,7 +28,7 @@ type ActionOption = {
 };
 
 function getActionOptions(targetType: ContentReportTargetType): ActionOption[] {
-  if (["forum_thread", "forum_reply", "learning_comment"].includes(targetType)) {
+  if (["forum_thread", "forum_reply", "learning_comment", "company_comment"].includes(targetType)) {
     return [
       {
         value: "hide_content",

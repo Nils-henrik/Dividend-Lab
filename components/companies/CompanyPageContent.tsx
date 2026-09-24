@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import AppIcon, { type AppIconName } from "@/components/layout/AppIcon";
 import CompanyLogo from "@/components/companies/CompanyLogo";
@@ -20,6 +21,7 @@ type Props = {
   marketData: CompanyMarketData;
   relatedMarketData: Record<string, CompanyMarketData>;
   officialData: InvestorOfficialData | null;
+  children?: ReactNode;
 };
 
 const PAGE_TABS = [
@@ -75,7 +77,7 @@ function OfficialList({ items, fallback, icon = "news" }: { items: OfficialItem[
   return <div className="mt-3 divide-y divide-[var(--divlab-divider)]">{items.slice(0, 4).map((item) => <a key={`${item.url}-${item.title}`} href={item.url} target="_blank" rel="noopener noreferrer" className="divlab-row-hover flex gap-3 rounded-lg py-3"><FactIcon name={icon} /><span className="min-w-0 flex-1"><span className="line-clamp-2 text-[13px] font-semibold leading-5 text-divlab-text">{item.title}</span><span className="mt-0.5 block text-[11px] text-divlab-text-muted">{item.date ? date(item.date) : "Officiellt dokument"}</span></span></a>)}</div>;
 }
 
-export default function CompanyPageContent({ company, articles, isAuthenticated, followState, relatedCompanies, marketData, relatedMarketData, officialData }: Props) {
+export default function CompanyPageContent({ company, articles, isAuthenticated, followState, relatedCompanies, marketData, relatedMarketData, officialData, children }: Props) {
   const loginHref = `/login?redirect=${encodeURIComponent(`/bolag/${company.slug}`)}`;
   const currency = marketData.currency ?? "SEK";
   const positive = (marketData.changePct ?? 0) >= 0;
@@ -150,6 +152,7 @@ export default function CompanyPageContent({ company, articles, isAuthenticated,
         </aside>
       </div>
       <p className="mt-4 text-[10px] leading-4 text-divlab-text-muted">{companySourceDisclaimer(company)}</p>
+      {children}
     </div>
   </div>;
 }

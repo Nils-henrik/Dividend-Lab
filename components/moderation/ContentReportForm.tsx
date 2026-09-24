@@ -36,6 +36,7 @@ const targetLabels: Record<ContentReportTargetType, string> = {
   forum_thread: "Forumtråd",
   forum_reply: "Forumsvar",
   learning_comment: "Kommentar",
+  company_comment: "Bolagskommentar",
   profile: "Profil",
   profile_avatar: "Profilbild",
   other: "Annan plats på DivLab",
