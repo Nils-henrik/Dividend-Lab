@@ -1,6 +1,7 @@
 import "server-only";
 
 import { cache } from "react";
+import { companyDocumentQueryFailure, isCompanySchemaUnavailable } from "@/lib/companies/document-query";
 import { tryGetSupabaseConfig } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 
@@ -67,19 +68,6 @@ type FollowRow = {
   created_at: string;
   companies: CompanyRelation | CompanyRelation[] | null;
 };
-
-function isCompanySchemaUnavailable(error: {
-  code?: string;
-  message?: string;
-}) {
-  return (
-    error.code === "PGRST205" ||
-    error.code === "42P01" ||
-    error.message?.includes("company_follows") ||
-    error.message?.includes("company_documents") ||
-    error.message?.includes("companies")
-  );
-}
 
 function mapDocument(row: CompanyDocumentRow): CompanyOfficialDocument {
   return {
@@ -177,17 +165,24 @@ export const getCompanyFollowState = cache(
       followQuery,
     ]);
 
-    if (documentsResult.error) {
-      if (isCompanySchemaUnavailable(documentsResult.error)) {
-        return {
-          companyId: company.id,
-          isAvailable: true,
-          isFollowing: Boolean(followResult.data),
-          documents: [],
-        };
-      }
+    const documentsFailure = companyDocumentQueryFailure(documentsResult.error);
+    if (documentsFailure === "schema_unavailable") {
+      return {
+        companyId: company.id,
+        isAvailable: true,
+        isFollowing: Boolean(followResult.data),
+        documents: [],
+      };
+    }
 
-      throw new Error(documentsResult.error.message);
+    const reportDateFailure = companyDocumentQueryFailure(reportDateResult.error);
+    if (reportDateFailure === "schema_unavailable") {
+      return {
+        companyId: company.id,
+        isAvailable: true,
+        isFollowing: Boolean(followResult.data),
+        documents: [],
+      };
     }
 
     if (followResult.error && !isCompanySchemaUnavailable(followResult.error)) {
@@ -200,9 +195,7 @@ export const getCompanyFollowState = cache(
       isFollowing: Boolean(followResult.data),
       documents: [
         ...((documentsResult.data ?? []) as CompanyDocumentRow[]),
-        ...(reportDateResult.error
-          ? []
-          : ((reportDateResult.data ?? []) as CompanyDocumentRow[])),
+        ...((reportDateResult.data ?? []) as CompanyDocumentRow[]),
       ].map(mapDocument),
     };
   },

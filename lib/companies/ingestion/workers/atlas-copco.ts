@@ -10,6 +10,10 @@ import {
   parseAtlasCopcoPressReleaseSitemap,
   type AtlasCopcoPressReleaseDocument,
 } from "@/lib/companies/ingestion/adapters/atlas-copco";
+import {
+  JOB_DEADLINE_EXCEEDED,
+  type JobDeadline,
+} from "@/lib/companies/ingestion/deadline";
 import { fetchBoundedText, waitForCrawlDelay } from "@/lib/companies/ingestion/http";
 import type { CompanyIngestionJob } from "@/lib/companies/ingestion/queue";
 import type { CompanyIngestionStore } from "@/lib/companies/ingestion/store";
@@ -46,19 +50,37 @@ async function recordFailure(
   return { status: "retry_scheduled", reason };
 }
 
+function timeoutWithinBudget(
+  deadline: JobDeadline | undefined,
+  normalTimeoutMs: number,
+): number | null {
+  if (!deadline) {
+    return normalTimeoutMs;
+  }
+
+  return deadline.requestTimeoutMs(normalTimeoutMs);
+}
+
 export async function loadAtlasCopcoPressReleaseDocuments(
-  dependencies: Pick<AtlasCopcoWorkerDependencies, "fetchImpl" | "sleep">,
+  dependencies: Pick<AtlasCopcoWorkerDependencies, "fetchImpl" | "sleep"> & {
+    deadline?: JobDeadline;
+  },
 ): Promise<
   | { status: "ok"; documents: AtlasCopcoPressReleaseDocument[] }
   | { status: "error"; reason: string }
 > {
+  const sitemapTimeout = timeoutWithinBudget(dependencies.deadline, REQUEST_TIMEOUT_MS);
+  if (sitemapTimeout === null) {
+    return { status: "error", reason: JOB_DEADLINE_EXCEEDED };
+  }
+
   const sitemapResponse = await fetchBoundedText(
     ATLAS_COPCO_PRESS_RELEASE_SITEMAP_URL,
     {
       allowedOrigin: ATLAS_COPCO_ORIGIN,
       acceptedContentTypes: ["application/xml", "text/xml"],
       maxBytes: ATLAS_COPCO_MAX_SITEMAP_BYTES,
-      timeoutMs: REQUEST_TIMEOUT_MS,
+      timeoutMs: sitemapTimeout,
       fetchImpl: dependencies.fetchImpl,
     },
   );
@@ -76,15 +98,27 @@ export async function loadAtlasCopcoPressReleaseDocuments(
 
   const documents: AtlasCopcoPressReleaseDocument[] = [];
   for (const candidate of sitemap.candidates) {
+    if (
+      dependencies.deadline &&
+      !dependencies.deadline.allowDelay(ATLAS_COPCO_MIN_REQUEST_INTERVAL_MS)
+    ) {
+      return { status: "error", reason: JOB_DEADLINE_EXCEEDED };
+    }
+
     await waitForCrawlDelay(
       ATLAS_COPCO_MIN_REQUEST_INTERVAL_MS,
       dependencies.sleep,
     );
+    const detailTimeout = timeoutWithinBudget(dependencies.deadline, REQUEST_TIMEOUT_MS);
+    if (detailTimeout === null) {
+      return { status: "error", reason: JOB_DEADLINE_EXCEEDED };
+    }
+
     const detailResponse = await fetchBoundedText(candidate.sourceUrl, {
       allowedOrigin: ATLAS_COPCO_ORIGIN,
       acceptedContentTypes: ["text/html"],
       maxBytes: ATLAS_COPCO_MAX_PRESS_RELEASE_BYTES,
-      timeoutMs: REQUEST_TIMEOUT_MS,
+      timeoutMs: detailTimeout,
       fetchImpl: dependencies.fetchImpl,
     });
     if (detailResponse.status === "error") {

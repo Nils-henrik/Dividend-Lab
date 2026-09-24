@@ -26,6 +26,13 @@ import {
 } from "@/lib/companies/ingestion/adapters/volvo";
 import { collectCompanySource } from "@/lib/companies/ingestion/collect";
 import {
+  COMPANY_INGESTION_CLEANUP_MARGIN_MS,
+  COMPANY_INGESTION_JOB_BUDGET_MS,
+  COMPANY_INGESTION_PLATFORM_MAX_MS,
+  createJobDeadline,
+} from "@/lib/companies/ingestion/deadline";
+import { INGESTION_REQUEST_TIMEOUT_MS } from "@/lib/companies/ingestion/fetch-source";
+import {
   validateNormalizedCompanyDocument,
   type NormalizedCompanyDocument,
 } from "@/lib/companies/ingestion/document";
@@ -60,6 +67,19 @@ function source(type: OfficialCompanySource["sourceType"], url: string, checked 
     sourceUrl: url,
     publisher: "Publisher",
     lastCheckedAt: checked ? "2026-09-01T00:00:00.000Z" : null,
+  };
+}
+
+function manualClock(start = 0) {
+  let elapsed = start;
+  return {
+    clock: () => elapsed,
+    sleep: async (milliseconds: number) => {
+      elapsed += milliseconds;
+    },
+    advance: (milliseconds: number) => {
+      elapsed += milliseconds;
+    },
   };
 }
 
@@ -295,6 +315,152 @@ describe("company ingestion v2", () => {
       { status: "retry_scheduled", reason: "worker_unexpected_error" },
     );
     assert.doesNotMatch(JSON.stringify(calls), /secret database detail/);
+  });
+
+  it("stoppar nästa källa och detalj när jobbets tidsbudget tar slut", async () => {
+    const time = manualClock();
+    const press = "https://www.volvogroup.com/en/news-and-media.html";
+    const reports = "https://www.volvogroup.com/en/investors/reports-and-presentations.html";
+    const calendar = "https://www.volvogroup.com/en/investors/financial-calendar.html";
+    const secondDetail = "https://www.volvogroup.com/en/news-and-media/events/2026/feb/annual-report-2025.html";
+    const { store, calls, saved, checked } = memoryStore({
+      slug: "volvo",
+      sources: [
+        source("press_releases", press),
+        source("financial_reports", reports),
+        source("financial_calendar", calendar),
+      ],
+    });
+    const requested: string[] = [];
+    const result = await runCompanyIngestionJob(JOB, {
+      store,
+      now: () => NOW,
+      clock: time.clock,
+      sleep: time.sleep,
+      fetchImpl: (async (input) => {
+        const url = String(input);
+        requested.push(url);
+        if (url === press) {
+          return new Response(`<div class="articlelist__item"><p class="articlelist__headerCaption">Press release</p><span class="articlelist__headerTimeDate">2026-09-23</span><h3 class="articlelist__headerTitle"><a href="https://www.volvogroup.com/en/news-and-media/news/2026/sep/verified-release.html">Verified Volvo release</a></h3></div>`, {
+            headers: { "content-type": "text/html" },
+          });
+        }
+        if (url === reports) {
+          return new Response(`<div data-nc-params-Teaser='{"analyticsData":{"title":"Volvo Group Second Quarter 2026"},"CTAURL":"/en/news-and-media/events/2026/jul/second-quarter-2026.html"}'></div><div data-nc-params-Teaser='{"analyticsData":{"title":"Annual Report 2025"},"CTAURL":"/en/news-and-media/events/2026/feb/annual-report-2025.html"}'></div>`, {
+            headers: { "content-type": "text/html" },
+          });
+        }
+        if (url.endsWith("second-quarter-2026.html")) {
+          time.advance(COMPANY_INGESTION_JOB_BUDGET_MS);
+          return new Response(`<div data-nc-params-eventinformation='{"startDate":"2026-07-17T07:20:00+02:00"}'></div><a href="/content/dam/volvo-group/markets/master/investors/reports-and-presentations/interim-reports/2026/volvo-group-q2-2026-eng.pdf">Report</a>`, {
+            headers: { "content-type": "text/html" },
+          });
+        }
+        throw new Error(`unexpected fetch ${url}`);
+      }) as typeof fetch,
+    });
+
+    assert.deepEqual(result, { status: "retry_scheduled", reason: "job_deadline_exceeded" });
+    assert.equal(requested.includes(secondDetail), false);
+    assert.equal(requested.includes(calendar), false);
+    assert.equal(saved.length, 1);
+    assert.equal(saved[0]?.documentType, "press_release");
+    assert.equal(checked.length, 1);
+    assert.equal(calls.includes("complete"), false);
+    assert.equal(calls.includes("retry:job_deadline_exceeded"), true);
+  });
+
+  it("markerar deadline som permanent fel på sista försöket utan att lämna jobbet lyckat", async () => {
+    let started = false;
+    const time = manualClock();
+    const clock = () => {
+      const value = time.clock();
+      if (!started) {
+        started = true;
+        return value;
+      }
+
+      return value + COMPANY_INGESTION_JOB_BUDGET_MS;
+    };
+    const { store, calls, checked } = memoryStore({
+      slug: "atlas-copco",
+      sources: [
+        source("press_releases", "https://www.atlascopcogroup.com/en/media/press-releases"),
+        source("financial_reports", "https://www.atlascopcogroup.com/en/investors/reports-and-presentations"),
+        source("financial_calendar", "https://www.atlascopcogroup.com/en/investors/calendar-and-events"),
+      ],
+    });
+    let fetched = false;
+    const result = await runCompanyIngestionJob({ ...JOB, attempts: 3 }, {
+      store,
+      now: () => NOW,
+      clock,
+      sleep: time.sleep,
+      fetchImpl: (async () => {
+        fetched = true;
+        throw new Error("should not fetch");
+      }) as typeof fetch,
+    });
+
+    assert.deepEqual(result, { status: "failed", reason: "job_deadline_exceeded" });
+    assert.equal(fetched, false);
+    assert.equal(checked.length, 0);
+    assert.equal(calls.includes("complete"), false);
+    assert.equal(calls.includes("retry:job_deadline_exceeded"), true);
+  });
+
+  it("kortar nästa request-timeout till kvarvarande budget och stoppar Atlas-detaljer", async () => {
+    const time = manualClock();
+    const deadline = createJobDeadline({ clock: time.clock });
+    assert.equal(COMPANY_INGESTION_JOB_BUDGET_MS, 45_000);
+    assert.equal(COMPANY_INGESTION_CLEANUP_MARGIN_MS, 5_000);
+    assert.ok(COMPANY_INGESTION_JOB_BUDGET_MS < COMPANY_INGESTION_PLATFORM_MAX_MS);
+    assert.equal(deadline.requestTimeoutMs(INGESTION_REQUEST_TIMEOUT_MS), INGESTION_REQUEST_TIMEOUT_MS);
+    time.advance(36_000);
+    assert.equal(deadline.requestTimeoutMs(INGESTION_REQUEST_TIMEOUT_MS), 4_000);
+    time.advance(4_000);
+    assert.equal(deadline.requestTimeoutMs(INGESTION_REQUEST_TIMEOUT_MS), null);
+    assert.equal(deadline.allowDelay(1_000), false);
+
+    const first = "https://www.atlascopcogroup.com/en/media/press-releases/2026/first-release";
+    const second = "https://www.atlascopcogroup.com/en/media/press-releases/2026/second-release";
+    const detailClock = manualClock();
+    const { store, checked, calls } = memoryStore({
+      slug: "atlas-copco",
+      sources: [
+        source("press_releases", "https://www.atlascopcogroup.com/en/media/press-releases"),
+        source("financial_reports", "https://www.atlascopcogroup.com/en/investors/reports-and-presentations", true),
+        source("financial_calendar", "https://www.atlascopcogroup.com/en/investors/calendar-and-events", true),
+      ],
+    });
+    const requested: string[] = [];
+    const result = await runCompanyIngestionJob(JOB, {
+      store,
+      now: () => NOW,
+      clock: detailClock.clock,
+      sleep: detailClock.sleep,
+      fetchImpl: (async (input) => {
+        const url = String(input);
+        requested.push(url);
+        if (url.endsWith("sitemap.xml")) {
+          return new Response(`<?xml version="1.0"?><urlset><url><loc>${first}</loc><lastmod>2026-09-01</lastmod></url><url><loc>${second}</loc><lastmod>2026-08-01</lastmod></url></urlset>`, {
+            headers: { "content-type": "application/xml" },
+          });
+        }
+        if (url === first) {
+          detailClock.advance(COMPANY_INGESTION_JOB_BUDGET_MS);
+          return new Response(`<h1 class="cmp-title__text">Verified Atlas Copco release</h1><p class="cmp-pagedate">August 27, 2026</p>`, {
+            headers: { "content-type": "text/html" },
+          });
+        }
+        throw new Error(`unexpected fetch ${url}`);
+      }) as typeof fetch,
+    });
+
+    assert.deepEqual(result, { status: "retry_scheduled", reason: "job_deadline_exceeded" });
+    assert.equal(requested.includes(second), false);
+    assert.equal(checked.length, 0);
+    assert.equal(calls.at(-1), "retry:job_deadline_exceeded");
   });
 
   it("hämtar inte AstraZenecas robots-blockerade listendpoint", async () => {

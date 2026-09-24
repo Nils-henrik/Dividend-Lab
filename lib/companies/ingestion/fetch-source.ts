@@ -1,4 +1,8 @@
 import {
+  JOB_DEADLINE_EXCEEDED,
+  type JobDeadline,
+} from "@/lib/companies/ingestion/deadline";
+import {
   fetchBoundedText,
   waitForCrawlDelay,
   type BoundedTextFetchResult,
@@ -13,7 +17,12 @@ export type SourceFetchContext = {
   fetchImpl?: typeof fetch;
   sleep?: (milliseconds: number) => Promise<void>;
   now: Date;
+  deadline?: JobDeadline;
 };
+
+export type OfficialTextResult =
+  | BoundedTextFetchResult
+  | { status: "error"; reason: typeof JOB_DEADLINE_EXCEEDED };
 
 export async function fetchOfficialText(
   url: string,
@@ -24,17 +33,34 @@ export async function fetchOfficialText(
     maxBytes: number;
     allowSearch?: boolean;
   },
-): Promise<BoundedTextFetchResult> {
+): Promise<OfficialTextResult> {
+  const timeoutMs = context.deadline
+    ? context.deadline.requestTimeoutMs(INGESTION_REQUEST_TIMEOUT_MS)
+    : INGESTION_REQUEST_TIMEOUT_MS;
+  if (timeoutMs === null) {
+    return { status: "error", reason: JOB_DEADLINE_EXCEEDED };
+  }
+
   return fetchBoundedText(url, {
     allowedOrigin: options.allowedOrigin,
     acceptedContentTypes: options.acceptedContentTypes,
     maxBytes: options.maxBytes,
-    timeoutMs: INGESTION_REQUEST_TIMEOUT_MS,
+    timeoutMs,
     allowSearch: options.allowSearch,
     fetchImpl: context.fetchImpl,
   });
 }
 
-export async function pauseBetweenRequests(context: SourceFetchContext): Promise<void> {
+export async function pauseBetweenRequests(
+  context: SourceFetchContext,
+): Promise<"ok" | typeof JOB_DEADLINE_EXCEEDED> {
+  if (
+    context.deadline &&
+    !context.deadline.allowDelay(INGESTION_CRAWL_DELAY_MS)
+  ) {
+    return JOB_DEADLINE_EXCEEDED;
+  }
+
   await waitForCrawlDelay(INGESTION_CRAWL_DELAY_MS, context.sleep);
+  return "ok";
 }

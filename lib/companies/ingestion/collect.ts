@@ -49,6 +49,7 @@ import {
   type CompanySourceType,
   type NormalizedCompanyDocument,
 } from "@/lib/companies/ingestion/document";
+import { JOB_DEADLINE_EXCEEDED } from "@/lib/companies/ingestion/deadline";
 import {
   fetchOfficialText,
   INGESTION_MAX_HTML_BYTES,
@@ -107,6 +108,24 @@ const ALLOWED_ORIGINS: Record<SupportedCompanyIngestionSlug, readonly string[]> 
   "atlas-copco": [ATLAS_COPCO_ORIGIN],
   astrazeneca: [ASTRAZENECA_ORIGIN],
 };
+
+function fetchFailure(prefix: string, reason: string): CollectedCompanySource {
+  if (reason === JOB_DEADLINE_EXCEEDED) {
+    return { status: "error", reason: JOB_DEADLINE_EXCEEDED };
+  }
+
+  return { status: "error", reason: `${prefix}_${reason}` };
+}
+
+async function pauseOrStop(
+  context: SourceFetchContext,
+): Promise<CollectedCompanySource | null> {
+  if ((await pauseBetweenRequests(context)) === JOB_DEADLINE_EXCEEDED) {
+    return { status: "error", reason: JOB_DEADLINE_EXCEEDED };
+  }
+
+  return null;
+}
 
 function acceptDocuments(
   documents: readonly NormalizedCompanyDocument[],
@@ -187,7 +206,7 @@ async function collectInvestor(
   if (sourceType === "financial_reports") {
     const landing = await fetchHtml(INVESTOR_REPORTS_SOURCE_URL, INVESTOR_ORIGIN, context);
     if (landing.status === "error") {
-      return { status: "error", reason: `listing_${landing.reason}` };
+      return fetchFailure("listing", landing.reason);
     }
 
     const yearUrl = latestInvestorReportYearUrl(landing.text);
@@ -195,10 +214,13 @@ async function collectInvestor(
       return { status: "error", reason: "no_valid_documents" };
     }
 
-    await pauseBetweenRequests(context);
+    const paused = await pauseOrStop(context);
+    if (paused) {
+      return paused;
+    }
     const yearPage = await fetchHtml(yearUrl, INVESTOR_ORIGIN, context);
     if (yearPage.status === "error") {
-      return { status: "error", reason: `detail_${yearPage.reason}` };
+      return fetchFailure("detail", yearPage.reason);
     }
 
     return acceptDocuments(parseInvestorFinancialReports(yearPage.text), origins);
@@ -209,7 +231,7 @@ async function collectInvestor(
     : INVESTOR_CALENDAR_SOURCE_URL;
   const page = await fetchHtml(pageUrl, INVESTOR_ORIGIN, context);
   if (page.status === "error") {
-    return { status: "error", reason: `listing_${page.reason}` };
+    return fetchFailure("listing", page.reason);
   }
 
   if (sourceType === "press_releases") {
@@ -238,7 +260,7 @@ async function collectVolvo(
       maxBytes: VOLVO_MAX_HTML_BYTES,
     });
     if (page.status === "error") {
-      return { status: "error", reason: `listing_${page.reason}` };
+      return fetchFailure("listing", page.reason);
     }
 
     return acceptDocuments(parseVolvoPressReleases(page.text), origins);
@@ -249,7 +271,7 @@ async function collectVolvo(
       maxBytes: VOLVO_MAX_HTML_BYTES,
     });
     if (page.status === "error") {
-      return { status: "error", reason: `listing_${page.reason}` };
+      return fetchFailure("listing", page.reason);
     }
 
     return acceptDocuments(parseVolvoCalendar(page.text, context.now), origins);
@@ -259,17 +281,20 @@ async function collectVolvo(
     maxBytes: VOLVO_MAX_HTML_BYTES,
   });
   if (page.status === "error") {
-    return { status: "error", reason: `listing_${page.reason}` };
+    return fetchFailure("listing", page.reason);
   }
 
   const documents: NormalizedCompanyDocument[] = [];
   for (const candidate of parseVolvoReportCandidates(page.text)) {
-    await pauseBetweenRequests(context);
+    const paused = await pauseOrStop(context);
+    if (paused) {
+      return paused;
+    }
     const detail = await fetchHtml(candidate.detailUrl, VOLVO_ORIGIN, context, {
       maxBytes: VOLVO_MAX_HTML_BYTES,
     });
     if (detail.status === "error") {
-      return { status: "error", reason: `detail_${detail.reason}` };
+      return fetchFailure("detail", detail.reason);
     }
 
     const document = parseVolvoReportDetail(detail.text, candidate.detailUrl, candidate.title);
@@ -290,7 +315,7 @@ async function collectEricsson(
     allowSearch: sourceType === "press_releases",
   });
   if (page.status === "error") {
-    return { status: "error", reason: `listing_${page.reason}` };
+    return fetchFailure("listing", page.reason);
   }
 
   const parsed = parseEricssonOfficialHtml(page.text);
@@ -327,7 +352,7 @@ async function collectAtlasCopco(
     : ATLAS_COPCO_CALENDAR_SOURCE_URL;
   const page = await fetchHtml(pageUrl, ATLAS_COPCO_ORIGIN, context);
   if (page.status === "error") {
-    return { status: "error", reason: `listing_${page.reason}` };
+    return fetchFailure("listing", page.reason);
   }
 
   const documents = sourceType === "financial_reports"
@@ -344,7 +369,7 @@ async function collectAstraZeneca(
   if (sourceType === "financial_reports") {
     const page = await fetchHtml(ASTRAZENECA_REPORTS_SOURCE_URL, ASTRAZENECA_ORIGIN, context);
     if (page.status === "error") {
-      return { status: "error", reason: `listing_${page.reason}` };
+      return fetchFailure("listing", page.reason);
     }
 
     return acceptDocuments(parseAstraZenecaReports(page.text), origins);
@@ -353,7 +378,7 @@ async function collectAstraZeneca(
   if (sourceType === "financial_calendar") {
     const page = await fetchHtml(ASTRAZENECA_CALENDAR_SOURCE_URL, ASTRAZENECA_ORIGIN, context);
     if (page.status === "error") {
-      return { status: "error", reason: `listing_${page.reason}` };
+      return fetchFailure("listing", page.reason);
     }
 
     return acceptDocuments(parseAstraZenecaCalendar(page.text, context.now), origins);
@@ -365,7 +390,7 @@ async function collectAstraZeneca(
     maxBytes: INGESTION_MAX_SITEMAP_BYTES,
   });
   if (sitemap.status === "error") {
-    return { status: "error", reason: `sitemap_${sitemap.reason}` };
+    return fetchFailure("sitemap", sitemap.reason);
   }
 
   const discovered = parseAstraZenecaPressSitemap(sitemap.text);
@@ -379,10 +404,13 @@ async function collectAstraZeneca(
       return { status: "error", reason: "robots_disallowed_listing" };
     }
 
-    await pauseBetweenRequests(context);
+    const paused = await pauseOrStop(context);
+    if (paused) {
+      return paused;
+    }
     const detail = await fetchHtml(candidate.sourceUrl, ASTRAZENECA_ORIGIN, context);
     if (detail.status === "error") {
-      return { status: "error", reason: `detail_${detail.reason}` };
+      return fetchFailure("detail", detail.reason);
     }
 
     const document = parseAstraZenecaPressRelease(detail.text, candidate.sourceUrl);
