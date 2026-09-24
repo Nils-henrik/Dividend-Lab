@@ -143,15 +143,24 @@ export const getCompanyFollowState = cache(
       };
     }
 
+    const documentColumns =
+      "id, document_type, title, source_url, source_publisher, published_at, event_at, fiscal_period";
     const documentQuery = supabase
       .from("company_documents")
-      .select(
-        "id, document_type, title, source_url, source_publisher, published_at, event_at, fiscal_period",
-      )
+      .select(documentColumns)
       .eq("company_id", company.id)
       .eq("is_published", true)
+      .neq("document_type", "report_date")
       .order("published_at", { ascending: false, nullsFirst: false })
       .limit(12);
+    const reportDateQuery = supabase
+      .from("company_documents")
+      .select(documentColumns)
+      .eq("company_id", company.id)
+      .eq("is_published", true)
+      .eq("document_type", "report_date")
+      .order("event_at", { ascending: true })
+      .limit(8);
 
     const followQuery = userId
       ? supabase
@@ -162,8 +171,9 @@ export const getCompanyFollowState = cache(
           .maybeSingle()
       : Promise.resolve({ data: null, error: null });
 
-    const [documentsResult, followResult] = await Promise.all([
+    const [documentsResult, reportDateResult, followResult] = await Promise.all([
       documentQuery,
+      reportDateQuery,
       followQuery,
     ]);
 
@@ -188,9 +198,12 @@ export const getCompanyFollowState = cache(
       companyId: company.id,
       isAvailable: !followResult.error,
       isFollowing: Boolean(followResult.data),
-      documents: ((documentsResult.data ?? []) as CompanyDocumentRow[]).map(
-        mapDocument,
-      ),
+      documents: [
+        ...((documentsResult.data ?? []) as CompanyDocumentRow[]),
+        ...(reportDateResult.error
+          ? []
+          : ((reportDateResult.data ?? []) as CompanyDocumentRow[])),
+      ].map(mapDocument),
     };
   },
 );

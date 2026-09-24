@@ -1,5 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import {
+  validateNormalizedCompanyDocument,
+  type CompanySourceType,
+  type NormalizedCompanyDocument,
+} from "@/lib/companies/ingestion/document";
 import type { CompanyIngestionJob } from "@/lib/companies/ingestion/queue";
 import type { AtlasCopcoPressReleaseDocument } from "@/lib/companies/ingestion/adapters/atlas-copco";
 
@@ -28,6 +33,62 @@ export type CompanyIngestionStore = {
   ): Promise<boolean>;
 };
 
+export type OfficialCompanySource = {
+  id: string;
+  sourceType: CompanySourceType;
+  sourceUrl: string;
+  publisher: string;
+  lastCheckedAt: string | null;
+};
+
+export type PersistedCompanyDocument = {
+  source_url: string;
+  published_at: string | null;
+  event_at: string | null;
+  fiscal_period: string | null;
+};
+
+export type CompanyIngestionOrchestratorStore = CompanyIngestionStore & {
+  loadCompany(
+    companyId: string,
+  ): Promise<
+    | { status: "ok"; company: { id: string; slug: string } }
+    | { status: "error" }
+  >;
+  loadOfficialSources(
+    companyId: string,
+  ): Promise<
+    | { status: "ok"; sources: OfficialCompanySource[] }
+    | { status: "error" }
+  >;
+  saveDocuments(input: {
+    companyId: string;
+    sourceId: string;
+    documents: NormalizedCompanyDocument[];
+    allowedOrigins: readonly string[];
+    fetchedAt: string;
+  }): Promise<boolean>;
+};
+
+export function mergePersistedCompanyDocument(
+  document: NormalizedCompanyDocument,
+  existing: PersistedCompanyDocument | null,
+): PersistedCompanyDocument & {
+  document_type: NormalizedCompanyDocument["documentType"];
+  title: string;
+  source_publisher: string;
+} {
+  return {
+    document_type: document.documentType,
+    title: document.title,
+    source_url: document.sourceUrl,
+    source_publisher: document.sourcePublisher,
+    published_at: document.publishedAt ?? existing?.published_at ?? null,
+    event_at: document.eventAt ?? existing?.event_at ?? null,
+    fiscal_period: document.fiscalPeriod ?? existing?.fiscal_period ?? null,
+  };
+}
+
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const MAX_JOB_ATTEMPTS = 3;
@@ -36,10 +97,135 @@ function sanitizeJobError(reason: string): string {
   return reason.replace(/[^a-z0-9_-]/gi, "_").slice(0, 160) || "unknown_error";
 }
 
+const SOURCE_TYPES = new Set<CompanySourceType>([
+  "press_releases",
+  "financial_reports",
+  "financial_calendar",
+]);
+const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
 export function createCompanyIngestionStore(
   client: SupabaseClient,
-): CompanyIngestionStore {
+): CompanyIngestionOrchestratorStore {
   return {
+    async loadCompany(companyId) {
+      const { data, error } = await client
+        .from("companies")
+        .select("id, slug")
+        .eq("id", companyId)
+        .maybeSingle();
+      if (
+        error ||
+        !data ||
+        data.id !== companyId ||
+        typeof data.slug !== "string" ||
+        !SLUG_PATTERN.test(data.slug)
+      ) {
+        return { status: "error" };
+      }
+
+      return { status: "ok", company: { id: data.id, slug: data.slug } };
+    },
+
+    async loadOfficialSources(companyId) {
+      const { data, error } = await client
+        .from("company_sources")
+        .select("id, source_type, source_url, publisher, last_checked_at")
+        .eq("company_id", companyId)
+        .eq("is_official", true)
+        .eq("is_active", true);
+      if (error || !Array.isArray(data)) {
+        return { status: "error" };
+      }
+
+      const sources: OfficialCompanySource[] = [];
+      for (const row of data) {
+        if (
+          typeof row.id !== "string" ||
+          !UUID_PATTERN.test(row.id) ||
+          typeof row.source_type !== "string" ||
+          !SOURCE_TYPES.has(row.source_type as CompanySourceType) ||
+          typeof row.source_url !== "string" ||
+          !row.source_url.startsWith("https://") ||
+          typeof row.publisher !== "string" ||
+          (row.last_checked_at !== null && typeof row.last_checked_at !== "string")
+        ) {
+          return { status: "error" };
+        }
+
+        sources.push({
+          id: row.id,
+          sourceType: row.source_type as CompanySourceType,
+          sourceUrl: row.source_url,
+          publisher: row.publisher,
+          lastCheckedAt: row.last_checked_at,
+        });
+      }
+
+      return { status: "ok", sources };
+    },
+
+    async saveDocuments(input) {
+      const invalid = input.documents.some(
+        (document) =>
+          !validateNormalizedCompanyDocument(document, input.allowedOrigins),
+      );
+      if (invalid || input.documents.length === 0) {
+        return false;
+      }
+
+      const { data: existingRows, error: existingError } = await client
+        .from("company_documents")
+        .select("source_url, published_at, event_at, fiscal_period")
+        .eq("company_id", input.companyId)
+        .in(
+          "source_url",
+          input.documents.map((document) => document.sourceUrl),
+        );
+      if (existingError || !Array.isArray(existingRows)) {
+        return false;
+      }
+
+      const existingByUrl = new Map<string, PersistedCompanyDocument>();
+      for (const row of existingRows) {
+        if (typeof row.source_url !== "string") {
+          return false;
+        }
+
+        existingByUrl.set(row.source_url, {
+          source_url: row.source_url,
+          published_at: typeof row.published_at === "string" ? row.published_at : null,
+          event_at: typeof row.event_at === "string" ? row.event_at : null,
+          fiscal_period: typeof row.fiscal_period === "string" ? row.fiscal_period : null,
+        });
+      }
+
+      const rows = input.documents.map((document) => {
+        const merged = mergePersistedCompanyDocument(
+          document,
+          existingByUrl.get(document.sourceUrl) ?? null,
+        );
+        return {
+          company_id: input.companyId,
+          source_id: input.sourceId,
+          document_type: merged.document_type,
+          title: merged.title,
+          source_url: merged.source_url,
+          source_publisher: merged.source_publisher,
+          published_at: merged.published_at,
+          event_at: merged.event_at,
+          fiscal_period: merged.fiscal_period,
+          fetched_at: input.fetchedAt,
+          is_published: true,
+        };
+      });
+      const { error } = await client.from("company_documents").upsert(rows, {
+        onConflict: "company_id,source_url",
+      });
+
+      return !error;
+    },
+
     async loadOfficialSource(input) {
       const { data, error } = await client
         .from("company_sources")

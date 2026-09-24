@@ -45,7 +45,15 @@ describe("company ingestion queue adapter", () => {
     assert.deepEqual(calls, [
       {
         name: "claim_company_ingestion_job",
-        args: { p_supported_company_slugs: ["atlas-copco"] },
+        args: {
+          p_supported_company_slugs: [
+            "investor",
+            "volvo",
+            "ericsson",
+            "atlas-copco",
+            "astrazeneca",
+          ],
+        },
       },
     ]);
   });

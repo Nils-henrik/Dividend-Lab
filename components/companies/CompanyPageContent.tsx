@@ -4,6 +4,7 @@ import CompanyLogo from "@/components/companies/CompanyLogo";
 import CompanyPriceChart from "@/components/companies/CompanyPriceChart";
 import FollowCompanyButton from "@/components/companies/FollowCompanyButton";
 import NewsArticleRow from "@/components/news/NewsArticleRow";
+import { classifyCompanyDocuments, companySourceDisclaimer } from "@/lib/companies/documents-view";
 import type { InvestorOfficialData, OfficialItem } from "@/lib/companies/investor-official";
 import type { CompanyMarketData } from "@/lib/companies/market-data";
 import type { CompanyFollowState } from "@/lib/companies/server";
@@ -78,10 +79,10 @@ export default function CompanyPageContent({ company, articles, isAuthenticated,
   const loginHref = `/login?redirect=${encodeURIComponent(`/bolag/${company.slug}`)}`;
   const currency = marketData.currency ?? "SEK";
   const positive = (marketData.changePct ?? 0) >= 0;
-  const sourceDocuments: OfficialItem[] = followState.documents.map((document) => ({ title: document.title, date: document.publishedAt?.slice(0, 10) ?? document.eventAt?.slice(0, 10) ?? null, url: document.url }));
-  const reports = officialData?.reports ?? sourceDocuments.filter((item) => /report|rapport/i.test(item.title));
-  const pressReleases = officialData?.pressReleases ?? sourceDocuments;
-  const events = officialData?.events ?? [];
+  const classifiedDocuments = classifyCompanyDocuments(followState.documents);
+  const reports = officialData?.reports.length ? officialData.reports : classifiedDocuments.reports;
+  const pressReleases = officialData?.pressReleases.length ? officialData.pressReleases : classifiedDocuments.pressReleases;
+  const events = officialData?.events.length ? officialData.events : classifiedDocuments.events;
   const metrics = [
     ["Börsvärde", compactSek(marketData.marketCap)],
     ["P/E-tal", number(marketData.peRatio, { maximumFractionDigits: 1 })],
@@ -148,7 +149,7 @@ export default function CompanyPageContent({ company, articles, isAuthenticated,
           <section className="divlab-card p-5"><PanelHeading title="Liknande bolag" /><div className="mt-2 space-y-1">{relatedCompanies.map((related) => { const change = relatedMarketData[related.slug]?.changePct ?? null; return <Link key={related.slug} href={`/bolag/${related.slug}`} className="divlab-row-hover flex items-center gap-3 rounded-lg py-2"><CompanyLogo name={related.name} logoPath={related.logoPath} size="compact" /><span className="min-w-0 flex-1 truncate text-xs font-semibold text-divlab-text">{related.displayName}</span><span className={`text-[11px] font-bold ${change === null ? "text-divlab-text-muted" : change >= 0 ? "text-emerald-600" : "text-red-500"}`}>{percent(change, true)}</span></Link>; })}</div></section>
         </aside>
       </div>
-      <p className="mt-4 text-[10px] leading-4 text-divlab-text-muted">Kursdata från Yahoo Finance och TradingView kan vara fördröjd. Bolagsdata hämtas från Investor AB:s officiella webbplats. Informationen utgör inte investeringsrådgivning.</p>
+      <p className="mt-4 text-[10px] leading-4 text-divlab-text-muted">{companySourceDisclaimer(company)}</p>
     </div>
   </div>;
 }

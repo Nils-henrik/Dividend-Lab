@@ -16,12 +16,17 @@ export type BoundedTextFetchOptions = {
   acceptedContentTypes: readonly string[];
   maxBytes: number;
   timeoutMs: number;
+  allowSearch?: boolean;
   fetchImpl?: typeof fetch;
 };
 
 const TEXT_DECODER = new TextDecoder("utf-8", { fatal: true });
 
-function isAllowedUrl(value: string, allowedOrigin: string): boolean {
+function isAllowedUrl(
+  value: string,
+  allowedOrigin: string,
+  allowSearch: boolean,
+): boolean {
   try {
     const url = new URL(value);
     return (
@@ -30,7 +35,7 @@ function isAllowedUrl(value: string, allowedOrigin: string): boolean {
       url.username === "" &&
       url.password === "" &&
       url.port === "" &&
-      url.search === "" &&
+      (url.search === "" || allowSearch) &&
       url.hash === ""
     );
   } catch {
@@ -104,7 +109,7 @@ export async function fetchBoundedText(
   options: BoundedTextFetchOptions,
 ): Promise<BoundedTextFetchResult> {
   if (
-    !isAllowedUrl(url, options.allowedOrigin) ||
+    !isAllowedUrl(url, options.allowedOrigin, options.allowSearch === true) ||
     !Number.isInteger(options.maxBytes) ||
     options.maxBytes < 1 ||
     !Number.isInteger(options.timeoutMs) ||

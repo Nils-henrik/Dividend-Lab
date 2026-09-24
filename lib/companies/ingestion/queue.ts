@@ -18,7 +18,22 @@ export type RecoverStaleCompanyIngestionJobsResult =
   | { status: "recovered"; count: number }
   | { status: "error"; reason: "recovery_failed" | "invalid_count" };
 
-export const SUPPORTED_COMPANY_INGESTION_SLUGS = ["atlas-copco"] as const;
+export const SUPPORTED_COMPANY_INGESTION_SLUGS = [
+  "investor",
+  "volvo",
+  "ericsson",
+  "atlas-copco",
+  "astrazeneca",
+] as const;
+
+export type SupportedCompanyIngestionSlug =
+  (typeof SUPPORTED_COMPANY_INGESTION_SLUGS)[number];
+
+export function isSupportedCompanyIngestionSlug(
+  slug: string,
+): slug is SupportedCompanyIngestionSlug {
+  return (SUPPORTED_COMPANY_INGESTION_SLUGS as readonly string[]).includes(slug);
+}
 
 type ClaimedJobRow = {
   job_id?: unknown;

@@ -46,19 +46,12 @@ async function recordFailure(
   return { status: "retry_scheduled", reason };
 }
 
-async function executeAtlasCopcoIngestionJob(
-  job: CompanyIngestionJob,
-  dependencies: AtlasCopcoWorkerDependencies,
-): Promise<AtlasCopcoWorkerResult> {
-  const sourceResult = await dependencies.store.loadOfficialSource({
-    companyId: job.companyId,
-    sourceType: "press_releases",
-    sourceUrl: ATLAS_COPCO_PRESS_RELEASE_SOURCE_URL,
-  });
-  if (sourceResult.status === "error") {
-    return recordFailure(job, "official_source_unavailable", dependencies);
-  }
-
+export async function loadAtlasCopcoPressReleaseDocuments(
+  dependencies: Pick<AtlasCopcoWorkerDependencies, "fetchImpl" | "sleep">,
+): Promise<
+  | { status: "ok"; documents: AtlasCopcoPressReleaseDocument[] }
+  | { status: "error"; reason: string }
+> {
   const sitemapResponse = await fetchBoundedText(
     ATLAS_COPCO_PRESS_RELEASE_SITEMAP_URL,
     {
@@ -70,11 +63,7 @@ async function executeAtlasCopcoIngestionJob(
     },
   );
   if (sitemapResponse.status === "error") {
-    return recordFailure(
-      job,
-      `sitemap_${sitemapResponse.reason}`,
-      dependencies,
-    );
+    return { status: "error", reason: `sitemap_${sitemapResponse.reason}` };
   }
 
   const sitemap = parseAtlasCopcoPressReleaseSitemap(
@@ -82,7 +71,7 @@ async function executeAtlasCopcoIngestionJob(
     ATLAS_COPCO_INITIAL_DISCOVERY_LIMIT,
   );
   if (sitemap.status === "invalid" || sitemap.candidates.length === 0) {
-    return recordFailure(job, "sitemap_invalid", dependencies);
+    return { status: "error", reason: "sitemap_invalid" };
   }
 
   const documents: AtlasCopcoPressReleaseDocument[] = [];
@@ -99,11 +88,7 @@ async function executeAtlasCopcoIngestionJob(
       fetchImpl: dependencies.fetchImpl,
     });
     if (detailResponse.status === "error") {
-      return recordFailure(
-        job,
-        `detail_${detailResponse.reason}`,
-        dependencies,
-      );
+      return { status: "error", reason: `detail_${detailResponse.reason}` };
     }
 
     const detail = parseAtlasCopcoPressRelease(
@@ -116,8 +101,31 @@ async function executeAtlasCopcoIngestionJob(
   }
 
   if (documents.length === 0) {
-    return recordFailure(job, "no_valid_documents", dependencies);
+    return { status: "error", reason: "no_valid_documents" };
   }
+
+  return { status: "ok", documents };
+}
+
+async function executeAtlasCopcoIngestionJob(
+  job: CompanyIngestionJob,
+  dependencies: AtlasCopcoWorkerDependencies,
+): Promise<AtlasCopcoWorkerResult> {
+  const sourceResult = await dependencies.store.loadOfficialSource({
+    companyId: job.companyId,
+    sourceType: "press_releases",
+    sourceUrl: ATLAS_COPCO_PRESS_RELEASE_SOURCE_URL,
+  });
+  if (sourceResult.status === "error") {
+    return recordFailure(job, "official_source_unavailable", dependencies);
+  }
+
+  const loaded = await loadAtlasCopcoPressReleaseDocuments(dependencies);
+  if (loaded.status === "error") {
+    return recordFailure(job, loaded.reason, dependencies);
+  }
+
+  const documents = loaded.documents;
 
   const completedAt = (dependencies.now ?? (() => new Date()))().toISOString();
   if (
