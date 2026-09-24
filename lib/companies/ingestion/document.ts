@@ -140,7 +140,7 @@ export function classifyReportTitle(
     return null;
   }
 
-  if (/annual report|full year/i.test(title)) {
+  if (/annual report|full[- ]year/i.test(title)) {
     return "annual_report";
   }
 
@@ -148,7 +148,7 @@ export function classifyReportTitle(
     return "half_year_report";
   }
 
-  if (/\bQ[1-4]\b|quarter/i.test(title)) {
+  if (/\bQ[1-4]\b|quarter|nine-month/i.test(title)) {
     return "quarterly_report";
   }
 
