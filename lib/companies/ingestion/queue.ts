@@ -31,6 +31,8 @@ export const SUPPORTED_COMPANY_INGESTION_SLUGS = [
   "eqt",
   "evolution",
   "nibe",
+  "essity",
+  "hm",
 ] as const;
 
 export type SupportedCompanyIngestionSlug =
