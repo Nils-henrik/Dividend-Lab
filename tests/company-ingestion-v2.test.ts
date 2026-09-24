@@ -130,13 +130,16 @@ function memoryStore(options: {
 }
 
 describe("company ingestion v2", () => {
-  it("stödjer exakt de fem pilotbolagen och failar stängt för okända", () => {
+  it("stödjer pilotbolagen plus verifierade OMXS30-utökningar och failar stängt för okända", () => {
     assert.deepEqual(SUPPORTED_COMPANY_INGESTION_SLUGS, [
       "investor",
       "volvo",
       "ericsson",
       "atlas-copco",
       "astrazeneca",
+      "saab",
+      "sandvik",
+      "sca",
     ]);
     assert.equal(isSupportedCompanyIngestionSlug("volvo"), true);
     assert.equal(isSupportedCompanyIngestionSlug("atlas copco"), false);
