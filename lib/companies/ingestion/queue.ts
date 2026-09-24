@@ -27,6 +27,10 @@ export const SUPPORTED_COMPANY_INGESTION_SLUGS = [
   "saab",
   "sandvik",
   "sca",
+  "addtech",
+  "eqt",
+  "evolution",
+  "nibe",
 ] as const;
 
 export type SupportedCompanyIngestionSlug =
