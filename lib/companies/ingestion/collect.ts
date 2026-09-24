@@ -34,6 +34,45 @@ import {
   parseInvestorIngestionPressReleases,
 } from "@/lib/companies/ingestion/adapters/investor";
 import {
+  ADDTECH_CALENDAR_SOURCE_URL,
+  ADDTECH_CISION_FEED_URL,
+  ADDTECH_CISION_IDENTIFIER,
+  ADDTECH_FEED_ORIGIN,
+  ADDTECH_ORIGIN,
+  ADDTECH_PRESS_FEED,
+  ADDTECH_PRESS_RELEASE_SOURCE_URL,
+  ADDTECH_REPORT_FEED,
+  ADDTECH_REPORTS_SOURCE_URL,
+  EQT_CALENDAR_SOURCE_URL,
+  EQT_ORIGIN,
+  EQT_PRESS_RELEASE_SOURCE_URL,
+  EQT_REPORTS_SOURCE_URL,
+  EVOLUTION_CALENDAR_SOURCE_URL,
+  EVOLUTION_ORIGIN,
+  EVOLUTION_PRESS_RELEASE_SOURCE_URL,
+  EVOLUTION_REPORTS_SOURCE_URL,
+  NIBE_ARCHIVE_WIDGET_URL,
+  NIBE_CALENDAR_SOURCE_URL,
+  NIBE_CALENDAR_WIDGET_URL,
+  NIBE_INVESTORS_SOURCE_URL,
+  NIBE_ORIGIN,
+  NIBE_PRESS_RELEASE_SOURCE_URL,
+  NIBE_REPORTS_SOURCE_URL,
+  NIBE_WIDGET_ORIGIN,
+  issuerPageEmbedsMarker,
+  parseAddtechCalendar,
+  parseAddtechCisionFeed,
+  parseEqtCalendar,
+  parseEqtFinancialReports,
+  parseEqtPressReleases,
+  parseEvolutionCalendar,
+  parseEvolutionFinancialReports,
+  parseEvolutionPressReleases,
+  parseNibeCalendar,
+  parseNibeFinancialReports,
+  parseNibePressReleases,
+} from "@/lib/companies/ingestion/adapters/omxs30-completion";
+import {
   SAAB_CALENDAR_SOURCE_URL,
   SAAB_ORIGIN,
   SAAB_PRESS_RELEASE_SOURCE_URL,
@@ -88,6 +127,7 @@ import { loadAtlasCopcoPressReleaseDocuments } from "@/lib/companies/ingestion/w
 
 const HTML = ["text/html"] as const;
 const XML = ["application/xml", "text/xml"] as const;
+const JSON_FEED = ["application/json"] as const;
 
 export type CollectedCompanySource =
   | { status: "ok"; documents: NormalizedCompanyDocument[] }
@@ -137,6 +177,26 @@ const EXPECTED_SOURCE_URLS: Record<
     financial_reports: SCA_REPORTS_SOURCE_URL,
     financial_calendar: SCA_CALENDAR_SOURCE_URL,
   },
+  addtech: {
+    press_releases: ADDTECH_PRESS_RELEASE_SOURCE_URL,
+    financial_reports: ADDTECH_REPORTS_SOURCE_URL,
+    financial_calendar: ADDTECH_CALENDAR_SOURCE_URL,
+  },
+  eqt: {
+    press_releases: EQT_PRESS_RELEASE_SOURCE_URL,
+    financial_reports: EQT_REPORTS_SOURCE_URL,
+    financial_calendar: EQT_CALENDAR_SOURCE_URL,
+  },
+  evolution: {
+    press_releases: EVOLUTION_PRESS_RELEASE_SOURCE_URL,
+    financial_reports: EVOLUTION_REPORTS_SOURCE_URL,
+    financial_calendar: EVOLUTION_CALENDAR_SOURCE_URL,
+  },
+  nibe: {
+    press_releases: NIBE_PRESS_RELEASE_SOURCE_URL,
+    financial_reports: NIBE_REPORTS_SOURCE_URL,
+    financial_calendar: NIBE_CALENDAR_SOURCE_URL,
+  },
 };
 
 const ALLOWED_ORIGINS: Record<SupportedCompanyIngestionSlug, readonly string[]> = {
@@ -148,6 +208,10 @@ const ALLOWED_ORIGINS: Record<SupportedCompanyIngestionSlug, readonly string[]> 
   saab: [SAAB_ORIGIN],
   sandvik: [SANDVIK_ORIGIN],
   sca: [SCA_ORIGIN],
+  addtech: [ADDTECH_ORIGIN, "https://news.cision.com"],
+  eqt: [EQT_ORIGIN],
+  evolution: [EVOLUTION_ORIGIN],
+  nibe: [NIBE_ORIGIN, "https://storage.mfn.se"],
 };
 
 function fetchFailure(prefix: string, reason: string): CollectedCompanySource {
@@ -268,6 +332,29 @@ export async function collectCompanySource(
         context,
         origins,
       );
+    case "addtech":
+      return collectAddtech(source.sourceType, context, origins);
+    case "eqt":
+      return collectEqt(source.sourceType, context, origins);
+    case "evolution":
+      return collectStaticPage(
+        source.sourceType,
+        EVOLUTION_ORIGIN,
+        {
+          press_releases: EVOLUTION_PRESS_RELEASE_SOURCE_URL,
+          financial_reports: EVOLUTION_REPORTS_SOURCE_URL,
+          financial_calendar: EVOLUTION_CALENDAR_SOURCE_URL,
+        },
+        {
+          press_releases: parseEvolutionPressReleases,
+          financial_reports: parseEvolutionFinancialReports,
+          financial_calendar: (html) => parseEvolutionCalendar(html, context.now),
+        },
+        context,
+        origins,
+      );
+    case "nibe":
+      return collectNibe(source.sourceType, context, origins);
     case "sca":
       return collectStaticPage(
         source.sourceType,
@@ -527,5 +614,120 @@ async function collectAstraZeneca(
     }
   }
 
+  return acceptDocuments(documents, origins);
+}
+
+async function collectAddtech(
+  sourceType: CompanySourceType,
+  context: SourceFetchContext,
+  origins: readonly string[],
+): Promise<CollectedCompanySource> {
+  if (sourceType === "financial_calendar") {
+    const page = await fetchHtml(ADDTECH_CALENDAR_SOURCE_URL, ADDTECH_ORIGIN, context);
+    if (page.status === "error") {
+      return fetchFailure("listing", page.reason);
+    }
+
+    return acceptDocuments(parseAddtechCalendar(page.text, context.now), origins);
+  }
+
+  const pageUrl = sourceType === "press_releases"
+    ? ADDTECH_PRESS_RELEASE_SOURCE_URL
+    : ADDTECH_REPORTS_SOURCE_URL;
+  const feedMarker = sourceType === "press_releases" ? ADDTECH_PRESS_FEED : ADDTECH_REPORT_FEED;
+  const page = await fetchHtml(pageUrl, ADDTECH_ORIGIN, context);
+  if (page.status === "error") {
+    return fetchFailure("listing", page.reason);
+  }
+
+  if (
+    !issuerPageEmbedsMarker(page.text, `data-identifier="${ADDTECH_CISION_IDENTIFIER}"`) ||
+    !issuerPageEmbedsMarker(page.text, `data-feed-to-show="${feedMarker}"`)
+  ) {
+    return { status: "error", reason: "delegated_source_not_verified" };
+  }
+
+  const paused = await pauseOrStop(context);
+  if (paused) {
+    return paused;
+  }
+  const feed = await fetchOfficialText(ADDTECH_CISION_FEED_URL, context, {
+    allowedOrigin: ADDTECH_FEED_ORIGIN,
+    acceptedContentTypes: JSON_FEED,
+    maxBytes: INGESTION_MAX_HTML_BYTES,
+    allowSearch: true,
+  });
+  if (feed.status === "error") {
+    return fetchFailure("feed", feed.reason);
+  }
+
+  const documents = parseAddtechCisionFeed(
+    feed.text,
+    sourceType === "press_releases" ? "PRM" : "RPT",
+  );
+  return acceptDocuments(documents, origins);
+}
+
+async function collectEqt(
+  sourceType: CompanySourceType,
+  context: SourceFetchContext,
+  origins: readonly string[],
+): Promise<CollectedCompanySource> {
+  const pageUrl = sourceType === "press_releases"
+    ? EQT_PRESS_RELEASE_SOURCE_URL
+    : sourceType === "financial_reports"
+      ? EQT_REPORTS_SOURCE_URL
+      : EQT_CALENDAR_SOURCE_URL;
+  const page = await fetchHtml(pageUrl, EQT_ORIGIN, context);
+  if (page.status === "error") {
+    return fetchFailure("listing", page.reason);
+  }
+
+  const documents = sourceType === "press_releases"
+    ? parseEqtPressReleases(page.text)
+    : sourceType === "financial_reports"
+      ? parseEqtFinancialReports(page.text)
+      : parseEqtCalendar(page.text, context.now);
+  return acceptDocuments(documents, origins);
+}
+
+async function collectNibe(
+  sourceType: CompanySourceType,
+  context: SourceFetchContext,
+  origins: readonly string[],
+): Promise<CollectedCompanySource> {
+  if (sourceType === "press_releases") {
+    const page = await fetchHtml(NIBE_PRESS_RELEASE_SOURCE_URL, NIBE_ORIGIN, context);
+    if (page.status === "error") {
+      return fetchFailure("listing", page.reason);
+    }
+
+    return acceptDocuments(parseNibePressReleases(page.text), origins);
+  }
+
+  const widgetUrl = sourceType === "financial_reports"
+    ? NIBE_ARCHIVE_WIDGET_URL
+    : NIBE_CALENDAR_WIDGET_URL;
+  const page = await fetchHtml(NIBE_INVESTORS_SOURCE_URL, NIBE_ORIGIN, context);
+  if (page.status === "error") {
+    return fetchFailure("listing", page.reason);
+  }
+
+  if (!issuerPageEmbedsMarker(page.text, widgetUrl)) {
+    return { status: "error", reason: "delegated_source_not_verified" };
+  }
+
+  const paused = await pauseOrStop(context);
+  if (paused) {
+    return paused;
+  }
+  const widget = await fetchHtml(widgetUrl, NIBE_WIDGET_ORIGIN, context, { allowSearch: true });
+  if (widget.status === "error") {
+    return fetchFailure("widget", widget.reason);
+  }
+
+  const documents = sourceType === "financial_reports"
+    ? parseNibeFinancialReports(widget.text)
+    : parseNibeCalendar(widget.text, context.now);
   return acceptDocuments(documents, origins);
 }
