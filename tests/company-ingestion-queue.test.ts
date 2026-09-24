@@ -59,6 +59,8 @@ describe("company ingestion queue adapter", () => {
             "eqt",
             "evolution",
             "nibe",
+            "essity",
+            "hm",
           ],
         },
       },
