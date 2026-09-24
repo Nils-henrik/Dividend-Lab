@@ -126,7 +126,7 @@ export function explicitFiscalPeriod(title: string): string | null {
     return `${year} H1`;
   }
 
-  if (/annual report|full year/i.test(title)) {
+  if (/annual report|full[- ]year/i.test(title)) {
     return year;
   }
 
