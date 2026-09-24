@@ -34,6 +34,29 @@ import {
   parseInvestorIngestionPressReleases,
 } from "@/lib/companies/ingestion/adapters/investor";
 import {
+  SAAB_CALENDAR_SOURCE_URL,
+  SAAB_ORIGIN,
+  SAAB_PRESS_RELEASE_SOURCE_URL,
+  SAAB_REPORTS_SOURCE_URL,
+  SANDVIK_CALENDAR_SOURCE_URL,
+  SANDVIK_ORIGIN,
+  SANDVIK_PRESS_RELEASE_SOURCE_URL,
+  SANDVIK_REPORTS_SOURCE_URL,
+  SCA_CALENDAR_SOURCE_URL,
+  SCA_ORIGIN,
+  SCA_PRESS_RELEASE_SOURCE_URL,
+  SCA_REPORTS_SOURCE_URL,
+  parseSaabCalendar,
+  parseSaabFinancialReports,
+  parseSaabPressReleases,
+  parseSandvikCalendar,
+  parseSandvikFinancialReports,
+  parseSandvikPressReleases,
+  parseScaCalendar,
+  parseScaFinancialReports,
+  parseScaPressReleases,
+} from "@/lib/companies/ingestion/adapters/omxs30-static";
+import {
   VOLVO_CALENDAR_SOURCE_URL,
   VOLVO_MAX_HTML_BYTES,
   VOLVO_ORIGIN,
@@ -99,6 +122,21 @@ const EXPECTED_SOURCE_URLS: Record<
     financial_reports: ASTRAZENECA_REPORTS_SOURCE_URL,
     financial_calendar: ASTRAZENECA_CALENDAR_SOURCE_URL,
   },
+  saab: {
+    press_releases: SAAB_PRESS_RELEASE_SOURCE_URL,
+    financial_reports: SAAB_REPORTS_SOURCE_URL,
+    financial_calendar: SAAB_CALENDAR_SOURCE_URL,
+  },
+  sandvik: {
+    press_releases: SANDVIK_PRESS_RELEASE_SOURCE_URL,
+    financial_reports: SANDVIK_REPORTS_SOURCE_URL,
+    financial_calendar: SANDVIK_CALENDAR_SOURCE_URL,
+  },
+  sca: {
+    press_releases: SCA_PRESS_RELEASE_SOURCE_URL,
+    financial_reports: SCA_REPORTS_SOURCE_URL,
+    financial_calendar: SCA_CALENDAR_SOURCE_URL,
+  },
 };
 
 const ALLOWED_ORIGINS: Record<SupportedCompanyIngestionSlug, readonly string[]> = {
@@ -107,6 +145,9 @@ const ALLOWED_ORIGINS: Record<SupportedCompanyIngestionSlug, readonly string[]> 
   ericsson: [ERICSSON_ORIGIN],
   "atlas-copco": [ATLAS_COPCO_ORIGIN],
   astrazeneca: [ASTRAZENECA_ORIGIN],
+  saab: [SAAB_ORIGIN],
+  sandvik: [SANDVIK_ORIGIN],
+  sca: [SCA_ORIGIN],
 };
 
 function fetchFailure(prefix: string, reason: string): CollectedCompanySource {
@@ -193,9 +234,76 @@ export async function collectCompanySource(
       return collectAtlasCopco(source.sourceType, context, origins);
     case "astrazeneca":
       return collectAstraZeneca(source.sourceType, context, origins);
+    case "saab":
+      return collectStaticPage(
+        source.sourceType,
+        SAAB_ORIGIN,
+        {
+          press_releases: SAAB_PRESS_RELEASE_SOURCE_URL,
+          financial_reports: SAAB_REPORTS_SOURCE_URL,
+          financial_calendar: SAAB_CALENDAR_SOURCE_URL,
+        },
+        {
+          press_releases: parseSaabPressReleases,
+          financial_reports: parseSaabFinancialReports,
+          financial_calendar: (html) => parseSaabCalendar(html, context.now),
+        },
+        context,
+        origins,
+      );
+    case "sandvik":
+      return collectStaticPage(
+        source.sourceType,
+        SANDVIK_ORIGIN,
+        {
+          press_releases: SANDVIK_PRESS_RELEASE_SOURCE_URL,
+          financial_reports: SANDVIK_REPORTS_SOURCE_URL,
+          financial_calendar: SANDVIK_CALENDAR_SOURCE_URL,
+        },
+        {
+          press_releases: parseSandvikPressReleases,
+          financial_reports: parseSandvikFinancialReports,
+          financial_calendar: (html) => parseSandvikCalendar(html, context.now),
+        },
+        context,
+        origins,
+      );
+    case "sca":
+      return collectStaticPage(
+        source.sourceType,
+        SCA_ORIGIN,
+        {
+          press_releases: SCA_PRESS_RELEASE_SOURCE_URL,
+          financial_reports: SCA_REPORTS_SOURCE_URL,
+          financial_calendar: SCA_CALENDAR_SOURCE_URL,
+        },
+        {
+          press_releases: parseScaPressReleases,
+          financial_reports: parseScaFinancialReports,
+          financial_calendar: (html) => parseScaCalendar(html, context.now),
+        },
+        context,
+        origins,
+      );
     default:
       return { status: "error", reason: "unsupported_company" };
   }
+}
+
+async function collectStaticPage(
+  sourceType: CompanySourceType,
+  origin: string,
+  urls: Record<CompanySourceType, string>,
+  parsers: Record<CompanySourceType, (html: string) => NormalizedCompanyDocument[]>,
+  context: SourceFetchContext,
+  origins: readonly string[],
+): Promise<CollectedCompanySource> {
+  const page = await fetchHtml(urls[sourceType], origin, context);
+  if (page.status === "error") {
+    return fetchFailure("listing", page.reason);
+  }
+
+  return acceptDocuments(parsers[sourceType](page.text), origins);
 }
 
 async function collectInvestor(
