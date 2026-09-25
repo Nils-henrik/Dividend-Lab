@@ -158,6 +158,20 @@ test("tom följlista renderar discovery och inte den gamla pilottexten", () => {
   assert.doesNotMatch(html, /Följda bolag \(0\)/);
 });
 
+test("Upptäck bolag kan fällas ihop och öppnas direkt för en tom följlista", () => {
+  const collapsed = renderBoard({
+    followed: buildFollowedCompanyCards([investorInput()], {}),
+    followedCount: 1,
+  });
+  const empty = renderBoard({ showEmptyFollows: true, followedCount: 0 });
+
+  assert.match(collapsed, /aria-expanded="false"/);
+  assert.match(collapsed, /Visa bolag \(30\)/);
+  assert.match(collapsed, /id="watchlist-discovery-list" hidden=""/);
+  assert.match(empty, /aria-expanded="true"/);
+  assert.match(empty, /Dölj bolag/);
+});
+
 test("discovery visar bara följbara bolag och markerar följda", () => {
   const discovery = listDiscoveryCompanies();
   const slugs = discovery.map((company) => company.slug);
