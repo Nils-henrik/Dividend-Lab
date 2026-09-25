@@ -42,6 +42,9 @@ export type YahooHistoryResearch = {
   sourceUrl: string;
   currency: string | null;
   exchangeName: string | null;
+  dayHigh: number | null;
+  dayLow: number | null;
+  dayVolume: number | null;
 };
 
 type YahooChartResponse = {
@@ -398,6 +401,9 @@ export async function fetchYahooHistoryResearch(
       sourceUrl: `https://finance.yahoo.com/quote/${encodeURIComponent(symbol)}`,
       currency: stringValue(meta.currency),
       exchangeName: stringValue(meta.fullExchangeName ?? meta.exchangeName),
+      dayHigh: finitePositive(meta.regularMarketDayHigh),
+      dayLow: finitePositive(meta.regularMarketDayLow),
+      dayVolume: finiteNumber(meta.regularMarketVolume),
     };
   } catch {
     return null;

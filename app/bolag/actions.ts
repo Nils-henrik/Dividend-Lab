@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getAuthenticatedUser } from "@/lib/auth/session";
 import { getCompanyProfile } from "@/lib/companies/catalog";
+import { isFollowableCompanySlug } from "@/lib/companies/follow-policy";
 import {
   validateCompanyCommentBody,
   type CompanyCommentActionState,
@@ -11,13 +12,11 @@ import {
 import { ensureProfileForUser } from "@/lib/profiles/profile";
 import { createClient } from "@/lib/supabase/server";
 
-const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-
 export async function setCompanyFollowAction(formData: FormData) {
   const slug = String(formData.get("companySlug") ?? "").trim();
   const follow = String(formData.get("follow") ?? "") === "true";
 
-  if (!SLUG_PATTERN.test(slug) || !getCompanyProfile(slug)) {
+  if (!isFollowableCompanySlug(slug)) {
     return;
   }
 
@@ -73,7 +72,7 @@ function getFormString(formData: FormData, key: string) {
 }
 
 async function resolveActiveCompany(slug: string) {
-  if (!SLUG_PATTERN.test(slug) || !getCompanyProfile(slug)) {
+  if (!getCompanyProfile(slug) || !isFollowableCompanySlug(slug)) {
     return null;
   }
 
