@@ -10,7 +10,7 @@ import {
   getRelatedCompanies,
 } from "@/lib/companies/catalog";
 import { getCompanyNews } from "@/lib/companies/news";
-import { getInvestorOfficialData } from "@/lib/companies/investor-official";
+import { getCompanyOfficialData } from "@/lib/companies/official-data.server";
 import {
   getCompanyMarketData,
   getRelatedCompanyMarketData,
@@ -72,14 +72,14 @@ export default async function CompanyPage({ params }: Props) {
 
   const user = await getAuthenticatedUser();
   const relatedCompanies = getRelatedCompanies(company);
-  const [articles, followState, marketData, relatedMarketData, officialData, profile] = await Promise.all([
+  const [articles, followState, marketData, relatedMarketData, profile] = await Promise.all([
     Promise.resolve(getCompanyNews(company, getNewsArticles())),
     getCompanyFollowState(company.slug, user?.id),
     getCompanyMarketData(company),
     getRelatedCompanyMarketData(relatedCompanies),
-    company.slug === "investor" ? getInvestorOfficialData() : Promise.resolve(null),
     user ? getProfileForUser(user.id) : Promise.resolve(null),
   ]);
+  const officialData = await getCompanyOfficialData(company, followState);
 
   return (
     <AppShell allowGuest>

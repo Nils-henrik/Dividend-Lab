@@ -1,9 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+export type CompanyIngestionJobType = "initial_sync" | "baseline_refresh";
+
 export type CompanyIngestionJob = {
   id: string;
   companyId: string;
-  jobType: "initial_sync";
+  jobType: CompanyIngestionJobType;
   attempts: number;
 };
 
@@ -31,6 +33,11 @@ export const SUPPORTED_COMPANY_INGESTION_SLUGS = [
   "eqt",
   "evolution",
   "nibe",
+  "essity",
+  "hm",
+  "alfa-laval",
+  "assa-abloy",
+  "handelsbanken",
 ] as const;
 
 export type SupportedCompanyIngestionSlug =
@@ -58,7 +65,7 @@ function parseClaimedJob(row: ClaimedJobRow): CompanyIngestionJob | null {
     !UUID_PATTERN.test(row.job_id) ||
     typeof row.company_id !== "string" ||
     !UUID_PATTERN.test(row.company_id) ||
-    row.job_type !== "initial_sync" ||
+    (row.job_type !== "initial_sync" && row.job_type !== "baseline_refresh") ||
     typeof row.attempts !== "number" ||
     !Number.isInteger(row.attempts) ||
     row.attempts < 1 ||
@@ -96,6 +103,22 @@ export async function claimCompanyIngestionJob(
   }
 
   return { status: "claimed", job };
+}
+
+export async function enqueueStaleCompanyBaselineRefreshes(
+  client: CompanyIngestionQueueClient,
+  limit = 2,
+): Promise<{ status: "enqueued"; count: number } | { status: "error"; reason: "enqueue_failed" | "invalid_count" }> {
+  const { data, error } = await client.rpc("enqueue_stale_company_baseline_refreshes", {
+    p_supported_company_slugs: [...SUPPORTED_COMPANY_INGESTION_SLUGS],
+    p_limit: limit,
+    p_stale_after: "12 hours",
+  });
+  if (error) return { status: "error", reason: "enqueue_failed" };
+  if (typeof data !== "number" || !Number.isInteger(data) || data < 0) {
+    return { status: "error", reason: "invalid_count" };
+  }
+  return { status: "enqueued", count: data };
 }
 
 export async function recoverStaleCompanyIngestionJobs(

@@ -30,7 +30,7 @@ describe("company ingestion cron", () => {
     assert.doesNotMatch(route, /SUPABASE_SERVICE_ROLE_KEY/);
   });
 
-  it("registrerar en kostnadssnål daglig Vercel-cron", () => {
+  it("registrerar en begränsad Vercel-cron var sjätte timme", () => {
     const config = JSON.parse(
       readFileSync(new URL("../vercel.json", import.meta.url), "utf8"),
     ) as {
@@ -40,7 +40,7 @@ describe("company ingestion cron", () => {
     assert.deepEqual(config.crons, [
       {
         path: "/api/internal/company-ingestion/run",
-        schedule: "17 3 * * *",
+        schedule: "17 */6 * * *",
       },
     ]);
   });

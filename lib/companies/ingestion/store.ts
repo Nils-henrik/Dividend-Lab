@@ -1,10 +1,18 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import type { SourceSupportMode } from "@/lib/companies/ingestion/baseline";
 import {
+  COMPANY_FACT_SOURCE_TYPES,
   validateNormalizedCompanyDocument,
   type CompanySourceType,
   type NormalizedCompanyDocument,
 } from "@/lib/companies/ingestion/document";
+import {
+  companyFactRows,
+  companyOwnershipRows,
+  type CompanyFactDraft,
+  type CompanyOwnershipDraft,
+} from "@/lib/companies/ingestion/facts";
 import type { CompanyIngestionJob } from "@/lib/companies/ingestion/queue";
 import type { AtlasCopcoPressReleaseDocument } from "@/lib/companies/ingestion/adapters/atlas-copco";
 
@@ -39,6 +47,9 @@ export type OfficialCompanySource = {
   sourceUrl: string;
   publisher: string;
   lastCheckedAt: string | null;
+  supportMode: SourceSupportMode;
+  lastSuccessAt: string | null;
+  lastFailureReason: string | null;
 };
 
 export type PersistedCompanyDocument = {
@@ -68,6 +79,20 @@ export type CompanyIngestionOrchestratorStore = CompanyIngestionStore & {
     allowedOrigins: readonly string[];
     fetchedAt: string;
   }): Promise<boolean>;
+  saveFacts(input: {
+    companyId: string;
+    facts: CompanyFactDraft[];
+    allowedOrigins: readonly string[];
+    fetchedAt: string;
+  }): Promise<boolean>;
+  replaceOwnership(input: {
+    companyId: string;
+    owners: CompanyOwnershipDraft[];
+    allowedOrigins: readonly string[];
+    fetchedAt: string;
+  }): Promise<boolean>;
+  markSourceFailure(sourceId: string, checkedAt: string, reason: string): Promise<boolean>;
+  markSourceSupport(sourceId: string, supportMode: SourceSupportMode, checkedAt: string): Promise<boolean>;
 };
 
 export function mergePersistedCompanyDocument(
@@ -101,7 +126,14 @@ const SOURCE_TYPES = new Set<CompanySourceType>([
   "press_releases",
   "financial_reports",
   "financial_calendar",
+  ...COMPANY_FACT_SOURCE_TYPES,
 ]);
+const SUPPORT_MODES = new Set<SourceSupportMode>(["automated", "source_link_only", "blocked"]);
+
+function isMissingCoverageColumn(error: { message?: string; code?: string } | null): boolean {
+  const message = error?.message ?? "";
+  return error?.code === "42703" || /support_mode|last_success_at|last_failure_reason/.test(message);
+}
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 export function createCompanyIngestionStore(
@@ -128,18 +160,31 @@ export function createCompanyIngestionStore(
     },
 
     async loadOfficialSources(companyId) {
-      const { data, error } = await client
+      const covered = await client
         .from("company_sources")
-        .select("id, source_type, source_url, publisher, last_checked_at")
+        .select("id, source_type, source_url, publisher, last_checked_at, support_mode, last_success_at, last_failure_reason")
         .eq("company_id", companyId)
         .eq("is_official", true)
         .eq("is_active", true);
+      const legacy = isMissingCoverageColumn(covered.error)
+        ? await client
+          .from("company_sources")
+          .select("id, source_type, source_url, publisher, last_checked_at")
+          .eq("company_id", companyId)
+          .eq("is_official", true)
+          .eq("is_active", true)
+        : covered;
+      const data = legacy.data;
+      const error = legacy.error;
       if (error || !Array.isArray(data)) {
         return { status: "error" };
       }
 
       const sources: OfficialCompanySource[] = [];
       for (const row of data) {
+        const supportMode = "support_mode" in row && typeof row.support_mode === "string"
+          ? row.support_mode
+          : "automated";
         if (
           typeof row.id !== "string" ||
           !UUID_PATTERN.test(row.id) ||
@@ -148,7 +193,8 @@ export function createCompanyIngestionStore(
           typeof row.source_url !== "string" ||
           !row.source_url.startsWith("https://") ||
           typeof row.publisher !== "string" ||
-          (row.last_checked_at !== null && typeof row.last_checked_at !== "string")
+          (row.last_checked_at !== null && typeof row.last_checked_at !== "string") ||
+          !SUPPORT_MODES.has(supportMode as SourceSupportMode)
         ) {
           return { status: "error" };
         }
@@ -159,6 +205,9 @@ export function createCompanyIngestionStore(
           sourceUrl: row.source_url,
           publisher: row.publisher,
           lastCheckedAt: row.last_checked_at,
+          supportMode: supportMode as SourceSupportMode,
+          lastSuccessAt: "last_success_at" in row && typeof row.last_success_at === "string" ? row.last_success_at : null,
+          lastFailureReason: "last_failure_reason" in row && typeof row.last_failure_reason === "string" ? row.last_failure_reason : null,
         });
       }
 
@@ -274,14 +323,88 @@ export function createCompanyIngestionStore(
       return !error;
     },
 
+    async saveFacts(input) {
+      const rows = companyFactRows(input.facts, input.allowedOrigins, input.fetchedAt);
+      if (!rows || rows.length === 0) return false;
+      const { error } = await client.from("company_facts").upsert(
+        rows.map((row) => ({ ...row, company_id: input.companyId })),
+        { onConflict: "company_id,fact_type" },
+      );
+      return !error;
+    },
+
+    async replaceOwnership(input) {
+      const rows = companyOwnershipRows(input.owners, input.allowedOrigins, input.fetchedAt);
+      if (!rows) return false;
+      const { error } = await client.from("company_ownership").upsert(
+        rows.map((row) => ({ ...row, company_id: input.companyId })),
+        { onConflict: "company_id,owner_name" },
+      );
+      if (error) return false;
+      const { data: existing, error: existingError } = await client
+        .from("company_ownership")
+        .select("id, owner_name")
+        .eq("company_id", input.companyId);
+      if (existingError || !Array.isArray(existing)) return false;
+      const names = new Set(rows.map((row) => row.owner_name));
+      const staleIds = existing.flatMap((row) =>
+        typeof row.id === "string" && typeof row.owner_name === "string" && !names.has(row.owner_name)
+          ? [row.id]
+          : [],
+      );
+      if (staleIds.length === 0) return true;
+      const { error: deleteError } = await client.from("company_ownership").delete().in("id", staleIds);
+      return !deleteError;
+    },
+
     async markSourceChecked(sourceId, checkedAt) {
-      const { data, error } = await client
+      const covered = await client
+        .from("company_sources")
+        .update({
+          last_checked_at: checkedAt,
+          last_success_at: checkedAt,
+          last_failure_reason: null,
+        })
+        .eq("id", sourceId)
+        .select("id")
+        .maybeSingle();
+      if (!isMissingCoverageColumn(covered.error)) {
+        return !covered.error && covered.data?.id === sourceId;
+      }
+      const legacy = await client
         .from("company_sources")
         .update({ last_checked_at: checkedAt })
         .eq("id", sourceId)
         .select("id")
         .maybeSingle();
+      return !legacy.error && legacy.data?.id === sourceId;
+    },
 
+    async markSourceFailure(sourceId, _checkedAt, reason) {
+      const { data, error } = await client
+        .from("company_sources")
+        .update({
+          last_failure_reason: sanitizeJobError(reason),
+        })
+        .eq("id", sourceId)
+        .select("id")
+        .maybeSingle();
+      if (isMissingCoverageColumn(error)) return true;
+      return !error && data?.id === sourceId;
+    },
+
+    async markSourceSupport(sourceId, supportMode, checkedAt) {
+      const { data, error } = await client
+        .from("company_sources")
+        .update({
+          support_mode: supportMode,
+          last_checked_at: checkedAt,
+          last_failure_reason: null,
+        })
+        .eq("id", sourceId)
+        .select("id")
+        .maybeSingle();
+      if (isMissingCoverageColumn(error)) return true;
       return !error && data?.id === sourceId;
     },
 

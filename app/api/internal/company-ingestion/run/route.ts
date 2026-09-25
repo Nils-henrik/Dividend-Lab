@@ -21,6 +21,7 @@ export async function GET(request: Request) {
   const status =
     result.status === "unavailable" ||
     result.status === "recovery_error" ||
+    result.status === "enqueue_error" ||
     result.status === "claim_error"
       ? 503
       : 200;

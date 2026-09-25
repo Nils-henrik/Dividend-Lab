@@ -3,6 +3,7 @@ import "server-only";
 import { createCompanyIngestionAdminClient } from "@/lib/companies/ingestion/admin";
 import {
   claimCompanyIngestionJob,
+  enqueueStaleCompanyBaselineRefreshes,
   recoverStaleCompanyIngestionJobs,
   type ClaimCompanyIngestionJobResult,
 } from "@/lib/companies/ingestion/queue";
@@ -29,6 +30,7 @@ export type RunNextCompanyIngestionJobResult =
         | "empty"
         | "unavailable"
         | "recovery_error"
+        | "enqueue_error"
         | "claim_error";
     };
 
@@ -41,6 +43,11 @@ export async function runNextCompanyIngestionJob(): Promise<RunNextCompanyIngest
   const recovery = await recoverStaleCompanyIngestionJobs(client);
   if (recovery.status === "error") {
     return { status: "recovery_error" };
+  }
+
+  const enqueued = await enqueueStaleCompanyBaselineRefreshes(client);
+  if (enqueued.status === "error") {
+    return { status: "enqueue_error" };
   }
 
   const claim = await claimCompanyIngestionJob(client);

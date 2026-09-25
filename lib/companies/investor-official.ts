@@ -4,9 +4,9 @@ const PRESS_RELEASES_URL =
 const EVENTS_URL = "https://vp053.alertir.com/v4/en/events-calendar";
 const PUBLIC_EVENTS_URL = `${INVESTOR_ORIGIN}/investors-media/events-calendar`;
 const REPORTS_URL = `${INVESTOR_ORIGIN}/investors-media/reports-presentations/2026`;
-const OWNERSHIP_URL = `${INVESTOR_ORIGIN}/investors-media/the-investor-share/ownership-structure`;
-const DIVIDEND_URL = `${INVESTOR_ORIGIN}/investors-media/the-investor-share/dividend-and-dividend-policy`;
-const MANAGEMENT_URL = `${INVESTOR_ORIGIN}/about-investor/board-management/executive-leadership-team`;
+export const INVESTOR_OWNERSHIP_PAGE_URL = `${INVESTOR_ORIGIN}/investors-media/the-investor-share/ownership-structure`;
+export const INVESTOR_DIVIDEND_PAGE_URL = `${INVESTOR_ORIGIN}/investors-media/the-investor-share/dividend-and-dividend-policy`;
+export const INVESTOR_MANAGEMENT_PAGE_URL = `${INVESTOR_ORIGIN}/about-investor/board-management/executive-leadership-team`;
 
 const USER_AGENT = "Mozilla/5.0 (compatible; DivLab/1.0; +https://divlab.se)";
 const MAX_HTML_BYTES = 2_000_000;
@@ -31,6 +31,8 @@ export type InvestorOfficialData = {
   ownershipAsOf: string | null;
   ceo: string | null;
   dividendPerShare: number | null;
+  dividendCurrency: "SEK" | null;
+  dividendYear: number | null;
   fetchedAt: string;
 };
 
@@ -142,12 +144,29 @@ export function parseInvestorCeo(html: string): string | null {
 }
 
 export function parseInvestorDividend(html: string): number | null {
+  return parseInvestorDividendFact(html)?.perShare ?? null;
+}
+
+export function parseInvestorDividendFact(html: string): {
+  perShare: number;
+  currency: "SEK" | null;
+  year: number | null;
+} | null {
   const text = decodeHtml(html);
-  const match = text.match(/dividend[^.]{0,180}?(?:SEK\s*)?(\d+[.,]\d{1,2})\s*(?:SEK|kronor|per share)/i)
-    ?? text.match(/(?:SEK\s*)?(\d+[.,]\d{1,2})\s*(?:SEK\s*)?per share/i);
+  const match = text.match(/dividend[^.]{0,220}?((?:SEK\s*)?\d+[.,]\d{1,2}\s*(?:SEK|kronor|per share))/i)
+    ?? text.match(/((?:SEK\s*)?\d+[.,]\d{1,2}\s*(?:SEK\s*)?per share)/i);
   if (!match) return null;
-  const value = Number(match[1].replace(",", "."));
-  return Number.isFinite(value) && value > 0 && value < 100 ? value : null;
+  const window = match[1] ?? match[0];
+  const amount = window.match(/(\d+[.,]\d{1,2})/);
+  if (!amount) return null;
+  const perShare = Number(amount[1].replace(",", "."));
+  if (!Number.isFinite(perShare) || perShare <= 0 || perShare >= 100) return null;
+  const yearMatch = window.match(/\b(20\d{2})\b/);
+  return {
+    perShare,
+    currency: /SEK|kronor/i.test(window) ? "SEK" : null,
+    year: yearMatch ? Number(yearMatch[1]) : null,
+  };
 }
 
 async function fetchOfficialHtml(url: string, revalidate: number) {
@@ -171,11 +190,12 @@ export async function getInvestorOfficialData(): Promise<InvestorOfficialData> {
       fetchOfficialHtml(PRESS_RELEASES_URL, 900),
       fetchOfficialHtml(EVENTS_URL, 3600),
       fetchOfficialHtml(REPORTS_URL, 14_400),
-      fetchOfficialHtml(OWNERSHIP_URL, 86_400),
-      fetchOfficialHtml(MANAGEMENT_URL, 86_400),
-      fetchOfficialHtml(DIVIDEND_URL, 86_400),
+      fetchOfficialHtml(INVESTOR_OWNERSHIP_PAGE_URL, 86_400),
+      fetchOfficialHtml(INVESTOR_MANAGEMENT_PAGE_URL, 86_400),
+      fetchOfficialHtml(INVESTOR_DIVIDEND_PAGE_URL, 86_400),
     ]);
   const ownership = parseInvestorOwnership(ownershipHtml);
+  const dividend = parseInvestorDividendFact(dividendHtml);
   return {
     pressReleases: parseInvestorPressReleases(pressHtml),
     events: parseInvestorEvents(eventsHtml),
@@ -183,7 +203,9 @@ export async function getInvestorOfficialData(): Promise<InvestorOfficialData> {
     ownership: ownership.items,
     ownershipAsOf: ownership.asOf,
     ceo: parseInvestorCeo(managementHtml),
-    dividendPerShare: parseInvestorDividend(dividendHtml),
+    dividendPerShare: dividend?.perShare ?? null,
+    dividendCurrency: dividend?.currency ?? null,
+    dividendYear: dividend?.year ?? null,
     fetchedAt: new Date().toISOString(),
   };
 }
