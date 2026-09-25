@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import AppIcon, { type AppIconName } from "@/components/layout/AppIcon";
 import CompanyLogo from "@/components/companies/CompanyLogo";
@@ -233,6 +233,8 @@ export default function WatchlistBoard({
   onFilterChange,
   renderFollow,
 }: Props) {
+  const [discoveryExpanded, setDiscoveryExpanded] = useState(showEmptyFollows);
+
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
       <section className="divlab-hero">
@@ -293,7 +295,13 @@ export default function WatchlistBoard({
           autoCapitalize="off"
           autoCorrect="off"
           spellCheck={false}
-          onChange={(event) => onQueryChange(event.target.value)}
+          onChange={(event) => {
+            const nextQuery = event.target.value;
+            if (nextQuery.trim()) {
+              setDiscoveryExpanded(true);
+            }
+            onQueryChange(nextQuery);
+          }}
           className="divlab-input min-h-11 w-full px-4"
         />
         <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -351,7 +359,12 @@ export default function WatchlistBoard({
                 key={filter.id}
                 type="button"
                 aria-pressed={selected}
-                onClick={() => onFilterChange(filter.id)}
+                onClick={() => {
+                  if (filter.id !== "all") {
+                    setDiscoveryExpanded(true);
+                  }
+                  onFilterChange(filter.id);
+                }}
                 className={`min-h-11 shrink-0 rounded-full border px-4 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/50 ${
                   selected
                     ? "divlab-selected"
@@ -462,27 +475,41 @@ export default function WatchlistBoard({
               {discovery.length} bolag som går att följa
             </p>
           </div>
+          <button
+            type="button"
+            aria-expanded={discoveryExpanded}
+            aria-controls="watchlist-discovery-list"
+            onClick={() => setDiscoveryExpanded((expanded) => !expanded)}
+            className="divlab-btn-secondary min-h-11 shrink-0 px-3 py-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/50"
+          >
+            {discoveryExpanded ? "Dölj bolag" : `Visa bolag (${discovery.length})`}
+            <span aria-hidden="true" className="ml-1">
+              {discoveryExpanded ? "▴" : "▾"}
+            </span>
+          </button>
         </div>
-        {showNoDiscoveryMatches ? (
-          <p className="divlab-card mt-3 px-5 py-8 text-center text-sm text-divlab-text-secondary">
-            Inga bolag matchar sökningen.
-          </p>
-        ) : (
-          <div className="divlab-card mt-3 divide-y divide-[var(--divlab-divider)] overflow-hidden">
-            {discovery.map((company) => (
-              <DiscoveryRow
-                key={company.slug}
-                company={company}
-                follow={renderFollow({
-                  slug: company.slug,
-                  displayName: company.displayName,
-                  isFollowing: company.isFollowing,
-                  followMode: "discovery",
-                })}
-              />
-            ))}
-          </div>
-        )}
+        <div id="watchlist-discovery-list" hidden={!discoveryExpanded}>
+          {showNoDiscoveryMatches ? (
+            <p className="divlab-card mt-3 px-5 py-8 text-center text-sm text-divlab-text-secondary">
+              Inga bolag matchar sökningen.
+            </p>
+          ) : (
+            <div className="divlab-card mt-3 divide-y divide-[var(--divlab-divider)] overflow-hidden">
+              {discovery.map((company) => (
+                <DiscoveryRow
+                  key={company.slug}
+                  company={company}
+                  follow={renderFollow({
+                    slug: company.slug,
+                    displayName: company.displayName,
+                    isFollowing: company.isFollowing,
+                    followMode: "discovery",
+                  })}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </section>
     </div>
   );
