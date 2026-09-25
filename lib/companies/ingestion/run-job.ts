@@ -1,4 +1,6 @@
+import { shouldRefreshCompanySource } from "@/lib/companies/ingestion/baseline";
 import {
+  COMPANY_FACT_SOURCE_TYPES,
   COMPANY_SOURCE_TYPES,
   type CompanySourceType,
 } from "@/lib/companies/ingestion/document";
@@ -6,6 +8,7 @@ import {
   collectCompanySource,
   companyDocumentOrigins,
 } from "@/lib/companies/ingestion/collect";
+import { collectInvestorProfileSource } from "@/lib/companies/ingestion/investor-profile";
 import { createJobDeadline, JOB_DEADLINE_EXCEEDED } from "@/lib/companies/ingestion/deadline";
 import {
   INGESTION_REQUEST_TIMEOUT_MS,
@@ -24,6 +27,7 @@ export type CompanyIngestionWorkerDependencies = {
   sleep?: (milliseconds: number) => Promise<void>;
   now?: () => Date;
   clock?: () => number;
+  budgetMs?: number;
 };
 
 export type CompanyIngestionWorkerResult =
@@ -55,9 +59,10 @@ async function executeCompanyIngestionJob(
   dependencies: CompanyIngestionWorkerDependencies,
 ): Promise<CompanyIngestionWorkerResult> {
   const now = (dependencies.now ?? (() => new Date()))();
-  const deadline = createJobDeadline(
-    dependencies.clock ? { clock: dependencies.clock } : undefined,
-  );
+  const deadline = createJobDeadline({
+    clock: dependencies.clock,
+    budgetMs: dependencies.budgetMs,
+  });
   const context: SourceFetchContext = {
     fetchImpl: dependencies.fetchImpl,
     sleep: dependencies.sleep,
@@ -81,14 +86,22 @@ async function executeCompanyIngestionJob(
   let savedDocuments = 0;
   let failure: string | null = null;
   let fetchedSources = 0;
-  for (const sourceType of COMPANY_SOURCE_TYPES) {
+  const sourceTypes: CompanySourceType[] = [...COMPANY_SOURCE_TYPES, ...COMPANY_FACT_SOURCE_TYPES];
+  for (const sourceType of sourceTypes) {
     const source = sources.sources.find((item) => item.sourceType === sourceType);
     if (!source) {
-      failure ??= `${sourceType}_official_source_unavailable`;
+      if (COMPANY_SOURCE_TYPES.includes(sourceType as (typeof COMPANY_SOURCE_TYPES)[number])) {
+        failure ??= `${sourceType}_official_source_unavailable`;
+      }
       continue;
     }
 
-    if (source.lastCheckedAt) {
+    if (!shouldRefreshCompanySource({
+      jobType: job.jobType,
+      supportMode: source.supportMode ?? "automated",
+      lastCheckedAt: source.lastCheckedAt,
+      now,
+    })) {
       continue;
     }
 
@@ -101,26 +114,72 @@ async function executeCompanyIngestionJob(
       return recordFailure(job, JOB_DEADLINE_EXCEEDED, dependencies);
     }
     fetchedSources += 1;
+    const fetchedAt = now.toISOString();
+    const allowedOrigins = companyDocumentOrigins(company.company.slug);
+    const isFactSource = (COMPANY_FACT_SOURCE_TYPES as readonly string[]).includes(sourceType);
+
+    if (isFactSource) {
+      if (company.company.slug !== "investor") {
+        const marked = await dependencies.store.markSourceSupport(source.id, "source_link_only", fetchedAt);
+        if (!marked) failure ??= "database_write_failed";
+        continue;
+      }
+      const profile = await collectInvestorProfileSource(source.sourceType, source.sourceUrl, context);
+      if (profile.status === "error") {
+        if (profile.reason === JOB_DEADLINE_EXCEEDED) {
+          return recordFailure(job, JOB_DEADLINE_EXCEEDED, dependencies);
+        }
+        failure ??= `${sourceType}_${profile.reason}`;
+        await dependencies.store.markSourceFailure(source.id, fetchedAt, profile.reason);
+        continue;
+      }
+      const factsSaved = profile.facts.length === 0
+        || await dependencies.store.saveFacts({
+          companyId: job.companyId,
+          facts: profile.facts,
+          allowedOrigins,
+          fetchedAt,
+        });
+      const ownersSaved = profile.ownership.length === 0
+        || await dependencies.store.replaceOwnership({
+          companyId: job.companyId,
+          owners: profile.ownership,
+          allowedOrigins,
+          fetchedAt,
+        });
+      const checked = factsSaved && ownersSaved && await dependencies.store.markSourceChecked(source.id, fetchedAt);
+      if (!checked) {
+        failure ??= "database_write_failed";
+        continue;
+      }
+      savedDocuments += profile.facts.length + profile.ownership.length;
+      continue;
+    }
 
     const collected = await collectCompanySource(
       company.company.slug,
-      { sourceType: source.sourceType as CompanySourceType, sourceUrl: source.sourceUrl },
+      { sourceType: source.sourceType, sourceUrl: source.sourceUrl },
       context,
     );
     if (collected.status === "error") {
       if (collected.reason === JOB_DEADLINE_EXCEEDED) {
         return recordFailure(job, JOB_DEADLINE_EXCEEDED, dependencies);
       }
+      if (collected.reason === "source_not_automated") {
+        const marked = await dependencies.store.markSourceSupport(source.id, "source_link_only", fetchedAt);
+        if (!marked) failure ??= "database_write_failed";
+        continue;
+      }
       failure ??= `${sourceType}_${collected.reason}`;
+      await dependencies.store.markSourceFailure(source.id, fetchedAt, collected.reason);
       continue;
     }
 
-    const fetchedAt = now.toISOString();
     const saved = await dependencies.store.saveDocuments({
       companyId: job.companyId,
       sourceId: source.id,
       documents: collected.documents,
-      allowedOrigins: companyDocumentOrigins(company.company.slug),
+      allowedOrigins,
       fetchedAt,
     });
     const checked = saved

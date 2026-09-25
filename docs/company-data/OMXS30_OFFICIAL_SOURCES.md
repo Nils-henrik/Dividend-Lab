@@ -1,6 +1,8 @@
 # Officiella bolagskällor – OMXS30
 
 Senast verifierad: 2026-09-24. Completion pass v2.0 lade till Addtech, EQT, Evolution och NIBE.
+Täckningen 2026-09-25, inklusive Essity, H&M, Alfa Laval, ASSA ABLOY och
+Handelsbanken, finns i `docs/company-data/COMPANY_PAGE_DATA_PARITY.md`.
 
 Registret utökar piloten i `docs/company-data/PILOT_OFFICIAL_SOURCES.md`.
 Endast källor som både svarade med den officiella bolagsdomänen och gav

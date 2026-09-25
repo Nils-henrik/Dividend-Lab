@@ -73,6 +73,44 @@ import {
   parseNibePressReleases,
 } from "@/lib/companies/ingestion/adapters/omxs30-completion";
 import {
+  ESSITY_CALENDAR_SOURCE_URL,
+  ESSITY_ORIGIN,
+  ESSITY_PRESS_RELEASE_SOURCE_URL,
+  ESSITY_REPORTS_SOURCE_URL,
+  HM_CALENDAR_SOURCE_URL,
+  HM_ORIGIN,
+  HM_PRESS_RELEASE_SOURCE_URL,
+  HM_REPORTS_SOURCE_URL,
+  parseEssityCalendar,
+  parseEssityFinancialReports,
+  parseEssityPressReleases,
+  parseHmCalendar,
+  parseHmFinancialReports,
+  parseHmPressReleases,
+} from "@/lib/companies/ingestion/adapters/omxs30-essity-hm";
+import {
+  ALFA_LAVAL_CALENDAR_SOURCE_URL,
+  ALFA_LAVAL_NEWSROOM_SOURCE_URL,
+  ALFA_LAVAL_ORIGIN,
+  ASSA_ABLOY_CALENDAR_SOURCE_URL,
+  ASSA_ABLOY_INTERIM_REPORTS_SOURCE_URL,
+  ASSA_ABLOY_ORIGIN,
+  ASSA_ABLOY_PRESS_JSON_URL,
+  ASSA_ABLOY_PRESS_SOURCE_URL,
+  HANDELSBANKEN_IR_SOURCE_URL,
+  HANDELSBANKEN_ORIGIN,
+  HANDELSBANKEN_PRESS_SOURCE_URL,
+  parseAlfaLavalFinancialNews,
+  parseAlfaLavalReportCandidates,
+  parseAlfaLavalReportPdf,
+  parseAssaAbloyFinancialReports,
+  parseAssaAbloyPressConfig,
+  parseAssaAbloyPressReleases,
+  parseHandelsbankenCalendar,
+  parseHandelsbankenFinancialReports,
+  type FastLaneReportCandidate,
+} from "@/lib/companies/ingestion/adapters/omxs30-fast-lane";
+import {
   SAAB_CALENDAR_SOURCE_URL,
   SAAB_ORIGIN,
   SAAB_PRESS_RELEASE_SOURCE_URL,
@@ -107,6 +145,7 @@ import {
   parseVolvoReportDetail,
 } from "@/lib/companies/ingestion/adapters/volvo";
 import {
+  COMPANY_SOURCE_TYPES,
   validateNormalizedCompanyDocument,
   type CompanySourceType,
   type NormalizedCompanyDocument,
@@ -133,9 +172,11 @@ export type CollectedCompanySource =
   | { status: "ok"; documents: NormalizedCompanyDocument[] }
   | { status: "error"; reason: string };
 
+type DocumentSourceType = (typeof COMPANY_SOURCE_TYPES)[number];
+
 const EXPECTED_SOURCE_URLS: Record<
   SupportedCompanyIngestionSlug,
-  Record<CompanySourceType, string>
+  Record<DocumentSourceType, string>
 > = {
   investor: {
     press_releases: INVESTOR_PRESS_RELEASE_SOURCE_URL,
@@ -197,6 +238,31 @@ const EXPECTED_SOURCE_URLS: Record<
     financial_reports: NIBE_REPORTS_SOURCE_URL,
     financial_calendar: NIBE_CALENDAR_SOURCE_URL,
   },
+  essity: {
+    press_releases: ESSITY_PRESS_RELEASE_SOURCE_URL,
+    financial_reports: ESSITY_REPORTS_SOURCE_URL,
+    financial_calendar: ESSITY_CALENDAR_SOURCE_URL,
+  },
+  hm: {
+    press_releases: HM_PRESS_RELEASE_SOURCE_URL,
+    financial_reports: HM_REPORTS_SOURCE_URL,
+    financial_calendar: HM_CALENDAR_SOURCE_URL,
+  },
+  "alfa-laval": {
+    press_releases: ALFA_LAVAL_NEWSROOM_SOURCE_URL,
+    financial_reports: ALFA_LAVAL_NEWSROOM_SOURCE_URL,
+    financial_calendar: ALFA_LAVAL_CALENDAR_SOURCE_URL,
+  },
+  "assa-abloy": {
+    press_releases: ASSA_ABLOY_PRESS_SOURCE_URL,
+    financial_reports: ASSA_ABLOY_INTERIM_REPORTS_SOURCE_URL,
+    financial_calendar: ASSA_ABLOY_CALENDAR_SOURCE_URL,
+  },
+  handelsbanken: {
+    press_releases: HANDELSBANKEN_PRESS_SOURCE_URL,
+    financial_reports: HANDELSBANKEN_IR_SOURCE_URL,
+    financial_calendar: HANDELSBANKEN_IR_SOURCE_URL,
+  },
 };
 
 const ALLOWED_ORIGINS: Record<SupportedCompanyIngestionSlug, readonly string[]> = {
@@ -212,6 +278,11 @@ const ALLOWED_ORIGINS: Record<SupportedCompanyIngestionSlug, readonly string[]> 
   eqt: [EQT_ORIGIN],
   evolution: [EVOLUTION_ORIGIN],
   nibe: [NIBE_ORIGIN, "https://storage.mfn.se"],
+  essity: [ESSITY_ORIGIN],
+  hm: [HM_ORIGIN],
+  "alfa-laval": [ALFA_LAVAL_ORIGIN],
+  "assa-abloy": [ASSA_ABLOY_ORIGIN],
+  handelsbanken: [HANDELSBANKEN_ORIGIN],
 };
 
 function fetchFailure(prefix: string, reason: string): CollectedCompanySource {
@@ -246,6 +317,18 @@ function acceptDocuments(
   return { status: "ok", documents: valid };
 }
 
+async function fetchJson(
+  url: string,
+  origin: string,
+  context: SourceFetchContext,
+) {
+  return fetchOfficialText(url, context, {
+    allowedOrigin: origin,
+    acceptedContentTypes: JSON_FEED,
+    maxBytes: INGESTION_MAX_HTML_BYTES,
+  });
+}
+
 async function fetchHtml(
   url: string,
   origin: string,
@@ -262,7 +345,7 @@ async function fetchHtml(
 
 export function expectedCompanySourceUrl(
   slug: SupportedCompanyIngestionSlug,
-  sourceType: CompanySourceType,
+  sourceType: DocumentSourceType,
 ): string {
   return EXPECTED_SOURCE_URLS[slug][sourceType];
 }
@@ -282,7 +365,11 @@ export async function collectCompanySource(
     return { status: "error", reason: "unsupported_company" };
   }
 
-  if (source.sourceUrl !== expectedCompanySourceUrl(slug, source.sourceType)) {
+  if (!(COMPANY_SOURCE_TYPES as readonly string[]).includes(source.sourceType)) {
+    return { status: "error", reason: "unsupported_source_type" };
+  }
+
+  if (source.sourceUrl !== expectedCompanySourceUrl(slug, source.sourceType as DocumentSourceType)) {
     return { status: "error", reason: "unexpected_source_url" };
   }
 
@@ -355,6 +442,46 @@ export async function collectCompanySource(
       );
     case "nibe":
       return collectNibe(source.sourceType, context, origins);
+    case "essity":
+      return collectStaticPage(
+        source.sourceType,
+        ESSITY_ORIGIN,
+        {
+          press_releases: ESSITY_PRESS_RELEASE_SOURCE_URL,
+          financial_reports: ESSITY_REPORTS_SOURCE_URL,
+          financial_calendar: ESSITY_CALENDAR_SOURCE_URL,
+        },
+        {
+          press_releases: parseEssityPressReleases,
+          financial_reports: parseEssityFinancialReports,
+          financial_calendar: (html) => parseEssityCalendar(html, context.now),
+        },
+        context,
+        origins,
+      );
+    case "hm":
+      return collectStaticPage(
+        source.sourceType,
+        HM_ORIGIN,
+        {
+          press_releases: HM_PRESS_RELEASE_SOURCE_URL,
+          financial_reports: HM_REPORTS_SOURCE_URL,
+          financial_calendar: HM_CALENDAR_SOURCE_URL,
+        },
+        {
+          press_releases: parseHmPressReleases,
+          financial_reports: parseHmFinancialReports,
+          financial_calendar: (html) => parseHmCalendar(html, context.now),
+        },
+        context,
+        origins,
+      );
+    case "alfa-laval":
+      return collectAlfaLaval(source.sourceType, context, origins);
+    case "assa-abloy":
+      return collectAssaAbloy(source.sourceType, context, origins);
+    case "handelsbanken":
+      return collectHandelsbanken(source.sourceType, context, origins);
     case "sca":
       return collectStaticPage(
         source.sourceType,
@@ -380,17 +507,21 @@ export async function collectCompanySource(
 async function collectStaticPage(
   sourceType: CompanySourceType,
   origin: string,
-  urls: Record<CompanySourceType, string>,
-  parsers: Record<CompanySourceType, (html: string) => NormalizedCompanyDocument[]>,
+  urls: Record<DocumentSourceType, string>,
+  parsers: Record<DocumentSourceType, (html: string) => NormalizedCompanyDocument[]>,
   context: SourceFetchContext,
   origins: readonly string[],
 ): Promise<CollectedCompanySource> {
-  const page = await fetchHtml(urls[sourceType], origin, context);
+  if (!(COMPANY_SOURCE_TYPES as readonly string[]).includes(sourceType)) {
+    return { status: "error", reason: "unsupported_source_type" };
+  }
+  const documentType = sourceType as DocumentSourceType;
+  const page = await fetchHtml(urls[documentType], origin, context);
   if (page.status === "error") {
     return fetchFailure("listing", page.reason);
   }
 
-  return acceptDocuments(parsers[sourceType](page.text), origins);
+  return acceptDocuments(parsers[documentType](page.text), origins);
 }
 
 async function collectInvestor(
@@ -729,5 +860,126 @@ async function collectNibe(
   const documents = sourceType === "financial_reports"
     ? parseNibeFinancialReports(widget.text)
     : parseNibeCalendar(widget.text, context.now);
+  return acceptDocuments(documents, origins);
+}
+
+async function collectDetailReports(
+  candidates: readonly FastLaneReportCandidate[],
+  origin: string,
+  parseDetail: (html: string, candidate: FastLaneReportCandidate) => NormalizedCompanyDocument | null,
+  context: SourceFetchContext,
+  origins: readonly string[],
+): Promise<CollectedCompanySource> {
+  const documents: NormalizedCompanyDocument[] = [];
+  for (const candidate of candidates) {
+    const paused = await pauseOrStop(context);
+    if (paused) {
+      return paused;
+    }
+    const detail = await fetchHtml(candidate.detailUrl, origin, context);
+    if (detail.status === "error") {
+      return fetchFailure("detail", detail.reason);
+    }
+
+    const document = parseDetail(detail.text, candidate);
+    if (document) {
+      documents.push(document);
+    }
+  }
+
+  return acceptDocuments(documents, origins);
+}
+
+async function collectAlfaLaval(
+  sourceType: CompanySourceType,
+  context: SourceFetchContext,
+  origins: readonly string[],
+): Promise<CollectedCompanySource> {
+  if (sourceType === "financial_calendar") {
+    return { status: "error", reason: "source_not_automated" };
+  }
+
+  const page = await fetchHtml(ALFA_LAVAL_NEWSROOM_SOURCE_URL, ALFA_LAVAL_ORIGIN, context);
+  if (page.status === "error") {
+    return fetchFailure("listing", page.reason);
+  }
+
+  if (sourceType === "press_releases") {
+    return acceptDocuments(parseAlfaLavalFinancialNews(page.text), origins);
+  }
+
+  return collectDetailReports(
+    parseAlfaLavalReportCandidates(page.text),
+    ALFA_LAVAL_ORIGIN,
+    parseAlfaLavalReportPdf,
+    context,
+    origins,
+  );
+}
+
+async function collectAssaAbloy(
+  sourceType: CompanySourceType,
+  context: SourceFetchContext,
+  origins: readonly string[],
+): Promise<CollectedCompanySource> {
+  if (sourceType === "financial_calendar") {
+    return { status: "error", reason: "source_not_automated" };
+  }
+
+  if (sourceType === "press_releases") {
+    const page = await fetchHtml(ASSA_ABLOY_PRESS_SOURCE_URL, ASSA_ABLOY_ORIGIN, context);
+    if (page.status === "error") {
+      return fetchFailure("listing", page.reason);
+    }
+    if (!parseAssaAbloyPressConfig(page.text)) {
+      return { status: "error", reason: "press_endpoint_not_verified" };
+    }
+
+    const paused = await pauseOrStop(context);
+    if (paused) {
+      return paused;
+    }
+    const json = await fetchJson(ASSA_ABLOY_PRESS_JSON_URL, ASSA_ABLOY_ORIGIN, context);
+    if (json.status === "error") {
+      return fetchFailure("listing", json.reason);
+    }
+
+    return acceptDocuments(parseAssaAbloyPressReleases(json.text), origins);
+  }
+
+  const page = await fetchHtml(ASSA_ABLOY_INTERIM_REPORTS_SOURCE_URL, ASSA_ABLOY_ORIGIN, context);
+  if (page.status === "error") {
+    return fetchFailure("listing", page.reason);
+  }
+
+  const paused = await pauseOrStop(context);
+  if (paused) {
+    return paused;
+  }
+  const json = await fetchJson(ASSA_ABLOY_PRESS_JSON_URL, ASSA_ABLOY_ORIGIN, context);
+  if (json.status === "error") {
+    return fetchFailure("dates", json.reason);
+  }
+
+  return acceptDocuments(parseAssaAbloyFinancialReports(page.text, json.text), origins);
+}
+
+async function collectHandelsbanken(
+  sourceType: CompanySourceType,
+  context: SourceFetchContext,
+  origins: readonly string[],
+): Promise<CollectedCompanySource> {
+  if (sourceType === "press_releases") {
+    return { status: "error", reason: "source_not_automated" };
+  }
+
+  const page = await fetchHtml(HANDELSBANKEN_IR_SOURCE_URL, HANDELSBANKEN_ORIGIN, context);
+  if (page.status === "error") {
+    return fetchFailure("listing", page.reason);
+  }
+
+  const documents = sourceType === "financial_reports"
+    ? parseHandelsbankenFinancialReports(page.text)
+    : parseHandelsbankenCalendar(page.text, context.now);
   return acceptDocuments(documents, origins);
 }

@@ -67,6 +67,9 @@ function source(type: OfficialCompanySource["sourceType"], url: string, checked 
     sourceUrl: url,
     publisher: "Publisher",
     lastCheckedAt: checked ? "2026-09-01T00:00:00.000Z" : null,
+    supportMode: "automated",
+    lastSuccessAt: checked ? "2026-09-01T00:00:00.000Z" : null,
+    lastFailureReason: null,
   };
 }
 
@@ -125,6 +128,22 @@ function memoryStore(options: {
       calls.push(`retry:${reason}`);
       return true;
     },
+    async saveFacts() {
+      calls.push("facts");
+      return true;
+    },
+    async replaceOwnership() {
+      calls.push("ownership");
+      return true;
+    },
+    async markSourceFailure(_sourceId, _checkedAt, reason) {
+      calls.push(`failure:${reason}`);
+      return true;
+    },
+    async markSourceSupport() {
+      calls.push("support");
+      return true;
+    },
   };
   return { store, calls, saved, checked };
 }
@@ -144,6 +163,11 @@ describe("company ingestion v2", () => {
       "eqt",
       "evolution",
       "nibe",
+      "essity",
+      "hm",
+      "alfa-laval",
+      "assa-abloy",
+      "handelsbanken",
     ]);
     assert.equal(isSupportedCompanyIngestionSlug("volvo"), true);
     assert.equal(isSupportedCompanyIngestionSlug("atlas copco"), false);

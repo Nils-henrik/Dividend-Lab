@@ -6,7 +6,9 @@ import CompanyPriceChart from "@/components/companies/CompanyPriceChart";
 import FollowCompanyButton from "@/components/companies/FollowCompanyButton";
 import NewsArticleRow from "@/components/news/NewsArticleRow";
 import { classifyCompanyDocuments, companySourceDisclaimer } from "@/lib/companies/documents-view";
-import type { InvestorOfficialData, OfficialItem } from "@/lib/companies/investor-official";
+import type { OfficialItem } from "@/lib/companies/investor-official";
+import { officialDividendYieldPercent, type CompanyOfficialData, type CompanyOfficialSection } from "@/lib/companies/official-data";
+import { officialPanelCopy, type OfficialPanel } from "@/lib/companies/official-copy";
 import type { CompanyMarketData } from "@/lib/companies/market-data";
 import type { CompanyFollowState } from "@/lib/companies/server";
 import type { CompanyProfile } from "@/lib/companies/types";
@@ -20,7 +22,7 @@ type Props = {
   relatedCompanies: readonly CompanyProfile[];
   marketData: CompanyMarketData;
   relatedMarketData: Record<string, CompanyMarketData>;
-  officialData: InvestorOfficialData | null;
+  officialData: CompanyOfficialData;
   children?: ReactNode;
 };
 
@@ -77,20 +79,34 @@ function OfficialList({ items, fallback, icon = "news" }: { items: OfficialItem[
   return <div className="mt-3 divide-y divide-[var(--divlab-divider)]">{items.slice(0, 4).map((item) => <a key={`${item.url}-${item.title}`} href={item.url} target="_blank" rel="noopener noreferrer" className="divlab-row-hover flex gap-3 rounded-lg py-3"><FactIcon name={icon} /><span className="min-w-0 flex-1"><span className="line-clamp-2 text-[13px] font-semibold leading-5 text-divlab-text">{item.title}</span><span className="mt-0.5 block text-[11px] text-divlab-text-muted">{item.date ? date(item.date) : "Officiellt dokument"}</span></span></a>)}</div>;
 }
 
+function PanelState({ panel, section }: { panel: OfficialPanel; section: CompanyOfficialSection<unknown> }) {
+  if (section.status === "available_with_items") return null;
+  const copy = officialPanelCopy(panel, section.status);
+  if (copy.showLink && section.sourceUrl) {
+    return <p className="mt-4 text-xs leading-5 text-divlab-text-muted"><a href={section.sourceUrl} target="_blank" rel="noopener noreferrer" className="font-semibold text-divlab-blue">{copy.text}</a></p>;
+  }
+  return <p className="mt-4 text-xs leading-5 text-divlab-text-muted">{copy.text}</p>;
+}
+
 export default function CompanyPageContent({ company, articles, isAuthenticated, followState, relatedCompanies, marketData, relatedMarketData, officialData, children }: Props) {
   const loginHref = `/login?redirect=${encodeURIComponent(`/bolag/${company.slug}`)}`;
   const currency = marketData.currency ?? "SEK";
   const positive = (marketData.changePct ?? 0) >= 0;
   const classifiedDocuments = classifyCompanyDocuments(followState.documents);
-  const reports = officialData?.reports.length ? officialData.reports : classifiedDocuments.reports;
-  const pressReleases = officialData?.pressReleases.length ? officialData.pressReleases : classifiedDocuments.pressReleases;
-  const events = officialData?.events.length ? officialData.events : classifiedDocuments.events;
+  const reports = officialData.reports.status === "available_with_items" ? officialData.reports.items : classifiedDocuments.reports;
+  const pressReleases = officialData.pressReleases.status === "available_with_items" ? officialData.pressReleases.items : classifiedDocuments.pressReleases;
+  const events = officialData.events.status === "available_with_items" ? officialData.events.items : classifiedDocuments.events;
+  const officialYield = officialDividendYieldPercent({
+    dividend: officialData.dividend,
+    price: marketData.price,
+    marketCurrency: marketData.currency,
+  });
   const metrics = [
     ["Börsvärde", compactSek(marketData.marketCap)],
     ["P/E-tal", number(marketData.peRatio, { maximumFractionDigits: 1 })],
-    ["Direktavkastning", marketData.dividendYield !== null ? percent(marketData.dividendYield * 100) : officialData?.dividendPerShare && marketData.price ? percent(officialData.dividendPerShare / marketData.price * 100) : "—"],
+    ["Direktavkastning", marketData.dividendYield !== null ? percent(marketData.dividendYield * 100) : officialYield !== null ? percent(officialYield) : "—"],
     ["52 veckors intervall", marketData.week52Low === null || marketData.week52High === null ? "—" : `${number(marketData.week52Low, { maximumFractionDigits: 2 })} – ${number(marketData.week52High, { maximumFractionDigits: 2 })}`],
-    ["VD", officialData?.ceo ?? "—"],
+    ["VD", officialData.ceo.name ?? "—"],
     ["Sektor", company.sector],
   ] as const;
   const quickLinks = [
@@ -100,7 +116,7 @@ export default function CompanyPageContent({ company, articles, isAuthenticated,
     ["Bolagsstyrning", company.governanceUrl ?? company.websiteUrl, "portfolio"],
     ["Investor Relations", company.websiteUrl, "chart"],
   ] as const satisfies readonly (readonly [string, string, AppIconName])[];
-  const ownership = officialData?.ownership.slice(0, 5) ?? [];
+  const ownership = officialData.ownership.items.slice(0, 5);
   const ownerTotal = ownership.reduce((sum, owner) => sum + owner.capitalPct, 0);
   const donutStops = ownership.reduce<{ colors: string[]; total: number }>((state, owner, index) => { const colors = ["#075ccf", "#1188f7", "#5aa9f8", "#12b8c8", "#18bf8b"]; const start = state.total; const end = start + owner.capitalPct; state.colors.push(`${colors[index]} ${start}% ${end}%`); state.total = end; return state; }, { colors: [], total: 0 });
   donutStops.colors.push(`#dbe4ef ${donutStops.total}% 100%`);
@@ -136,17 +152,17 @@ export default function CompanyPageContent({ company, articles, isAuthenticated,
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(250px,0.75fr)]">
             <section id="nyheter" className="divlab-card scroll-mt-28 p-5"><PanelHeading title={`Senaste nyheter om ${company.name}`} href="/news" />{articles.length ? <div className="mt-2">{articles.slice(0, 4).map((article) => <NewsArticleRow key={article.id} article={article} />)}</div> : <p className="mt-5 text-xs leading-5 text-divlab-text-muted">Inga publicerade DivLab-nyheter matchar bolaget just nu.</p>}</section>
             <div className="space-y-4">
-              <section id="kalender" className="divlab-card scroll-mt-28 p-5"><PanelHeading title="Kommande händelser" href={company.calendarUrl} />{events.length ? <ol className="mt-3 border-l-2 border-divlab-blue/20 pl-4">{events.slice(0, 3).map((event) => <li key={`${event.date}-${event.title}`} className="relative py-2"><span className="absolute -left-[21px] top-3.5 h-2 w-2 rounded-full bg-divlab-blue ring-4 ring-divlab-card" /><a href={event.url} target="_blank" rel="noopener noreferrer" className="grid grid-cols-[80px_1fr] gap-2 text-[11px]"><time className="text-divlab-text-secondary">{date(event.date)}</time><span className="font-semibold leading-4 text-divlab-text">{event.title}</span></a></li>)}</ol> : <p className="mt-4 text-xs text-divlab-text-muted">Kalendern kunde inte hämtas just nu.</p>}</section>
-              <section id="rapporter" className="divlab-card scroll-mt-28 p-5"><PanelHeading title="Senaste rapporter" href={company.reportsUrl} /><OfficialList items={reports} fallback="Rapporter kunde inte hämtas just nu." /></section>
+              <section id="kalender" className="divlab-card scroll-mt-28 p-5"><PanelHeading title="Kommande händelser" href={company.calendarUrl} />{events.length ? <ol className="mt-3 border-l-2 border-divlab-blue/20 pl-4">{events.slice(0, 3).map((event) => <li key={`${event.date}-${event.title}`} className="relative py-2"><span className="absolute -left-[21px] top-3.5 h-2 w-2 rounded-full bg-divlab-blue ring-4 ring-divlab-card" /><a href={event.url} target="_blank" rel="noopener noreferrer" className="grid grid-cols-[80px_1fr] gap-2 text-[11px]"><time className="text-divlab-text-secondary">{date(event.date)}</time><span className="font-semibold leading-4 text-divlab-text">{event.title}</span></a></li>)}</ol> : <PanelState panel="calendar" section={officialData.events} />}</section>
+              <section id="rapporter" className="divlab-card scroll-mt-28 p-5"><PanelHeading title="Senaste rapporter" href={company.reportsUrl} />{reports.length ? <OfficialList items={reports} fallback="" /> : <PanelState panel="reports" section={officialData.reports} />}</section>
             </div>
           </div>
 
-          <section id="agarstruktur" className="divlab-card scroll-mt-28 p-5 sm:p-6"><PanelHeading title="Ägarstruktur (största ägare)" href={company.ownershipUrl} label="Officiell källa" />{ownership.length ? <div className="mt-5 grid items-center gap-8 md:grid-cols-[minmax(0,1.5fr)_minmax(290px,0.8fr)]"><div className="space-y-3">{ownership.map((owner, index) => <div key={owner.owner} className="grid grid-cols-[minmax(120px,190px)_1fr_54px] items-center gap-3 text-[11px]"><span className="truncate text-divlab-text-secondary" title={owner.owner}>{owner.owner}</span><span className="h-4 overflow-hidden rounded-sm bg-divlab-elevated"><span className="block h-full rounded-sm bg-divlab-blue" style={{ width: `${Math.min(100, owner.capitalPct / maxOwnership * 100)}%`, opacity: 1 - index * 0.11 }} /></span><strong className="text-right text-divlab-text">{number(owner.capitalPct, { minimumFractionDigits: 1, maximumFractionDigits: 2 })} %</strong></div>)}</div><div className="flex items-center justify-center gap-5"><div className="relative h-36 w-36 shrink-0 rounded-full" style={{ background: `conic-gradient(${donutStops.colors.join(",")})` }}><div className="absolute inset-7 flex flex-col items-center justify-center rounded-full bg-divlab-card text-[11px] text-divlab-text-muted">Totalt<strong className="text-lg text-divlab-text">100 %</strong></div></div><div className="space-y-2 text-[10px]">{ownership.map((owner, index) => <div key={owner.owner} className="flex items-center gap-2"><span className="h-2 w-2 rounded-sm" style={{ background: ["#075ccf", "#1188f7", "#5aa9f8", "#12b8c8", "#18bf8b"][index] }} /><span className="max-w-28 truncate text-divlab-text-secondary">{owner.owner}</span><strong className="ml-auto text-divlab-text">{number(owner.capitalPct, { maximumFractionDigits: 2 })} %</strong></div>)}<div className="flex items-center gap-2"><span className="h-2 w-2 rounded-sm bg-slate-200" /><span className="text-divlab-text-secondary">Övriga</span><strong className="ml-auto text-divlab-text">{number(100 - ownerTotal, { maximumFractionDigits: 2 })} %</strong></div></div></div></div> : <p className="mt-4 text-xs text-divlab-text-muted">Verifierad ägardata kunde inte hämtas just nu.</p>}{officialData?.ownershipAsOf ? <p className="mt-4 text-[10px] text-divlab-text-muted">Ägardata per {date(officialData.ownershipAsOf)} från Investor AB.</p> : null}</section>
-          <section className="divlab-card p-5"><PanelHeading title="Senaste pressmeddelanden" href={company.pressReleasesUrl} label="Officiell källa" /><OfficialList items={pressReleases} fallback="Pressmeddelanden kunde inte hämtas just nu." icon="messages" /></section>
+          <section id="agarstruktur" className="divlab-card scroll-mt-28 p-5 sm:p-6"><PanelHeading title="Ägarstruktur (största ägare)" href={company.ownershipUrl} label="Officiell källa" />{ownership.length ? <div className="mt-5 grid items-center gap-8 md:grid-cols-[minmax(0,1.5fr)_minmax(290px,0.8fr)]"><div className="space-y-3">{ownership.map((owner, index) => <div key={owner.owner} className="grid grid-cols-[minmax(120px,190px)_1fr_54px] items-center gap-3 text-[11px]"><span className="truncate text-divlab-text-secondary" title={owner.owner}>{owner.owner}</span><span className="h-4 overflow-hidden rounded-sm bg-divlab-elevated"><span className="block h-full rounded-sm bg-divlab-blue" style={{ width: `${Math.min(100, owner.capitalPct / maxOwnership * 100)}%`, opacity: 1 - index * 0.11 }} /></span><strong className="text-right text-divlab-text">{number(owner.capitalPct, { minimumFractionDigits: 1, maximumFractionDigits: 2 })} %</strong></div>)}</div><div className="flex items-center justify-center gap-5"><div className="relative h-36 w-36 shrink-0 rounded-full" style={{ background: `conic-gradient(${donutStops.colors.join(",")})` }}><div className="absolute inset-7 flex flex-col items-center justify-center rounded-full bg-divlab-card text-[11px] text-divlab-text-muted">Totalt<strong className="text-lg text-divlab-text">100 %</strong></div></div><div className="space-y-2 text-[10px]">{ownership.map((owner, index) => <div key={owner.owner} className="flex items-center gap-2"><span className="h-2 w-2 rounded-sm" style={{ background: ["#075ccf", "#1188f7", "#5aa9f8", "#12b8c8", "#18bf8b"][index] }} /><span className="max-w-28 truncate text-divlab-text-secondary">{owner.owner}</span><strong className="ml-auto text-divlab-text">{number(owner.capitalPct, { maximumFractionDigits: 2 })} %</strong></div>)}<div className="flex items-center gap-2"><span className="h-2 w-2 rounded-sm bg-slate-200" /><span className="text-divlab-text-secondary">Övriga</span><strong className="ml-auto text-divlab-text">{number(100 - ownerTotal, { maximumFractionDigits: 2 })} %</strong></div></div></div></div> : <PanelState panel="ownership" section={officialData.ownership} />}{officialData.ownership.asOf ? <p className="mt-4 text-[10px] text-divlab-text-muted">Ägardata per {date(officialData.ownership.asOf)}{officialData.ownership.sourcePublisher ? ` från ${officialData.ownership.sourcePublisher}` : ""}.</p> : null}</section>
+          <section className="divlab-card p-5"><PanelHeading title="Senaste pressmeddelanden" href={company.pressReleasesUrl} label="Officiell källa" />{pressReleases.length ? <OfficialList items={pressReleases} fallback="" icon="messages" /> : <PanelState panel="press" section={officialData.pressReleases} />}</section>
         </main>
 
         <aside className="min-w-0 space-y-4">
-          <section id="om-bolaget" className="divlab-card scroll-mt-28 p-5"><PanelHeading title="Kort om bolaget" /><dl className="mt-4 space-y-3">{[["Grundat", company.founded, "portfolio"], ["Huvudkontor", company.headquarters, "dashboard"], ["VD", officialData?.ceo ?? "—", "account"], ["Hemsida", company.websiteLabel, "chart"]].map(([label, value, icon]) => <div key={label} className="flex items-center gap-3"><FactIcon name={icon as AppIconName} /><div><dt className="text-[10px] text-divlab-text-muted">{label}</dt><dd className="text-xs font-semibold text-divlab-text">{value}</dd></div></div>)}</dl><p className="mt-4 text-xs leading-5 text-divlab-text-secondary">{company.description}</p><a href={company.websiteUrl} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex text-xs font-semibold text-divlab-blue">Läs mer om bolaget →</a></section>
+          <section id="om-bolaget" className="divlab-card scroll-mt-28 p-5"><PanelHeading title="Kort om bolaget" /><dl className="mt-4 space-y-3">{[["Grundat", company.founded, "portfolio"], ["Huvudkontor", company.headquarters, "dashboard"], ["VD", officialData.ceo.name ?? "—", "account"], ["Hemsida", company.websiteLabel, "chart"]].map(([label, value, icon]) => <div key={label} className="flex items-center gap-3"><FactIcon name={icon as AppIconName} /><div><dt className="text-[10px] text-divlab-text-muted">{label}</dt><dd className="text-xs font-semibold text-divlab-text">{value}</dd></div></div>)}</dl><p className="mt-4 text-xs leading-5 text-divlab-text-secondary">{company.description}</p><a href={company.websiteUrl} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex text-xs font-semibold text-divlab-blue">Läs mer om bolaget →</a></section>
           <section className="divlab-card p-5"><PanelHeading title="Snabblänkar" /><div className="mt-2 divide-y divide-[var(--divlab-divider)]">{quickLinks.map(([label, href, icon]) => <a key={label} href={href} target="_blank" rel="noopener noreferrer" className="divlab-row-hover flex items-center gap-3 py-2.5"><FactIcon name={icon} /><span className="flex-1 text-xs font-medium text-divlab-text">{label}</span><span className="text-divlab-text-muted">›</span></a>)}</div></section>
           <section className="divlab-card p-5"><PanelHeading title="Liknande bolag" /><div className="mt-2 space-y-1">{relatedCompanies.map((related) => { const change = relatedMarketData[related.slug]?.changePct ?? null; return <Link key={related.slug} href={`/bolag/${related.slug}`} className="divlab-row-hover flex items-center gap-3 rounded-lg py-2"><CompanyLogo name={related.name} logoPath={related.logoPath} size="compact" /><span className="min-w-0 flex-1 truncate text-xs font-semibold text-divlab-text">{related.displayName}</span><span className={`text-[11px] font-bold ${change === null ? "text-divlab-text-muted" : change >= 0 ? "text-emerald-600" : "text-red-500"}`}>{percent(change, true)}</span></Link>; })}</div></section>
         </aside>

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { isAuthorizedCompanyIngestionCron } from "@/lib/companies/ingestion/cron-auth";
-import { runNextCompanyIngestionJob } from "@/lib/companies/ingestion/runtime";
+import { runCompanyIngestionBatch } from "@/lib/companies/ingestion/runtime";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,10 +17,11 @@ export async function GET(request: Request) {
     return new NextResponse(null, { status: 401 });
   }
 
-  const result = await runNextCompanyIngestionJob();
+  const result = await runCompanyIngestionBatch();
   const status =
     result.status === "unavailable" ||
     result.status === "recovery_error" ||
+    result.status === "enqueue_error" ||
     result.status === "claim_error"
       ? 503
       : 200;

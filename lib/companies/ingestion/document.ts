@@ -14,7 +14,16 @@ export type CompanyDocumentType = (typeof DOCUMENT_TYPES)[number];
 export type CompanySourceType =
   | "press_releases"
   | "financial_reports"
-  | "financial_calendar";
+  | "financial_calendar"
+  | "management"
+  | "ownership"
+  | "dividend";
+
+export const COMPANY_FACT_SOURCE_TYPES = [
+  "management",
+  "ownership",
+  "dividend",
+] as const satisfies readonly CompanySourceType[];
 
 export const COMPANY_SOURCE_TYPES = [
   "press_releases",
@@ -126,7 +135,7 @@ export function explicitFiscalPeriod(title: string): string | null {
     return `${year} H1`;
   }
 
-  if (/annual report|full year/i.test(title)) {
+  if (/annual report|full[- ]year/i.test(title)) {
     return year;
   }
 
@@ -140,7 +149,7 @@ export function classifyReportTitle(
     return null;
   }
 
-  if (/annual report|full year/i.test(title)) {
+  if (/annual report|full[- ]year/i.test(title)) {
     return "annual_report";
   }
 
@@ -148,7 +157,7 @@ export function classifyReportTitle(
     return "half_year_report";
   }
 
-  if (/\bQ[1-4]\b|quarter/i.test(title)) {
+  if (/\bQ[1-4]\b|quarter|nine-month/i.test(title)) {
     return "quarterly_report";
   }
 
