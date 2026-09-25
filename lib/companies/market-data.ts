@@ -92,9 +92,9 @@ export async function getCompanyMarketData(
       null,
     week52Low: lows.length ? Math.min(...lows) : null,
     week52High: highs.length ? Math.max(...highs) : null,
-    dayHigh: extremes.dayHigh,
-    dayLow: extremes.dayLow,
-    sessionVolume: extremes.sessionVolume,
+    dayHigh: history?.dayHigh ?? extremes.dayHigh,
+    dayLow: history?.dayLow ?? extremes.dayLow,
+    sessionVolume: history?.dayVolume ?? extremes.sessionVolume,
     sparkline,
     sourceUrl:
       history?.sourceUrl ??

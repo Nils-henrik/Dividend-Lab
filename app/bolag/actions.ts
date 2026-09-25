@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getAuthenticatedUser } from "@/lib/auth/session";
+import { getCompanyProfile } from "@/lib/companies/catalog";
 import { isFollowableCompanySlug } from "@/lib/companies/follow-policy";
 import {
   validateCompanyCommentBody,
@@ -71,7 +72,7 @@ function getFormString(formData: FormData, key: string) {
 }
 
 async function resolveActiveCompany(slug: string) {
-  if (!isFollowableCompanySlug(slug)) {
+  if (!getCompanyProfile(slug) || !isFollowableCompanySlug(slug)) {
     return null;
   }
 

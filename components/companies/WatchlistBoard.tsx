@@ -70,65 +70,63 @@ function FollowedListCard({
 
   return (
     <article className="divlab-card p-4 sm:p-5">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div className="flex min-w-0 flex-1 gap-3 sm:gap-4">
-          <CompanyLogo name={company.name} logoPath={company.logoPath} size="compact" />
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <h3 className="min-w-0 truncate text-lg font-semibold tracking-[-0.03em] text-divlab-text">
-                <Link
-                  href={companyPath(company.slug)}
-                  className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/50 hover:text-divlab-blue"
-                >
-                  {company.displayName}
-                </Link>
-              </h3>
-              {company.indexLabels.map((label) => (
-                <span
-                  key={label}
-                  className="rounded-md bg-divlab-blue/10 px-2 py-0.5 text-xs font-semibold text-divlab-blue"
-                >
-                  {label}
-                </span>
-              ))}
-            </div>
-            <p className="mt-1 truncate text-sm text-divlab-text-secondary">
-              {company.ticker}
-              <span className="px-1.5 text-divlab-text-muted">·</span>
-              {company.exchange}
-            </p>
-            <div className="mt-4 flex flex-wrap items-end justify-between gap-3">
-              <div>
-                <p className="text-2xl font-semibold tabular-nums tracking-[-0.04em] text-divlab-text">
-                  {company.priceLabel}
-                </p>
-                <p className={`mt-1 text-sm font-semibold tabular-nums ${toneClass}`}>
-                  {company.changeLabel}
-                  <span className="ml-2">{company.changePctLabel}</span>
-                </p>
-                <p className="mt-1 text-xs text-divlab-text-muted">
-                  Fördröjd kurs · {company.timestampLabel}
-                </p>
-              </div>
-              <PriceSparkline values={company.sparkline} tone={company.tone} />
-            </div>
-            <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <Stat label="Dagshögsta" value={company.dayHighLabel} />
-              <Stat label="Dagslägsta" value={company.dayLowLabel} />
-              <Stat label="Volym" value={company.volumeLabel} />
-              <Stat label="Börsvärde" value={company.marketCapLabel} />
-            </dl>
+      <div className="flex items-start gap-3 sm:gap-4">
+        <CompanyLogo name={company.name} logoPath={company.logoPath} size="compact" />
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="min-w-0 text-lg font-semibold tracking-[-0.03em] text-divlab-text">
+              <Link
+                href={companyPath(company.slug)}
+                className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/50 hover:text-divlab-blue"
+              >
+                {company.displayName}
+              </Link>
+            </h3>
+            {company.indexLabels.map((label) => (
+              <span
+                key={label}
+                className="rounded-md bg-divlab-blue/10 px-2 py-0.5 text-xs font-semibold text-divlab-blue"
+              >
+                {label}
+              </span>
+            ))}
           </div>
+          <p className="mt-1 truncate text-sm text-divlab-text-secondary">
+            {company.ticker}
+            <span className="px-1.5 text-divlab-text-muted">·</span>
+            {company.exchange}
+          </p>
         </div>
-        <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-2 lg:flex lg:w-44 lg:flex-col [&_button]:w-full [&_form]:w-full">
-          <Link
-            href={companyPath(company.slug)}
-            className="divlab-btn-primary min-h-11 w-full px-4 py-2.5 text-center text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/50"
-          >
-            Visa bolagssida
-          </Link>
-          {follow}
+      </div>
+      <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-2xl font-semibold tabular-nums tracking-[-0.04em] text-divlab-text">
+            {company.priceLabel}
+          </p>
+          <p className={`mt-1 text-sm font-semibold tabular-nums ${toneClass}`}>
+            {company.changeLabel}
+            <span className="ml-2">{company.changePctLabel}</span>
+          </p>
+          <p className="mt-1 text-xs text-divlab-text-muted">
+            Fördröjd kurs · {company.timestampLabel}
+          </p>
         </div>
+        <PriceSparkline values={company.sparkline} tone={company.tone} />
+      </div>
+      <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
+        <Stat label="Dagshögsta" value={company.dayHighLabel} />
+        <Stat label="Dagslägsta" value={company.dayLowLabel} />
+        <Stat label="Volym" value={company.volumeLabel} />
+        <Stat label="Börsvärde" value={company.marketCapLabel} />
+      </dl>
+      <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center [&_button]:w-full [&_form]:w-full sm:[&_button]:w-auto sm:[&_form]:w-auto">
+        <Link
+          href={companyPath(company.slug)}
+          className="divlab-btn-primary min-h-11 w-full px-4 py-2.5 text-center text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/50 sm:w-auto"
+        >
+          Visa bolagssida
+        </Link>
+        {follow}
       </div>
     </article>
   );
