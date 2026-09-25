@@ -42,3 +42,28 @@ export function getCompanyNews(
     .filter((article) => articleMatchesCompany(article, company))
     .slice(0, limit);
 }
+
+export function getFollowedCompanyNews(
+  companies: readonly CompanyProfile[],
+  articles: readonly NewsArticle[],
+  limit = 3,
+) {
+  const seen = new Set<string>();
+
+  return [...articles]
+    .sort((left, right) => right.publishedAt.localeCompare(left.publishedAt))
+    .filter((article) => {
+      if (seen.has(article.id)) {
+        return false;
+      }
+
+      const matches = companies.some((company) => articleMatchesCompany(article, company));
+
+      if (matches) {
+        seen.add(article.id);
+      }
+
+      return matches;
+    })
+    .slice(0, limit);
+}
