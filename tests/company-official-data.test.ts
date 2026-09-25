@@ -298,6 +298,46 @@ describe("company official data contract", () => {
       lastCheckedAt: "2026-09-20T00:00:00.000Z",
       now: NOW,
     }), true);
+    assert.equal(shouldRefreshCompanySource({
+      jobType: "baseline_refresh",
+      supportMode: "automated",
+      lastCheckedAt: "2026-09-25T00:00:00.000Z",
+      now: NOW,
+    }), false);
+    assert.equal(shouldRefreshCompanySource({
+      jobType: "baseline_refresh",
+      supportMode: "automated",
+      lastCheckedAt: "2026-09-24T15:00:00.000Z",
+      now: NOW,
+    }), true);
+  });
+
+  it("drains the supported universe in three daily batches of eight", () => {
+    const companies = Array.from({ length: 17 }, (_, index) => ({
+      slug: `company-${index}`,
+      followed: index === 16,
+      sources: [{ supportMode: "automated" as const, lastCheckedAt: null as string | null }],
+    }));
+    const first = planBaselineRefresh({ now: NOW, companies });
+    assert.equal(first.length, 8);
+    assert.equal(first[0], "company-16");
+
+    const markChecked = (
+      rows: typeof companies,
+      slugs: readonly string[],
+    ) => rows.map((company) => (
+      slugs.includes(company.slug)
+        ? { ...company, sources: [{ supportMode: "automated" as const, lastCheckedAt: NOW.toISOString() }] }
+        : company
+    ));
+    const second = planBaselineRefresh({ now: NOW, companies: markChecked(companies, first) });
+    assert.equal(second.length, 8);
+    const third = planBaselineRefresh({
+      now: NOW,
+      companies: markChecked(markChecked(companies, first), second),
+    });
+    assert.deepEqual(third, ["company-15"]);
+    assert.equal(new Set([...first, ...second, ...third]).size, 17);
   });
 
   it("does not fabricate documents from a blocked source", async () => {

@@ -9,7 +9,7 @@
   "crons": [
     {
       "path": "/api/internal/company-ingestion/run",
-      "schedule": "17 */6 * * *"
+      "schedule": "17 3 * * *"
     }
   ],
   "env": {

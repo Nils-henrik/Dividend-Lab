@@ -27,6 +27,7 @@ export type CompanyIngestionWorkerDependencies = {
   sleep?: (milliseconds: number) => Promise<void>;
   now?: () => Date;
   clock?: () => number;
+  budgetMs?: number;
 };
 
 export type CompanyIngestionWorkerResult =
@@ -58,9 +59,10 @@ async function executeCompanyIngestionJob(
   dependencies: CompanyIngestionWorkerDependencies,
 ): Promise<CompanyIngestionWorkerResult> {
   const now = (dependencies.now ?? (() => new Date()))();
-  const deadline = createJobDeadline(
-    dependencies.clock ? { clock: dependencies.clock } : undefined,
-  );
+  const deadline = createJobDeadline({
+    clock: dependencies.clock,
+    budgetMs: dependencies.budgetMs,
+  });
   const context: SourceFetchContext = {
     fetchImpl: dependencies.fetchImpl,
     sleep: dependencies.sleep,

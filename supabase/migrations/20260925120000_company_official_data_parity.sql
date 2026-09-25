@@ -332,10 +332,12 @@ declare
   v_limit integer;
   v_stale interval;
 begin
-  v_limit := least(greatest(coalesce(p_limit, 2), 1), 3);
-  v_stale := coalesce(p_stale_after, interval '12 hours');
+  -- Hobby cron is once per day. One invocation may enqueue 8 companies.
+  -- The route drains that batch inside a shared 45s budget.
+  v_limit := least(greatest(coalesce(p_limit, 8), 1), 8);
+  v_stale := coalesce(p_stale_after, interval '20 hours');
   if v_stale < interval '1 hour' or v_stale > interval '14 days' then
-    v_stale := interval '12 hours';
+    v_stale := interval '20 hours';
   end if;
 
   with candidates as (

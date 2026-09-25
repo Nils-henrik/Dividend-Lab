@@ -20,11 +20,26 @@ columns, the `baseline_refresh` job type, and
 
 ## Scheduler
 
-Each cron invocation (`17 */6 * * *`) recovers stale locks, enqueues at most
-two companies, then claims one job. Uninitialized automated sources come
-before merely stale ones. Followed companies come before unfollowed companies
-inside each group. `initial_sync` on first follow is unchanged. Blocked and
-source-link rows are not fetched.
+Vercel Hobby allows one cron run per day. The schedule is `17 3 * * *`
+(03:17 UTC). A six-hour schedule is rejected by the Hobby plan and is not used.
+
+Each invocation recovers stale locks, enqueues at most eight companies, then
+claims and runs jobs until eight have finished or fewer than 12 seconds remain
+of the shared 45-second route budget. The platform limit stays 60 seconds.
+A later job receives only the time still left. It does not get a new 45-second
+budget. Retry stays capped at 3. Blocked and source-link rows are not fetched.
+`initial_sync` on first follow is unchanged.
+
+Uninitialized automated sources are enqueued first, then followed companies,
+then the oldest other stale followable companies. Seventeen supported
+automated companies therefore finish an initial pass in three daily runs when
+fetches fit in the budget. A slow company consumes the shared budget and the
+loop stops; leftover pending jobs are claimed the next day.
+
+A daily cron cannot refresh every 12 hours. A source is eligible again after
+20 hours, so yesterday's check is stale at the next 03:17 run. Followed
+companies stay at the front of every batch. Unfollowed companies use the
+remaining slots and cycle about every three days when the batch is full.
 
 ## Reused draft work
 

@@ -1,7 +1,10 @@
 import type { CompanyIngestionJobType } from "@/lib/companies/ingestion/queue";
+import {
+  BASELINE_ENQUEUE_LIMIT,
+  BASELINE_SOURCE_STALE_MS,
+} from "@/lib/companies/ingestion/schedule";
 
-export const BASELINE_SOURCE_STALE_MS = 12 * 60 * 60 * 1000;
-export const BASELINE_ENQUEUE_LIMIT = 2;
+export { BASELINE_ENQUEUE_LIMIT, BASELINE_SOURCE_STALE_MS };
 
 export type SourceSupportMode = "automated" | "source_link_only" | "blocked";
 
@@ -43,7 +46,10 @@ export function planBaselineRefresh(input: {
   limit?: number;
 }): string[] {
   const staleAfterMs = input.staleAfterMs ?? BASELINE_SOURCE_STALE_MS;
-  const limit = Math.min(3, Math.max(1, input.limit ?? BASELINE_ENQUEUE_LIMIT));
+  const limit = Math.min(
+    BASELINE_ENQUEUE_LIMIT,
+    Math.max(1, input.limit ?? BASELINE_ENQUEUE_LIMIT),
+  );
   return input.companies
     .map((company) => ({ company, stale: staleAutomatedSources(company, input.now, staleAfterMs) }))
     .filter((entry) => entry.stale.length > 0)

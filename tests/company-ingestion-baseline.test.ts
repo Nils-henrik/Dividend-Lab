@@ -17,7 +17,9 @@ describe("baseline refresh migration", () => {
       "utf8",
     );
     assert.match(migration, /job_type = 'baseline_refresh'/);
-    assert.match(migration, /least\(greatest\(coalesce\(p_limit, 2\), 1\), 3\)/);
+    assert.match(migration, /least\(greatest\(coalesce\(p_limit, 8\), 1\), 8\)/);
+    assert.match(migration, /interval '20 hours'/);
+    assert.doesNotMatch(migration, /interval '12 hours'/);
     assert.match(migration, /support_mode = 'automated'/);
     assert.match(migration, /source\.last_checked_at is null/);
     assert.match(migration, /grant execute on function public\.enqueue_stale_company_baseline_refreshes\(text\[\], integer, interval\)\s+to service_role/);

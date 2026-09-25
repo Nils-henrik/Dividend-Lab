@@ -1,5 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import {
+  BASELINE_ENQUEUE_LIMIT,
+  BASELINE_STALE_AFTER,
+} from "@/lib/companies/ingestion/schedule";
+
 export type CompanyIngestionJobType = "initial_sync" | "baseline_refresh";
 
 export type CompanyIngestionJob = {
@@ -107,12 +112,12 @@ export async function claimCompanyIngestionJob(
 
 export async function enqueueStaleCompanyBaselineRefreshes(
   client: CompanyIngestionQueueClient,
-  limit = 2,
+  limit = BASELINE_ENQUEUE_LIMIT,
 ): Promise<{ status: "enqueued"; count: number } | { status: "error"; reason: "enqueue_failed" | "invalid_count" }> {
   const { data, error } = await client.rpc("enqueue_stale_company_baseline_refreshes", {
     p_supported_company_slugs: [...SUPPORTED_COMPANY_INGESTION_SLUGS],
     p_limit: limit,
-    p_stale_after: "12 hours",
+    p_stale_after: BASELINE_STALE_AFTER,
   });
   if (error) return { status: "error", reason: "enqueue_failed" };
   if (typeof data !== "number" || !Number.isInteger(data) || data < 0) {
