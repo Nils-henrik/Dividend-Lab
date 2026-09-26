@@ -21,7 +21,9 @@ export const NORDEN_I_CENTRUM_26_SEPTEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-09-26T13:24:30+02:00",
   url: "/news/norden-i-centrum-26-september-2026",
   featured: true,
-  imageAlt: "Norden i centrum – veckan som gått den 26 september 2026 med H&M, Novo Nordisk och nordiska räntebesked.",
+  imageUrl: "/news/generated/norden-i-centrum-2026-09-26.png",
+  thumbnailImageUrl: "/news/generated/norden-i-centrum-2026-09-26.png",
+  imageAlt: "Norden i centrum 2026-09-26 – DivLabs morgonöversikt över nordiska börsnyheter.",
   readingMinutes: 7,
   seoTitle: "Norden veckan som gått: H&M, Novo Nordisk och räntor",
   seoDescription:
