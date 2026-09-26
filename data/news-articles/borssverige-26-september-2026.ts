@@ -20,7 +20,9 @@ export const BORSSVERIGE_26_SEPTEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-09-26T13:25:00+02:00",
   url: "/news/borssverige-26-september-2026",
   featured: true,
-  imageAlt: "BörsSverige – veckan som gått den 26 september 2026 med H&M, Riksbanken, Arjo och Saab.",
+  imageUrl: "/news/generated/borssverige-2026-09-26.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-09-26.png",
+  imageAlt: "BörsSverige 2026-09-26 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 7,
   seoTitle: "BörsSverige veckan som gått: H&M, Riksbanken och Saab",
   seoDescription:
