@@ -20,6 +20,9 @@ export const USA_I_FOKUS_27_SEPTEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-09-27T14:03:08.382+02:00",
   url: "/news/usa-i-fokus-27-september-2026-veckan-som-kommer-jobbrapport-micron",
   featured: true,
+  imageUrl: "/news/generated/usa-i-fokus-2026-09-27.png",
+  thumbnailImageUrl: "/news/generated/usa-i-fokus-2026-09-27.png",
+  imageAlt: "USA i fokus 2026-09-27 – DivLabs översikt över den amerikanska börsmarknaden inför Wall Streets öppning.",
   readingMinutes: 6,
   seoTitle: "USA i fokus: Jobbrapport och Micron styr veckan",
   seoDescription:
