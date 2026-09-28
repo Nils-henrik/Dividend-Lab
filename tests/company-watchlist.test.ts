@@ -397,7 +397,10 @@ test("befintlig bolagssida behåller sitt marknadsdata- och följkontrakt", () =
   const content = read("components/companies/CompanyPageContent.tsx");
 
   assert.match(page, /CompanyPageContent/);
-  assert.match(page, /getCompanyMarketData\(company\)/);
+  assert.match(page, /loadCompanyPage/);
+  assert.match(read("lib/companies/page-data.server.ts"), /getCompanyMarketData\(company, true, true\)/);
+  assert.doesNotMatch(page, /getRelatedCompanyMarketData/);
+  assert.doesNotMatch(page, /listDiscoveryCompanies/);
   assert.match(content, /FollowCompanyButton/);
   assert.match(content, /companySlug=\{company\.slug\}/);
   assert.doesNotMatch(content, /mode="unfollow"/);

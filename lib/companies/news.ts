@@ -9,6 +9,25 @@ function normalize(value: string) {
     .replace(/[^a-z0-9]/g, "");
 }
 
+function loose(value: string) {
+  return value
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("sv")
+    .trim();
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** Title hits must be whole words so short or prefix names do not false-match. */
+export function titleMentionsCompany(title: string, key: string) {
+  const needle = loose(key);
+  if (needle.length < 5) return false;
+  return new RegExp(`(?:^|[^a-z0-9])${escapeRegExp(needle)}(?:[^a-z0-9]|$)`, "i").test(loose(title));
+}
+
 export function articleMatchesCompany(
   article: NewsArticle,
   company: CompanyProfile,
@@ -27,9 +46,7 @@ export function articleMatchesCompany(
     article.internalLinking?.tickers?.some((ticker) =>
       tickerKeys.has(normalize(ticker)),
     ) === true ||
-    [...companyKeys].some((key) =>
-      key.length >= 5 && normalize(article.title).includes(key),
-    )
+    [company.name, ...company.aliases].some((key) => titleMentionsCompany(article.title, key))
   );
 }
 
