@@ -127,8 +127,9 @@ async function loadCompanyMarketData(
       }
     : emptyValuation();
   const currency = history?.currency ?? null;
+  // Listing currency stays on the quote. Statement rows read financialCurrency themselves.
   const financialPoints = includeStatements && statementFundamentals
-    ? parseYahooAnnualFinancials(statementFundamentals.statements, currency)
+    ? parseYahooAnnualFinancials(statementFundamentals.statements)
     : [];
   const financials = {
     status: !includeStatements

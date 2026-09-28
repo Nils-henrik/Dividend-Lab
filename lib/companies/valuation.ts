@@ -54,6 +54,27 @@ export function formatCompactMoney(value: number | null, currency: string | null
   return formatMoney(value, currency, 0);
 }
 
+/** Compact annual statement amount. Currency is appended only when it is already verified. */
+export function formatStatementAmount(value: number | null, currency: string | null) {
+  if (value === null || !Number.isFinite(value)) return MISSING_METRIC;
+  if (value === 0) return currency ? `0 ${currency}` : "0";
+  const absolute = Math.abs(value);
+  const sign = value < 0 ? "−" : "";
+  let scaled = absolute;
+  let unit = "";
+  if (absolute >= 1_000_000_000) {
+    scaled = absolute / 1_000_000_000;
+    unit = "md";
+  } else if (absolute >= 1_000_000) {
+    scaled = absolute / 1_000_000;
+    unit = "mn";
+  }
+  const digits = unit === "" ? 0 : scaled >= 100 ? 1 : 2;
+  const body = `${sign}${formatSvNumber(scaled, { minimumFractionDigits: digits, maximumFractionDigits: digits })}`;
+  const suffix = [unit, currency].filter(Boolean).join(" ");
+  return suffix ? `${body} ${suffix}` : body;
+}
+
 export function formatCount(value: number | null) {
   if (value === null || !Number.isFinite(value)) return MISSING_METRIC;
   return formatSvNumber(value, { maximumFractionDigits: 0 });

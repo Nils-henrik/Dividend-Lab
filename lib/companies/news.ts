@@ -21,11 +21,26 @@ function escapeRegExp(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-/** Title hits must be whole words so short or prefix names do not false-match. */
+function wholeTokenMatch(title: string, key: string) {
+  const needle = loose(key);
+  if (needle.length < 2) return false;
+  return new RegExp(`(?:^|[^a-z0-9])${escapeRegExp(needle)}(?:[^a-z0-9]|$)`, "i").test(loose(title));
+}
+
+/**
+ * Long-name title hits. Needles under five characters stay rejected here so
+ * short words are not matched unless they are a verified ticker or short name.
+ */
 export function titleMentionsCompany(title: string, key: string) {
   const needle = loose(key);
   if (needle.length < 5) return false;
-  return new RegExp(`(?:^|[^a-z0-9])${escapeRegExp(needle)}(?:[^a-z0-9]|$)`, "i").test(loose(title));
+  return wholeTokenMatch(title, key);
+}
+
+/** Canonical names and aliases whose letters are a short symbol, such as ABB or H&M. */
+function isShortCanonicalName(key: string) {
+  const compact = normalize(key);
+  return compact.length >= 2 && compact.length <= 4;
 }
 
 export function articleMatchesCompany(
@@ -39,6 +54,13 @@ export function articleMatchesCompany(
     [company.ticker, ...company.tickerAliases].map(normalize),
   );
 
+  const title = article.title;
+  const longNameHit = [company.name, ...company.aliases].some((key) => titleMentionsCompany(title, key));
+  const shortNameHit = [company.name, ...company.aliases]
+    .filter(isShortCanonicalName)
+    .some((key) => wholeTokenMatch(title, key));
+  const tickerHit = [company.ticker, ...company.tickerAliases].some((ticker) => wholeTokenMatch(title, ticker));
+
   return (
     article.internalLinking?.companies?.some((name) =>
       companyKeys.has(normalize(name)),
@@ -46,7 +68,9 @@ export function articleMatchesCompany(
     article.internalLinking?.tickers?.some((ticker) =>
       tickerKeys.has(normalize(ticker)),
     ) === true ||
-    [company.name, ...company.aliases].some((key) => titleMentionsCompany(article.title, key))
+    longNameHit ||
+    shortNameHit ||
+    tickerHit
   );
 }
 

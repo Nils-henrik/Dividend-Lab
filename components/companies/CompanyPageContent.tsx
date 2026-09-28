@@ -9,10 +9,10 @@ import { classifyCompanyDocuments, companySourceDisclaimer } from "@/lib/compani
 import type { OfficialItem } from "@/lib/companies/investor-official";
 import type { CompanyOfficialData, CompanyOfficialSection } from "@/lib/companies/official-data";
 import { officialPanelCopy, type OfficialPanel } from "@/lib/companies/official-copy";
-import type { CompanyPageModel, SourcedRow } from "@/lib/companies/page-model";
+import type { CompanyPageModel, MarketChangeDirection, SourcedRow } from "@/lib/companies/page-model";
+import { formatPaidDividend, partitionValuationMetrics } from "@/lib/companies/page-model";
 import type { JsonLd } from "@/lib/seo/json-ld";
-import { formatPaidDividend } from "@/lib/companies/page-model";
-import { formatSvNumber } from "@/lib/companies/valuation";
+import { formatStatementAmount, formatSvNumber } from "@/lib/companies/valuation";
 import type { CompanyFollowState } from "@/lib/companies/server";
 import type { CompanyProfile } from "@/lib/companies/types";
 import type { NewsArticle } from "@/types/news";
@@ -85,6 +85,12 @@ function amountCell(value: number | null, digits = 0) {
   return formatSvNumber(value, { maximumFractionDigits: digits });
 }
 
+function changeTone(direction: MarketChangeDirection) {
+  if (direction === "positive") return { text: "text-emerald-600", dot: "bg-emerald-500" };
+  if (direction === "negative") return { text: "text-red-500", dot: "bg-red-500" };
+  return { text: "text-divlab-text-secondary", dot: "bg-divlab-text-muted" };
+}
+
 function rowsFromOfficial(items: OfficialItem[], publisher: string | null, documentType: string | null): SourcedRow[] {
   return items.map((item) => ({
     title: item.title,
@@ -133,7 +139,10 @@ export default function CompanyPageContent({
     : rowsFromOfficial(classifiedDocuments.events, officialData.events.sourcePublisher, "Kalenderhändelse");
   const revenuePoints = model.financials.points.filter((point) => point.revenue !== null);
   const maxRevenue = revenuePoints.reduce((max, point) => Math.max(max, Math.abs(point.revenue ?? 0)), 0);
-  const currency = model.financials.points.find((point) => point.currency)?.currency;
+  const reportingCurrencies = [...new Set(model.financials.points.flatMap((point) => point.currency ? [point.currency] : []))];
+  const currency = reportingCurrencies.length === 1 ? reportingCurrencies[0] : null;
+  const valuationGroups = partitionValuationMetrics(model.metrics);
+  const change = changeTone(model.changeDirection);
   const ceo = model.management[0];
   const json = JSON.stringify(jsonLd).replace(/</g, "\\u003c");
 
@@ -168,11 +177,11 @@ export default function CompanyPageContent({
               <FollowCompanyButton companySlug={company.slug} isAuthenticated={isAuthenticated} isAvailable={followState.isAvailable} isFollowing={followState.isFollowing} loginHref={loginHref} />
               <div className="mt-7 text-left lg:text-right">
                 <p className="text-3xl font-bold tracking-[-0.04em] text-divlab-text sm:text-4xl">{model.priceText}</p>
-                <p className={`mt-1.5 text-base font-bold ${model.positiveChange ? "text-emerald-600" : "text-red-500"}`}>
+                <p className={`mt-1.5 text-base font-bold ${change.text}`}>
                   {model.changeText} <span className="ml-1">{model.changePctText}</span>
                 </p>
                 <p className="mt-2 text-[10px] text-divlab-text-muted">
-                  <span className={`mr-1.5 inline-block h-2 w-2 rounded-full ${model.positiveChange ? "bg-emerald-500" : "bg-red-500"}`} />
+                  <span className={`mr-1.5 inline-block h-2 w-2 rounded-full ${change.dot}`} />
                   Fördröjd marknadsdata · {time(model.marketTimestamp)}
                 </p>
               </div>
@@ -188,8 +197,12 @@ export default function CompanyPageContent({
                   <a key={href} href={href} className="shrink-0 border-b-2 border-transparent px-3 py-3 text-[11px] font-semibold text-divlab-text-muted hover:text-divlab-text">{label}</a>
                 ))}
               </nav>
-              <div className="flex justify-end px-5 pt-4">
-                <a href={model.marketSourceUrl} target="_blank" rel="noopener noreferrer" className="rounded-lg border divlab-border-neutral px-3 py-2 text-[10px] font-medium text-divlab-text-secondary">Källa: Yahoo Finance ↗</a>
+              <div className="flex flex-wrap items-center justify-between gap-2 px-5 pt-4">
+                <p className="max-w-xl text-[10px] leading-4 text-divlab-text-muted">Grafen kommer från TradingView. Kurs, förändring och nyckeltal kommer från Yahoo Finance.</p>
+                <div className="flex flex-wrap justify-end gap-2">
+                  <a href={model.marketSourceUrl} target="_blank" rel="noopener noreferrer" className="rounded-lg border divlab-border-neutral px-3 py-2 text-[10px] font-medium text-divlab-text-secondary">Kurs och nyckeltal: Yahoo Finance ↗</a>
+                  <span className="rounded-lg border divlab-border-neutral px-3 py-2 text-[10px] font-medium text-divlab-text-secondary">Graf: TradingView</span>
+                </div>
               </div>
               <div className="px-2 pb-2 pt-1 sm:px-4">
                 <CompanyPriceChart companyName={company.displayName} symbol={company.tradingViewSymbol} />
@@ -199,15 +212,31 @@ export default function CompanyPageContent({
             <section id="nyckeltal" className="divlab-card scroll-mt-28 p-5 sm:p-6">
               <PanelHeading title="Nyckeltal" href={model.marketSourceUrl} label="Yahoo Finance" />
               <p className="mt-2 text-[11px] leading-5 text-divlab-text-muted">Värden visas bara när leverantören har dem. Saknad data är —. Inga tal räknas om mellan valutor.</p>
-              <dl className="mt-4 grid gap-px overflow-hidden rounded-xl border divlab-border-neutral bg-[var(--divlab-divider)] sm:grid-cols-2 xl:grid-cols-3">
-                {model.metrics.map((metric) => (
-                  <div key={metric.id} className="bg-divlab-card px-4 py-3" title={metric.definition}>
-                    <dt className="text-[10px] text-divlab-text-muted">{metric.label}</dt>
-                    <dd className="mt-0.5 truncate text-[13px] font-bold text-divlab-text">{metric.value}</dd>
-                    <dd className="mt-1 text-[10px] text-divlab-text-muted">{metric.source}</dd>
-                  </div>
-                ))}
-              </dl>
+              {valuationGroups.available.length ? (
+                <dl className="mt-4 grid gap-px overflow-hidden rounded-xl border divlab-border-neutral bg-[var(--divlab-divider)] sm:grid-cols-2 xl:grid-cols-3">
+                  {valuationGroups.available.map((metric) => (
+                    <div key={metric.id} className="bg-divlab-card px-4 py-3" title={metric.definition}>
+                      <dt className="text-[10px] text-divlab-text-muted">{metric.label}</dt>
+                      <dd className="mt-0.5 truncate text-[13px] font-bold text-divlab-text">{metric.value}</dd>
+                      <dd className="mt-1 text-[10px] text-divlab-text-muted">{metric.source}</dd>
+                    </div>
+                  ))}
+                </dl>
+              ) : <p className="mt-4 text-xs leading-5 text-divlab-text-muted">Inga nyckeltal finns tillgängliga just nu.</p>}
+              {valuationGroups.unavailable.length ? (
+                <details className="mt-4 text-[11px] leading-5 text-divlab-text-muted">
+                  <summary className="cursor-pointer font-semibold text-divlab-text-secondary">Nyckeltal som saknas ({valuationGroups.unavailable.length})</summary>
+                  <dl className="mt-3 grid gap-px overflow-hidden rounded-xl border divlab-border-neutral bg-[var(--divlab-divider)] sm:grid-cols-2">
+                    {valuationGroups.unavailable.map((metric) => (
+                      <div key={metric.id} className="bg-divlab-card px-4 py-3" title={metric.definition}>
+                        <dt className="text-[10px] text-divlab-text-muted">{metric.label}</dt>
+                        <dd className="mt-0.5 text-[13px] font-bold text-divlab-text-secondary">{metric.value}</dd>
+                        <dd className="mt-1 text-[10px] text-divlab-text-muted">{metric.source}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </details>
+              ) : null}
               <details className="mt-4 text-[11px] leading-5 text-divlab-text-muted">
                 <summary className="cursor-pointer font-semibold text-divlab-text-secondary">Vad nyckeltalen betyder</summary>
                 <dl className="mt-3 space-y-2">
@@ -224,7 +253,7 @@ export default function CompanyPageContent({
             <section id="finansiell-utveckling" className="divlab-card scroll-mt-28 p-5 sm:p-6">
               <PanelHeading title="Finansiell utveckling" href={company.reportsUrl} label="Rapporter" />
               <p className="mt-2 text-[11px] leading-5 text-divlab-text-muted">
-                Årsserie från Yahoo Finance{currency ? ` i ${currency}` : ""}. Rörelseresultat är fältet operatingIncome. Fritt kassaflöde är leverantörens eget fält, eller kassaflöde från löpande verksamhet plus investeringar när investeringarna är noll eller negativa. Nettoskuld är skuld minus likvida medel för samma rapport. Tomma år fylls inte i.
+                Årsserie från Yahoo Finance{currency ? ` i rapporteringsvalutan ${currency}` : ". Rapporteringsvaluta saknas, så ingen valuta visas"}. Belopp i miljoner (mn) eller miljarder (md). Rörelseresultat är fältet operatingIncome. Fritt kassaflöde är leverantörens eget fält, eller kassaflöde från löpande verksamhet plus investeringar när investeringarna är noll eller negativa. Nettoskuld är skuld minus likvida medel för samma rapport. Tomma år fylls inte i.
               </p>
               {model.financials.points.length ? (
                 <div className="mt-4 overflow-x-auto">
@@ -258,12 +287,12 @@ export default function CompanyPageContent({
                       {model.financials.points.map((point) => (
                         <tr key={point.fiscalYear} className="border-t divlab-border-neutral">
                           <td className="py-2 pr-3 font-semibold text-divlab-text">{point.fiscalYear}</td>
-                          <td className="py-2 pr-3">{amountCell(point.revenue)}</td>
-                          <td className="py-2 pr-3">{amountCell(point.operatingIncome)}</td>
-                          <td className="py-2 pr-3">{amountCell(point.netIncome)}</td>
+                          <td className="py-2 pr-3">{formatStatementAmount(point.revenue, point.currency)}</td>
+                          <td className="py-2 pr-3">{formatStatementAmount(point.operatingIncome, point.currency)}</td>
+                          <td className="py-2 pr-3">{formatStatementAmount(point.netIncome, point.currency)}</td>
                           <td className="py-2 pr-3">{amountCell(point.eps, 2)}</td>
-                          <td className="py-2 pr-3">{amountCell(point.freeCashFlow)}</td>
-                          <td className="py-2 pr-3">{amountCell(point.netDebt)}</td>
+                          <td className="py-2 pr-3">{formatStatementAmount(point.freeCashFlow, point.currency)}</td>
+                          <td className="py-2 pr-3">{formatStatementAmount(point.netDebt, point.currency)}</td>
                           <td className="py-2 pr-3">{point.operatingMargin === null ? "—" : `${formatSvNumber(point.operatingMargin * 100, { maximumFractionDigits: 1 })} %`}</td>
                           <td className="py-2">{point.profitMargin === null ? "—" : `${formatSvNumber(point.profitMargin * 100, { maximumFractionDigits: 1 })} %`}</td>
                         </tr>

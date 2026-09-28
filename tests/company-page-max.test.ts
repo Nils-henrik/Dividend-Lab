@@ -9,19 +9,33 @@ import {
   paidDividendGrowth,
   parseYahooDividendChart,
 } from "../lib/companies/dividend-view";
-import { parseYahooAnnualFinancials } from "../lib/companies/financial-history";
+import { parseYahooAnnualFinancials, readYahooReportingCurrency } from "../lib/companies/financial-history";
 import { INSIDER_LINK } from "../lib/companies/insiders";
-import { titleMentionsCompany } from "../lib/companies/news";
+import { articleMatchesCompany, titleMentionsCompany } from "../lib/companies/news";
 import { assembleCompanyOfficialData } from "../lib/companies/official-data";
 import { selectOwnershipSnapshot } from "../lib/companies/ownership-snapshot";
-import { buildCompanyPageModel, type PageMarketInput } from "../lib/companies/page-model";
+import { buildCompanyPageModel, marketChangeDirection, partitionValuationMetrics, type PageMarketInput } from "../lib/companies/page-model";
 import { companyPageMetadataCopy } from "../lib/companies/page-seo";
 import { sectorPeers } from "../lib/companies/peers";
-import { buildValuationMetrics, CURRENCY_MISMATCH_YIELD_REASON, MISSING_METRIC } from "../lib/companies/valuation";
+import { buildValuationMetrics, CURRENCY_MISMATCH_YIELD_REASON, formatStatementAmount, MISSING_METRIC } from "../lib/companies/valuation";
+import type { NewsArticle } from "../types/news";
 const NOW = new Date("2026-09-28T12:00:00.000Z");
 
 function read(path: string) {
   return readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
+}
+
+function titledArticle(title: string): NewsArticle {
+  return {
+    id: title,
+    title,
+    summary: title,
+    category: "company",
+    source: "DivLab",
+    publishedAt: "2026-09-21T08:00:00.000Z",
+    url: null,
+    featured: false,
+  };
 }
 
 function emptyValuation(): PageMarketInput["valuation"] {
@@ -211,7 +225,8 @@ test("finansiell historik sorteras och fyller inte luckor", () => {
         { endDate: "2024-12-31", totalCash: 15, shortLongTermDebt: 5, longTermDebt: 25 },
       ],
     },
-  }, "SEK");
+    financialData: { financialCurrency: "SEK" },
+  });
 
   assert.deepEqual(points.map((point) => point.fiscalYear), [2022, 2024]);
   assert.equal(points.find((point) => point.fiscalYear === 2023), undefined);
@@ -221,8 +236,52 @@ test("finansiell historik sorteras och fyller inte luckor", () => {
   assert.equal(points[1]?.freeCashFlowBasis, "operating_plus_capex");
   assert.equal(points[1]?.netDebt, 15);
   assert.equal(points[1]?.operatingMargin, 0.1);
-  assert.deepEqual(parseYahooAnnualFinancials({}, "SEK"), []);
-  assert.deepEqual(parseYahooAnnualFinancials(null, "SEK"), []);
+  assert.equal(points[1]?.currency, "SEK");
+  assert.deepEqual(parseYahooAnnualFinancials({}), []);
+  assert.deepEqual(parseYahooAnnualFinancials(null), []);
+});
+
+test("årsredovisningens valuta är rapporteringsvalutan och gissas inte från kursen", () => {
+  const astrazeneca = getCompanyProfile("astrazeneca");
+  assert.ok(astrazeneca);
+  assert.equal(astrazeneca.marketDataSymbol, "AZN.ST");
+  const aznStatements = {
+    price: { currency: "SEK" },
+    summaryDetail: { currency: "SEK" },
+    financialData: { financialCurrency: "USD" },
+    incomeStatementHistory: {
+      incomeStatementHistory: [
+        { endDate: "2024-12-31", totalRevenue: { raw: 54_073_000_000 }, netIncome: { raw: -1_200_000_000 } },
+      ],
+    },
+  };
+  assert.equal(readYahooReportingCurrency(aznStatements), "USD");
+  const azn = parseYahooAnnualFinancials(aznStatements);
+  assert.equal(azn[0]?.currency, "USD");
+  assert.equal(azn[0]?.currency === "SEK", false);
+  assert.match(formatStatementAmount(azn[0]?.revenue ?? null, azn[0]?.currency ?? null), /54,07 md USD/);
+  assert.match(formatStatementAmount(azn[0]?.netIncome ?? null, azn[0]?.currency ?? null), /^−1,20 md USD$/);
+
+  const missingCurrency = {
+    price: { currency: "SEK" },
+    financialData: { financialCurrency: "" },
+    incomeStatementHistory: {
+      incomeStatementHistory: [
+        { endDate: "2024-12-31", totalRevenue: { raw: 54_073_000_000 } },
+      ],
+    },
+  };
+  assert.equal(readYahooReportingCurrency(missingCurrency), null);
+  assert.equal(readYahooReportingCurrency({ financialData: { financialCurrency: "US dollars" } }), null);
+  assert.equal(readYahooReportingCurrency({ financialData: { financialCurrency: { raw: "USD" } } }), "USD");
+  const unlabeled = parseYahooAnnualFinancials(missingCurrency);
+  assert.equal(unlabeled[0]?.currency, null);
+  const compact = formatStatementAmount(unlabeled[0]?.revenue ?? null, unlabeled[0]?.currency ?? null);
+  assert.match(compact, /54,07 md$/);
+  assert.equal(compact.includes("SEK"), false);
+  assert.equal(compact.includes("USD"), false);
+  assert.doesNotMatch(read("lib/companies/market-data.ts"), /parseYahooAnnualFinancials\([^)]*currency/);
+  assert.doesNotMatch(read("lib/companies/financial-history.ts"), /price\.currency|summaryDetail/);
 });
 
 test("styrelseförslag är inte en beslutad utdelning", () => {
@@ -367,14 +426,34 @@ test("ledning behåller källa och insyn är bara en officiell länk", () => {
   assert.match(model.insiders.url, /^https:\/\/www\.fi\.se\//);
 });
 
-test("DivLab-nyheter undviker prefixträffar", () => {
+test("DivLab-nyheter undviker prefixträffar och träffar korta tickers exakt", () => {
   const sandvik = getCompanyProfile("sandvik");
   const seb = getCompanyProfile("seb");
-  assert.ok(sandvik && seb);
+  const abb = getCompanyProfile("abb");
+  const eqt = getCompanyProfile("eqt");
+  const sca = getCompanyProfile("sca");
+  const skf = getCompanyProfile("skf");
+  const atlas = getCompanyProfile("atlas-copco");
+  assert.ok(sandvik && seb && abb && eqt && sca && skf && atlas);
   assert.equal(titleMentionsCompany("Sandviken kommun höjer skatten", "Sandvik"), false);
   assert.equal(titleMentionsCompany("Rapport från Sandvik idag", "Sandvik"), true);
   assert.equal(titleMentionsCompany("SEB höjer utdelningen", seb.name), false);
   assert.equal(titleMentionsCompany("Skandinaviska Enskilda Banken höjer", seb.aliases[1] ?? ""), true);
+
+  assert.equal(articleMatchesCompany(titledArticle("SEB höjer utdelningen"), seb), true);
+  assert.equal(articleMatchesCompany(titledArticle("ABB i fokus"), abb), true);
+  assert.equal(articleMatchesCompany(titledArticle("EQT investerar"), eqt), true);
+  assert.equal(articleMatchesCompany(titledArticle("SCA höjer utdelningen"), sca), true);
+  assert.equal(articleMatchesCompany(titledArticle("SKF B i rapporten"), skf), true);
+  assert.equal(articleMatchesCompany(titledArticle("ATCO A rapport"), atlas), true);
+
+  assert.equal(articleMatchesCompany(titledArticle("SEBORG kommun"), seb), false);
+  assert.equal(articleMatchesCompany(titledArticle("ABBA släpper skiva"), abb), false);
+  assert.equal(articleMatchesCompany(titledArticle("SCANDINAVIA växer"), sca), false);
+  assert.equal(articleMatchesCompany(titledArticle("SKForetag utan träff"), skf), false);
+  assert.equal(articleMatchesCompany(titledArticle("EQ testar produkten"), eqt), false);
+  assert.equal(articleMatchesCompany(titledArticle("ATCO rapport"), atlas), false);
+  assert.equal(articleMatchesCompany(titledArticle("Sandviken kommun höjer skatten"), sandvik), false);
 });
 
 test("liknande bolag kommer bara från samma sektor", () => {
@@ -440,35 +519,113 @@ test("bolagssidan har mobil struktur och sektionsankare", () => {
   assert.match(content, /break-words/);
 });
 
-test("tunna bolagssidor är noindex och fylliga sidor kan indexeras", () => {
+test("indexering kräver stabil substans och ignorerar tillfällig marknadsdata", () => {
   const company = getCompanyProfile("skf");
   assert.ok(company);
-  const thin = buildCompanyPageModel({
-    company,
-    market: market(),
-    official: official("skf"),
-    articles: [],
-    now: NOW,
+  const substantialOfficial = official("skf", {
+    documents: [
+      { type: "quarterly_report", title: "Q2", url: "https://www.skf.com/report", publishedAt: "2026-07-17", eventAt: null },
+      { type: "press_release", title: "PM", url: "https://www.skf.com/press", publishedAt: "2026-09-01", eventAt: null },
+    ],
   });
-  assert.equal(thin.indexable, false);
-  assert.deepEqual(companyPageMetadataCopy(company, thin).robots, { index: false, follow: true });
-
-  const full = buildCompanyPageModel({
+  const priceOnly = buildCompanyPageModel({
     company,
     market: market({
       price: 200,
+      change: 2,
+      changePct: 1,
       currency: "SEK",
       marketCap: 50_000_000_000,
       valuation: { ...emptyValuation(), trailingPe: 18 },
+      financials: {
+        status: "available",
+        points: [{
+          fiscalYear: 2024,
+          endDate: "2024-12-31",
+          currency: "SEK",
+          revenue: 1,
+          operatingIncome: null,
+          netIncome: null,
+          eps: null,
+          freeCashFlow: null,
+          freeCashFlowBasis: null,
+          cash: null,
+          debt: null,
+          netDebt: null,
+          operatingMargin: null,
+          profitMargin: null,
+        }],
+      },
     }),
     official: official("skf"),
     articles: [],
+    paidDividends: [{ exDate: "2025-04-01", amount: 5, currency: "SEK" }],
     now: NOW,
   });
-  assert.equal(full.indexable, true);
-  assert.equal(companyPageMetadataCopy(company, full).robots.index, true);
-  assert.match(companyPageMetadataCopy(company, full).title, /SKF aktie/);
-  assert.match(companyPageMetadataCopy(company, full).description, /SKF/);
+  assert.equal(priceOnly.indexable, false);
+  assert.equal(priceOnly.indexSignals.includes("valuation"), false);
+  assert.equal(priceOnly.indexSignals.includes("market_price"), false);
+  assert.deepEqual(companyPageMetadataCopy(company, priceOnly).robots, { index: false, follow: true });
+
+  const withoutYahoo = buildCompanyPageModel({
+    company,
+    market: market(),
+    official: substantialOfficial,
+    articles: [],
+    now: NOW,
+  });
+  const withYahoo = buildCompanyPageModel({
+    company,
+    market: market({ price: 200, change: 2, changePct: 1, currency: "SEK", valuation: { ...emptyValuation(), trailingPe: 18 } }),
+    official: substantialOfficial,
+    articles: [titledArticle("SKF rapport"), titledArticle("SKF utdelning")],
+    now: NOW,
+  });
+  assert.equal(withoutYahoo.indexable, true);
+  assert.equal(withYahoo.indexable, true);
+  assert.equal(companyPageMetadataCopy(company, withoutYahoo).robots.index, true);
+  assert.deepEqual(withoutYahoo.indexSignals.filter((signal) => signal === "reports" || signal === "press").sort(), ["press", "reports"]);
+  assert.match(companyPageMetadataCopy(company, withYahoo).title, /SKF aktie/);
+  assert.match(companyPageMetadataCopy(company, withYahoo).description, /SKF/);
+});
+
+test("saknad dagsförändring är neutral och nyckeltal utan värde är sekundära", () => {
+  assert.equal(marketChangeDirection(null, null), "neutral");
+  assert.equal(marketChangeDirection(4, null), "neutral");
+  assert.equal(marketChangeDirection(null, 1.2), "neutral");
+  assert.equal(marketChangeDirection(0, 0), "neutral");
+  assert.equal(marketChangeDirection(1.5, 0.4), "positive");
+  assert.equal(marketChangeDirection(-1.5, -0.4), "negative");
+
+  const company = getCompanyProfile("volvo");
+  assert.ok(company);
+  const missing = buildCompanyPageModel({
+    company,
+    market: market({ price: 100, currency: "SEK" }),
+    official: official("volvo"),
+    articles: [],
+    now: NOW,
+  });
+  assert.equal(missing.changeDirection, "neutral");
+  const down = buildCompanyPageModel({
+    company,
+    market: market({ price: 100, change: -2, changePct: -1.5, currency: "SEK" }),
+    official: official("volvo"),
+    articles: [],
+    now: NOW,
+  });
+  assert.equal(down.changeDirection, "negative");
+  const groups = partitionValuationMetrics(missing.metrics);
+  assert.ok(groups.unavailable.length > 0);
+  assert.ok(groups.available.every((metric) => metric.value !== MISSING_METRIC));
+  assert.ok(groups.unavailable.every((metric) => metric.value === MISSING_METRIC && metric.source && metric.definition));
+  const content = read("components/companies/CompanyPageContent.tsx");
+  assert.match(content, /Nyckeltal som saknas/);
+  assert.match(content, /Graf: TradingView/);
+  assert.match(content, /Kurs och nyckeltal: Yahoo Finance/);
+  assert.doesNotMatch(content, /Källa: Yahoo Finance/);
+  assert.match(content, /text-divlab-text-secondary/);
+  assert.doesNotMatch(content, /positiveChange/);
 });
 
 test("varken Börskollen, Autoredaktionen, PR 415 eller ändrad Phase 2-cron ingår", () => {

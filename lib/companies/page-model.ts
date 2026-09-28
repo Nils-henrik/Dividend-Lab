@@ -67,7 +67,7 @@ export type CompanyPageModel = {
   priceText: string;
   changeText: string;
   changePctText: string;
-  positiveChange: boolean;
+  changeDirection: MarketChangeDirection;
   marketTimestamp: string | null;
   marketSourceUrl: string;
   metrics: DisplayMetric[];
@@ -125,36 +125,49 @@ function publisherFor(documents: readonly PageDocument[], url: string, fallback:
   return documents.find((document) => document.url === url)?.publisher ?? fallback;
 }
 
+export type MarketChangeDirection = "positive" | "negative" | "neutral";
+
+/** Missing change or change percent, and a zero move, stay neutral. */
+export function marketChangeDirection(change: number | null, changePct: number | null): MarketChangeDirection {
+  if (change === null || changePct === null || changePct === 0) return "neutral";
+  return changePct > 0 ? "positive" : "negative";
+}
+
+export function partitionValuationMetrics(metrics: readonly DisplayMetric[]) {
+  return {
+    available: metrics.filter((metric) => metric.value !== MISSING_METRIC),
+    unavailable: metrics.filter((metric) => metric.value === MISSING_METRIC),
+  };
+}
+
+/**
+ * Stable substance only. Price, valuation, Yahoo statements and Yahoo
+ * dividend history are intentionally excluded so a temporary quote success
+ * or failure cannot change indexability.
+ */
 export function companyIndexSignals(input: {
-  price: number | null;
-  metrics: readonly DisplayMetric[];
-  financialPoints: number;
   dividendKind: DividendKind;
   dividendAmount: boolean;
-  paidDividends: number;
   reports: number;
   press: number;
   events: number;
   management: number;
   ownership: number;
+  articles: number;
 }) {
   const signals: string[] = [];
-  if (input.price !== null) signals.push("market_price");
-  if (input.metrics.some((metric) => metric.id !== "official_yield" && metric.id !== "week52" && metric.id !== "volume" && metric.value !== MISSING_METRIC)) {
-    signals.push("valuation");
-  }
-  if (input.financialPoints > 0) signals.push("financial_history");
-  if (input.dividendAmount && input.dividendKind !== "board_proposal") signals.push("dividend");
-  if (input.paidDividends > 0) signals.push("dividend_history");
   if (input.reports > 0) signals.push("reports");
   if (input.press > 0) signals.push("press");
   if (input.events > 0) signals.push("calendar");
   if (input.management > 0) signals.push("management");
   if (input.ownership > 0) signals.push("ownership");
+  if (input.dividendAmount && input.dividendKind !== "board_proposal") signals.push("dividend");
+  if (input.articles >= COMPANY_PAGE_EDITORIAL_MINIMUM) signals.push("editorial");
   return signals;
 }
 
 export const COMPANY_PAGE_INDEX_MINIMUM = 2;
+export const COMPANY_PAGE_EDITORIAL_MINIMUM = 2;
 
 export function buildCompanyPageModel(input: {
   company: CompanyProfile;
@@ -247,17 +260,14 @@ export function buildCompanyPageModel(input: {
     href: article.url ?? `/news/${article.id}`,
   }));
   const indexSignals = companyIndexSignals({
-    price: input.market.price,
-    metrics,
-    financialPoints: input.market.financials.points.length,
     dividendKind: officialDividend.kind,
     dividendAmount: officialDividend.perShare !== null,
-    paidDividends: paidDividends.length,
     reports: reports.length,
     press: press.length,
     events: events.length,
     management: management.length,
     ownership: ownershipSnapshot.items.length,
+    articles: input.articles.length,
   });
   const changeText = input.market.change === null || !input.market.currency
     ? MISSING_METRIC
@@ -271,7 +281,7 @@ export function buildCompanyPageModel(input: {
     priceText: formatMoney(input.market.price, input.market.currency),
     changeText,
     changePctText,
-    positiveChange: (input.market.changePct ?? 0) >= 0,
+    changeDirection: marketChangeDirection(input.market.change, input.market.changePct),
     marketTimestamp: input.market.marketTimestamp,
     marketSourceUrl: input.market.sourceUrl,
     metrics,

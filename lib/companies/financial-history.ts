@@ -95,17 +95,45 @@ function hasSignal(point: AnnualFinancialPoint) {
   ].some((value) => value !== null);
 }
 
+const REPORTING_CURRENCY = /^[A-Za-z]{3}$/;
+
+function readCurrencyCode(value: unknown): string | null {
+  if (typeof value === "string" && REPORTING_CURRENCY.test(value.trim())) {
+    return value.trim().toUpperCase();
+  }
+  if (value && typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    if ("raw" in record) return readCurrencyCode(record.raw);
+    if ("fmt" in record) return readCurrencyCode(record.fmt);
+  }
+  return null;
+}
+
+/**
+ * Reporting currency from an explicit Yahoo financialCurrency field.
+ * Quote, price and chart currencies are ignored. Missing means null.
+ */
+export function readYahooReportingCurrency(statements: unknown): string | null {
+  if (!statements || typeof statements !== "object") return null;
+  const root = statements as Record<string, unknown>;
+  const financialData = root.financialData;
+  if (financialData && typeof financialData === "object") {
+    const fromModule = readCurrencyCode((financialData as Record<string, unknown>).financialCurrency);
+    if (fromModule) return fromModule;
+  }
+  return readCurrencyCode(root.financialCurrency);
+}
+
 /**
  * Annual figures from a Yahoo quoteSummary payload.
  * Missing years are omitted. Nothing is filled with zero.
  * Operating income is only the provider's operatingIncome field.
+ * Currency is the verified reporting currency, never the listing currency.
  */
-export function parseYahooAnnualFinancials(
-  statements: unknown,
-  currency: string | null,
-): AnnualFinancialPoint[] {
+export function parseYahooAnnualFinancials(statements: unknown): AnnualFinancialPoint[] {
   if (!statements || typeof statements !== "object") return [];
   const root = statements as Record<string, unknown>;
+  const currency = readYahooReportingCurrency(statements);
   const incomeRows = rowsFrom(root.incomeStatementHistory, ["incomeStatementHistory"]);
   const balanceRows = rowsFrom(root.balanceSheetHistory, ["balanceSheetStatements", "balanceSheetHistory"]);
   const cashRows = rowsFrom(root.cashflowStatementHistory, ["cashflowStatements", "cashflowStatementHistory"]);
