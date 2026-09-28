@@ -20,6 +20,9 @@ export const USA_I_FOKUS_28_SEPTEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-09-28T14:00:04+02:00",
   url: "/news/usa-i-fokus-28-september-2026-inflation-micron-wall-street",
   featured: true,
+  imageUrl: "/news/generated/usa-i-fokus-2026-09-28.png",
+  thumbnailImageUrl: "/news/generated/usa-i-fokus-2026-09-28.png",
+  imageAlt: "USA i fokus 2026-09-28 – DivLabs översikt över den amerikanska börsmarknaden inför Wall Streets öppning.",
   readingMinutes: 5,
   seoTitle: "USA i fokus: PCE-inflation och Micron i centrum",
   seoDescription:
