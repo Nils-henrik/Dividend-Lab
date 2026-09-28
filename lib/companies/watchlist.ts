@@ -1,5 +1,10 @@
-import { getCompanyProfile, getPilotCompanies } from "@/lib/companies/catalog";
-import { isVerifiedOmxs30Member } from "@/lib/companies/omxs30";
+import { getCompanyCatalog, getCompanyProfile } from "@/lib/companies/catalog";
+import {
+  COMPANY_INDEXES,
+  indexIdsForSlug,
+  indexLabelsForSlug,
+  type CompanyIndexId,
+} from "@/lib/companies/indexes";
 
 export const MISSING_MARKET_VALUE = "—";
 
@@ -28,6 +33,7 @@ export type DiscoveryCompany = CompanySearchFields & {
   countryCode: string;
   countryName: string;
   logoPath: string | null;
+  indexIds: readonly CompanyIndexId[];
   indexLabels: readonly string[];
 };
 
@@ -112,12 +118,15 @@ function compactSearch(value: string) {
   return normalizeSearch(value).replace(/[^a-z0-9]/g, "");
 }
 
-function indexLabelsFor(slug: string) {
-  return isVerifiedOmxs30Member(slug) ? ["OMXS30"] : [];
+function membershipFor(slug: string) {
+  return {
+    indexIds: indexIdsForSlug(slug),
+    indexLabels: indexLabelsForSlug(slug),
+  };
 }
 
 export function listDiscoveryCompanies(): DiscoveryCompany[] {
-  return getPilotCompanies().map((company) => ({
+  return getCompanyCatalog().map((company) => ({
     slug: company.slug,
     name: company.name,
     displayName: company.displayName,
@@ -126,7 +135,7 @@ export function listDiscoveryCompanies(): DiscoveryCompany[] {
     countryCode: company.countryCode,
     countryName: company.countryName,
     logoPath: company.logoPath,
-    indexLabels: indexLabelsFor(company.slug),
+    ...membershipFor(company.slug),
     aliases: company.aliases,
     tickerAliases: company.tickerAliases,
   }));
@@ -134,9 +143,12 @@ export function listDiscoveryCompanies(): DiscoveryCompany[] {
 
 export function listMarketFilters(companies: readonly DiscoveryCompany[]): MarketFilter[] {
   const filters: MarketFilter[] = [{ id: "all", label: "Alla", kind: "all" }];
+  const present = new Set(companies.flatMap((company) => company.indexIds));
 
-  if (companies.some((company) => company.indexLabels.includes("OMXS30"))) {
-    filters.push({ id: "omxs30", label: "OMXS30", kind: "index" });
+  for (const index of COMPANY_INDEXES) {
+    if (present.has(index.id)) {
+      filters.push({ id: index.id, label: index.label, kind: "index" });
+    }
   }
 
   const countries = new Map<string, string>();
@@ -157,22 +169,18 @@ export function listMarketFilters(companies: readonly DiscoveryCompany[]): Marke
 }
 
 export function matchesMarketFilter(
-  company: Pick<DiscoveryCompany, "indexLabels" | "countryCode">,
+  company: Pick<DiscoveryCompany, "indexIds" | "countryCode">,
   filterId: string,
 ) {
   if (filterId === "all") {
     return true;
   }
 
-  if (filterId === "omxs30") {
-    return company.indexLabels.includes("OMXS30");
-  }
-
   if (filterId.startsWith("country:")) {
     return company.countryCode === filterId.slice("country:".length);
   }
 
-  return false;
+  return company.indexIds.includes(filterId as CompanyIndexId);
 }
 
 export function companyMatchesQuery(company: CompanySearchFields, query: string) {
@@ -376,7 +384,8 @@ export function buildFollowedCompanyCards(
       countryCode: profile?.countryCode ?? "",
       countryName: profile?.countryName ?? "",
       logoPath: profile?.logoPath ?? row.logoPath,
-      indexLabels: profile ? indexLabelsFor(profile.slug) : [],
+      indexIds: profile ? indexIdsForSlug(profile.slug) : [],
+      indexLabels: profile ? indexLabelsForSlug(profile.slug) : [],
       aliases: profile?.aliases ?? [],
       tickerAliases: profile?.tickerAliases ?? [],
       followedAt: row.followedAt,

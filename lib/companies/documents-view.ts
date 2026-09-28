@@ -1,4 +1,5 @@
 import type { OfficialItem } from "@/lib/companies/investor-official";
+import { companyOfficialCoverage } from "@/lib/companies/official-coverage";
 
 export type ViewableCompanyDocument = {
   type:
@@ -77,6 +78,11 @@ export function companySourceDisclaimer(company: {
   slug: string;
   name: string;
 }): string {
-  const publisher = SOURCE_PUBLISHERS[company.slug] ?? company.name;
-  return `Kursdata från Yahoo Finance och TradingView kan vara fördröjd. Officiella pressmeddelanden, rapporter och kalenderdatum hämtas från ${publisher}. Informationen utgör inte investeringsrådgivning.`;
+  const publisher = SOURCE_PUBLISHERS[company.slug];
+  const hasOfficialCoverage = Boolean(publisher || companyOfficialCoverage(company.slug));
+  const official = hasOfficialCoverage
+    ? `Officiella pressmeddelanden, rapporter och kalenderdatum hämtas från ${publisher ?? company.name}.`
+    : "DivLab hämtar inte officiella rapporter, pressmeddelanden eller kalenderdatum för det här bolaget.";
+
+  return `Kursdata från Yahoo Finance och TradingView kan vara fördröjd. ${official} Informationen utgör inte investeringsrådgivning.`;
 }

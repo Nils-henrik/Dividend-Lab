@@ -5,10 +5,11 @@ import CompanyPageContent from "@/components/companies/CompanyPageContent";
 import AppShell from "@/components/layout/AppShell";
 import { getAuthenticatedUser } from "@/lib/auth/session";
 import {
+  getCompanyCatalog,
   getCompanyProfile,
-  getPilotCompanies,
   getRelatedCompanies,
 } from "@/lib/companies/catalog";
+import { isSubstantiveCompanyPage } from "@/lib/companies/page-policy";
 import { getCompanyNews } from "@/lib/companies/news";
 import { getCompanyOfficialData } from "@/lib/companies/official-data.server";
 import {
@@ -30,7 +31,7 @@ type Props = {
 export const dynamic = "force-dynamic";
 
 export function generateStaticParams() {
-  return getPilotCompanies().map((company) => ({ slug: company.slug }));
+  return getCompanyCatalog().map((company) => ({ slug: company.slug }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -44,13 +45,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   }
 
+  const substantive = isSubstantiveCompanyPage(company);
   const title = `${company.name} (${company.ticker}) – aktie, nyheter och rapporter`;
-  const description = `Följ ${company.name}: TradingView-graf, senaste DivLab-artiklar, officiella pressmeddelanden och rapporter.`;
+  const description = substantive
+    ? `Följ ${company.name}: TradingView-graf, senaste DivLab-artiklar, officiella pressmeddelanden och rapporter.`
+    : `Följ ${company.displayName} (${company.ticker}) på ${company.exchange}.`;
   const path = `/bolag/${company.slug}`;
 
   return {
     title,
     description,
+    ...(substantive ? {} : { robots: { index: false as const, follow: true as const } }),
     alternates: { canonical: getCanonicalUrl(path) },
     openGraph: {
       title,

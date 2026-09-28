@@ -44,10 +44,11 @@ function money(value: number | null, currency = "SEK") {
   return value === null ? "—" : `${number(value, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`;
 }
 
-function compactSek(value: number | null) {
+function compactMoney(value: number | null, currency: string) {
   if (value === null) return "—";
-  if (value >= 1_000_000_000) return `${number(value / 1_000_000_000, { maximumFractionDigits: 0 })} md SEK`;
-  return `${number(value / 1_000_000, { maximumFractionDigits: 0 })} mn SEK`;
+  const unit = currency ? ` ${currency}` : "";
+  if (value >= 1_000_000_000) return `${number(value / 1_000_000_000, { maximumFractionDigits: 0 })} md${unit}`;
+  return `${number(value / 1_000_000, { maximumFractionDigits: 0 })} mn${unit}`;
 }
 
 function percent(value: number | null, signed = false) {
@@ -99,28 +100,28 @@ export default function CompanyPageContent({ company, articles, isAuthenticated,
   const officialDividendLabel = officialData.dividend.status === "available_with_items" && officialData.dividend.perShare !== null
     ? `${number(officialData.dividend.perShare, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${officialData.dividend.currency ?? "SEK"}${officialData.dividend.year ? ` · ${officialData.dividend.year}` : ""}`
     : null;
-  const aboutFacts: Array<readonly [string, string, AppIconName]> = [
-    ["Grundat", company.founded, "portfolio"],
-    ["Huvudkontor", company.headquarters, "dashboard"],
-    ["VD", officialData.ceo.name ?? "—", "account"],
-    ["Hemsida", company.websiteLabel, "chart"],
-  ];
+  const aboutFacts: Array<readonly [string, string, AppIconName]> = [];
+  if (company.founded) aboutFacts.push(["Grundat", company.founded, "portfolio"]);
+  if (company.headquarters) aboutFacts.push(["Huvudkontor", company.headquarters, "dashboard"]);
+  aboutFacts.push(["VD", officialData.ceo.name ?? "—", "account"]);
+  if (company.websiteLabel) aboutFacts.push(["Hemsida", company.websiteLabel, "chart"]);
   if (officialDividendLabel) aboutFacts.push(["Utdelning", officialDividendLabel, "portfolio"]);
   const metrics = [
-    ["Börsvärde", compactSek(marketData.marketCap)],
+    ["Börsvärde", compactMoney(marketData.marketCap, currency)],
     ["P/E-tal", number(marketData.peRatio, { maximumFractionDigits: 1 })],
     ["Direktavkastning", marketData.dividendYield !== null ? percent(marketData.dividendYield * 100) : "—"],
     ["52 veckors intervall", marketData.week52Low === null || marketData.week52High === null ? "—" : `${number(marketData.week52Low, { maximumFractionDigits: 2 })} – ${number(marketData.week52High, { maximumFractionDigits: 2 })}`],
     ["VD", officialData.ceo.name ?? "—"],
-    ["Sektor", company.sector],
+    ["Sektor", company.sector ?? "—"],
   ] as const;
-  const quickLinks = [
-    ["Rapportkalender", company.calendarUrl, "calendar"],
-    ["Senaste rapport", reports[0]?.url ?? company.reportsUrl, "news"],
-    ["Pressmeddelanden", company.pressReleasesUrl, "messages"],
-    ["Bolagsstyrning", company.governanceUrl ?? company.websiteUrl, "portfolio"],
-    ["Investor Relations", company.websiteUrl, "chart"],
-  ] as const satisfies readonly (readonly [string, string, AppIconName])[];
+  const quickLinks: Array<readonly [string, string, AppIconName]> = [];
+  if (company.calendarUrl) quickLinks.push(["Rapportkalender", company.calendarUrl, "calendar"]);
+  const latestReportUrl = reports[0]?.url ?? company.reportsUrl;
+  if (latestReportUrl) quickLinks.push(["Senaste rapport", latestReportUrl, "news"]);
+  if (company.pressReleasesUrl) quickLinks.push(["Pressmeddelanden", company.pressReleasesUrl, "messages"]);
+  const governanceUrl = company.governanceUrl ?? (company.pressReleasesUrl ? company.websiteUrl : undefined);
+  if (governanceUrl) quickLinks.push(["Bolagsstyrning", governanceUrl, "portfolio"]);
+  if (company.websiteUrl) quickLinks.push(["Investor Relations", company.websiteUrl, "chart"]);
   const ownership = officialData.ownership.asOf ? officialData.ownership.items.slice(0, 5) : [];
   const ownerTotal = ownership.reduce((sum, owner) => sum + owner.capitalPct, 0);
   const donutStops = ownership.reduce<{ colors: string[]; total: number }>((state, owner, index) => { const colors = ["#075ccf", "#1188f7", "#5aa9f8", "#12b8c8", "#18bf8b"]; const start = state.total; const end = start + owner.capitalPct; state.colors.push(`${colors[index]} ${start}% ${end}%`); state.total = end; return state; }, { colors: [], total: 0 });
@@ -134,11 +135,11 @@ export default function CompanyPageContent({ company, articles, isAuthenticated,
       <section className="divlab-card p-5 sm:p-6">
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-center">
           <div className="flex min-w-0 flex-col gap-5 sm:flex-row sm:items-center">{company.slug === "investor" ? <span aria-hidden="true" className="flex h-24 w-24 shrink-0 items-center justify-center rounded-2xl bg-[#063b78] text-xl font-bold text-white shadow-sm sm:h-28 sm:w-28">Investor</span> : <CompanyLogo name={company.name} logoPath={company.logoPath} size="hero" />}<div className="min-w-0">
-            <div className="flex gap-2"><span className="rounded-md bg-divlab-elevated px-2 py-1 text-[10px] font-semibold uppercase text-divlab-text-secondary">Aktie</span><span className="rounded-md bg-divlab-elevated px-2 py-1 text-[10px] font-semibold text-divlab-text-secondary">{company.segment}</span></div>
+            <div className="flex gap-2"><span className="rounded-md bg-divlab-elevated px-2 py-1 text-[10px] font-semibold uppercase text-divlab-text-secondary">Aktie</span>{company.segment ? <span className="rounded-md bg-divlab-elevated px-2 py-1 text-[10px] font-semibold text-divlab-text-secondary">{company.segment}</span> : null}</div>
             <h1 className="mt-2 text-3xl font-bold tracking-[-0.045em] text-divlab-text sm:text-[38px]">{company.displayName}</h1>
             <p className="mt-1 text-sm text-divlab-text-secondary">{company.ticker} <span className="px-1">•</span> {company.exchange}</p>
-            <p className="mt-2 max-w-2xl text-[13px] leading-5 text-divlab-text-secondary">{company.shortDescription}</p>
-            <div className="mt-3 flex flex-wrap gap-2"><a href={company.websiteUrl} target="_blank" rel="noopener noreferrer" className="inline-flex h-8 items-center gap-1.5 rounded-lg border divlab-border-neutral bg-divlab-surface px-2.5 text-[11px] font-semibold text-divlab-blue">◎ {company.websiteLabel}</a>{company.linkedinUrl ? <a aria-label={`${company.name} på LinkedIn`} href={company.linkedinUrl} target="_blank" rel="noopener noreferrer" className="flex h-8 w-8 items-center justify-center rounded-lg border divlab-border-neutral bg-divlab-surface text-xs font-bold text-divlab-blue">in</a> : null}{company.xUrl ? <a aria-label={`${company.name} på X`} href={company.xUrl} target="_blank" rel="noopener noreferrer" className="flex h-8 w-8 items-center justify-center rounded-lg border divlab-border-neutral bg-divlab-surface text-xs font-bold text-divlab-text">X</a> : null}</div>
+            {company.shortDescription ? <p className="mt-2 max-w-2xl text-[13px] leading-5 text-divlab-text-secondary">{company.shortDescription}</p> : null}
+            <div className="mt-3 flex flex-wrap gap-2">{company.websiteUrl ? <a href={company.websiteUrl} target="_blank" rel="noopener noreferrer" className="inline-flex h-8 items-center gap-1.5 rounded-lg border divlab-border-neutral bg-divlab-surface px-2.5 text-[11px] font-semibold text-divlab-blue">◎ {company.websiteLabel}</a> : null}{company.linkedinUrl ? <a aria-label={`${company.name} på LinkedIn`} href={company.linkedinUrl} target="_blank" rel="noopener noreferrer" className="flex h-8 w-8 items-center justify-center rounded-lg border divlab-border-neutral bg-divlab-surface text-xs font-bold text-divlab-blue">in</a> : null}{company.xUrl ? <a aria-label={`${company.name} på X`} href={company.xUrl} target="_blank" rel="noopener noreferrer" className="flex h-8 w-8 items-center justify-center rounded-lg border divlab-border-neutral bg-divlab-surface text-xs font-bold text-divlab-text">X</a> : null}</div>
           </div></div>
           <div className="flex flex-col items-start lg:items-end"><FollowCompanyButton companySlug={company.slug} isAuthenticated={isAuthenticated} isAvailable={followState.isAvailable} isFollowing={followState.isFollowing} loginHref={loginHref} /><div className="mt-7 text-left lg:text-right"><p className="text-3xl font-bold tracking-[-0.04em] text-divlab-text sm:text-4xl">{money(marketData.price, currency)}</p><p className={`mt-1.5 text-base font-bold ${positive ? "text-emerald-600" : "text-red-500"}`}>{marketData.change === null ? "—" : `${marketData.change > 0 ? "+" : ""}${number(marketData.change, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} <span className="ml-1">{percent(marketData.changePct, true)}</span> <span className="text-xs font-normal text-divlab-text-muted">(senast)</span></p><p className="mt-2 text-[10px] text-divlab-text-muted"><span className={`mr-1.5 inline-block h-2 w-2 rounded-full ${positive ? "bg-emerald-500" : "bg-red-500"}`} />Fördröjd marknadsdata · {time(marketData.marketTimestamp)}</p></div></div>
         </div>
@@ -151,7 +152,7 @@ export default function CompanyPageContent({ company, articles, isAuthenticated,
           <section id="kursutveckling" className="divlab-card overflow-hidden scroll-mt-28">
             <nav className="flex gap-1 overflow-x-auto border-b divlab-border-neutral px-4 pt-1" aria-label="Bolagsinformation">{PAGE_TABS.map(([label, href], index) => <a key={href} href={href} className={`shrink-0 border-b-2 px-3 py-3 text-[11px] font-semibold ${index === 0 ? "border-divlab-blue text-divlab-blue" : "border-transparent text-divlab-text-muted hover:text-divlab-text"}`}>{label}</a>)}</nav>
             <div className="flex justify-end px-5 pt-4"><a href={marketData.sourceUrl} target="_blank" rel="noopener noreferrer" className="rounded-lg border divlab-border-neutral px-3 py-2 text-[10px] font-medium text-divlab-text-secondary">Källa: Yahoo Finance ↗</a></div>
-            <div className="px-2 pb-2 pt-1 sm:px-4"><CompanyPriceChart companyName={company.displayName} symbol={company.tradingViewSymbol} /></div>
+            {company.tradingViewSymbol ? <div className="px-2 pb-2 pt-1 sm:px-4"><CompanyPriceChart companyName={company.displayName} symbol={company.tradingViewSymbol} /></div> : null}
           </section>
 
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(250px,0.75fr)]">
@@ -167,9 +168,9 @@ export default function CompanyPageContent({ company, articles, isAuthenticated,
         </main>
 
         <aside className="min-w-0 space-y-4">
-          <section id="om-bolaget" className="divlab-card scroll-mt-28 p-5"><PanelHeading title="Kort om bolaget" /><dl className="mt-4 space-y-3">{aboutFacts.map(([label, value, icon]) => <div key={label} className="flex items-center gap-3"><FactIcon name={icon as AppIconName} /><div><dt className="text-[10px] text-divlab-text-muted">{label}</dt><dd className="text-xs font-semibold text-divlab-text">{value}</dd></div></div>)}</dl><p className="mt-4 text-xs leading-5 text-divlab-text-secondary">{company.description}</p><a href={company.websiteUrl} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex text-xs font-semibold text-divlab-blue">Läs mer om bolaget →</a></section>
+          <section id="om-bolaget" className="divlab-card scroll-mt-28 p-5"><PanelHeading title="Kort om bolaget" /><dl className="mt-4 space-y-3">{aboutFacts.map(([label, value, icon]) => <div key={label} className="flex items-center gap-3"><FactIcon name={icon} /><div><dt className="text-[10px] text-divlab-text-muted">{label}</dt><dd className="text-xs font-semibold text-divlab-text">{value}</dd></div></div>)}</dl>{company.description ? <p className="mt-4 text-xs leading-5 text-divlab-text-secondary">{company.description}</p> : null}{company.websiteUrl ? <a href={company.websiteUrl} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex text-xs font-semibold text-divlab-blue">Läs mer om bolaget →</a> : null}</section>
           <section className="divlab-card p-5"><PanelHeading title="Snabblänkar" /><div className="mt-2 divide-y divide-[var(--divlab-divider)]">{quickLinks.map(([label, href, icon]) => <a key={label} href={href} target="_blank" rel="noopener noreferrer" className="divlab-row-hover flex items-center gap-3 py-2.5"><FactIcon name={icon} /><span className="flex-1 text-xs font-medium text-divlab-text">{label}</span><span className="text-divlab-text-muted">›</span></a>)}</div></section>
-          <section className="divlab-card p-5"><PanelHeading title="Liknande bolag" /><div className="mt-2 space-y-1">{relatedCompanies.map((related) => { const change = relatedMarketData[related.slug]?.changePct ?? null; return <Link key={related.slug} href={`/bolag/${related.slug}`} className="divlab-row-hover flex items-center gap-3 rounded-lg py-2"><CompanyLogo name={related.name} logoPath={related.logoPath} size="compact" /><span className="min-w-0 flex-1 truncate text-xs font-semibold text-divlab-text">{related.displayName}</span><span className={`text-[11px] font-bold ${change === null ? "text-divlab-text-muted" : change >= 0 ? "text-emerald-600" : "text-red-500"}`}>{percent(change, true)}</span></Link>; })}</div></section>
+          {relatedCompanies.length ? <section className="divlab-card p-5"><PanelHeading title="Liknande bolag" /><div className="mt-2 space-y-1">{relatedCompanies.map((related) => { const change = relatedMarketData[related.slug]?.changePct ?? null; return <Link key={related.slug} href={`/bolag/${related.slug}`} className="divlab-row-hover flex items-center gap-3 rounded-lg py-2"><CompanyLogo name={related.name} logoPath={related.logoPath} size="compact" /><span className="min-w-0 flex-1 truncate text-xs font-semibold text-divlab-text">{related.displayName}</span><span className={`text-[11px] font-bold ${change === null ? "text-divlab-text-muted" : change >= 0 ? "text-emerald-600" : "text-red-500"}`}>{percent(change, true)}</span></Link>; })}</div></section> : null}
         </aside>
       </div>
       <p className="mt-4 text-[10px] leading-4 text-divlab-text-muted">{companySourceDisclaimer(company)}</p>

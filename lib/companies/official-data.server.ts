@@ -67,10 +67,10 @@ export const getCompanyOfficialData = cache(async (
   if (!tryGetSupabaseConfig() || !followState.companyId) {
     const base = assembleCompanyOfficialData({
       slug: company.slug,
-      pressReleasesUrl: company.pressReleasesUrl,
-      reportsUrl: company.reportsUrl,
-      calendarUrl: company.calendarUrl,
-      profileUrl: company.governanceUrl ?? company.ownershipUrl ?? company.websiteUrl,
+      pressReleasesUrl: company.pressReleasesUrl ?? company.websiteUrl ?? "",
+      reportsUrl: company.reportsUrl ?? company.websiteUrl ?? "",
+      calendarUrl: company.calendarUrl ?? company.websiteUrl ?? "",
+      profileUrl: company.governanceUrl ?? company.ownershipUrl ?? company.websiteUrl ?? "",
       documents,
       documentQuery: followState.companyId ? "ok" : "schema_unavailable",
       facts: [],
@@ -167,10 +167,10 @@ export const getCompanyOfficialData = cache(async (
 
   const assembled = assembleCompanyOfficialData({
     slug: company.slug,
-    pressReleasesUrl: company.pressReleasesUrl,
-    reportsUrl: company.reportsUrl,
-    calendarUrl: company.calendarUrl,
-    profileUrl: company.governanceUrl ?? company.ownershipUrl ?? company.websiteUrl,
+    pressReleasesUrl: company.pressReleasesUrl ?? company.websiteUrl ?? "",
+    reportsUrl: company.reportsUrl ?? company.websiteUrl ?? "",
+    calendarUrl: company.calendarUrl ?? company.websiteUrl ?? "",
+    profileUrl: company.governanceUrl ?? company.ownershipUrl ?? company.websiteUrl ?? "",
     documents,
     documentQuery: "ok",
     facts,
