@@ -87,5 +87,16 @@ describe("bounded company ingestion HTTP", () => {
       }),
       { status: "error", reason: "too_large" },
     );
+
+    const prefix = await fetchBoundedText(`${ORIGIN}/en/media/press-releases/2026/test`, {
+      allowedOrigin: ORIGIN,
+      acceptedContentTypes: ["text/html"],
+      maxBytes: 100,
+      timeoutMs: 1_000,
+      returnPrefixAtCap: true,
+      fetchImpl,
+    });
+    assert.equal(prefix.status, "ok");
+    assert.equal(prefix.status === "ok" ? prefix.text.length : 0, 100);
   });
 });

@@ -50,78 +50,102 @@ function documents(
 
 export const COMPANY_OFFICIAL_COVERAGE: Record<string, CompanyOfficialCoverage> = {
   investor: {
-    press: category("automated", "https://www.investorab.com/investors-media/press-releases"),
+    press: category("source_link_only", "https://www.investorab.com/investors-media/press-releases", "Presslistan är en AlertIR-embed. Ingen separat utfärdarfeed är tillåten."),
     reports: category("automated", "https://www.investorab.com/investors-media/reports-presentations/"),
-    calendar: category("automated", "https://www.investorab.com/investors-media/events-calendar"),
+    calendar: category("source_link_only", "https://www.investorab.com/investors-media/events-calendar", "Kalendern är en AlertIR-embed. Ingen separat utfärdarfeed är tillåten."),
     ceo: category("automated", "https://www.investorab.com/about-investor/board-management/executive-leadership-team"),
     ownership: category("automated", "https://www.investorab.com/investors-media/the-investor-share/ownership-structure"),
     dividend: category("automated", "https://www.investorab.com/investors-media/the-investor-share/dividend-and-dividend-policy"),
   },
-  volvo: documents({
+  volvo: {
     press: category("automated", "https://www.volvogroup.com/en/news-and-media.html"),
     reports: category("automated", "https://www.volvogroup.com/en/investors/reports-and-presentations.html"),
     calendar: category("automated", "https://www.volvogroup.com/en/investors/financial-calendar.html"),
-  }, "https://www.volvogroup.com/"),
+    ceo: category("automated", "https://www.volvogroup.com/en/investors/corporate-governance/ceo-and-group-executive-board.html"),
+    ownership: category("source_link_only", "https://www.volvogroup.com/en/investors/the-volvo-share.html", "Ägartabellen ligger inte i den officiella HTML-sidan."),
+    dividend: category("source_link_only", "https://www.volvogroup.com/en/investors/the-volvo-share.html", "Utdelningen ligger i en AlertIR-embed."),
+  },
   ericsson: documents({
     press: category("automated", "https://www.ericsson.com/en/newsroom/latest-news?locs=68304&typeFilters=3", "Presslistan kan stoppas av bot-skydd. Sidan länkar då till den officiella källan."),
     reports: category("automated", "https://www.ericsson.com/en/investors/financial-reports-and-presentations"),
     calendar: category("automated", "https://www.ericsson.com/en/investors/financial-calendar"),
   }, "https://www.ericsson.com/"),
-  "atlas-copco": documents({
-    press: category("automated", "https://www.atlascopcogroup.com/en/media/press-releases"),
+  "atlas-copco": {
+    press: category("automated", "https://www.atlascopcogroup.com/en/media-new/press-releases"),
     reports: category("automated", "https://www.atlascopcogroup.com/en/investors/reports-and-presentations"),
     calendar: category("automated", "https://www.atlascopcogroup.com/en/investors/calendar-and-events"),
-  }, "https://www.atlascopcogroup.com/"),
+    ceo: category("automated", "https://www.atlascopcogroup.com/en/investors/corporate-governance/management-and-remuneration/meet-our-president-and-ceo"),
+    ownership: category("automated", "https://www.atlascopcogroup.com/en/investors/atlas-copco-ab-share/shareholders"),
+    dividend: category("source_link_only", "https://www.atlascopcogroup.com/en/investors", "Ingen utdelning per aktie fanns i den officiella HTML-sidan."),
+  },
   astrazeneca: documents({
     press: category("automated", "https://www.astrazeneca.com/media-centre/press-releases.html"),
     reports: category("automated", "https://www.astrazeneca.com/investor-relations/results-and-presentations.html"),
     calendar: category("automated", "https://www.astrazeneca.com/investor-relations/events.html"),
   }, "https://www.astrazeneca.com/"),
-  saab: documents({
+  saab: {
     press: category("automated", "https://www.saab.com/newsroom/press-releases"),
     reports: category("automated", "https://www.saab.com/investors/reports-and-presentations"),
     calendar: category("automated", "https://www.saab.com/investors/calendar"),
-  }, "https://www.saab.com/"),
-  sandvik: documents({
+    ceo: category("automated", "https://www.saab.com/about/company-in-brief/group-management"),
+    ownership: category("source_link_only", "https://www.saab.com/investors/the-share/ownership", "Ägardata ligger i en MFN-widget, inte i utfärdarens HTML."),
+    dividend: category("source_link_only", "https://www.saab.com/investors/the-share/dividend", "Sidan anger ett styrelseförslag, inte en fastställd utdelning."),
+  },
+  sandvik: {
     press: category("automated", "https://www.home.sandvik/en/investors/press-releases/"),
     reports: category("automated", "https://www.home.sandvik/en/investors/reports-presentations/"),
     calendar: category("automated", "https://www.home.sandvik/en/investors/calendar/"),
-  }, "https://www.home.sandvik/"),
+    ceo: category("automated", "https://www.home.sandvik/en/investors/corporate-governance/group-executive-management/"),
+    ownership: category("source_link_only", "https://www.home.sandvik/en/investors/share-price-monitor/ownership-structure/", "Ägartabellen finns inte i den officiella HTML-sidan."),
+    dividend: category("source_link_only", "https://www.home.sandvik/en/investors/share-price-monitor/dividend-information/", "Utdelning per aktie finns inte i den officiella HTML-sidan."),
+  },
   sca: documents({
     press: category("automated", "https://www.sca.com/en/media/press-releases/"),
     reports: category("automated", "https://www.sca.com/en/investors/reports-and-presentations/interim-reports/"),
     calendar: category("automated", "https://www.sca.com/en/investors/ir-calendar/"),
   }, "https://www.sca.com/"),
-  addtech: documents({
+  addtech: {
     press: category("automated", "https://www.addtech.com/investors-and-media/press-releases"),
     reports: category("automated", "https://www.addtech.com/investors-and-media/financial-reports"),
     calendar: category("automated", "https://www.addtech.com/investors-and-media/financial-calendar"),
-  }, "https://www.addtech.com/investors-and-media/press-releases"),
+    ceo: category("automated", "https://www.addtech.com/this-is-addtech/executive-management"),
+    ownership: category("automated", "https://www.addtech.com/investors-and-media/the-share/owners"),
+    dividend: category("source_link_only", "https://www.addtech.com/investors-and-media/the-share", "Ingen utdelning per aktie fanns i den officiella HTML-sidan."),
+  },
   eqt: documents({
     press: category("automated", "https://eqtgroup.com/news"),
     reports: category("automated", "https://eqtgroup.com/shareholders/reports-and-presentations"),
     calendar: category("automated", "https://eqtgroup.com/shareholders/financial-calendar"),
   }, "https://eqtgroup.com/"),
-  evolution: documents({
+  evolution: {
     press: category("automated", "https://www.evolution.com/investors/financial-publications/press-releases"),
     reports: category("automated", "https://www.evolution.com/investors/financial-publications/reports"),
     calendar: category("automated", "https://www.evolution.com/investors/financial-data/financial-calendar"),
-  }, "https://www.evolution.com/"),
+    ceo: category("automated", "https://www.evolution.com/investors/corporate-governance/group-management"),
+    ownership: category("automated", "https://www.evolution.com/investors/share-information/shareholder-structure"),
+    dividend: category("source_link_only", "https://www.evolution.com/investors/share-information/the-share", "Ingen utdelning per aktie parserades från den officiella sidan."),
+  },
   nibe: documents({
     press: category("automated", "https://www.nibegroup.com/news"),
     reports: category("automated", "https://www.nibegroup.com/investors"),
     calendar: category("automated", "https://www.nibegroup.com/investors"),
   }, "https://www.nibegroup.com/"),
-  essity: documents({
+  essity: {
     press: category("automated", "https://www.essity.com/media/press-releases/"),
     reports: category("automated", "https://www.essity.com/investors/financial-reports/interim-reports/"),
     calendar: category("automated", "https://www.essity.com/investors/calendar/"),
-  }, "https://www.essity.com/"),
-  hm: documents({
+    ceo: category("automated", "https://www.essity.com/company/organization-and-management/executive-management-team/"),
+    ownership: category("source_link_only", "https://www.essity.com/investors/essity-share/ownership/", "Ägartabellen fanns inte i den officiella HTML-sidan."),
+    dividend: category("source_link_only", "https://www.essity.com/investors/essity-share/dividend/", "Utdelning per aktie fanns inte i den officiella HTML-sidan."),
+  },
+  hm: {
     press: category("automated", "https://hmgroup.com/media/news/"),
     reports: category("automated", "https://hmgroup.com/investors/"),
     calendar: category("automated", "https://hmgroup.com/investors/financial-calendar/"),
-  }, "https://hmgroup.com/"),
+    ceo: category("automated", "https://hmgroup.com/about-us/corporate-governance/ceo/"),
+    ownership: category("automated", "https://hmgroup.com/investors/shareholders/"),
+    dividend: category("automated", "https://hmgroup.com/investors/dividend/"),
+  },
   "alfa-laval": documents({
     press: category("automated", "https://www.alfalaval.com/media/newsroom/"),
     reports: category("automated", "https://www.alfalaval.com/media/newsroom/"),

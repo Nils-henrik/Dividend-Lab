@@ -31,6 +31,19 @@ export const COMPANY_INGESTION_ROUTE_BUDGET_MS = COMPANY_INGESTION_JOB_BUDGET_MS
 export const COMPANY_INGESTION_MIN_JOB_SLICE_MS = 12_000;
 
 /**
+ * One source category may not consume the whole shared route budget.
+ * A slow listing stops at this slice so sibling categories, and later
+ * companies, still get time in the same invocation.
+ */
+export const COMPANY_INGESTION_SOURCE_ATTEMPT_BUDGET_MS = 18_000;
+
+/**
+ * After a source hits its own slice, continue with the next category only
+ * when the shared route budget can still finish a short fetch.
+ */
+export const COMPANY_INGESTION_SOURCE_CONTINUE_MIN_MS = 8_000;
+
+/**
  * A daily cron cannot honor a 12-hour refresh. Twenty hours makes a source
  * checked on the previous run eligible at the next 03:17 UTC run.
  */
@@ -59,6 +72,8 @@ export function companyIngestionRouteFitsPlatformLimit(): boolean {
   return (
     COMPANY_INGESTION_ROUTE_BUDGET_MS < COMPANY_INGESTION_PLATFORM_MAX_MS &&
     COMPANY_INGESTION_MIN_JOB_SLICE_MS < COMPANY_INGESTION_ROUTE_BUDGET_MS &&
+    COMPANY_INGESTION_SOURCE_CONTINUE_MIN_MS < COMPANY_INGESTION_SOURCE_ATTEMPT_BUDGET_MS &&
+    COMPANY_INGESTION_SOURCE_ATTEMPT_BUDGET_MS * 2 < COMPANY_INGESTION_ROUTE_BUDGET_MS &&
     COMPANY_INGESTION_ROUTE_BUDGET_MS + 15_000 <= COMPANY_INGESTION_PLATFORM_MAX_MS
   );
 }
