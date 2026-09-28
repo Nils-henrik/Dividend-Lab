@@ -18,6 +18,9 @@ export const BOLAGET_I_FOKUS_VERISURE_28_SEPTEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-09-28T10:59:00+02:00",
   url: "/news/bolaget-i-fokus-verisure-28-september-2026",
   featured: true,
+  imageUrl: "/news/generated/bolaget-i-fokus-2026-09-28.png",
+  thumbnailImageUrl: "/news/generated/bolaget-i-fokus-2026-09-28.png",
+  imageAlt: "Bolaget i fokus 2026-09-28 – DivLabs artikel om dagens mest intressanta bolagshändelse.",
   readingMinutes: 5,
   seoTitle: "Verisure och Ting Labs lanserar brandvarning i Europa",
   seoDescription:
