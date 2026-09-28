@@ -19,7 +19,8 @@ import {
   overlayInvestorLiveData,
   type CompanyOfficialData,
 } from "@/lib/companies/official-data";
-import { getPilotCompanies } from "@/lib/companies/catalog";
+import { getCompanyCatalog } from "@/lib/companies/catalog";
+import { COMPANY_INDEXES } from "@/lib/companies/indexes";
 
 const NOW = new Date("2026-09-25T12:00:00.000Z");
 const ORIGIN = "https://www.investorab.com";
@@ -408,8 +409,15 @@ describe("company official data contract", () => {
     const ingestion = readFileSync(new URL("../lib/companies/ingestion/collect.ts", import.meta.url), "utf8");
     assert.doesNotMatch(page, /slug === "investor" \? getInvestorOfficialData/);
     assert.doesNotMatch(`${page}\n${ingestion}`, /börskollen|borskollen/i);
-    for (const company of getPilotCompanies()) {
+    const omxSlugs = new Set(
+      COMPANY_INDEXES.find((index) => index.id === "omxs30")!.constituentSlugs,
+    );
+    for (const company of getCompanyCatalog()) {
       const coverage = COMPANY_OFFICIAL_COVERAGE[company.slug];
+      if (!omxSlugs.has(company.slug)) {
+        assert.equal(coverage, undefined, company.slug);
+        continue;
+      }
       assert.ok(coverage, company.slug);
       for (const category of ["press", "reports", "calendar", "ceo", "ownership", "dividend"] as const) {
         assert.match(coverage[category].href, /^https:\/\//);

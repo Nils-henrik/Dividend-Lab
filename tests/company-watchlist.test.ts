@@ -4,7 +4,7 @@ import test from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import WatchlistBoard from "../components/companies/WatchlistBoard";
-import { getCompanyProfile, getPilotCompanies } from "../lib/companies/catalog";
+import { getCompanyCatalog, getCompanyProfile } from "../lib/companies/catalog";
 import { followButtonLabel } from "../lib/companies/follow-label";
 import { isFollowableCompanySlug } from "../lib/companies/follow-policy";
 import { getFollowedCompanyNews } from "../lib/companies/news";
@@ -166,7 +166,7 @@ test("Upptäck bolag kan fällas ihop och öppnas direkt för en tom följlista"
   const empty = renderBoard({ showEmptyFollows: true, followedCount: 0 });
 
   assert.match(collapsed, /aria-expanded="false"/);
-  assert.match(collapsed, /Visa bolag \(30\)/);
+  assert.match(collapsed, new RegExp(`Visa bolag \\(${listDiscoveryCompanies().length}\\)`));
   assert.match(collapsed, /id="watchlist-discovery-list" hidden=""/);
   assert.match(empty, /aria-expanded="true"/);
   assert.match(empty, /Dölj bolag/);
@@ -176,10 +176,14 @@ test("discovery visar bara följbara bolag och markerar följda", () => {
   const discovery = listDiscoveryCompanies();
   const slugs = discovery.map((company) => company.slug);
 
-  assert.equal(discovery.length, 30);
-  assert.deepEqual(new Set(slugs), new Set(getPilotCompanies().map((company) => company.slug)));
-  assert.equal(slugs.includes("apple"), false);
-  assert.ok(discovery.every((company) => company.indexLabels.includes("OMXS30")));
+  assert.equal(discovery.length, getCompanyCatalog().length);
+  assert.equal(discovery.length, 170);
+  assert.deepEqual(new Set(slugs), new Set(getCompanyCatalog().map((company) => company.slug)));
+  assert.equal(slugs.includes("apple"), true);
+  assert.equal(
+    discovery.filter((company) => company.indexLabels.includes("OMXS30")).length,
+    30,
+  );
 
   const followed = new Set(["investor"]);
   const marked = discovery.filter((company) => followed.has(company.slug));
@@ -214,11 +218,7 @@ test("index- och marknadsfilter visar bara verifierade medlemmar", () => {
 
   assert.deepEqual(
     filters.map((filter) => filter.label),
-    ["Alla", "OMXS30", "Sverige"],
-  );
-  assert.equal(
-    filters.some((filter) => /nasdaq|s&p|dax|russell|usa|tyskland|europa/i.test(filter.label)),
-    false,
+    ["Alla", "OMXS30", "DAX 40", "Nasdaq-100", "Nederländerna", "Sverige", "Tyskland", "USA"],
   );
 
   const omx = companies.filter((company) => matchesMarketFilter(company, "omxs30"));
@@ -227,12 +227,13 @@ test("index- och marknadsfilter visar bara verifierade medlemmar", () => {
 
   const outsider: DiscoveryCompany = {
     ...companies[0]!,
-    slug: "apple",
-    name: "Apple",
-    displayName: "Apple",
-    ticker: "AAPL",
+    slug: "not-a-member",
+    name: "Outsider",
+    displayName: "Outsider",
+    ticker: "OUT",
     countryCode: "US",
     countryName: "USA",
+    indexIds: [],
     indexLabels: [],
     exchange: "Nasdaq",
   };
@@ -241,7 +242,7 @@ test("index- och marknadsfilter visar bara verifierade medlemmar", () => {
   assert.equal(matchesMarketFilter(outsider, "country:SE"), false);
   assert.equal(matchesMarketFilter(outsider, "nasdaq-100"), false);
   assert.equal(matchesMarketFilter(companies[0]!, "country:SE"), true);
-  assert.deepEqual(new Set(VERIFIED_OMXS30_SLUGS), new Set(companies.map((company) => company.slug)));
+  assert.deepEqual(new Set(VERIFIED_OMXS30_SLUGS), new Set(omx.map((company) => company.slug)));
   assert.equal((VERIFIED_OMXS30_SLUGS as readonly string[]).includes("apple"), false);
 });
 
@@ -295,13 +296,15 @@ test("följ och avfölj använder befintligt action-kontrakt", () => {
 test("okänt eller icke-följbart bolag stoppas innan följningen skrivs", () => {
   assert.equal(isFollowableCompanySlug("investor"), true);
   assert.equal(isFollowableCompanySlug("volvo"), true);
-  assert.equal(isFollowableCompanySlug("apple"), false);
+  assert.equal(isFollowableCompanySlug("apple"), true);
+  assert.equal(isFollowableCompanySlug("siemens"), true);
   assert.equal(isFollowableCompanySlug("nasdaq-100"), false);
   assert.equal(isFollowableCompanySlug("ATLAS"), false);
   assert.equal(isFollowableCompanySlug("../investor"), false);
   assert.equal(isFollowableCompanySlug("investor;drop"), false);
   assert.equal(isFollowableCompanySlug(""), false);
-  assert.equal(getCompanyProfile("apple"), null);
+  assert.equal(getCompanyProfile("not-a-company"), null);
+  assert.equal(getCompanyProfile("apple")?.ticker, "AAPL");
 });
 
 test("schema unavailable skiljs från tom följlista", () => {

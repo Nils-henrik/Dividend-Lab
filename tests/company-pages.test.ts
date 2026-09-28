@@ -2,10 +2,11 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
+  getCompanyCatalog,
   getCompanyProfile,
-  getPilotCompanies,
   getRelatedCompanies,
 } from "../lib/companies/catalog";
+import { COMPANY_INDEXES } from "../lib/companies/indexes";
 import { articleMatchesCompany, getCompanyNews } from "../lib/companies/news";
 import type { NewsArticle } from "../types/news";
 
@@ -63,8 +64,11 @@ const OMXS30_EXPANSION_SLUGS = [
   "telia",
 ] as const;
 
-test("följbara bolag är hela OMXS30 utan dubbletter eller påhittad kursdata", () => {
-  const companies = getPilotCompanies();
+test("OMXS30-profilerna är oförändrat rika och katalogen har inga dubbletter", () => {
+  const omxSlugs = COMPANY_INDEXES.find((index) => index.id === "omxs30")!.constituentSlugs;
+  const companies = getCompanyCatalog().filter((company) =>
+    (omxSlugs as readonly string[]).includes(company.slug),
+  );
   const slugs = companies.map((company) => company.slug);
   const tickers = companies.map((company) => company.ticker.toUpperCase());
   const tradingViewPattern = /^[A-Z0-9_.-]+:[A-Z0-9_.-]+$/;
@@ -83,15 +87,16 @@ test("följbara bolag är hela OMXS30 utan dubbletter eller påhittad kursdata",
 
   for (const company of companies) {
     assert.match(company.slug, /^[a-z0-9]+(?:-[a-z0-9]+)*$/);
-    assert.match(company.tradingViewSymbol, tradingViewPattern);
+    assert.match(company.tradingViewSymbol ?? "", tradingViewPattern);
     assert.match(company.marketDataSymbol, /^[A-Z0-9-]+\.ST$/);
     assert.equal(company.exchange, "Nasdaq Stockholm");
     assert.equal(company.countryCode, "SE");
-    assert.ok(company.websiteUrl.startsWith("https://"));
-    assert.ok(company.pressReleasesUrl.startsWith("https://"));
-    assert.ok(company.reportsUrl.startsWith("https://"));
-    assert.ok(company.calendarUrl.startsWith("https://"));
-    assert.ok(company.description.length > 60);
+    assert.ok(company.websiteUrl?.startsWith("https://"));
+    assert.ok(company.pressReleasesUrl?.startsWith("https://"));
+    assert.ok(company.reportsUrl?.startsWith("https://"));
+    assert.ok(company.calendarUrl?.startsWith("https://"));
+    assert.ok(company.description && company.description.length > 60);
+    assert.ok(company.tradingViewSymbol);
     assert.equal(
       JSON.stringify(company).match(/placeholder|mock|lorem|fake/i),
       null,
@@ -106,11 +111,20 @@ test("okänt bolag saknar profil och kan därför ge 404", () => {
 });
 
 test("relaterade bolag ger säkra interna länkar utan självreferenser", () => {
-  for (const company of getPilotCompanies()) {
+  const omxSlugs = new Set(
+    COMPANY_INDEXES.find((index) => index.id === "omxs30")!.constituentSlugs,
+  );
+
+  for (const company of getCompanyCatalog()) {
     const relatedCompanies = getRelatedCompanies(company);
 
-    assert.equal(relatedCompanies.length, 3);
-    assert.equal(new Set(relatedCompanies.map((item) => item.slug)).size, 3);
+    if (omxSlugs.has(company.slug)) {
+      assert.equal(relatedCompanies.length, 3);
+      assert.equal(new Set(relatedCompanies.map((item) => item.slug)).size, 3);
+    } else {
+      assert.equal(relatedCompanies.length, 0);
+    }
+
     assert.ok(relatedCompanies.every((item) => item.slug !== company.slug));
   }
 });
