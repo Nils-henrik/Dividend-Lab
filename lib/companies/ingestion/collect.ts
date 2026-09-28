@@ -333,13 +333,14 @@ async function fetchHtml(
   url: string,
   origin: string,
   context: SourceFetchContext,
-  options?: { allowSearch?: boolean; maxBytes?: number },
+  options?: { allowSearch?: boolean; maxBytes?: number; returnPrefixAtCap?: boolean },
 ) {
   return fetchOfficialText(url, context, {
     allowedOrigin: origin,
     acceptedContentTypes: HTML,
     maxBytes: options?.maxBytes ?? INGESTION_MAX_HTML_BYTES,
     allowSearch: options?.allowSearch,
+    returnPrefixAtCap: options?.returnPrefixAtCap,
   });
 }
 
@@ -516,7 +517,9 @@ async function collectStaticPage(
     return { status: "error", reason: "unsupported_source_type" };
   }
   const documentType = sourceType as DocumentSourceType;
-  const page = await fetchHtml(urls[documentType], origin, context);
+  const page = await fetchHtml(urls[documentType], origin, context, {
+    returnPrefixAtCap: urls[documentType] === SCA_REPORTS_SOURCE_URL,
+  });
   if (page.status === "error") {
     return fetchFailure("listing", page.reason);
   }

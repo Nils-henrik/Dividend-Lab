@@ -1,7 +1,11 @@
+import { englishDateToIso, normalizeSameOriginUrl } from "@/lib/companies/ingestion/text";
+
 export const ATLAS_COPCO_PRESS_RELEASE_SITEMAP_URL =
   "https://www.atlascopcogroup.com/en/sitemap.xml";
 export const ATLAS_COPCO_PRESS_RELEASE_SOURCE_URL =
-  "https://www.atlascopcogroup.com/en/media/press-releases";
+  "https://www.atlascopcogroup.com/en/media-new/press-releases";
+export const ATLAS_COPCO_PRESS_LISTING_LIMIT = 8;
+export const ATLAS_COPCO_PRESS_DETAIL_LIMIT = 4;
 export const ATLAS_COPCO_MIN_REQUEST_INTERVAL_MS = 1_000;
 export const ATLAS_COPCO_INITIAL_DISCOVERY_LIMIT = 20;
 export const ATLAS_COPCO_MAX_SITEMAP_BYTES = 1_000_000;
@@ -9,6 +13,7 @@ export const ATLAS_COPCO_MAX_PRESS_RELEASE_BYTES = 500_000;
 export const ATLAS_COPCO_ORIGIN = "https://www.atlascopcogroup.com";
 
 const PRESS_RELEASE_PATH = /^\/en\/media\/press-releases\/\d{4}\/[^/?#]+$/;
+const PRESS_LISTING_PATH = /^\/en\/media-new\/press-releases\/[^/]+$/;
 const URL_BLOCK_PATTERN = /<url>\s*([\s\S]*?)<\/url>/gi;
 const LOC_PATTERN = /<loc>\s*([\s\S]*?)<\/loc>/i;
 const LAST_MODIFIED_PATTERN = /<lastmod>\s*([\s\S]*?)<\/lastmod>/i;
@@ -247,4 +252,42 @@ export function parseAtlasCopcoPressRelease(
       publishedAt,
     },
   };
+}
+
+export function parseAtlasCopcoPressListing(
+  html: string,
+): AtlasCopcoPressReleaseDocument[] {
+  if (Buffer.byteLength(html, "utf8") > ATLAS_COPCO_MAX_PRESS_RELEASE_BYTES) {
+    return [];
+  }
+
+  const documents: AtlasCopcoPressReleaseDocument[] = [];
+  const seen = new Set<string>();
+  for (const match of html.matchAll(
+    /<a\b[^>]*class="[^"]*\bcmp-teaser__link\b[^"]*"[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi,
+  )) {
+    const sourceUrl = normalizeSameOriginUrl(match[1], ATLAS_COPCO_ORIGIN, PRESS_LISTING_PATH);
+    const block = match[2];
+    const title = decodeHtmlText(
+      block.match(/<h2\b[^>]*class="[^"]*\bcmp-teaser__title\b[^"]*"[^>]*>([\s\S]*?)<\/h2>/i)?.[1] ?? "",
+    );
+    const publishedAt = englishDateToIso(decodeHtmlText(
+      block.match(/<p\b[^>]*class="[^"]*\bcmp-teaser__date\b[^"]*"[^>]*>([\s\S]*?)<\/p>/i)?.[1] ?? "",
+    ));
+    if (!sourceUrl || !title || title.length > 500 || !publishedAt || seen.has(sourceUrl)) {
+      continue;
+    }
+    seen.add(sourceUrl);
+    documents.push({
+      documentType: "press_release",
+      title,
+      sourceUrl,
+      sourcePublisher: "Atlas Copco Group",
+      publishedAt,
+    });
+  }
+
+  return documents
+    .sort((first, second) => second.publishedAt.localeCompare(first.publishedAt) || first.sourceUrl.localeCompare(second.sourceUrl))
+    .slice(0, ATLAS_COPCO_PRESS_LISTING_LIMIT);
 }

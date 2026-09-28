@@ -32,6 +32,7 @@ export async function fetchOfficialText(
     acceptedContentTypes: readonly string[];
     maxBytes: number;
     allowSearch?: boolean;
+    returnPrefixAtCap?: boolean;
   },
 ): Promise<OfficialTextResult> {
   const timeoutMs = context.deadline
@@ -47,6 +48,7 @@ export async function fetchOfficialText(
     maxBytes: options.maxBytes,
     timeoutMs,
     allowSearch: options.allowSearch,
+    returnPrefixAtCap: options.returnPrefixAtCap,
     fetchImpl: context.fetchImpl,
   });
 }

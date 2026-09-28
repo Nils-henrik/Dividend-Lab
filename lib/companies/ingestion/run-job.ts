@@ -8,8 +8,12 @@ import {
   collectCompanySource,
   companyDocumentOrigins,
 } from "@/lib/companies/ingestion/collect";
-import { collectInvestorProfileSource } from "@/lib/companies/ingestion/investor-profile";
-import { createJobDeadline, JOB_DEADLINE_EXCEEDED } from "@/lib/companies/ingestion/deadline";
+import { collectCompanyProfileSource } from "@/lib/companies/ingestion/company-profile";
+import { createJobDeadline, JOB_DEADLINE_EXCEEDED, type JobDeadline } from "@/lib/companies/ingestion/deadline";
+import {
+  COMPANY_INGESTION_SOURCE_ATTEMPT_BUDGET_MS,
+  COMPANY_INGESTION_SOURCE_CONTINUE_MIN_MS,
+} from "@/lib/companies/ingestion/schedule";
 import {
   INGESTION_REQUEST_TIMEOUT_MS,
   pauseBetweenRequests,
@@ -36,6 +40,25 @@ export type CompanyIngestionWorkerResult =
   | { status: "failed"; reason: string };
 
 const MAX_JOB_ATTEMPTS = 3;
+const SOURCE_LINK_ONLY_REASONS = new Set([
+  "source_not_automated",
+  "alertir_embed_not_automated",
+]);
+
+function sourceFetchContext(
+  context: SourceFetchContext,
+  parent: JobDeadline,
+  clock: (() => number) | undefined,
+): SourceFetchContext {
+  const budgetMs = Math.max(
+    1,
+    Math.min(COMPANY_INGESTION_SOURCE_ATTEMPT_BUDGET_MS, Math.floor(parent.remainingMs())),
+  );
+  return {
+    ...context,
+    deadline: createJobDeadline({ clock, budgetMs }),
+  };
+}
 
 async function recordFailure(
   job: CompanyIngestionJob,
@@ -110,6 +133,12 @@ async function executeCompanyIngestionJob(
         return recordFailure(job, JOB_DEADLINE_EXCEEDED, dependencies);
       }
     }
+    if (
+      fetchedSources > 0
+      && deadline.remainingMs() < COMPANY_INGESTION_SOURCE_CONTINUE_MIN_MS
+    ) {
+      return recordFailure(job, JOB_DEADLINE_EXCEEDED, dependencies);
+    }
     if (deadline.requestTimeoutMs(INGESTION_REQUEST_TIMEOUT_MS) === null) {
       return recordFailure(job, JOB_DEADLINE_EXCEEDED, dependencies);
     }
@@ -117,20 +146,29 @@ async function executeCompanyIngestionJob(
     const fetchedAt = now.toISOString();
     const allowedOrigins = companyDocumentOrigins(company.company.slug);
     const isFactSource = (COMPANY_FACT_SOURCE_TYPES as readonly string[]).includes(sourceType);
+    const sourceContext = sourceFetchContext(context, deadline, dependencies.clock);
 
     if (isFactSource) {
-      if (company.company.slug !== "investor") {
-        const marked = await dependencies.store.markSourceSupport(source.id, "source_link_only", fetchedAt);
-        if (!marked) failure ??= "database_write_failed";
-        continue;
-      }
-      const profile = await collectInvestorProfileSource(source.sourceType, source.sourceUrl, context);
+      const profile = await collectCompanyProfileSource(
+        company.company.slug,
+        source.sourceType,
+        source.sourceUrl,
+        sourceContext,
+      );
       if (profile.status === "error") {
-        if (profile.reason === JOB_DEADLINE_EXCEEDED) {
-          return recordFailure(job, JOB_DEADLINE_EXCEEDED, dependencies);
+        if (SOURCE_LINK_ONLY_REASONS.has(profile.reason)) {
+          const marked = await dependencies.store.markSourceSupport(source.id, "source_link_only", fetchedAt);
+          if (!marked) failure ??= "database_write_failed";
+          continue;
         }
         failure ??= `${sourceType}_${profile.reason}`;
         await dependencies.store.markSourceFailure(source.id, fetchedAt, profile.reason);
+        if (
+          profile.reason === JOB_DEADLINE_EXCEEDED
+          && deadline.remainingMs() < COMPANY_INGESTION_SOURCE_CONTINUE_MIN_MS
+        ) {
+          return recordFailure(job, JOB_DEADLINE_EXCEEDED, dependencies);
+        }
         continue;
       }
       const factsSaved = profile.facts.length === 0
@@ -159,19 +197,22 @@ async function executeCompanyIngestionJob(
     const collected = await collectCompanySource(
       company.company.slug,
       { sourceType: source.sourceType, sourceUrl: source.sourceUrl },
-      context,
+      sourceContext,
     );
     if (collected.status === "error") {
-      if (collected.reason === JOB_DEADLINE_EXCEEDED) {
-        return recordFailure(job, JOB_DEADLINE_EXCEEDED, dependencies);
-      }
-      if (collected.reason === "source_not_automated") {
+      if (SOURCE_LINK_ONLY_REASONS.has(collected.reason)) {
         const marked = await dependencies.store.markSourceSupport(source.id, "source_link_only", fetchedAt);
         if (!marked) failure ??= "database_write_failed";
         continue;
       }
       failure ??= `${sourceType}_${collected.reason}`;
       await dependencies.store.markSourceFailure(source.id, fetchedAt, collected.reason);
+      if (
+        collected.reason === JOB_DEADLINE_EXCEEDED
+        && deadline.remainingMs() < COMPANY_INGESTION_SOURCE_CONTINUE_MIN_MS
+      ) {
+        return recordFailure(job, JOB_DEADLINE_EXCEEDED, dependencies);
+      }
       continue;
     }
 

@@ -1,11 +1,12 @@
 import {
-  ATLAS_COPCO_INITIAL_DISCOVERY_LIMIT,
   ATLAS_COPCO_MAX_PRESS_RELEASE_BYTES,
   ATLAS_COPCO_MAX_SITEMAP_BYTES,
   ATLAS_COPCO_MIN_REQUEST_INTERVAL_MS,
   ATLAS_COPCO_ORIGIN,
+  ATLAS_COPCO_PRESS_DETAIL_LIMIT,
   ATLAS_COPCO_PRESS_RELEASE_SITEMAP_URL,
   ATLAS_COPCO_PRESS_RELEASE_SOURCE_URL,
+  parseAtlasCopcoPressListing,
   parseAtlasCopcoPressRelease,
   parseAtlasCopcoPressReleaseSitemap,
   type AtlasCopcoPressReleaseDocument,
@@ -61,13 +62,14 @@ function timeoutWithinBudget(
   return deadline.requestTimeoutMs(normalTimeoutMs);
 }
 
-export async function loadAtlasCopcoPressReleaseDocuments(
+async function loadAtlasCopcoPressReleaseDetails(
   dependencies: Pick<AtlasCopcoWorkerDependencies, "fetchImpl" | "sleep"> & {
     deadline?: JobDeadline;
   },
 ): Promise<
   | { status: "ok"; documents: AtlasCopcoPressReleaseDocument[] }
   | { status: "error"; reason: string }
+  | { status: "fallback" }
 > {
   const sitemapTimeout = timeoutWithinBudget(dependencies.deadline, REQUEST_TIMEOUT_MS);
   if (sitemapTimeout === null) {
@@ -78,62 +80,97 @@ export async function loadAtlasCopcoPressReleaseDocuments(
     ATLAS_COPCO_PRESS_RELEASE_SITEMAP_URL,
     {
       allowedOrigin: ATLAS_COPCO_ORIGIN,
-      acceptedContentTypes: ["application/xml", "text/xml"],
+      acceptedContentTypes: ["text/xml", "application/xml"],
       maxBytes: ATLAS_COPCO_MAX_SITEMAP_BYTES,
       timeoutMs: sitemapTimeout,
       fetchImpl: dependencies.fetchImpl,
     },
   );
   if (sitemapResponse.status === "error") {
-    return { status: "error", reason: `sitemap_${sitemapResponse.reason}` };
+    return { status: "fallback" };
   }
 
-  const sitemap = parseAtlasCopcoPressReleaseSitemap(
+  const discovered = parseAtlasCopcoPressReleaseSitemap(
     sitemapResponse.text,
-    ATLAS_COPCO_INITIAL_DISCOVERY_LIMIT,
+    ATLAS_COPCO_PRESS_DETAIL_LIMIT,
   );
-  if (sitemap.status === "invalid" || sitemap.candidates.length === 0) {
-    return { status: "error", reason: "sitemap_invalid" };
+  if (discovered.status !== "ok" || discovered.candidates.length === 0) {
+    return { status: "fallback" };
   }
 
   const documents: AtlasCopcoPressReleaseDocument[] = [];
-  for (const candidate of sitemap.candidates) {
-    if (
-      dependencies.deadline &&
-      !dependencies.deadline.allowDelay(ATLAS_COPCO_MIN_REQUEST_INTERVAL_MS)
-    ) {
-      return { status: "error", reason: JOB_DEADLINE_EXCEEDED };
+  for (const [index, candidate] of discovered.candidates.entries()) {
+    if (index > 0) {
+      if (
+        dependencies.deadline &&
+        !dependencies.deadline.allowDelay(ATLAS_COPCO_MIN_REQUEST_INTERVAL_MS)
+      ) {
+        break;
+      }
+      await waitForCrawlDelay(ATLAS_COPCO_MIN_REQUEST_INTERVAL_MS, dependencies.sleep);
     }
 
-    await waitForCrawlDelay(
-      ATLAS_COPCO_MIN_REQUEST_INTERVAL_MS,
-      dependencies.sleep,
-    );
     const detailTimeout = timeoutWithinBudget(dependencies.deadline, REQUEST_TIMEOUT_MS);
     if (detailTimeout === null) {
-      return { status: "error", reason: JOB_DEADLINE_EXCEEDED };
+      break;
     }
 
-    const detailResponse = await fetchBoundedText(candidate.sourceUrl, {
+    const detail = await fetchBoundedText(candidate.sourceUrl, {
       allowedOrigin: ATLAS_COPCO_ORIGIN,
       acceptedContentTypes: ["text/html"],
       maxBytes: ATLAS_COPCO_MAX_PRESS_RELEASE_BYTES,
       timeoutMs: detailTimeout,
       fetchImpl: dependencies.fetchImpl,
     });
-    if (detailResponse.status === "error") {
-      return { status: "error", reason: `detail_${detailResponse.reason}` };
+    if (detail.status === "error") {
+      if (documents.length > 0) break;
+      return { status: "error", reason: `detail_${detail.reason}` };
     }
 
-    const detail = parseAtlasCopcoPressRelease(
-      detailResponse.text,
-      candidate.sourceUrl,
-    );
-    if (detail.status === "ok") {
-      documents.push(detail.document);
-    }
+    const parsed = parseAtlasCopcoPressRelease(detail.text, candidate.sourceUrl);
+    if (parsed.status === "ok") documents.push(parsed.document);
   }
 
+  if (documents.length === 0) {
+    return { status: "error", reason: "no_valid_documents" };
+  }
+
+  return { status: "ok", documents };
+}
+
+export async function loadAtlasCopcoPressReleaseDocuments(
+  dependencies: Pick<AtlasCopcoWorkerDependencies, "fetchImpl" | "sleep"> & {
+    deadline?: JobDeadline;
+  },
+): Promise<
+  | { status: "ok"; documents: AtlasCopcoPressReleaseDocument[] }
+  | { status: "error"; reason: string }
+> {
+  const detailed = await loadAtlasCopcoPressReleaseDetails(dependencies);
+  if (detailed.status !== "fallback") {
+    return detailed;
+  }
+
+  const listingTimeout = timeoutWithinBudget(dependencies.deadline, REQUEST_TIMEOUT_MS);
+  if (listingTimeout === null) {
+    return { status: "error", reason: JOB_DEADLINE_EXCEEDED };
+  }
+
+  const listingResponse = await fetchBoundedText(
+    ATLAS_COPCO_PRESS_RELEASE_SOURCE_URL,
+    {
+      allowedOrigin: ATLAS_COPCO_ORIGIN,
+      acceptedContentTypes: ["text/html"],
+      maxBytes: ATLAS_COPCO_MAX_PRESS_RELEASE_BYTES,
+      timeoutMs: listingTimeout,
+      fetchImpl: dependencies.fetchImpl,
+    },
+  );
+  if (listingResponse.status === "error") {
+    return { status: "error", reason: `listing_${listingResponse.reason}` };
+  }
+
+  const documents = parseAtlasCopcoPressListing(listingResponse.text);
   if (documents.length === 0) {
     return { status: "error", reason: "no_valid_documents" };
   }

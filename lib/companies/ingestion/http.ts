@@ -17,6 +17,11 @@ export type BoundedTextFetchOptions = {
   maxBytes: number;
   timeoutMs: number;
   allowSearch?: boolean;
+  /**
+   * Keep the first maxBytes when a listing is slightly over the cap.
+   * The unread tail is cancelled. Default remains fail-closed.
+   */
+  returnPrefixAtCap?: boolean;
   fetchImpl?: typeof fetch;
 };
 
@@ -61,9 +66,10 @@ function hasAcceptedContentType(
 async function readBoundedBody(
   response: Response,
   maxBytes: number,
+  returnPrefixAtCap = false,
 ): Promise<BoundedTextFetchResult> {
   const contentLength = Number(response.headers.get("content-length"));
-  if (Number.isFinite(contentLength) && contentLength > maxBytes) {
+  if (!returnPrefixAtCap && Number.isFinite(contentLength) && contentLength > maxBytes) {
     return { status: "error", reason: "too_large" };
   }
 
@@ -74,6 +80,7 @@ async function readBoundedBody(
   const reader = response.body.getReader();
   const chunks: Uint8Array[] = [];
   let totalBytes = 0;
+  let truncated = false;
 
   while (true) {
     const { done, value } = await reader.read();
@@ -81,12 +88,22 @@ async function readBoundedBody(
       break;
     }
 
-    totalBytes += value.byteLength;
-    if (totalBytes > maxBytes) {
+    if (totalBytes + value.byteLength > maxBytes) {
+      if (!returnPrefixAtCap) {
+        await reader.cancel();
+        return { status: "error", reason: "too_large" };
+      }
+      const room = maxBytes - totalBytes;
+      if (room > 0) {
+        chunks.push(value.subarray(0, room));
+        totalBytes += room;
+      }
+      truncated = true;
       await reader.cancel();
-      return { status: "error", reason: "too_large" };
+      break;
     }
 
+    totalBytes += value.byteLength;
     chunks.push(value);
   }
 
@@ -98,7 +115,8 @@ async function readBoundedBody(
   }
 
   try {
-    return { status: "ok", text: TEXT_DECODER.decode(body) };
+    const decoder = truncated ? new TextDecoder("utf-8") : TEXT_DECODER;
+    return { status: "ok", text: decoder.decode(body) };
   } catch {
     return { status: "error", reason: "network_error" };
   }
@@ -141,7 +159,7 @@ export async function fetchBoundedText(
       return { status: "error", reason: "unexpected_content_type" };
     }
 
-    return await readBoundedBody(response, options.maxBytes);
+    return await readBoundedBody(response, options.maxBytes, options.returnPrefixAtCap === true);
   } catch (error) {
     return {
       status: "error",

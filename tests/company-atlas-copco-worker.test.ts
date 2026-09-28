@@ -4,7 +4,7 @@ import { describe, it } from "node:test";
 
 import type { CompanyIngestionJob } from "@/lib/companies/ingestion/queue";
 import type { CompanyIngestionStore } from "@/lib/companies/ingestion/store";
-import { runAtlasCopcoIngestionJob } from "@/lib/companies/ingestion/workers/atlas-copco";
+import { loadAtlasCopcoPressReleaseDocuments, runAtlasCopcoIngestionJob } from "@/lib/companies/ingestion/workers/atlas-copco";
 
 const JOB: CompanyIngestionJob = {
   id: "6bb70661-3c0b-4d3f-a0ce-cd03dd45f610",
@@ -14,13 +14,8 @@ const JOB: CompanyIngestionJob = {
 };
 const SOURCE_ID = "99970661-3c0b-4d3f-a0ce-cd03dd45f610";
 const PRESS_URL =
-  "https://www.atlascopcogroup.com/en/media/press-releases/2026/example";
-const SITEMAP = `<?xml version="1.0"?><urlset><url><loc>${PRESS_URL}</loc><lastmod>2026-08-28</lastmod></url></urlset>`;
-const DETAIL = `
-  <html>
-    <h1 class="cmp-title__text">Verified Atlas Copco release</h1>
-    <p class="cmp-pagedate">August 27, 2026</p>
-  </html>`;
+  "https://www.atlascopcogroup.com/en/media-new/press-releases/20260827-verified";
+const LISTING = `<a class="cmp-teaser__link" href="${PRESS_URL}"><p class="cmp-teaser__date">August 27 2026</p><h2 class="cmp-teaser__title">Verified Atlas Copco release</h2></a>`;
 
 function testStore() {
   const calls: Array<{ operation: string; value?: unknown }> = [];
@@ -58,13 +53,9 @@ describe("Atlas Copco ingestion worker", () => {
     const fetchImpl = (async (input) => {
       const url = String(input);
       urls.push(url);
-      return url.endsWith("sitemap.xml")
-        ? new Response(SITEMAP, {
-            headers: { "content-type": "application/xml" },
-          })
-        : new Response(DETAIL, {
-            headers: { "content-type": "text/html; charset=utf-8" },
-          });
+      return new Response(LISTING, {
+        headers: { "content-type": "text/html; charset=utf-8" },
+      });
     }) as typeof fetch;
 
     assert.deepEqual(
@@ -79,7 +70,9 @@ describe("Atlas Copco ingestion worker", () => {
       { status: "completed", savedDocuments: 1 },
     );
     assert.equal(urls.length, 2);
-    assert.deepEqual(delays, [1_000]);
+    assert.deepEqual(delays, []);
+    assert.equal(urls[0]?.endsWith("/en/sitemap.xml"), true);
+    assert.equal(urls[1]?.includes("/en/media-new/press-releases"), true);
     assert.deepEqual(
       calls.map((call) => call.operation),
       ["source", "save", "checked", "complete"],
@@ -105,7 +98,7 @@ describe("Atlas Copco ingestion worker", () => {
         fetchImpl,
         now: () => new Date("2026-09-22T12:00:00.000Z"),
       }),
-      { status: "retry_scheduled", reason: "sitemap_http_status" },
+      { status: "retry_scheduled", reason: "listing_http_status" },
     );
     assert.deepEqual(
       calls.map((call) => call.operation),
@@ -126,7 +119,7 @@ describe("Atlas Copco ingestion worker", () => {
         { ...JOB, attempts: 3 },
         { store, fetchImpl },
       ),
-      { status: "failed", reason: "sitemap_http_status" },
+      { status: "failed", reason: "listing_http_status" },
     );
   });
 
@@ -142,6 +135,77 @@ describe("Atlas Copco ingestion worker", () => {
     );
     assert.equal(calls.at(-1)?.operation, "retry");
     assert.doesNotMatch(JSON.stringify(calls), /secret database detail/);
+  });
+
+  it("hämtar högst fyra nya sitemap-träffar och hoppar över den äldre listningen", async () => {
+    const urls: string[] = [];
+    const delays: number[] = [];
+    const sitemap = Array.from({ length: 6 }, (_, index) => {
+      const day = String(20 - index).padStart(2, "0");
+      return `<url><loc>https://www.atlascopcogroup.com/en/media/press-releases/2026/202609${day}-item</loc><lastmod>2026-09-${day}T00:00:00.000Z</lastmod></url>`;
+    }).join("");
+    const fetchImpl = (async (input: RequestInfo | URL) => {
+      const url = String(input);
+      urls.push(url);
+      if (url.endsWith("/sitemap.xml")) {
+        return new Response(`<urlset>${sitemap}</urlset>`, {
+          headers: { "content-type": "text/xml" },
+        });
+      }
+      return new Response(
+        `<h1 class="cmp-title__text">${url.split("/").at(-1)}</h1><p class="cmp-pagedate">September 21, 2026</p>`,
+        { headers: { "content-type": "text/html" } },
+      );
+    }) as typeof fetch;
+
+    const loaded = await loadAtlasCopcoPressReleaseDocuments({
+      fetchImpl,
+      sleep: async (delay) => {
+        delays.push(delay);
+      },
+    });
+
+    assert.equal(loaded.status, "ok");
+    assert.equal(loaded.status === "ok" ? loaded.documents.length : 0, 4);
+    assert.equal(
+      loaded.status === "ok" ? loaded.documents[0]?.sourceUrl.endsWith("/20260920-item") : false,
+      true,
+    );
+    assert.equal(urls.filter((url) => url.includes("/2026/")).length, 4);
+    assert.deepEqual(delays, [1000, 1000, 1000]);
+    assert.equal(urls.some((url) => url.includes("/media-new/")), false);
+  });
+
+  it("behåller redan lästa detaljer när nästa fördröjning inte ryms", async () => {
+    let details = 0;
+    const fetchImpl = (async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith("/sitemap.xml")) {
+        return new Response(
+          `<urlset><url><loc>https://www.atlascopcogroup.com/en/media/press-releases/2026/20260920-item</loc><lastmod>2026-09-20T00:00:00.000Z</lastmod></url><url><loc>https://www.atlascopcogroup.com/en/media/press-releases/2026/20260919-item</loc><lastmod>2026-09-19T00:00:00.000Z</lastmod></url></urlset>`,
+          { headers: { "content-type": "text/xml" } },
+        );
+      }
+      details += 1;
+      return new Response(
+        `<h1 class="cmp-title__text">Kept release</h1><p class="cmp-pagedate">September 20, 2026</p>`,
+        { headers: { "content-type": "text/html" } },
+      );
+    }) as typeof fetch;
+
+    const loaded = await loadAtlasCopcoPressReleaseDocuments({
+      fetchImpl,
+      sleep: async () => undefined,
+      deadline: {
+        remainingMs: () => 1_000,
+        allowDelay: () => false,
+        requestTimeoutMs: () => 1_000,
+      },
+    });
+
+    assert.equal(loaded.status, "ok");
+    assert.equal(loaded.status === "ok" ? loaded.documents.length : 0, 1);
+    assert.equal(details, 1);
   });
 
   it("lagrar med unik bolags- och originallänk som idempotensnyckel", () => {

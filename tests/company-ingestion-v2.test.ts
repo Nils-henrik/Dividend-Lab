@@ -416,7 +416,7 @@ describe("company ingestion v2", () => {
     const { store, calls, checked } = memoryStore({
       slug: "atlas-copco",
       sources: [
-        source("press_releases", "https://www.atlascopcogroup.com/en/media/press-releases"),
+        source("press_releases", "https://www.atlascopcogroup.com/en/media-new/press-releases"),
         source("financial_reports", "https://www.atlascopcogroup.com/en/investors/reports-and-presentations"),
         source("financial_calendar", "https://www.atlascopcogroup.com/en/investors/calendar-and-events"),
       ],
@@ -453,13 +453,12 @@ describe("company ingestion v2", () => {
     assert.equal(deadline.requestTimeoutMs(INGESTION_REQUEST_TIMEOUT_MS), null);
     assert.equal(deadline.allowDelay(1_000), false);
 
-    const first = "https://www.atlascopcogroup.com/en/media/press-releases/2026/first-release";
-    const second = "https://www.atlascopcogroup.com/en/media/press-releases/2026/second-release";
-    const detailClock = manualClock();
-    const { store, checked, calls } = memoryStore({
+    const listing = "https://www.atlascopcogroup.com/en/media-new/press-releases";
+    const detail = "https://www.atlascopcogroup.com/en/media-new/press-releases/20260921-acquisition";
+    const { store, checked, calls, saved } = memoryStore({
       slug: "atlas-copco",
       sources: [
-        source("press_releases", "https://www.atlascopcogroup.com/en/media/press-releases"),
+        source("press_releases", listing),
         source("financial_reports", "https://www.atlascopcogroup.com/en/investors/reports-and-presentations", true),
         source("financial_calendar", "https://www.atlascopcogroup.com/en/investors/calendar-and-events", true),
       ],
@@ -468,30 +467,23 @@ describe("company ingestion v2", () => {
     const result = await runCompanyIngestionJob(JOB, {
       store,
       now: () => NOW,
-      clock: detailClock.clock,
-      sleep: detailClock.sleep,
+      sleep: async () => undefined,
       fetchImpl: (async (input) => {
         const url = String(input);
         requested.push(url);
-        if (url.endsWith("sitemap.xml")) {
-          return new Response(`<?xml version="1.0"?><urlset><url><loc>${first}</loc><lastmod>2026-09-01</lastmod></url><url><loc>${second}</loc><lastmod>2026-08-01</lastmod></url></urlset>`, {
-            headers: { "content-type": "application/xml" },
-          });
-        }
-        if (url === first) {
-          detailClock.advance(COMPANY_INGESTION_JOB_BUDGET_MS);
-          return new Response(`<h1 class="cmp-title__text">Verified Atlas Copco release</h1><p class="cmp-pagedate">August 27, 2026</p>`, {
-            headers: { "content-type": "text/html" },
-          });
-        }
-        throw new Error(`unexpected fetch ${url}`);
+        if (url === detail) throw new Error("detail fetch");
+        return new Response(`<a class="cmp-teaser__link" href="${detail}"><p class="cmp-teaser__date">September 21 2026</p><h2 class="cmp-teaser__title">Verified Atlas listing</h2></a>`, {
+          headers: { "content-type": "text/html" },
+        });
       }) as typeof fetch,
     });
 
-    assert.deepEqual(result, { status: "retry_scheduled", reason: "job_deadline_exceeded" });
-    assert.equal(requested.includes(second), false);
-    assert.equal(checked.length, 0);
-    assert.equal(calls.at(-1), "retry:job_deadline_exceeded");
+    assert.equal(result.status, "completed");
+    assert.equal(requested.includes(detail), false);
+    assert.equal(requested.includes("https://www.atlascopcogroup.com/en/sitemap.xml"), true);
+    assert.equal(saved[0]?.title, "Verified Atlas listing");
+    assert.equal(checked.length, 1);
+    assert.equal(calls.at(-1), "complete");
   });
 
   it("hämtar inte AstraZenecas robots-blockerade listendpoint", async () => {

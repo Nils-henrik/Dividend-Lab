@@ -380,10 +380,11 @@ export function createCompanyIngestionStore(
       return !legacy.error && legacy.data?.id === sourceId;
     },
 
-    async markSourceFailure(sourceId, _checkedAt, reason) {
+    async markSourceFailure(sourceId, checkedAt, reason) {
       const { data, error } = await client
         .from("company_sources")
         .update({
+          last_checked_at: checkedAt,
           last_failure_reason: sanitizeJobError(reason),
         })
         .eq("id", sourceId)
