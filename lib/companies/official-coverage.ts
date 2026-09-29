@@ -10,8 +10,6 @@ export type OfficialCategoryCoverage = {
 
 export type CompanyOfficialCoverage = Record<OfficialCategory, OfficialCategoryCoverage>;
 
-const BLOCKED_BOT = "403 för DivLabBot. Ingen officiell feed verifierades utan att kringgå spärren.";
-
 function category(
   mode: SourceSupportMode,
   href: string,
@@ -161,23 +159,54 @@ export const COMPANY_OFFICIAL_COVERAGE: Record<string, CompanyOfficialCoverage> 
     reports: category("automated", "https://www.handelsbanken.com/en/investor-relations"),
     calendar: category("automated", "https://www.handelsbanken.com/en/investor-relations"),
   }, "https://www.handelsbanken.com/en/investor-relations"),
-  abb: uniform("source_link_only", "https://global.abb/group/en", "Ingen stabil press-, rapport- och kalendertrio i första HTML-svaret."),
-  boliden: uniform("blocked", "https://www.boliden.com/investor-relations/", BLOCKED_BOT),
-  epiroc: uniform("blocked", "https://www.epirocgroup.com/en/investors", BLOCKED_BOT),
-  hexagon: uniform("blocked", "https://hexagon.com/investors", BLOCKED_BOT),
-  skanska: uniform("blocked", "https://www.skanska.com/investors/", BLOCKED_BOT),
-  industrivarden: documents({
-    press: category("source_link_only", "https://www.industrivarden.se/media/Pressmeddelanden/", "MFN-widgeten exponerar ingen verifierad utfärdarspecifik feed."),
-    reports: category("source_link_only", "https://www.industrivarden.se/", "Ingen datum satt dokumentlista verifierades."),
-    calendar: category("source_link_only", "https://www.industrivarden.se/investerare/Kalender/", "Kalendern kunde inte bindas till en verifierad feed."),
-  }, "https://www.industrivarden.se/"),
-  lifco: uniform("source_link_only", "https://www.lifco.se/investors/", "Ingen datum satt dokumentlista."),
-  nordea: uniform("source_link_only", "https://www.nordea.com/en/investors", "Rapporter saknar dagdatum och kalendern är en skyddad widget."),
-  seb: uniform("source_link_only", "https://sebgroup.com/investor-relations", "Sidan exponerar inget verifierat feed-id eller dokumentlista."),
-  skf: uniform("source_link_only", "https://www.skf.com/group/investors", "Skal utan dokumentlänkar."),
-  swedbank: uniform("source_link_only", "https://www.swedbank.com/investor-relations.html", "Inga rapportlänkar i HTML."),
-  tele2: uniform("source_link_only", "https://www.tele2.com/investors", "Skal utan dokumentlänkar."),
-  telia: uniform("source_link_only", "https://www.teliacompany.com/en/investors", "Skal utan dokumentlänkar."),
+  abb: uniform("source_link_only", "https://global.abb/group/en/investors", "Q2 2026 har ett datum i HTML, men dokumentlänken går till stream.swisscom.ch och nedladdningslistan är tom."),
+  boliden: uniform("blocked", "https://www.boliden.com/investor-relations/", "www.boliden.com/investor-relations/ omdirigerar till investors.boliden.com, som svarar 403. Sitemap på www.boliden.com listar stories, inte IR-dokument."),
+  epiroc: uniform("blocked", "https://www.epirocgroup.com/en/investors", "Cloudflare-challenge (cf-mitigated: challenge) redan på robots.txt. Ingen feed hämtades."),
+  hexagon: uniform("blocked", "https://hexagon.com/investors", "Cloudflare-challenge (cf-mitigated: challenge) redan på robots.txt. Ingen feed hämtades."),
+  skanska: {
+    press: category("source_link_only", "https://www.skanska.com/group/en/media/press-releases", "Presslistan renderas i klienten och visar Loading. Ingen datumlista i första HTML-svaret."),
+    reports: category("source_link_only", "https://www.skanska.com/group/en/investors/financial-reports/interim-reports", "PDF-länkar finns, men time-attributet är tomt. Dagdatum gissas inte."),
+    calendar: category("source_link_only", "https://www.skanska.com/group/en/investors/financial-reports/calendar", "Kalendern är en Next-payload utan verifierad datumlista i statisk HTML."),
+    ceo: category("source_link_only", "https://www.skanska.com/group/en/investors"),
+    ownership: category("source_link_only", "https://www.skanska.com/group/en/investors"),
+    dividend: category("source_link_only", "https://www.skanska.com/group/en/investors"),
+  },
+  industrivarden: {
+    press: category("automated", "https://www.industrivarden.se/rss/"),
+    reports: category("automated", "https://www.industrivarden.se/rss/"),
+    calendar: category("automated", "https://www.industrivarden.se/investerare/Kalender/"),
+    ceo: category("source_link_only", "https://www.industrivarden.se/", "Ingen VD-rad kunde läsas ur en stabil personmarkup."),
+    ownership: category("source_link_only", "https://www.industrivarden.se/", "Ingen ägartabell med ett gemensamt avstämningsdatum verifierades."),
+    dividend: category("source_link_only", "https://www.industrivarden.se/", "Ingen beslutad utdelning per aktie verifierades i statisk HTML."),
+  },
+  lifco: uniform("source_link_only", "https://www.lifco.se/investors/press-releases", "Next-skal utan datumsatta dokument. De enda PDF:erna är integritetspolicy på network.s-z.se."),
+  nordea: {
+    press: category("automated", "https://www.nordea.com/en/investors"),
+    reports: category("automated", "https://www.nordea.com/en/investors"),
+    calendar: category("source_link_only", "https://www.nordea.com/en/investors/financial-calendar", "Kalendersidan saknar datumsatta händelser i HTML."),
+    ceo: category("source_link_only", "https://www.nordea.com/en/investors", "Ingen generisk VD-markup verifierades på investerarsidan."),
+    ownership: category("source_link_only", "https://www.nordea.com/en/investors", "Ingen ägartabell med ett gemensamt avstämningsdatum verifierades."),
+    dividend: category("automated", "https://www.nordea.com/en/investors"),
+  },
+  seb: uniform("source_link_only", "https://sebgroup.com/investor-relations", "IR-, press- och kalendersidor svarar 200 utan datumsatta dokumentlänkar eller feed-id."),
+  skf: uniform("source_link_only", "https://www.skf.com/group/investors", "IR-sidan är ett skal utan dokumentlänkar."),
+  swedbank: {
+    press: category("automated", "https://www.swedbank.com/investor-relations.html"),
+    reports: category("automated", "https://www.swedbank.com/investor-relations.html"),
+    calendar: category("source_link_only", "https://www.swedbank.com/investor-relations/financial-calendar.html", "Kalendersidan saknar datumsatta händelser. Rapportfiler på internetbank.swedbank.se har query-sträng och används inte."),
+    ceo: category("source_link_only", "https://www.swedbank.com/investor-relations.html", "Ingen generisk VD-markup verifierades."),
+    ownership: category("source_link_only", "https://www.swedbank.com/investor-relations.html", "Ingen ägartabell med ett gemensamt avstämningsdatum verifierades."),
+    dividend: category("source_link_only", "https://www.swedbank.com/investor-relations.html", "Ingen beslutad utdelning per aktie verifierades i IR-sidans HTML."),
+  },
+  tele2: {
+    press: category("automated", "https://www.tele2.com/investors/"),
+    reports: category("automated", "https://www.tele2.com/investors/"),
+    calendar: category("automated", "https://www.tele2.com/investors/"),
+    ceo: category("automated", "https://www.tele2.com/investors/"),
+    ownership: category("source_link_only", "https://www.tele2.com/investors/", "Ingen ägartabell med ett gemensamt avstämningsdatum verifierades."),
+    dividend: category("source_link_only", "https://www.tele2.com/investors/", "Ingen beslutad utdelning per aktie verifierades på investerarsidan."),
+  },
+  telia: uniform("source_link_only", "https://www.teliacompany.com/en/investors", "IR-sidan är ett kort skal utan dokumentlista."),
 };
 
 export function companyOfficialCoverage(slug: string): CompanyOfficialCoverage | null {

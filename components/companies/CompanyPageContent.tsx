@@ -12,6 +12,7 @@ import { officialPanelCopy, type OfficialPanel } from "@/lib/companies/official-
 import type { CompanyPageModel, MarketChangeDirection, SourcedRow } from "@/lib/companies/page-model";
 import { formatPaidDividend, partitionValuationMetrics } from "@/lib/companies/page-model";
 import type { JsonLd } from "@/lib/seo/json-ld";
+import { formatReportMetric } from "@/lib/companies/report-snapshot";
 import { formatStatementAmount, formatSvNumber } from "@/lib/companies/valuation";
 import type { CompanyFollowState } from "@/lib/companies/server";
 import type { CompanyProfile } from "@/lib/companies/types";
@@ -145,6 +146,14 @@ export default function CompanyPageContent({
   const change = changeTone(model.changeDirection);
   const ceo = model.management[0];
   const json = JSON.stringify(jsonLd).replace(/</g, "\\u003c");
+  const pageTabs = model.reportSnapshot
+    ? [["Rapport", "#rapport-i-siffror"] as const, ...PAGE_TABS]
+    : PAGE_TABS;
+  const dividendDates = [
+    model.dividend.exDate ? ["X-dag", model.dividend.exDate] : null,
+    model.dividend.recordDate ? ["Avstämningsdag", model.dividend.recordDate] : null,
+    model.dividend.paymentDate ? ["Utbetalningsdag", model.dividend.paymentDate] : null,
+  ].filter((row): row is [string, string] => Boolean(row));
 
   return (
     <div className="min-h-screen bg-[linear-gradient(135deg,var(--divlab-bg)_0%,var(--divlab-elevated)_52%,var(--divlab-bg)_100%)]">
@@ -193,7 +202,7 @@ export default function CompanyPageContent({
           <main className="min-w-0 space-y-4">
             <section id="kursutveckling" className="divlab-card overflow-hidden scroll-mt-28">
               <nav className="flex gap-1 overflow-x-auto border-b divlab-border-neutral px-4 pt-1" aria-label="Bolagsinformation">
-                {PAGE_TABS.map(([label, href]) => (
+                {pageTabs.map(([label, href]) => (
                   <a key={href} href={href} className="shrink-0 border-b-2 border-transparent px-3 py-3 text-[11px] font-semibold text-divlab-text-muted hover:text-divlab-text">{label}</a>
                 ))}
               </nav>
@@ -309,6 +318,24 @@ export default function CompanyPageContent({
               )}
             </section>
 
+            {model.reportSnapshot ? (
+              <section id="rapport-i-siffror" className="divlab-card scroll-mt-28 p-5 sm:p-6">
+                <PanelHeading title="Senaste rapporten i siffror" href={model.reportSnapshot.sourceUrl} label="Officiell rapport" />
+                <p className="mt-2 text-[11px] leading-5 text-divlab-text-muted">
+                  {model.reportSnapshot.period} · {model.reportSnapshot.currency} · publicerad {date(model.reportSnapshot.publishedOn)}. Bara fält som står uttryckligen i källan. Jämförelse visas när både aktuell period och jämförelseperiod finns.
+                </p>
+                <dl className="mt-4 grid gap-3 sm:grid-cols-2">
+                  {model.reportSnapshot.metrics.map((metric) => (
+                    <div key={metric.id} className="min-w-0">
+                      <dt className="text-[10px] text-divlab-text-muted">{metric.label}</dt>
+                      <dd className="mt-1 text-sm font-bold text-divlab-text">{formatReportMetric(metric, model.reportSnapshot?.currency ?? "")}</dd>
+                    </div>
+                  ))}
+                </dl>
+                <p className="mt-3 text-[10px] text-divlab-text-muted">Källa: {model.reportSnapshot.sourcePublisher}. Skalan är den bolaget själv använder.</p>
+              </section>
+            ) : null}
+
             <section id="utdelning" className="divlab-card scroll-mt-28 p-5 sm:p-6">
               <PanelHeading title="Utdelning" href={model.dividend.sourceUrl ?? company.websiteUrl} label="Officiell källa" />
               <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -330,6 +357,16 @@ export default function CompanyPageContent({
                   <p className="mt-1 text-sm font-bold text-divlab-text">{model.dividend.growthText ?? "—"}</p>
                 </div>
               </div>
+              {dividendDates.length ? (
+                <dl className="mt-4 grid gap-3 sm:grid-cols-3">
+                  {dividendDates.map(([label, value]) => (
+                    <div key={label}>
+                      <dt className="text-[10px] text-divlab-text-muted">{label}</dt>
+                      <dd className="mt-1 text-sm font-bold text-divlab-text">{date(value)}</dd>
+                    </div>
+                  ))}
+                </dl>
+              ) : null}
               {model.dividend.kind === "board_proposal" ? <p className="mt-3 text-xs leading-5 text-divlab-text-muted">Källan beskriver ett styrelseförslag. Beloppet visas inte som en beslutad utdelning.</p> : null}
               {model.dividend.yieldBlocked ? <p className="mt-3 text-xs leading-5 text-divlab-text-muted">{model.metrics.find((metric) => metric.id === "official_yield")?.definition}</p> : null}
               {model.dividend.sourcePublisher ? <p className="mt-3 text-[10px] text-divlab-text-muted">Källa: {model.dividend.sourcePublisher}{model.dividend.asOf ? ` · ${date(model.dividend.asOf)}` : ""}.</p> : null}

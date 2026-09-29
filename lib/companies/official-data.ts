@@ -39,6 +39,10 @@ export type CompanyDividendFact = {
   sourceUrl: string | null;
   sourcePublisher: string | null;
   asOf: string | null;
+  kind: "board_proposal" | "decided" | "paid" | null;
+  exDate: string | null;
+  recordDate: string | null;
+  paymentDate: string | null;
 };
 
 export type CompanyOwnershipEntry = OwnershipItem & {
@@ -57,7 +61,7 @@ export type CompanyOfficialData = {
 };
 
 export type PersistedCompanyFact = {
-  factType: "ceo" | "dividend_per_share" | "dividend_currency" | "dividend_year";
+  factType: "ceo" | "dividend_per_share" | "dividend_currency" | "dividend_year" | "dividend_kind" | "dividend_ex_date" | "dividend_record_date" | "dividend_payment_date";
   valueText: string | null;
   valueNumeric: number | null;
   unit: string | null;
@@ -175,7 +179,15 @@ export function assembleCompanyOfficialData(input: {
   const perShare = input.facts.find((fact) => fact.factType === "dividend_per_share" && fact.valueNumeric !== null);
   const currencyFact = input.facts.find((fact) => fact.factType === "dividend_currency" && fact.valueText);
   const yearFact = input.facts.find((fact) => fact.factType === "dividend_year" && fact.valueNumeric !== null);
+  const kindFact = input.facts.find((fact) => fact.factType === "dividend_kind" && fact.valueText);
+  const dateFact = (factType: PersistedCompanyFact["factType"]) => {
+    const fact = input.facts.find((item) => item.factType === factType && item.valueText);
+    return fact?.valueText && /^\d{4}-\d{2}-\d{2}$/.test(fact.valueText) ? fact.valueText : null;
+  };
   const currency = currencyFact?.valueText ?? perShare?.unit ?? null;
+  const kind = kindFact?.valueText === "board_proposal" || kindFact?.valueText === "decided" || kindFact?.valueText === "paid"
+    ? kindFact.valueText
+    : null;
   const ownershipItems: CompanyOwnershipEntry[] = input.ownership.map((owner) => ({
     owner: owner.ownerName,
     capitalPct: owner.capitalPct,
@@ -243,6 +255,10 @@ export function assembleCompanyOfficialData(input: {
       sourceUrl: dividendSource?.sourceUrl ?? perShare?.sourceUrl ?? dividendCoverage.href,
       sourcePublisher: dividendSource?.publisher ?? perShare?.sourcePublisher ?? null,
       asOf: perShare?.asOf ?? null,
+      kind: dividendStatus === "available_with_items" ? kind : null,
+      exDate: dividendStatus === "available_with_items" ? dateFact("dividend_ex_date") : null,
+      recordDate: dividendStatus === "available_with_items" ? dateFact("dividend_record_date") : null,
+      paymentDate: dividendStatus === "available_with_items" ? dateFact("dividend_payment_date") : null,
     },
   };
 }

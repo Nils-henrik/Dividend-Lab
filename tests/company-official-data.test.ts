@@ -161,6 +161,10 @@ describe("company official data contract", () => {
       sourceUrl: ORIGIN,
       sourcePublisher: "Investor AB",
       asOf: "2026-09-25",
+      kind: null,
+      exDate: null,
+      recordDate: null,
+      paymentDate: null,
     };
     assert.equal(officialDividendYieldPercent({ dividend, price: 100, marketCurrency: "SEK" }), null);
     assert.equal(officialDividendYieldPercent({

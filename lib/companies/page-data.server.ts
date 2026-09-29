@@ -7,6 +7,8 @@ import { getCompanyMarketData } from "@/lib/companies/market-data";
 import { getCompanyNews } from "@/lib/companies/news";
 import { getCompanyOfficialData } from "@/lib/companies/official-data.server";
 import { buildCompanyPageModel, type PageMarketInput } from "@/lib/companies/page-model";
+import { selectLatestReportSnapshotUrl } from "@/lib/companies/report-snapshot";
+import { loadCompanyReportSnapshot } from "@/lib/companies/report-snapshot.server";
 import { sectorPeers } from "@/lib/companies/peers";
 import { getCompanyFollowState } from "@/lib/companies/server";
 import { getNewsArticles } from "@/lib/news/get-articles";
@@ -15,10 +17,12 @@ export const loadCompanyPage = cache(async (slug: string, userId: string | undef
   const company = getCompanyProfile(slug);
   if (!company) return null;
   const followState = await getCompanyFollowState(company.slug, userId);
-  const [marketData, officialData, paidDividends] = await Promise.all([
+  const reportUrl = selectLatestReportSnapshotUrl(company.slug, followState.documents);
+  const [marketData, officialData, paidDividends, reportSnapshot] = await Promise.all([
     getCompanyMarketData(company, true, true),
     getCompanyOfficialData(company, followState),
     fetchPaidDividends(company.marketDataSymbol),
+    loadCompanyReportSnapshot(company.slug, reportUrl),
   ]);
   const market: PageMarketInput = {
     price: marketData.price,
@@ -43,6 +47,7 @@ export const loadCompanyPage = cache(async (slug: string, userId: string | undef
     articles,
     paidDividends,
     documents: followState.documents,
+    reportSnapshot,
   });
   return { company, followState, marketData, officialData, articles, peers, model };
 });

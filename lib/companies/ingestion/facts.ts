@@ -3,6 +3,10 @@ export const COMPANY_FACT_TYPES = [
   "dividend_per_share",
   "dividend_currency",
   "dividend_year",
+  "dividend_kind",
+  "dividend_ex_date",
+  "dividend_record_date",
+  "dividend_payment_date",
 ] as const;
 
 export type CompanyFactType = (typeof COMPANY_FACT_TYPES)[number];
@@ -82,13 +86,31 @@ export function validateCompanyFact(
     return fact.valueNumeric === null && /^[A-Z]{3}$/.test(fact.valueText ?? "");
   }
 
-  return (
-    fact.valueText === null &&
-    typeof fact.valueNumeric === "number" &&
-    Number.isInteger(fact.valueNumeric) &&
-    fact.valueNumeric >= 1990 &&
-    fact.valueNumeric <= 2100
-  );
+  if (fact.factType === "dividend_year") {
+    return (
+      fact.valueText === null &&
+      typeof fact.valueNumeric === "number" &&
+      Number.isInteger(fact.valueNumeric) &&
+      fact.valueNumeric >= 1990 &&
+      fact.valueNumeric <= 2100
+    );
+  }
+
+  if (fact.factType === "dividend_kind") {
+    return fact.valueNumeric === null && (
+      fact.valueText === "board_proposal" || fact.valueText === "decided" || fact.valueText === "paid"
+    );
+  }
+
+  if (
+    fact.factType === "dividend_ex_date"
+    || fact.factType === "dividend_record_date"
+    || fact.factType === "dividend_payment_date"
+  ) {
+    return fact.valueNumeric === null && DATE_ONLY.test(fact.valueText ?? "");
+  }
+
+  return false;
 }
 
 export function validateCompanyOwnership(

@@ -4,8 +4,11 @@ import { describe, it } from "node:test";
 
 import { isAuthorizedCompanyIngestionCron } from "@/lib/companies/ingestion/cron-auth";
 import { createJobDeadline } from "@/lib/companies/ingestion/deadline";
-import { enqueueStaleCompanyBaselineRefreshes } from "@/lib/companies/ingestion/queue";
-import type { CompanyIngestionQueueClient } from "@/lib/companies/ingestion/queue";
+import {
+  enqueueStaleCompanyBaselineRefreshes,
+  SUPPORTED_COMPANY_INGESTION_SLUGS,
+  type CompanyIngestionQueueClient,
+} from "@/lib/companies/ingestion/queue";
 import {
   BASELINE_ENQUEUE_LIMIT,
   BASELINE_STALE_AFTER,
@@ -86,8 +89,8 @@ describe("company ingestion cron", () => {
     assert.deepEqual(enqueued, { status: "enqueued", count: 8 });
     assert.equal(args?.p_limit, 8);
     assert.equal(args?.p_stale_after, "20 hours");
-    assert.equal(Array.isArray(args?.p_supported_company_slugs), true);
-    assert.equal((args?.p_supported_company_slugs as string[]).length, 17);
+    assert.deepEqual(args?.p_supported_company_slugs, [...SUPPORTED_COMPANY_INGESTION_SLUGS]);
+    assert.equal(SUPPORTED_COMPANY_INGESTION_SLUGS.length, 21);
   });
 
   it("kör flera jobb i samma anrop och stannar innan plattformsgränsen", async () => {
