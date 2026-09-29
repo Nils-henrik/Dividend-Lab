@@ -43,6 +43,10 @@ export const SUPPORTED_COMPANY_INGESTION_SLUGS = [
   "alfa-laval",
   "assa-abloy",
   "handelsbanken",
+  "industrivarden",
+  "nordea",
+  "swedbank",
+  "tele2",
 ] as const;
 
 export type SupportedCompanyIngestionSlug =

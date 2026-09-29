@@ -104,7 +104,7 @@ function stockholmYear(now: Date) {
 export function paidDividendGrowth(
   events: readonly PaidDividend[],
   now = new Date(),
-): { years: 3 | 5; cagr: number } | null {
+): { years: 3 | 5; cagr: number; endYear: number; endTotal: number; currency: string } | null {
   if (events.length === 0) return null;
   const currencies = new Set(events.map((event) => event.currency));
   if (currencies.size !== 1) return null;
@@ -128,5 +128,7 @@ export function paidDividendGrowth(
   const start = totals.get(window[0] ?? -1);
   const end = totals.get(window.at(-1) ?? -1);
   if (start === undefined || end === undefined || start <= 0 || end <= 0) return null;
-  return { years: span, cagr: (end / start) ** (1 / span) - 1 };
+  const endYear = window.at(-1);
+  if (endYear === undefined) return null;
+  return { years: span, cagr: (end / start) ** (1 / span) - 1, endYear, endTotal: end, currency: events[0]?.currency ?? "" };
 }

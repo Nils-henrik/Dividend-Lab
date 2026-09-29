@@ -58,4 +58,4 @@ The company page adds one statement-module quoteSummary request and one 10-year 
 
 ## Schema
 
-No new migration. Insider rows, dividend kind and ex-dates are not persisted.
+Company Page Max v1 added no migration. Dividend kind and the official ex-date, record date and payment date are persisted by the later Crown Jewel migration. See `docs/company-data/COMPANY_PAGE_CROWN.md`. That migration is not applied from the agent runtime.

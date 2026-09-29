@@ -8,6 +8,7 @@ import {
   type PaidDividend,
 } from "@/lib/companies/dividend-view";
 import type { AnnualFinancialPoint, FinancialHistoryStatus } from "@/lib/companies/financial-history";
+import type { ReportSnapshot } from "@/lib/companies/report-snapshot";
 import { INSIDER_LINK } from "@/lib/companies/insiders";
 import {
   officialDividendYieldPercent,
@@ -85,7 +86,11 @@ export type CompanyPageModel = {
     growthText: string | null;
     payoutText: string;
     yieldBlocked: boolean;
+    exDate: string | null;
+    recordDate: string | null;
+    paymentDate: string | null;
   };
+  reportSnapshot: ReportSnapshot | null;
   currentEvents: CurrentEvent[];
   ownership: {
     asOf: string | null;
@@ -176,6 +181,7 @@ export function buildCompanyPageModel(input: {
   articles: readonly NewsArticle[];
   paidDividends?: readonly PaidDividend[];
   documents?: readonly PageDocument[];
+  reportSnapshot?: ReportSnapshot | null;
   now?: Date;
 }): CompanyPageModel {
   const documents = input.documents ?? [];
@@ -184,6 +190,7 @@ export function buildCompanyPageModel(input: {
   const officialDividend = classifyOfficialDividend({
     perShare: input.official.dividend.perShare,
     blocker,
+    explicitKind: input.official.dividend.kind,
   });
   const officialYield = officialDividend.kind === "board_proposal"
     ? null
@@ -299,16 +306,28 @@ export function buildCompanyPageModel(input: {
       asOf: input.official.dividend.asOf,
       history: paidDividends,
       growthText: growth
-        ? `${growth.years}-årig årlig tillväxt av utbetald utdelning: ${formatPercentPoints(growth.cagr * 100)}. Summan av utbetalningar per avslutat kalenderår.`
+        ? `${growth.years}-årig årlig tillväxt av utbetald utdelning: ${formatPercentPoints(growth.cagr * 100)}. Summan av utbetalningar per avslutat kalenderår. ${growth.endYear}: ${formatMoney(growth.endTotal, growth.currency)}.`
         : null,
       payoutText: formatPayoutRatio(input.market.valuation.payoutRatio),
       yieldBlocked,
+      exDate: input.official.dividend.exDate,
+      recordDate: input.official.dividend.recordDate,
+      paymentDate: input.official.dividend.paymentDate,
     },
+    reportSnapshot: input.reportSnapshot ?? null,
     currentEvents: buildCurrentEvents({
       events,
       reports,
       press,
       articles,
+      dividend: officialDividend.perShare !== null && officialDividend.kind !== "unspecified" && input.official.dividend.sourceUrl
+        ? {
+          title: `${DIVIDEND_KIND_LABEL[officialDividend.kind]} ${formatMoney(officialDividend.perShare, input.official.dividend.currency)}`,
+          date: input.official.dividend.recordDate ?? input.official.dividend.exDate ?? input.official.dividend.paymentDate ?? input.official.dividend.asOf,
+          url: input.official.dividend.sourceUrl,
+          publisher: input.official.dividend.sourcePublisher,
+        }
+        : null,
       changePct: input.market.changePct,
       marketTimestamp: input.market.marketTimestamp,
       marketSourceUrl: input.market.sourceUrl,

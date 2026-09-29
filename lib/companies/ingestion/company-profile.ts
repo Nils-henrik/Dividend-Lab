@@ -1,4 +1,14 @@
 import {
+  NORDEA_INVESTORS_SOURCE_URL,
+  NORDEA_ORIGIN,
+  NORDEA_PUBLISHER,
+  TELE2_INVESTORS_SOURCE_URL,
+  TELE2_PUBLISHER,
+  nordeaDividendArticleUrl,
+  parseNordeaDecidedDividend,
+  parseTele2Ceo,
+} from "@/lib/companies/ingestion/adapters/omxs30-crown";
+import {
   parseAddtechOwnership,
   parseAtlasOwnership,
   parseEvolutionOwnership,
@@ -11,6 +21,7 @@ import { companyDocumentOrigins } from "@/lib/companies/ingestion/collect";
 import {
   fetchOfficialText,
   INGESTION_MAX_HTML_BYTES,
+  pauseBetweenRequests,
   type SourceFetchContext,
 } from "@/lib/companies/ingestion/fetch-source";
 import { collectInvestorProfileSource } from "@/lib/companies/ingestion/investor-profile";
@@ -113,10 +124,47 @@ export const COMPANY_PROFILE_SOURCES: Partial<
       parse: (html, sourceUrl, publisher) => profileFromCeo(html, sourceUrl, publisher),
     },
   },
+  tele2: {
+    management: {
+      url: TELE2_INVESTORS_SOURCE_URL,
+      publisher: TELE2_PUBLISHER,
+      parse: parseTele2Ceo,
+    },
+  },
 };
 
 function isProfileKind(value: string): value is ProfileKind {
   return value === "management" || value === "ownership" || value === "dividend";
+}
+
+async function collectNordeaDividend(sourceUrl: string, context: SourceFetchContext) {
+  if (sourceUrl !== NORDEA_INVESTORS_SOURCE_URL) {
+    return { status: "error" as const, reason: "unexpected_source_url" };
+  }
+  const listing = await fetchOfficialText(sourceUrl, context, {
+    allowedOrigin: NORDEA_ORIGIN,
+    acceptedContentTypes: HTML,
+    maxBytes: INGESTION_MAX_HTML_BYTES,
+  });
+  if (listing.status === "error") {
+    return { status: "error" as const, reason: `listing_${listing.reason}` };
+  }
+  const articleUrl = nordeaDividendArticleUrl(listing.text);
+  if (!articleUrl) return { status: "error" as const, reason: "no_valid_documents" };
+  if ((await pauseBetweenRequests(context)) === "job_deadline_exceeded") {
+    return { status: "error" as const, reason: "job_deadline_exceeded" };
+  }
+  const article = await fetchOfficialText(articleUrl, context, {
+    allowedOrigin: NORDEA_ORIGIN,
+    acceptedContentTypes: HTML,
+    maxBytes: INGESTION_MAX_HTML_BYTES,
+  });
+  if (article.status === "error") {
+    return { status: "error" as const, reason: `listing_${article.reason}` };
+  }
+  const parsed = parseNordeaDecidedDividend(article.text, articleUrl, NORDEA_PUBLISHER);
+  if (!parsed) return { status: "error" as const, reason: "no_valid_documents" };
+  return { status: "ok" as const, facts: parsed.facts, ownership: parsed.ownership };
 }
 
 export async function collectCompanyProfileSource(
@@ -127,6 +175,9 @@ export async function collectCompanyProfileSource(
 ) {
   if (slug === "investor") {
     return collectInvestorProfileSource(sourceType, sourceUrl, context);
+  }
+  if (slug === "nordea" && sourceType === "dividend") {
+    return collectNordeaDividend(sourceUrl, context);
   }
   if (!isSupportedCompanyIngestionSlug(slug) || !isProfileKind(sourceType)) {
     return { status: "error" as const, reason: "source_not_automated" };

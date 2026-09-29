@@ -111,6 +111,29 @@ import {
   type FastLaneReportCandidate,
 } from "@/lib/companies/ingestion/adapters/omxs30-fast-lane";
 import {
+  INDUSTRIVARDEN_CALENDAR_SOURCE_URL,
+  INDUSTRIVARDEN_ORIGIN,
+  INDUSTRIVARDEN_RSS_SOURCE_URL,
+  NORDEA_CALENDAR_SOURCE_URL,
+  NORDEA_INVESTORS_SOURCE_URL,
+  NORDEA_ORIGIN,
+  SWEDBANK_CALENDAR_SOURCE_URL,
+  SWEDBANK_INVESTORS_SOURCE_URL,
+  SWEDBANK_ORIGIN,
+  TELE2_INVESTORS_SOURCE_URL,
+  TELE2_ORIGIN,
+  parseIndustrivardenCalendar,
+  parseIndustrivardenFinancialReports,
+  parseIndustrivardenPressReleases,
+  parseNordeaFinancialReports,
+  parseNordeaPressReleases,
+  parseSwedbankFinancialReports,
+  parseSwedbankPressReleases,
+  parseTele2Calendar,
+  parseTele2FinancialReports,
+  parseTele2PressReleases,
+} from "@/lib/companies/ingestion/adapters/omxs30-crown";
+import {
   SAAB_CALENDAR_SOURCE_URL,
   SAAB_ORIGIN,
   SAAB_PRESS_RELEASE_SOURCE_URL,
@@ -165,7 +188,7 @@ import {
 import { loadAtlasCopcoPressReleaseDocuments } from "@/lib/companies/ingestion/workers/atlas-copco";
 
 const HTML = ["text/html"] as const;
-const XML = ["application/xml", "text/xml"] as const;
+const XML = ["application/xml", "text/xml", "application/rss+xml"] as const;
 const JSON_FEED = ["application/json"] as const;
 
 export type CollectedCompanySource =
@@ -263,6 +286,26 @@ const EXPECTED_SOURCE_URLS: Record<
     financial_reports: HANDELSBANKEN_IR_SOURCE_URL,
     financial_calendar: HANDELSBANKEN_IR_SOURCE_URL,
   },
+  industrivarden: {
+    press_releases: INDUSTRIVARDEN_RSS_SOURCE_URL,
+    financial_reports: INDUSTRIVARDEN_RSS_SOURCE_URL,
+    financial_calendar: INDUSTRIVARDEN_CALENDAR_SOURCE_URL,
+  },
+  nordea: {
+    press_releases: NORDEA_INVESTORS_SOURCE_URL,
+    financial_reports: NORDEA_INVESTORS_SOURCE_URL,
+    financial_calendar: NORDEA_CALENDAR_SOURCE_URL,
+  },
+  swedbank: {
+    press_releases: SWEDBANK_INVESTORS_SOURCE_URL,
+    financial_reports: SWEDBANK_INVESTORS_SOURCE_URL,
+    financial_calendar: SWEDBANK_CALENDAR_SOURCE_URL,
+  },
+  tele2: {
+    press_releases: TELE2_INVESTORS_SOURCE_URL,
+    financial_reports: TELE2_INVESTORS_SOURCE_URL,
+    financial_calendar: TELE2_INVESTORS_SOURCE_URL,
+  },
 };
 
 const ALLOWED_ORIGINS: Record<SupportedCompanyIngestionSlug, readonly string[]> = {
@@ -283,6 +326,10 @@ const ALLOWED_ORIGINS: Record<SupportedCompanyIngestionSlug, readonly string[]> 
   "alfa-laval": [ALFA_LAVAL_ORIGIN],
   "assa-abloy": [ASSA_ABLOY_ORIGIN],
   handelsbanken: [HANDELSBANKEN_ORIGIN],
+  industrivarden: [INDUSTRIVARDEN_ORIGIN, "https://industrivarden.se"],
+  nordea: [NORDEA_ORIGIN],
+  swedbank: [SWEDBANK_ORIGIN],
+  tele2: [TELE2_ORIGIN],
 };
 
 function fetchFailure(prefix: string, reason: string): CollectedCompanySource {
@@ -483,6 +530,47 @@ export async function collectCompanySource(
       return collectAssaAbloy(source.sourceType, context, origins);
     case "handelsbanken":
       return collectHandelsbanken(source.sourceType, context, origins);
+    case "industrivarden":
+      return collectIndustrivarden(source.sourceType, context, origins);
+    case "nordea":
+      return collectStaticPage(
+        source.sourceType,
+        NORDEA_ORIGIN,
+        EXPECTED_SOURCE_URLS.nordea,
+        {
+          press_releases: parseNordeaPressReleases,
+          financial_reports: parseNordeaFinancialReports,
+          financial_calendar: () => [],
+        },
+        context,
+        origins,
+      );
+    case "swedbank":
+      return collectStaticPage(
+        source.sourceType,
+        SWEDBANK_ORIGIN,
+        EXPECTED_SOURCE_URLS.swedbank,
+        {
+          press_releases: parseSwedbankPressReleases,
+          financial_reports: parseSwedbankFinancialReports,
+          financial_calendar: () => [],
+        },
+        context,
+        origins,
+      );
+    case "tele2":
+      return collectStaticPage(
+        source.sourceType,
+        TELE2_ORIGIN,
+        EXPECTED_SOURCE_URLS.tele2,
+        {
+          press_releases: parseTele2PressReleases,
+          financial_reports: parseTele2FinancialReports,
+          financial_calendar: parseTele2Calendar,
+        },
+        context,
+        origins,
+      );
     case "sca":
       return collectStaticPage(
         source.sourceType,
@@ -984,5 +1072,30 @@ async function collectHandelsbanken(
   const documents = sourceType === "financial_reports"
     ? parseHandelsbankenFinancialReports(page.text)
     : parseHandelsbankenCalendar(page.text, context.now);
+  return acceptDocuments(documents, origins);
+}
+
+async function collectIndustrivarden(
+  sourceType: CompanySourceType,
+  context: SourceFetchContext,
+  origins: readonly string[],
+): Promise<CollectedCompanySource> {
+  if (sourceType === "financial_calendar") {
+    const page = await fetchHtml(INDUSTRIVARDEN_CALENDAR_SOURCE_URL, INDUSTRIVARDEN_ORIGIN, context);
+    if (page.status === "error") return fetchFailure("listing", page.reason);
+    return acceptDocuments(parseIndustrivardenCalendar(page.text), origins);
+  }
+  if (sourceType !== "press_releases" && sourceType !== "financial_reports") {
+    return { status: "error", reason: "unsupported_source_type" };
+  }
+  const feed = await fetchOfficialText(INDUSTRIVARDEN_RSS_SOURCE_URL, context, {
+    allowedOrigin: INDUSTRIVARDEN_ORIGIN,
+    acceptedContentTypes: XML,
+    maxBytes: INGESTION_MAX_HTML_BYTES,
+  });
+  if (feed.status === "error") return fetchFailure("listing", feed.reason);
+  const documents = sourceType === "press_releases"
+    ? parseIndustrivardenPressReleases(feed.text)
+    : parseIndustrivardenFinancialReports(feed.text);
   return acceptDocuments(documents, origins);
 }
