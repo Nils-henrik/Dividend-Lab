@@ -217,6 +217,14 @@ test("rapportutdrag kräver källa, valuta och jämförelseperiod", () => {
   assert.equal(nordea?.metrics.find((metric) => metric.id === "net_profit")?.comparisonAmount, null);
   assert.equal(nordea?.metrics.find((metric) => metric.id === "diluted_eps")?.scale, "unit");
   assert.equal(parseNordeaReportSnapshot("<table><tr><td>Operating profit</td><td>1</td></tr></table>", "https://www.nordea.com/en/press/2026-07-16/half-year-results-2026"), null);
+  const repeated = `<link rel="canonical" href="https://www.nordea.com/en/press/2026-07-16/half-year-results-2026" />
+    <table><tr><th>EURm</th><th>Q2 2026</th><th>Q2 2025</th><th>Chg %</th></tr>
+    <tr><td>Operating profit</td><td>1,608</td><td>1,599</td><td>1</td></tr></table>
+    <table><tr><th>EURm</th><th>Q2 2026</th><th>Q2 2025</th><th>Chg %</th></tr>
+    <tr><td>Operating profit</td><td>1,608</td><td>1,599</td><td>1</td></tr></table>`;
+  assert.equal(parseNordeaReportSnapshot(repeated, "https://www.nordea.com/en/press/2026-07-16/half-year-results-2026")?.metrics.filter((metric) => metric.id === "operating_profit").length, 1);
+  const conflict = repeated.replace("<td>1,608</td><td>1,599</td><td>1</td></tr></table>", "<td>9,999</td><td>1,599</td><td>1</td></tr></table>");
+  assert.equal(parseNordeaReportSnapshot(conflict, "https://www.nordea.com/en/press/2026-07-16/half-year-results-2026"), null);
 
   const tele2 = parseTele2ReportSnapshot(`
     <span>Jul 16 2026,  7:00 AM CET</span>

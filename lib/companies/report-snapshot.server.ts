@@ -71,6 +71,6 @@ export const loadCompanyReportSnapshot = unstable_cache(
       return null;
     }
   },
-  ["company-report-snapshot-v1"],
+  ["company-report-snapshot-v2"],
   { revalidate: 60 * 60 * 12 },
 );

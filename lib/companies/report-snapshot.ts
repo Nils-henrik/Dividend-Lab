@@ -40,6 +40,26 @@ function parseAmount(value: string): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+function sameMetric(left: ReportSnapshotMetric, right: ReportSnapshotMetric) {
+  return left.amount === right.amount
+    && left.comparisonAmount === right.comparisonAmount
+    && left.reportedChangePercent === right.reportedChangePercent
+    && left.scale === right.scale;
+}
+
+function dedupeMetrics(metrics: ReportSnapshotMetric[]): ReportSnapshotMetric[] | null {
+  const kept: ReportSnapshotMetric[] = [];
+  for (const metric of metrics) {
+    const previous = kept.find((item) => item.id === metric.id);
+    if (!previous) {
+      kept.push(metric);
+      continue;
+    }
+    if (!sameMetric(previous, metric)) return null;
+  }
+  return kept;
+}
+
 function finishSnapshot(input: {
   period: string;
   currency: string;
@@ -131,13 +151,15 @@ export function parseNordeaReportSnapshot(html: string, sourceUrl: string): Repo
       }
     }
   }
+  const unique = dedupeMetrics(metrics);
+  if (!unique) return null;
   return finishSnapshot({
     period: period ?? "",
     currency: "EUR",
     publishedOn,
     sourceUrl,
     sourcePublisher: "Nordea",
-    metrics,
+    metrics: unique,
   });
 }
 

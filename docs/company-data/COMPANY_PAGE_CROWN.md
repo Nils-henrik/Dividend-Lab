@@ -43,7 +43,7 @@ Checked with `DivLabBot/1.0`, no redirects followed, no challenge bypass:
 
 Adapters:
 
-- Nordea: EURm table columns `Q[1-4] 20xx` plus the same quarter one year earlier, and the DEPS row in EUR.
+- Nordea: EURm table columns `Q[1-4] 20xx` plus the same quarter one year earlier, and the DEPS row in EUR. The same metric repeated with the same figures is shown once. A later table with a different figure for that metric drops the snapshot.
 - Tele2: the verified sentences for total revenue, net profit, earnings per share and equity free cash flow. Revenue has no comparison amount. Parenthetical comparisons count only when the prior-year quarter is also written on the page.
 - Industrivärden: `Substansvärdet den 30 juni` in mdkr and kronor per aktie, with the article `<time datetime>`.
 
