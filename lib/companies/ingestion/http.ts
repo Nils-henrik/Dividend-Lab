@@ -6,9 +6,13 @@ export type BoundedTextFetchResult =
         | "invalid_url"
         | "network_error"
         | "timeout"
-        | "http_status"
         | "unexpected_content_type"
         | "too_large";
+    }
+  | {
+      status: "error";
+      reason: "http_status";
+      httpStatus: number;
     };
 
 export type BoundedTextFetchOptions = {
@@ -152,7 +156,7 @@ export async function fetchBoundedText(
     });
 
     if (!response.ok) {
-      return { status: "error", reason: "http_status" };
+      return { status: "error", reason: "http_status", httpStatus: response.status };
     }
 
     if (!hasAcceptedContentType(response, options.acceptedContentTypes)) {

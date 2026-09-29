@@ -40,24 +40,34 @@ function parseAmount(value: string): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-function sameMetric(left: ReportSnapshotMetric, right: ReportSnapshotMetric) {
-  return left.amount === right.amount
+function sameMetric(left: ReportSnapshotMetric, right: ReportSnapshotMetric): boolean {
+  return left.label === right.label
+    && left.amount === right.amount
     && left.comparisonAmount === right.comparisonAmount
+    && left.comparisonLabel === right.comparisonLabel
     && left.reportedChangePercent === right.reportedChangePercent
     && left.scale === right.scale;
 }
 
-function dedupeMetrics(metrics: ReportSnapshotMetric[]): ReportSnapshotMetric[] | null {
-  const kept: ReportSnapshotMetric[] = [];
+/**
+ * A snapshot has at most one row per metric id.
+ * Matching candidates collapse to the first row. If any candidate disagrees on
+ * the stored amount, comparison, reported change, scale or label, that metric
+ * is omitted. Conflicting values are never mixed into one row.
+ */
+export function dedupeReportMetrics(metrics: readonly ReportSnapshotMetric[]): ReportSnapshotMetric[] {
+  const groups = new Map<string, ReportSnapshotMetric[]>();
   for (const metric of metrics) {
-    const previous = kept.find((item) => item.id === metric.id);
-    if (!previous) {
-      kept.push(metric);
-      continue;
-    }
-    if (!sameMetric(previous, metric)) return null;
+    const group = groups.get(metric.id) ?? [];
+    group.push(metric);
+    groups.set(metric.id, group);
   }
-  return kept;
+  const unique: ReportSnapshotMetric[] = [];
+  for (const group of groups.values()) {
+    const first = group[0];
+    if (first && group.every((metric) => sameMetric(metric, first))) unique.push(first);
+  }
+  return unique;
 }
 
 function finishSnapshot(input: {
@@ -68,30 +78,34 @@ function finishSnapshot(input: {
   sourcePublisher: string;
   metrics: ReportSnapshotMetric[];
 }): ReportSnapshot | null {
+  const metrics = dedupeReportMetrics(input.metrics);
   if (
     !input.period
     || !CURRENCY.test(input.currency)
     || !DATE_ONLY.test(input.publishedOn)
     || !input.sourceUrl.startsWith("https://")
     || !input.sourcePublisher
-    || input.metrics.length === 0
+    || metrics.length === 0
   ) {
     return null;
   }
-  return input;
+  return { ...input, metrics };
 }
 
 function columnIndexes(header: string[]) {
-  const currentLabel = header.find((cell) => /^Q[1-4] 20\d{2}$/.test(cell));
+  const quarterLabel = header.find((cell) => /^Q[1-4] 20\d{2}$/.test(cell));
+  const fyLabel = header.find((cell) => /^(?:Jan-Dec|FY) 20\d{2}$/.test(cell));
+  const currentLabel = quarterLabel ?? fyLabel;
   if (!currentLabel) return null;
-  const [quarter, yearText] = currentLabel.split(" ");
+  const [token, yearText] = currentLabel.split(" ");
   const year = Number(yearText);
-  const comparisonLabel = `${quarter} ${year - 1}`;
+  const comparisonLabel = `${token} ${year - 1}`;
   const current = header.indexOf(currentLabel);
   const comparison = header.indexOf(comparisonLabel);
   if (current < 1 || comparison < 1) return null;
   const change = header[comparison + 1] === "Chg %" ? comparison + 1 : -1;
-  return { current, comparison, change, period: `${yearText} ${quarter}`, comparisonLabel };
+  const period = quarterLabel ? `${yearText} ${token}` : `${yearText} FY`;
+  return { current, comparison, change, period, comparisonLabel };
 }
 
 function metricFromRow(input: {
@@ -116,8 +130,24 @@ function metricFromRow(input: {
   };
 }
 
+function statutoryIncludingTable(before: string): boolean {
+  const text = before.toLowerCase();
+  const including = text.lastIndexOf("including items affecting comparability");
+  if (including < 0) return false;
+  return including > text.lastIndexOf("excluding items affecting comparability");
+}
+
+/**
+ * Nordea Q1, half-year, Q3 and year-end releases share one table shape.
+ * The current period is the first Q1–Q4 column that also has the prior-year column.
+ * Year-end pages lead with Q4, so the snapshot stays on that quarter. A table that
+ * only has Jan-Dec or FY columns is read as FY. Later tables for another period are ignored.
+ * The headline group table is kept. A following table introduced as
+ * "Including items affecting comparability" is the statutory bridge and is skipped,
+ * so it cannot duplicate or replace the headline row.
+ */
 export function parseNordeaReportSnapshot(html: string, sourceUrl: string): ReportSnapshot | null {
-  if (!/^https:\/\/www\.nordea\.com\/en\/press\/\d{4}-\d{2}-\d{2}\//.test(sourceUrl)) return null;
+  if (!isNordeaReportSnapshotUrl(sourceUrl)) return null;
   const publishedOn = sourceUrl.match(/\/en\/press\/(\d{4}-\d{2}-\d{2})\//)?.[1] ?? "";
   const text = decodeHtmlText(html);
   if (!text.includes(publishedOn) && !text.includes(publishedOn.slice(8) + "-" + publishedOn.slice(5, 7) + "-" + publishedOn.slice(0, 4))) {
@@ -126,8 +156,12 @@ export function parseNordeaReportSnapshot(html: string, sourceUrl: string): Repo
   }
   const metrics: ReportSnapshotMetric[] = [];
   let period: string | null = null;
-  for (const table of html.matchAll(/<table\b[^>]*>([\s\S]*?)<\/table>/gi)) {
-    const rows = tableRows(table[1]);
+  const chunks = html.split(/<table\b/i);
+  for (let index = 1; index < chunks.length; index += 1) {
+    const before = decodeHtmlText(chunks[index - 1].slice(-2000));
+    if (statutoryIncludingTable(before)) continue;
+    const tableHtml = chunks[index].split(/<\/table>/i)[0] ?? "";
+    const rows = tableRows(tableHtml);
     const header = rows[0] ?? [];
     const columns = columnIndexes(header);
     if (!columns) continue;
@@ -145,21 +179,19 @@ export function parseNordeaReportSnapshot(html: string, sourceUrl: string): Repo
       } else if (millionTable && label === "Total income") {
         const metric = metricFromRow({ id: "total_income", label, cells, columns, scale: "million" });
         if (metric) metrics.push(metric);
-      } else if (!millionTable && label === "Diluted earnings per share (DEPS), EUR") {
+      } else if (!millionTable && (label === "Diluted earnings per share (DEPS), EUR" || label === "Diluted earnings per share, EUR")) {
         const metric = metricFromRow({ id: "diluted_eps", label: "Diluted earnings per share (DEPS)", cells, columns, scale: "unit" });
         if (metric) metrics.push(metric);
       }
     }
   }
-  const unique = dedupeMetrics(metrics);
-  if (!unique) return null;
   return finishSnapshot({
     period: period ?? "",
     currency: "EUR",
     publishedOn,
     sourceUrl,
     sourcePublisher: "Nordea",
-    metrics: unique,
+    metrics,
   });
 }
 
@@ -223,7 +255,7 @@ function sekMetric(input: {
 }
 
 export function parseTele2ReportSnapshot(html: string, sourceUrl: string): ReportSnapshot | null {
-  if (!sourceUrl.startsWith("https://www.tele2.com/investors/reports-and-presentations/")) return null;
+  if (!isTele2ReportSnapshotUrl(sourceUrl)) return null;
   const text = decodeHtmlText(html).replace(/\s+/g, " ");
   const periodMatch = text.match(/\bin (Q[1-4]) (20\d{2})\b/);
   if (!periodMatch) return null;
@@ -284,17 +316,25 @@ export function parseTele2ReportSnapshot(html: string, sourceUrl: string): Repor
   });
 }
 
+const INDUSTRIVARDEN_NAV_PERIOD: Record<string, string> = {
+  "31 mars": "Q1",
+  "30 juni": "H1",
+  "30 september": "Q3",
+  "31 december": "FY",
+};
+
 export function parseIndustrivardenReportSnapshot(html: string, sourceUrl: string): ReportSnapshot | null {
-  if (!sourceUrl.startsWith("https://www.industrivarden.se/media/Pressmeddelanden/")) return null;
+  if (!isIndustrivardenReportSnapshotUrl(sourceUrl)) return null;
   const publishedOn = html.match(/<time\b[^>]*datetime="(\d{4}-\d{2}-\d{2})"/i)?.[1] ?? "";
   const text = decodeHtmlText(html).replace(/\s+/g, " ");
-  const nav = text.match(/Substansvärdet den 30 juni (20\d{2}) var ([0-9]+(?:,[0-9]+)?) mdkr, eller ([0-9]+) kronor per aktie/);
-  if (!nav || !publishedOn) return null;
-  const amount = Number(nav[2].replace(",", "."));
-  const perShare = Number(nav[3]);
+  const nav = text.match(/Substansvärdet den (31 mars|30 juni|30 september|31 december) (20\d{2}) var ([0-9]+(?:,[0-9]+)?) mdkr, eller ([0-9]+(?:,[0-9]+)?) kronor per aktie/);
+  const periodKind = nav ? INDUSTRIVARDEN_NAV_PERIOD[nav[1]] : null;
+  if (!nav || !periodKind || !publishedOn) return null;
+  const amount = Number(nav[3].replace(",", "."));
+  const perShare = Number(nav[4].replace(",", "."));
   if (!Number.isFinite(amount) || !Number.isFinite(perShare)) return null;
   return finishSnapshot({
-    period: `${nav[1]} H1`,
+    period: periodKind === "FY" ? `${nav[2]} FY` : `${nav[2]} ${periodKind}`,
     currency: "SEK",
     publishedOn,
     sourceUrl,
@@ -322,30 +362,114 @@ export function parseIndustrivardenReportSnapshot(html: string, sourceUrl: strin
   });
 }
 
-export function selectNordeaReportArticleUrl(html: string): string | null {
-  const matches = [...html.matchAll(/href="(\/en\/press\/\d{4}-\d{2}-\d{2}\/[^"]*half-year-results[^"]*)"/gi)];
-  const href = matches[0]?.[1];
-  if (!href) return null;
-  return `https://www.nordea.com${href}`;
+const REPORT_DOCUMENT_TYPES = new Set(["quarterly_report", "half_year_report", "annual_report"]);
+
+export type ReportDocumentRef = {
+  type: string;
+  url: string;
+  publishedAt: string | null;
+};
+
+export const REPORT_SNAPSHOT_TIMEOUT_MS = 3_000;
+export const REPORT_SNAPSHOT_REVALIDATE_SECONDS = 60 * 60;
+
+function httpsPath(url: string, origin: string, path: RegExp): boolean {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "https:"
+      && parsed.origin === origin
+      && parsed.username === ""
+      && parsed.password === ""
+      && parsed.port === ""
+      && parsed.search === ""
+      && parsed.hash === ""
+      && path.test(parsed.pathname);
+  } catch {
+    return false;
+  }
 }
 
-export function selectTele2ReportArticleUrl(html: string): string | null {
-  const href = html.match(/href="(\/investors\/reports-and-presentations\/[^"]+)"/i)?.[1];
-  if (!href || href.includes("?")) return null;
-  return `https://www.tele2.com${href}`;
+export function isNordeaReportSnapshotUrl(url: string): boolean {
+  return httpsPath(url, "https://www.nordea.com", /^\/en\/press\/\d{4}-\d{2}-\d{2}\/[^/]+$/);
 }
 
-export function selectIndustrivardenReportUrl(xml: string): string | null {
-  const items = [...xml.matchAll(/<item\b([^>]*)>([\s\S]*?)<\/item>/gi)];
-  const parsed = items.flatMap((match) => {
-    const base = match[1].match(/xml:base="(https:\/\/www\.industrivarden\.se\/media\/Pressmeddelanden\/[^"]+)"/i)?.[1];
-    const title = match[2].match(/<title>([\s\S]*?)<\/title>/i)?.[1] ?? "";
-    const pubDate = match[2].match(/<pubDate>([\s\S]*?)<\/pubDate>/i)?.[1] ?? "";
-    const time = new Date(pubDate).getTime();
-    if (!base || !/delårsrapport|bokslutsrapport|årsredovisning/i.test(title) || !Number.isFinite(time)) return [];
-    return [{ base, time }];
-  }).sort((left, right) => right.time - left.time);
-  return parsed[0]?.base ?? null;
+export function isTele2ReportSnapshotUrl(url: string): boolean {
+  return httpsPath(url, "https://www.tele2.com", /^\/investors\/reports-and-presentations\/[^/]+\/$/);
+}
+
+export function isIndustrivardenReportSnapshotUrl(url: string): boolean {
+  return httpsPath(url, "https://www.industrivarden.se", /^\/media\/Pressmeddelanden\/\d{4}\/[^/]+\/$/);
+}
+
+export function reportSnapshotOrigin(slug: string): string | null {
+  if (slug === "nordea") return "https://www.nordea.com";
+  if (slug === "tele2") return "https://www.tele2.com";
+  if (slug === "industrivarden") return "https://www.industrivarden.se";
+  return null;
+}
+
+export function isReportSnapshotUrl(slug: string, url: string): boolean {
+  if (slug === "nordea") return isNordeaReportSnapshotUrl(url);
+  if (slug === "tele2") return isTele2ReportSnapshotUrl(url);
+  if (slug === "industrivarden") return isIndustrivardenReportSnapshotUrl(url);
+  return false;
+}
+
+function publishedTime(value: string | null): number {
+  if (!value) return Number.NEGATIVE_INFINITY;
+  const time = Date.parse(value);
+  return Number.isFinite(time) ? time : Number.NEGATIVE_INFINITY;
+}
+
+/**
+ * The newest official report document, and only when its own URL can be parsed.
+ * An older supported report is not used when a newer report exists but is not
+ * a verified snapshot URL. Listing and feed URLs are never selected.
+ */
+export function selectLatestReportSnapshotUrl(
+  slug: string,
+  documents: readonly ReportDocumentRef[],
+): string | null {
+  const reports = documents.filter((document) => REPORT_DOCUMENT_TYPES.has(document.type));
+  const newest = reports.reduce((max, document) => Math.max(max, publishedTime(document.publishedAt)), Number.NEGATIVE_INFINITY);
+  if (newest === Number.NEGATIVE_INFINITY) return null;
+  const latest = reports.filter((document) => publishedTime(document.publishedAt) === newest);
+  return latest.find((document) => isReportSnapshotUrl(slug, document.url))?.url ?? null;
+}
+
+export type ReportSnapshotReadResult =
+  | { status: "ok"; text: string }
+  | { status: "transient" }
+  | { status: "miss" };
+
+export type ReportSnapshotLoad = {
+  snapshot: ReportSnapshot | null;
+  /** False when the source failed temporarily. That result must not be cached. */
+  cacheable: boolean;
+};
+
+export function parseCompanyReportSnapshot(slug: string, html: string, sourceUrl: string): ReportSnapshot | null {
+  if (slug === "nordea") return parseNordeaReportSnapshot(html, sourceUrl);
+  if (slug === "tele2") return parseTele2ReportSnapshot(html, sourceUrl);
+  if (slug === "industrivarden") return parseIndustrivardenReportSnapshot(html, sourceUrl);
+  return null;
+}
+
+/**
+ * Reads at most the one verified report URL already stored for the company.
+ * No issuer listing or feed is fetched here.
+ */
+export async function readLatestReportSnapshot(
+  slug: string,
+  documents: readonly ReportDocumentRef[],
+  readReport: (url: string) => Promise<ReportSnapshotReadResult>,
+): Promise<ReportSnapshotLoad> {
+  const url = selectLatestReportSnapshotUrl(slug, documents);
+  if (!url) return { snapshot: null, cacheable: true };
+  const read = await readReport(url);
+  if (read.status === "transient") return { snapshot: null, cacheable: false };
+  if (read.status !== "ok") return { snapshot: null, cacheable: true };
+  return { snapshot: parseCompanyReportSnapshot(slug, read.text, url), cacheable: true };
 }
 
 export function formatReportMetric(metric: ReportSnapshotMetric, currency: string) {

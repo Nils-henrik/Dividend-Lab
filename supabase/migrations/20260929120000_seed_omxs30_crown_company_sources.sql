@@ -25,6 +25,11 @@ set
   publisher = replacement.publisher,
   is_official = true,
   is_active = true,
+  -- A replaced URL or support mode is a new source. Clear only that row so
+  -- the daily cron treats an automated source as never checked.
+  last_checked_at = null,
+  last_success_at = null,
+  last_failure_reason = null,
   updated_at = now()
 from public.companies as company
 join (
@@ -48,7 +53,11 @@ join (
   on company.slug = replacement.slug
 where source.company_id = company.id
   and source.source_type = replacement.source_type
-  and source.source_url = replacement.previous_url;
+  and source.source_url = replacement.previous_url
+  and (
+    source.source_url is distinct from replacement.source_url
+    or source.support_mode is distinct from replacement.support_mode
+  );
 
 insert into public.company_sources (
   company_id,
@@ -94,4 +103,16 @@ set
   support_mode = excluded.support_mode,
   is_official = true,
   is_active = true,
+  last_checked_at = case
+    when company_sources.support_mode is distinct from excluded.support_mode then null
+    else company_sources.last_checked_at
+  end,
+  last_success_at = case
+    when company_sources.support_mode is distinct from excluded.support_mode then null
+    else company_sources.last_success_at
+  end,
+  last_failure_reason = case
+    when company_sources.support_mode is distinct from excluded.support_mode then null
+    else company_sources.last_failure_reason
+  end,
   updated_at = now();

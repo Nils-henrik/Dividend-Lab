@@ -43,11 +43,11 @@ Checked with `DivLabBot/1.0`, no redirects followed, no challenge bypass:
 
 Adapters:
 
-- Nordea: EURm table columns `Q[1-4] 20xx` plus the same quarter one year earlier, and the DEPS row in EUR. The same metric repeated with the same figures is shown once. A later table with a different figure for that metric drops the snapshot.
-- Tele2: the verified sentences for total revenue, net profit, earnings per share and equity free cash flow. Revenue has no comparison amount. Parenthetical comparisons count only when the prior-year quarter is also written on the page.
-- Industrivärden: `Substansvärdet den 30 juni` in mdkr and kronor per aktie, with the article `<time datetime>`.
+- Nordea: EURm table columns `Q[1-4] 20xx` plus the same quarter one year earlier, and the DEPS row in EUR. Q1, half-year (lead column Q2), Q3 and year-end (lead column Q4) use that shape. A table with only `Jan-Dec` or `FY` columns is read as FY. Each metric id is kept once. A later table marked “Including items affecting comparability” is skipped. If the remaining candidates disagree, that metric is omitted. If every metric disagrees, the snapshot is omitted.
+- Tele2: the verified sentences for total revenue, net profit, earnings per share and equity free cash flow on the results article. Revenue has no comparison amount. Parenthetical comparisons count only when the prior-year quarter is also written on the page. The stored report URL is that article when it is on `/investors/reports-and-presentations/`. A PDF-only document is not parsed.
+- Industrivärden: `Substansvärdet den 31 mars`, `30 juni`, `30 september` or `31 december` in mdkr and kronor per aktie, with the article `<time datetime>`. Those dates are Q1, H1, Q3 and FY. Any other date fails closed.
 
-Every other company returns no snapshot.
+The page reads only the newest stored report document. If that document cannot be parsed, the section is hidden. An older supported report is not labelled “Senaste”. Every other company returns no snapshot.
 
 ## Dividend, owners, current events
 
@@ -61,7 +61,11 @@ Current events keep one row per kind, at most six, in the order calendar, report
 
 A company page still loads the existing delayed quote, statement modules and dividend chart, plus the official rows already in the database. Discovery still does not mass-fetch quotes.
 
-After this change, Nordea, Tele2 and Industrivärden add one cached chain of two allowlisted fetches (listing, then the selected article). The cache revalidates every 12 hours. Every other company adds zero snapshot requests. The ingestion cron schedule stays `17 3 * * *` and the daily batch stays 8. The supported universe is now 21 issuers, so a full pass still fits three daily batches. New issuer fetches run only for that company's due sources, with the existing byte cap, timeout, origin allowlist and `redirect: error`.
+Before this fix, a cold Nordea, Tele2 or Industrivärden page did two sequential allowlisted fetches inside the page request: the issuer listing or RSS, then the selected article. Each fetch could wait 8 seconds, so one cold source could hold the response for about 16 seconds. A failed fetch was returned as `null` and that `null` could stay cached for 12 hours.
+
+After this fix the page does not fetch a listing or feed. It uses the newest official report URL already stored on the company document. No stored report means no snapshot request. A supported company therefore adds at most one report fetch, with a 3 second timeout, in parallel with the existing quote and official-data reads. A successful parse, and a document that is valid but not parsable, is cached for 1 hour under a key that includes the report URL, so a newer document is fetched at once. Network errors, timeouts and HTTP 408/429/5xx are not written into that cache. Every other company still adds zero snapshot requests.
+
+The ingestion cron schedule stays `17 3 * * *` and the daily batch stays 8. The supported universe is now 21 issuers, so a full pass still fits three daily batches. New issuer fetches run only for that company's due sources, with the existing byte cap, timeout, origin allowlist and `redirect: error`. The crown migration clears `last_checked_at`, `last_success_at` and `last_failure_reason` only on the rows whose URL or support mode it actually replaces, so those automated sources are due on the next cron without a broader reset. The migration is still not applied by this change.
 
 ## Not in this change
 

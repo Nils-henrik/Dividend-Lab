@@ -33,6 +33,10 @@ import {
   parseIndustrivardenReportSnapshot,
   parseNordeaReportSnapshot,
   parseTele2ReportSnapshot,
+  readLatestReportSnapshot,
+  REPORT_SNAPSHOT_REVALIDATE_SECONDS,
+  REPORT_SNAPSHOT_TIMEOUT_MS,
+  selectLatestReportSnapshotUrl,
 } from "../lib/companies/report-snapshot";
 
 const NOW = new Date("2026-09-29T08:00:00.000Z");
@@ -163,7 +167,7 @@ test("Nordea, Tele2, Swedbank och Industrivärden läser bara egna domäner", ()
   `;
   assert.equal(parseTele2PressReleases(tele2)[0]?.sourceUrl, "https://www.tele2.com/media/news/2026/invitation-to-the-presentation/");
   assert.equal(parseTele2FinancialReports(tele2)[0]?.documentType, "quarterly_report");
-  assert.equal(parseTele2FinancialReports(tele2)[0]?.sourceUrl, "https://www.tele2.com/files/Main/3372/4374673/interim-report-q2-2026.pdf");
+  assert.equal(parseTele2FinancialReports(tele2)[0]?.sourceUrl, "https://www.tele2.com/investors/reports-and-presentations/tele2-reports-second-quarter-2026-results/");
   assert.equal(parseTele2Calendar(tele2)[0]?.eventAt?.slice(0, 10), "2026-10-20");
   assert.equal(parseTele2Ceo(`<span class="quote-with-reference__name">Nicholas Högberg</span> <span class="quote-with-reference__title">President and Group CEO</span>`, "https://www.tele2.com/investors/", "Tele2")?.facts[0]?.valueText, "Nicholas Högberg");
 
@@ -243,9 +247,176 @@ test("rapportutdrag kräver källa, valuta och jämförelseperiod", () => {
     <time datetime="2026-07-08">8 jul 2026</time>
     <p>Substansvärdet den 30 juni 2026 var 225,0 mdkr, eller 521 kronor per aktie.</p>
   `, "https://www.industrivarden.se/media/Pressmeddelanden/2026/delarsrapport-1-januari--30-juni-2026/");
+  assert.equal(industrivarden?.period, "2026 H1");
   assert.equal(industrivarden?.metrics[0]?.id, "net_asset_value");
   assert.equal(industrivarden?.metrics.some((metric) => metric.id === "revenue"), false);
   assert.equal(industrivarden?.currency, "SEK");
+  const q1 = parseIndustrivardenReportSnapshot(`
+    <time datetime="2026-04-10"></time>
+    <p>Substansvärdet den 31 mars 2026 var 204,1 mdkr, eller 472 kronor per aktie.</p>
+  `, "https://www.industrivarden.se/media/Pressmeddelanden/2026/delarsrapport-1-januari--31-mars-2026/");
+  assert.equal(q1?.period, "2026 Q1");
+  const q3 = parseIndustrivardenReportSnapshot(`
+    <time datetime="2025-10-16"></time>
+    <p>Substansvärdet den 30 september 2025 var 173,0 mdkr, eller 401 kronor per aktie.</p>
+  `, "https://www.industrivarden.se/media/Pressmeddelanden/2025/delarsrapport-1-januari--30-september-2025/");
+  assert.equal(q3?.period, "2025 Q3");
+  const fy = parseIndustrivardenReportSnapshot(`
+    <time datetime="2026-02-06"></time>
+    <p>Substansvärdet den 31 december 2025 var 191,6 mdkr, eller 444 kronor per aktie.</p>
+  `, "https://www.industrivarden.se/media/Pressmeddelanden/2026/bokslutsrapport-1-januari--31-december-2025/");
+  assert.equal(fy?.period, "2025 FY");
+  assert.equal(parseIndustrivardenReportSnapshot(`
+    <time datetime="2026-09-01"></time>
+    <p>Substansvärdet den 31 augusti 2026 var 230,0 mdkr, eller 530 kronor per aktie.</p>
+  `, "https://www.industrivarden.se/media/Pressmeddelanden/2026/substansvarde-den-31-augusti-2026/"), null);
+});
+
+test("Nordea-siffror har en rad per mått och tål kvartalsbyte", () => {
+  const repeated = parseNordeaReportSnapshot(`
+    <p>Published 2026-07-16</p>
+    <table><tr><th>EURm</th><th>Q2 2026</th><th>Q2 2025</th><th>Chg %</th></tr>
+    <tr><td>Operating profit</td><td>1,608</td><td>1,599</td><td>1</td></tr></table>
+    <table><tr><th>EURm</th><th>Q2 2026</th><th>Q2 2025</th><th>Chg %</th></tr>
+    <tr><td>Operating profit</td><td>1,608</td><td>1,599</td><td>1</td></tr>
+    <tr><td>Net profit for the period</td><td>1,232</td><td>1,221</td><td>1</td></tr></table>
+    <table><tr><th></th><th>Q2 2026</th><th>Q2 2025</th><th>Chg %</th></tr>
+    <tr><td>Diluted earnings per share (DEPS), EUR</td><td>0.36</td><td>0.35</td><td>3</td></tr></table>
+    <table><tr><th></th><th>Q2 2026</th><th>Q2 2025</th><th>Chg %</th></tr>
+    <tr><td>Diluted earnings per share (DEPS), EUR</td><td>0.36</td><td>0.35</td><td>3</td></tr></table>
+    <p>Income statement Including items affecting comparability</p>
+    <table><tr><th>EURm</th><th>Q2 2026</th><th>Q2 2025</th><th>Chg %</th></tr>
+    <tr><td>Operating profit</td><td>1,400</td><td>1,599</td><td>-13</td></tr>
+    <tr><td>Net profit for the period</td><td>1,000</td><td>1,221</td><td>-18</td></tr></table>
+  `, "https://www.nordea.com/en/press/2026-07-16/half-year-results-2026");
+  assert.equal(repeated?.metrics.filter((metric) => metric.id === "operating_profit").length, 1);
+  assert.equal(repeated?.metrics.filter((metric) => metric.id === "net_profit").length, 1);
+  assert.equal(repeated?.metrics.filter((metric) => metric.id === "diluted_eps").length, 1);
+  assert.equal(repeated?.metrics.find((metric) => metric.id === "operating_profit")?.amount, 1608);
+
+  const conflict = parseNordeaReportSnapshot(`
+    <p>2026-10-16</p>
+    <table><tr><th>EURm</th><th>Q3 2026</th><th>Q3 2025</th><th>Chg %</th></tr>
+    <tr><td>Operating profit</td><td>1,000</td><td>900</td><td>11</td></tr>
+    <tr><td>Net profit for the period</td><td>800</td><td>700</td><td>14</td></tr></table>
+    <table><tr><th>EURm</th><th>Q3 2026</th><th>Q3 2025</th><th>Chg %</th></tr>
+    <tr><td>Operating profit</td><td>1,100</td><td>900</td><td>22</td></tr>
+    <tr><td>Net profit for the period</td><td>800</td><td>700</td><td>14</td></tr></table>
+  `, "https://www.nordea.com/en/press/2026-10-16/third-quarter-results-2026");
+  assert.equal(conflict?.period, "2026 Q3");
+  assert.equal(conflict?.metrics.some((metric) => metric.id === "operating_profit"), false);
+  assert.equal(conflict?.metrics.find((metric) => metric.id === "net_profit")?.amount, 800);
+
+  const q1 = parseNordeaReportSnapshot(`
+    <p>2026-04-22</p>
+    <table><tr><th>EURm</th><th>Q1 2026</th><th>Q1 2025</th><th>Chg %</th></tr>
+    <tr><td>Operating profit</td><td>1,634</td><td>1,607</td><td>2</td></tr></table>
+    <p>Including items affecting comparability</p>
+    <table><tr><th>EURm</th><th>Q1 2026</th><th>Q1 2025</th><th>Chg %</th></tr>
+    <tr><td>Operating profit</td><td>1,444</td><td>1,607</td><td>-10</td></tr></table>
+  `, "https://www.nordea.com/en/press/2026-04-22/first-quarter-results-2026");
+  assert.equal(q1?.period, "2026 Q1");
+  assert.equal(q1?.metrics.length, 1);
+  assert.equal(q1?.metrics[0]?.amount, 1634);
+
+  const yearEnd = parseNordeaReportSnapshot(`
+    <p>2026-01-29</p>
+    <table><tr><th>EURm</th><th>Q4 2025</th><th>Q4 2024</th><th>Chg %</th><th>Jan-Dec 2025</th><th>Jan-Dec 2024</th><th>Chg %</th></tr>
+    <tr><td>Operating profit</td><td>1,513</td><td>1,467</td><td>3</td><td>6,316</td><td>6,548</td><td>-4</td></tr></table>
+  `, "https://www.nordea.com/en/press/2026-01-29/fourth-quarter-and-full-year-results-2025");
+  assert.equal(yearEnd?.period, "2025 Q4");
+  assert.equal(yearEnd?.metrics[0]?.amount, 1513);
+  assert.equal(yearEnd?.metrics[0]?.comparisonAmount, 1467);
+  const depsLabel = parseNordeaReportSnapshot(`
+    <p>2025-10-16</p>
+    <table><tr><th></th><th>Q3 2025</th><th>Q3 2024</th><th>Chg %</th></tr>
+    <tr><td>Diluted earnings per share, EUR</td><td>0.36</td><td>0.36</td><td>0</td></tr></table>
+  `, "https://www.nordea.com/en/press/2025-10-16/third-quarter-results-2025");
+  assert.equal(depsLabel?.metrics.length, 1);
+  assert.equal(depsLabel?.metrics[0]?.id, "diluted_eps");
+  assert.equal(depsLabel?.metrics[0]?.amount, 0.36);
+
+  const fyOnly = parseNordeaReportSnapshot(`
+    <p>2026-02-01</p>
+    <table><tr><th>EURm</th><th>Jan-Dec 2025</th><th>Jan-Dec 2024</th><th>Chg %</th></tr>
+    <tr><td>Operating profit</td><td>6,316</td><td>6,548</td><td>-4</td></tr></table>
+  `, "https://www.nordea.com/en/press/2026-02-01/full-year-results-2025");
+  assert.equal(fyOnly?.period, "2025 FY");
+  assert.equal(fyOnly?.metrics[0]?.amount, 6316);
+});
+
+test("rapportsidan hämtar bara den senaste verifierade rapportadressen", async () => {
+  const h1 = "https://www.industrivarden.se/media/Pressmeddelanden/2026/delarsrapport-1-januari--30-juni-2026/";
+  const q3 = "https://www.industrivarden.se/media/Pressmeddelanden/2026/delarsrapport-1-januari--30-september-2026/";
+  const h1Html = `<time datetime="2026-07-08"></time><p>Substansvärdet den 30 juni 2026 var 225,0 mdkr, eller 521 kronor per aktie.</p>`;
+  const q3Html = `<time datetime="2026-10-16"></time><p>Substansvärdet den 30 september 2026 var 230,0 mdkr, eller 530 kronor per aktie.</p>`;
+  const calls: string[] = [];
+  const latest = await readLatestReportSnapshot("industrivarden", [
+    { type: "half_year_report", url: h1, publishedAt: "2026-07-08T06:00:00.000Z" },
+    { type: "quarterly_report", url: q3, publishedAt: "2026-10-16T06:00:00.000Z" },
+    { type: "press_release", url: "https://www.industrivarden.se/rss/", publishedAt: "2026-10-20T06:00:00.000Z" },
+  ], async (url) => {
+    calls.push(url);
+    return { status: "ok", text: url === q3 ? q3Html : h1Html };
+  });
+  assert.deepEqual(calls, [q3]);
+  assert.equal(latest.cacheable, true);
+  assert.equal(latest.snapshot?.period, "2026 Q3");
+
+  const staleCalls: string[] = [];
+  const hidden = await readLatestReportSnapshot("industrivarden", [
+    { type: "half_year_report", url: h1, publishedAt: "2026-07-08T06:00:00.000Z" },
+    { type: "quarterly_report", url: q3, publishedAt: "2026-10-16T06:00:00.000Z" },
+  ], async (url) => {
+    staleCalls.push(url);
+    return { status: "ok", text: "<time datetime=\"2026-10-16\"></time><p>Inget substansvärde.</p>" };
+  });
+  assert.deepEqual(staleCalls, [q3]);
+  assert.equal(hidden.snapshot, null);
+  assert.equal(hidden.cacheable, true);
+
+  const blockedCalls: string[] = [];
+  const blocked = await readLatestReportSnapshot("nordea", [
+    { type: "half_year_report", url: "https://www.nordea.com/en/press/2026-07-16/half-year-results-2026", publishedAt: "2026-07-16" },
+    { type: "quarterly_report", url: "https://www.nordea.com/en/doc/q3-2026.pdf", publishedAt: "2026-10-16" },
+  ], async (url) => {
+    blockedCalls.push(url);
+    return { status: "ok", text: "<p>2026-07-16</p>" };
+  });
+  assert.deepEqual(blockedCalls, []);
+  assert.equal(blocked.snapshot, null);
+  assert.equal(selectLatestReportSnapshotUrl("tele2", [
+    { type: "quarterly_report", url: "https://www.tele2.com/investors/", publishedAt: "2026-07-16" },
+  ]), null);
+
+  const failed = await readLatestReportSnapshot("tele2", [
+    { type: "quarterly_report", url: "https://www.tele2.com/investors/reports-and-presentations/q2-2026/", publishedAt: "2026-07-16" },
+  ], async () => ({ status: "transient" }));
+  assert.equal(failed.snapshot, null);
+  assert.equal(failed.cacheable, false);
+
+  const server = read("lib/companies/report-snapshot.server.ts");
+  const page = read("lib/companies/page-data.server.ts");
+  assert.match(page, /selectLatestReportSnapshotUrl\(company\.slug, followState\.documents\)/);
+  assert.match(server, /throw new ReportSnapshotTransientError\(\)/);
+  assert.match(server, /timeoutMs: REPORT_SNAPSHOT_TIMEOUT_MS/);
+  assert.equal(REPORT_SNAPSHOT_TIMEOUT_MS <= 3_000, true);
+  assert.equal(REPORT_SNAPSHOT_REVALIDATE_SECONDS, 60 * 60);
+  assert.match(server, /revalidate: REPORT_SNAPSHOT_REVALIDATE_SECONDS/);
+  assert.doesNotMatch(server, /en\/investors"|\/investors\/"|industrivarden\.se\/rss|half-year-results/);
+  assert.doesNotMatch(read("lib/companies/report-snapshot.ts"), /half-year-results/);
+});
+
+test("kronjuvel-migrationen nollställer bara ersatta källors hälsostatus", () => {
+  const sql = read("supabase/migrations/20260929120000_seed_omxs30_crown_company_sources.sql");
+  assert.match(sql, /last_checked_at = null/);
+  assert.match(sql, /last_success_at = null/);
+  assert.match(sql, /last_failure_reason = null/);
+  assert.match(sql, /source\.source_url is distinct from replacement\.source_url/);
+  assert.match(sql, /source\.support_mode is distinct from replacement\.support_mode/);
+  assert.match(sql, /company_sources\.support_mode is distinct from excluded\.support_mode then null/);
+  assert.match(sql, /else company_sources\.last_checked_at/);
+  assert.doesNotMatch(sql, /update public\.company_sources set/);
 });
 
 test("beslutad utdelning är inte förslag och saknar gissad utbetalningsdag", () => {

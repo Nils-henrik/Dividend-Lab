@@ -1,76 +1,84 @@
 import "server-only";
 
 import { unstable_cache } from "next/cache";
-import {
-  INDUSTRIVARDEN_ORIGIN,
-  INDUSTRIVARDEN_RSS_SOURCE_URL,
-} from "@/lib/companies/ingestion/adapters/omxs30-crown";
 import { fetchBoundedText } from "@/lib/companies/ingestion/http";
 import {
-  parseIndustrivardenReportSnapshot,
-  parseNordeaReportSnapshot,
-  parseTele2ReportSnapshot,
-  selectIndustrivardenReportUrl,
-  selectNordeaReportArticleUrl,
-  selectTele2ReportArticleUrl,
+  REPORT_SNAPSHOT_REVALIDATE_SECONDS,
+  REPORT_SNAPSHOT_TIMEOUT_MS,
+  readLatestReportSnapshot,
+  reportSnapshotOrigin,
   type ReportSnapshot,
 } from "@/lib/companies/report-snapshot";
 
 const HTML = ["text/html"] as const;
-const RSS = ["application/rss+xml", "application/xml", "text/xml"] as const;
 
-async function readText(url: string, origin: string, acceptedContentTypes: readonly string[]) {
-  const result = await fetchBoundedText(url, {
-    allowedOrigin: origin,
-    acceptedContentTypes,
-    maxBytes: 1_000_000,
-    timeoutMs: 8_000,
+class ReportSnapshotTransientError extends Error {
+  constructor() {
+    super("report_snapshot_transient");
+    this.name = "ReportSnapshotTransientError";
+  }
+}
+
+function isTransientHttp(status: number): boolean {
+  return status === 408 || status === 429 || status >= 500;
+}
+
+async function loadParsed(slug: string, reportUrl: string): Promise<ReportSnapshot | null> {
+  const origin = reportSnapshotOrigin(slug);
+  if (!origin) return null;
+  const loaded = await readLatestReportSnapshot(slug, [{
+    type: "quarterly_report",
+    url: reportUrl,
+    publishedAt: "9999-12-31T00:00:00.000Z",
+  }], async (url) => {
+    const result = await fetchBoundedText(url, {
+      allowedOrigin: origin,
+      acceptedContentTypes: HTML,
+      maxBytes: 1_000_000,
+      timeoutMs: REPORT_SNAPSHOT_TIMEOUT_MS,
+    });
+    if (result.status === "ok") return { status: "ok", text: result.text };
+    if (
+      result.reason === "network_error"
+      || result.reason === "timeout"
+      || (result.reason === "http_status" && isTransientHttp(result.httpStatus))
+    ) {
+      return { status: "transient" };
+    }
+    return { status: "miss" };
   });
-  return result.status === "ok" ? result.text : null;
+  if (!loaded.cacheable) throw new ReportSnapshotTransientError();
+  return loaded.snapshot;
 }
 
-async function loadNordeaSnapshot(): Promise<ReportSnapshot | null> {
-  const listing = await readText("https://www.nordea.com/en/investors", "https://www.nordea.com", HTML);
-  if (!listing) return null;
-  const articleUrl = selectNordeaReportArticleUrl(listing);
-  if (!articleUrl) return null;
-  const article = await readText(articleUrl, "https://www.nordea.com", HTML);
-  return article ? parseNordeaReportSnapshot(article, articleUrl) : null;
-}
+const loadCached = unstable_cache(loadParsed, ["company-report-snapshot-v2"], {
+  revalidate: REPORT_SNAPSHOT_REVALIDATE_SECONDS,
+});
 
-async function loadTele2Snapshot(): Promise<ReportSnapshot | null> {
-  const listing = await readText("https://www.tele2.com/investors/", "https://www.tele2.com", HTML);
-  if (!listing) return null;
-  const articleUrl = selectTele2ReportArticleUrl(listing);
-  if (!articleUrl) return null;
-  const article = await readText(articleUrl, "https://www.tele2.com", HTML);
-  return article ? parseTele2ReportSnapshot(article, articleUrl) : null;
-}
-
-async function loadIndustrivardenSnapshot(): Promise<ReportSnapshot | null> {
-  const feed = await readText(INDUSTRIVARDEN_RSS_SOURCE_URL, INDUSTRIVARDEN_ORIGIN, RSS);
-  if (!feed) return null;
-  const articleUrl = selectIndustrivardenReportUrl(feed);
-  if (!articleUrl) return null;
-  const article = await readText(articleUrl, INDUSTRIVARDEN_ORIGIN, HTML);
-  return article ? parseIndustrivardenReportSnapshot(article, articleUrl) : null;
-}
-
-async function loadUncached(slug: string): Promise<ReportSnapshot | null> {
-  if (slug === "nordea") return loadNordeaSnapshot();
-  if (slug === "tele2") return loadTele2Snapshot();
-  if (slug === "industrivarden") return loadIndustrivardenSnapshot();
-  return null;
-}
-
-export const loadCompanyReportSnapshot = unstable_cache(
-  async (slug: string) => {
-    try {
-      return await loadUncached(slug);
-    } catch {
+/**
+ * One allowlisted report fetch when a verified document URL was already stored.
+ * Transport, timeout and 5xx failures throw inside the cache callback so they
+ * are not stored. A parsed snapshot, or a valid unsupported document, is cached
+ * for one hour. The cache key includes the report URL, so a newer document is
+ * fetched immediately.
+ */
+export async function loadCompanyReportSnapshot(
+  slug: string,
+  reportUrl: string | null,
+): Promise<ReportSnapshot | null> {
+  if (!reportUrl) return null;
+  try {
+    return await loadCached(slug, reportUrl);
+  } catch (error) {
+    if (
+      error instanceof ReportSnapshotTransientError
+      || (error instanceof Error && (
+        error.name === "ReportSnapshotTransientError"
+        || error.message === "report_snapshot_transient"
+      ))
+    ) {
       return null;
     }
-  },
-  ["company-report-snapshot-v2"],
-  { revalidate: 60 * 60 * 12 },
-);
+    throw error;
+  }
+}

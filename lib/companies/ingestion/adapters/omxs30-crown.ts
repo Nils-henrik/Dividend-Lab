@@ -40,6 +40,7 @@ export const INDUSTRIVARDEN_CALENDAR_SOURCE_URL = `${INDUSTRIVARDEN_ORIGIN}/inve
 const NORDEA_PRESS_PATH = /^\/en\/press\/\d{4}-\d{2}-\d{2}\/[^/]+$/;
 const TELE2_PRESS_PATH = /^\/media\/news\/\d{4}\/[^/]+\/$/;
 const TELE2_REPORT_PATH = /^\/files\/.+\.pdf$/i;
+const TELE2_RESULTS_PATH = /^\/investors\/reports-and-presentations\/[^/]+\/$/;
 const TELE2_CALENDAR_PATH = /^\/investors\/calendar\/\d{4}\/[^/]+\/$/;
 const SWEDBANK_PRESS_PATH = /^\/newsroom\/press-releases\.details\.[^/]+\.html$/;
 const INDUSTRIVARDEN_PRESS_PATH = /^\/media\/Pressmeddelanden\/\d{4}\/[^/]+\/$/;
@@ -282,8 +283,10 @@ export function parseTele2InvestorCards(html: string): NormalizedCompanyDocument
     if (/interim report|annual report|year-end report/i.test(card.type)) {
       const reportType = englishReportType(card.title);
       const pdfUrl = card.pdf ? normalizeSameOriginUrl(card.pdf, TELE2_ORIGIN, TELE2_REPORT_PATH) : null;
-      const articleUrl = card.href ? normalizeSameOriginUrl(card.href, TELE2_ORIGIN, /^\/investors\/reports-and-presentations\/[^/]+\/$/) : null;
-      const sourceUrl = pdfUrl ?? articleUrl;
+      const articleUrl = card.href ? normalizeSameOriginUrl(card.href, TELE2_ORIGIN, TELE2_RESULTS_PATH) : null;
+      // The results article is the verified HTML report. The PDF stays a fallback
+      // when that article URL is missing. Snapshot parsing reads this one URL.
+      const sourceUrl = articleUrl ?? pdfUrl;
       if (!reportType || !sourceUrl) continue;
       const document = reportDocument({
         title: card.title,
