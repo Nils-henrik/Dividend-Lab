@@ -16,7 +16,7 @@ describe("Följda bolag i appnavigationen", () => {
 
   it("visar en direktlänk i den autentiserade vänstermenyn", () => {
     assert.ok(watchlistItem);
-    assert.equal(watchlistItem.label, "Följda bolag");
+    assert.equal(watchlistItem.label, "Mitt DivLab");
     assert.equal(watchlistItem.icon, "watchlist");
     assert.equal(watchlistItem.statusLabel, "Ny");
   });
@@ -24,7 +24,7 @@ describe("Följda bolag i appnavigationen", () => {
   it("markerar följlistan aktiv och använder samma titel på mobil", () => {
     assert.ok(watchlistItem);
     assert.equal(isNavigationItemActive("/watchlist", watchlistItem), true);
-    assert.equal(getPageTitle("/watchlist"), "Följda bolag");
+    assert.equal(getPageTitle("/watchlist"), "Mitt DivLab");
   });
 
   it("delar navigationsmodell mellan desktop och mobil", () => {

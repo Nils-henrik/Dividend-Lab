@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import FollowCompanyButton from "@/components/companies/FollowCompanyButton";
 import WatchlistBoard from "@/components/companies/WatchlistBoard";
 import type { FollowButtonMode } from "@/lib/companies/follow-label";
+import type { FollowFeedModel } from "@/lib/companies/follow-feed";
 import {
   listMarketFilters,
   matchesMarketFilter,
@@ -13,27 +14,24 @@ import {
   type DiscoveryCompany,
   type FollowControlModel,
   type FollowedCompanyCard,
-  type FollowedNewsItem,
   type WatchlistSort,
-  type WatchlistView,
 } from "@/lib/companies/watchlist";
 
 type Props = {
   isAvailable: boolean;
   followed: readonly FollowedCompanyCard[];
   discovery: readonly DiscoveryCompany[];
-  news: readonly FollowedNewsItem[];
+  feed: FollowFeedModel;
 };
 
 export default function CompanyWatchlist({
   isAvailable,
   followed,
   discovery,
-  news,
+  feed,
 }: Props) {
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<WatchlistSort>("recent");
-  const [view, setView] = useState<WatchlistView>("list");
   const [filterId, setFilterId] = useState("all");
   const filters = useMemo(() => listMarketFilters(discovery), [discovery]);
   const unfiltered = query.trim() === "" && filterId === "all";
@@ -78,18 +76,16 @@ export default function CompanyWatchlist({
       followedCount={isAvailable ? followed.length : null}
       followed={visibleFollowed}
       discovery={visibleDiscovery}
-      news={isAvailable && followed.length > 0 ? news : []}
+      feed={feed}
       filters={filters}
       query={query}
       sort={sort}
-      view={view}
       filterId={filterId}
       showEmptyFollows={isAvailable && followed.length === 0 && unfiltered}
       showNoFollowMatches={isAvailable && followed.length > 0 && visibleFollowed.length === 0}
       showNoDiscoveryMatches={visibleDiscovery.length === 0}
       onQueryChange={setQuery}
       onSortChange={setSort}
-      onViewChange={setView}
       onFilterChange={setFilterId}
       renderFollow={renderFollow}
     />

@@ -1,4 +1,5 @@
 import type { SourceSupportMode } from "@/lib/companies/ingestion/baseline";
+import { COMPANY_FACT_TYPES } from "@/lib/companies/ingestion/facts";
 import type { ViewableCompanyDocument } from "@/lib/companies/documents-view";
 import { classifyCompanyDocuments } from "@/lib/companies/documents-view";
 import type { OfficialItem, OwnershipItem } from "@/lib/companies/investor-official";
@@ -88,6 +89,31 @@ export type PersistedSourceCoverage = {
   lastSuccessAt: string | null;
   lastFailureReason: string | null;
 };
+
+const STORED_FACT_TYPES = new Set<string>(COMPANY_FACT_TYPES);
+
+function numericFact(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim() !== "" && Number.isFinite(Number(value))) {
+    return Number(value);
+  }
+  return null;
+}
+
+/** Keep every stored fact type, including dividend kind and the official dates. */
+export function persistedFactFromRow(row: Record<string, unknown>): PersistedCompanyFact | null {
+  if (typeof row.fact_type !== "string" || !STORED_FACT_TYPES.has(row.fact_type)) return null;
+  if (typeof row.source_url !== "string" || typeof row.source_publisher !== "string") return null;
+  return {
+    factType: row.fact_type as PersistedCompanyFact["factType"],
+    valueText: typeof row.value_text === "string" ? row.value_text : null,
+    valueNumeric: numericFact(row.value_numeric),
+    unit: typeof row.unit === "string" ? row.unit : null,
+    asOf: typeof row.as_of === "string" ? row.as_of : null,
+    sourceUrl: row.source_url,
+    sourcePublisher: row.source_publisher,
+  };
+}
 
 const SOURCE_TYPE_FOR_CATEGORY = {
   press: "press_releases",

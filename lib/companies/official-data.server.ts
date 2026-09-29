@@ -7,6 +7,7 @@ import { getInvestorOfficialData } from "@/lib/companies/investor-official";
 import {
   assembleCompanyOfficialData,
   overlayInvestorLiveData,
+  persistedFactFromRow,
   type CompanyOfficialData,
   type PersistedCompanyFact,
   type PersistedOwnershipRow,
@@ -18,7 +19,6 @@ import { tryGetSupabaseConfig } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 import type { SourceSupportMode } from "@/lib/companies/ingestion/baseline";
 
-const FACT_TYPES = new Set(["ceo", "dividend_per_share", "dividend_currency", "dividend_year"]);
 const SUPPORT_MODES = new Set<SourceSupportMode>(["automated", "source_link_only", "blocked"]);
 
 function isMissingSchema(error: { code?: string; message?: string } | null): boolean {
@@ -136,17 +136,8 @@ export const getCompanyOfficialData = cache(async (
 
   const facts: PersistedCompanyFact[] = profileQuery === "ok"
     ? ((factsResult.data ?? []) as Array<Record<string, unknown>>).flatMap((row) => {
-      if (typeof row.fact_type !== "string" || !FACT_TYPES.has(row.fact_type)) return [];
-      if (typeof row.source_url !== "string" || typeof row.source_publisher !== "string") return [];
-      return [{
-        factType: row.fact_type as PersistedCompanyFact["factType"],
-        valueText: typeof row.value_text === "string" ? row.value_text : null,
-        valueNumeric: numeric(row.value_numeric),
-        unit: typeof row.unit === "string" ? row.unit : null,
-        asOf: typeof row.as_of === "string" ? row.as_of : null,
-        sourceUrl: row.source_url,
-        sourcePublisher: row.source_publisher,
-      }];
+      const fact = persistedFactFromRow(row);
+      return fact ? [fact] : [];
     })
     : [];
   const ownership: PersistedOwnershipRow[] = profileQuery === "ok"
