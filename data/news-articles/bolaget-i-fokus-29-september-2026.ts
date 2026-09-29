@@ -18,6 +18,9 @@ export const BOLAGET_I_FOKUS_ASTRAZENECA_29_SEPTEMBER_2026_ARTICLE: NewsArticle 
   publishedAt: "2026-09-29T11:05:30+02:00",
   url: "/news/bolaget-i-fokus-astrazeneca-29-september-2026",
   featured: true,
+  imageUrl: "/news/generated/bolaget-i-fokus-2026-09-29.png",
+  thumbnailImageUrl: "/news/generated/bolaget-i-fokus-2026-09-29.png",
+  imageAlt: "Bolaget i fokus 2026-09-29 – DivLabs artikel om dagens mest intressanta bolagshändelse.",
   readingMinutes: 5,
   seoTitle: "AstraZeneca investerar 2 miljarder dollar i Summit",
   seoDescription:
