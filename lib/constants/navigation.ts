@@ -5,7 +5,7 @@ export const appNavigation: NavigationItem[] = [
   { label: "Översikt", href: "/dashboard", icon: "dashboard" },
   { label: "Börsnyheter", href: "/news", icon: "news" },
   {
-    label: "Följda bolag",
+    label: "Mitt DivLab",
     href: "/watchlist",
     icon: "watchlist",
     statusLabel: "Ny",
@@ -68,7 +68,7 @@ export const pageTitles: Record<string, string> = {
   "/portfolio": "Modellportföljer",
   "/portfolios": "Modellportföljer",
   "/settings": "Inställningar",
-  "/watchlist": "Följda bolag",
+  "/watchlist": "Mitt DivLab",
   "/profile": "Profil",
   "/dashboard/account": "Investeraridentitet",
   "/dashboard/brain": "DivBrain",
@@ -77,7 +77,7 @@ export const pageTitles: Record<string, string> = {
   "/dashboard/learning": "Utbildning",
   "/dashboard/portfolio": "Modellportföljer",
   "/dashboard/settings": "Inställningar",
-  "/dashboard/watchlist": "Följda bolag",
+  "/dashboard/watchlist": "Mitt DivLab",
 };
 
 export function getPageTitle(pathname: string) {

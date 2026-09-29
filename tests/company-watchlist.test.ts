@@ -10,6 +10,7 @@ import { isFollowableCompanySlug } from "../lib/companies/follow-policy";
 import { getFollowedCompanyNews } from "../lib/companies/news";
 import { VERIFIED_OMXS30_SLUGS } from "../lib/companies/omxs30";
 import { sessionExtremes } from "../lib/companies/quote-session";
+import { buildFollowFeed, type FollowFeedModel } from "../lib/companies/follow-feed";
 import {
   buildFollowedCompanyCards,
   companyMatchesQuery,
@@ -44,6 +45,14 @@ function investorInput(followedAt = "2026-09-25T10:00:00.000Z"): FollowedCompany
   };
 }
 
+function emptyFeed(followedCount: number, available = true): FollowFeedModel {
+  return buildFollowFeed({
+    companies: [],
+    followedCount,
+    available,
+  });
+}
+
 function renderBoard(options: {
   isAvailable?: boolean;
   followed?: FollowedCompanyCard[];
@@ -52,30 +61,31 @@ function renderBoard(options: {
   showNoFollowMatches?: boolean;
   showNoDiscoveryMatches?: boolean;
   followedCount?: number | null;
+  feed?: FollowFeedModel;
 }) {
   const discovery =
     options.discovery ??
     listDiscoveryCompanies().map((company) => ({ ...company, isFollowing: false }));
   const followed = options.followed ?? [];
+  const isAvailable = options.isAvailable ?? true;
+  const followedCount = options.followedCount === undefined ? followed.length : options.followedCount;
 
   return renderToStaticMarkup(
     createElement(WatchlistBoard, {
-      isAvailable: options.isAvailable ?? true,
-      followedCount: options.followedCount === undefined ? followed.length : options.followedCount,
+      isAvailable,
+      followedCount,
       followed,
       discovery,
-      news: [],
+      feed: options.feed ?? emptyFeed(followedCount ?? 0, isAvailable),
       filters: listMarketFilters(listDiscoveryCompanies()),
       query: "",
       sort: "name",
-      view: "list",
       filterId: "all",
       showEmptyFollows: options.showEmptyFollows ?? false,
       showNoFollowMatches: options.showNoFollowMatches ?? false,
       showNoDiscoveryMatches: options.showNoDiscoveryMatches ?? false,
       onQueryChange: () => undefined,
       onSortChange: () => undefined,
-      onViewChange: () => undefined,
       onFilterChange: () => undefined,
       renderFollow: (company: FollowControlModel) =>
         createElement(
@@ -137,10 +147,11 @@ test("följda bolag renderas med riktiga fält och saknad data som tankstreck", 
     })),
   });
 
+  assert.match(html, /Mitt DivLab/);
   assert.match(html, /Volvo B/);
   assert.match(html, /Visa bolagssida/);
   assert.match(html, /Sluta följ/);
-  assert.match(html, /Följda bolag \(1\)/);
+  assert.match(html, /Bolag du följer/);
   assert.match(html, new RegExp(MISSING_MARKET_VALUE));
   assert.doesNotMatch(html, /Senaste stängningskurser/);
   assert.match(html, /Följer ✓/);
@@ -150,6 +161,7 @@ test("tom följlista renderar discovery och inte den gamla pilottexten", () => {
   const html = renderBoard({ showEmptyFollows: true, followedCount: 0 });
 
   assert.match(html, /Du följer inga bolag ännu/);
+  assert.match(html, /Följ ditt första bolag/);
   assert.match(html, /Upptäck bolag/);
   assert.match(html, /Investor B/);
   assert.match(html, /\+ Följ/);
