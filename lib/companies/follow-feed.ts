@@ -1,5 +1,6 @@
 import { MATERIAL_DAY_MOVE_PERCENT, stockholmIsoDate } from "@/lib/companies/current-events";
 import { DIVIDEND_KIND_LABEL, type DividendKind } from "@/lib/companies/dividend-view";
+import { explicitFiscalPeriod, isReportPublicationTitle } from "@/lib/companies/ingestion/document";
 import type { CompanyOfficialData } from "@/lib/companies/official-data";
 import { formatMoney } from "@/lib/companies/valuation";
 
@@ -29,6 +30,7 @@ export type FollowFeedDocument = {
   date: string | null;
   url: string;
   publisher: string | null;
+  fiscalPeriod?: string | null;
 };
 
 export type FollowFeedDividend = FollowFeedDocument & {
@@ -135,6 +137,55 @@ function shiftIsoDay(iso: string, days: number) {
   return date.toISOString().slice(0, 10);
 }
 
+function stockholmClock(date: Date) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/Stockholm",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date);
+  const hour = Number(parts.find((part) => part.type === "hour")?.value);
+  const minute = Number(parts.find((part) => part.type === "minute")?.value);
+  return { hour, minute };
+}
+
+/** UTC instant for 00:00 on a Stockholm calendar day. */
+export function stockholmDayStartUtc(isoDay: string) {
+  const [year, month, day] = isoDay.split("-").map(Number);
+  const utcMidnight = Date.UTC(year!, (month ?? 1) - 1, day ?? 1);
+  for (let hoursBack = 0; hoursBack <= 14; hoursBack += 1) {
+    const candidate = new Date(utcMidnight - hoursBack * 3_600_000);
+    const clock = stockholmClock(candidate);
+    if (stockholmIsoDate(candidate) === isoDay && clock.hour === 0 && clock.minute === 0) {
+      return candidate.toISOString();
+    }
+  }
+  return new Date(utcMidnight).toISOString();
+}
+
+/** Oldest published_at the feed can still show. Matches the 45-day report window. */
+export function followFeedDocumentPublishedAfter(now = new Date()) {
+  const today = stockholmIsoDate(now);
+  return stockholmDayStartUtc(shiftIsoDay(today, -FOLLOW_FEED_REPORT_DAYS));
+}
+
+/** Calendar rows older than the current Stockholm day are not part of the feed or its fallback. */
+export function followFeedCalendarEventAfter(now = new Date()) {
+  return stockholmDayStartUtc(stockholmIsoDate(now));
+}
+
+const STORED_FISCAL_PERIOD = /^(20\d{2})(?: Q[1-4]| H1)?$/;
+
+/**
+ * Report dates only. Uses the stored fiscal period or the existing report-title
+ * classifier. A calendar heading such as an årsstämma stays a calendar event.
+ */
+export function isUpcomingReportCalendar(event: { title: string; fiscalPeriod?: string | null }) {
+  const fiscalPeriod = event.fiscalPeriod?.trim();
+  if (fiscalPeriod && STORED_FISCAL_PERIOD.test(fiscalPeriod)) return true;
+  return explicitFiscalPeriod(event.title) !== null || isReportPublicationTitle(event.title);
+}
+
 function eventKey(value: string) {
   try {
     const url = new URL(value, "https://divlab.se");
@@ -180,6 +231,19 @@ function withItems<T>(status: string, items: readonly T[]) {
   return status === "available_with_items" ? items : [];
 }
 
+function storedText(
+  values: ReadonlyMap<string, string> | undefined,
+  url: string,
+  fallback: string | null,
+) {
+  if (!values) {
+    const section = fallback?.trim();
+    return section ? section : null;
+  }
+  const stored = values.get(url)?.trim();
+  return stored ? stored : null;
+}
+
 export function followFeedCompanyFromOfficial(input: {
   slug: string;
   name: string;
@@ -187,26 +251,46 @@ export function followFeedCompanyFromOfficial(input: {
   official: CompanyOfficialData | null;
   articles: readonly FollowFeedArticle[];
   priceMove: FollowFeedPriceMove | null;
+  publishersByUrl?: ReadonlyMap<string, string>;
+  fiscalPeriodsByUrl?: ReadonlyMap<string, string>;
 }): FollowFeedCompanyInput {
   const official = input.official;
+  const publisherFor = (url: string, fallback: string | null) => storedText(input.publishersByUrl, url, fallback);
   const reports = official
     ? withItems(official.reports.status, official.reports.items).flatMap((item) =>
         item.url
-          ? [{ title: item.title, date: item.date, url: item.url, publisher: official.reports.sourcePublisher }]
+          ? [{
+              title: item.title,
+              date: item.date,
+              url: item.url,
+              publisher: publisherFor(item.url, official.reports.sourcePublisher),
+              fiscalPeriod: storedText(input.fiscalPeriodsByUrl, item.url, null),
+            }]
           : [],
       )
     : [];
   const press = official
     ? withItems(official.pressReleases.status, official.pressReleases.items).flatMap((item) =>
         item.url
-          ? [{ title: item.title, date: item.date, url: item.url, publisher: official.pressReleases.sourcePublisher }]
+          ? [{
+              title: item.title,
+              date: item.date,
+              url: item.url,
+              publisher: publisherFor(item.url, official.pressReleases.sourcePublisher),
+            }]
           : [],
       )
     : [];
   const events = official
     ? withItems(official.events.status, official.events.items).flatMap((item) =>
         item.url
-          ? [{ title: item.title, date: item.date, url: item.url, publisher: official.events.sourcePublisher }]
+          ? [{
+              title: item.title,
+              date: item.date,
+              url: item.url,
+              publisher: publisherFor(item.url, official.events.sourcePublisher),
+              fiscalPeriod: storedText(input.fiscalPeriodsByUrl, item.url, null),
+            }]
           : [],
       )
     : [];
@@ -237,7 +321,7 @@ export function followFeedCompanyFromOfficial(input: {
   };
 }
 
-type Draft = FollowFeedItem & { rank: number; day: string };
+type Draft = FollowFeedItem & { rank: number; day: string; reportCalendar: boolean };
 
 function draftItem(input: {
   company: FollowFeedCompanyInput;
@@ -249,6 +333,7 @@ function draftItem(input: {
   href: string;
   freshnessLabel: string;
   dividendKind?: FollowFeedDividendKind | null;
+  fiscalPeriod?: string | null;
   fallback?: boolean;
   idSuffix?: string;
 }): Draft {
@@ -270,6 +355,10 @@ function draftItem(input: {
     fallback: input.fallback ?? false,
     rank: KIND_RANK[input.kind],
     day: input.day,
+    reportCalendar: input.kind === "calendar" && isUpcomingReportCalendar({
+      title: input.title,
+      fiscalPeriod: input.fiscalPeriod,
+    }),
   };
 }
 
@@ -302,6 +391,7 @@ function collectPrimary(company: FollowFeedCompanyInput, today: string): Draft[]
       sourceLabel: event.publisher ?? "Officiell kalender",
       href: event.url,
       freshnessLabel: calendarFreshness(today, event.day, false),
+      fiscalPeriod: event.fiscalPeriod,
     }));
   }
 
@@ -414,6 +504,7 @@ function nextCalendar(company: FollowFeedCompanyInput, today: string): Draft | n
     sourceLabel: next.publisher ?? "Officiell kalender",
     href: next.url,
     freshnessLabel: calendarFreshness(today, next.day, true),
+    fiscalPeriod: next.fiscalPeriod,
     fallback: true,
   });
 }
@@ -451,8 +542,20 @@ function toItem(row: Draft): FollowFeedItem {
   };
 }
 
+function boundByCategory(rows: readonly Draft[]) {
+  const counts = new Map<FollowFeedKind, number>();
+  const kept: Draft[] = [];
+  for (const row of sortDrafts(rows)) {
+    const count = counts.get(row.kind) ?? 0;
+    if (count >= FOLLOW_FEED_LIMIT) continue;
+    counts.set(row.kind, count + 1);
+    kept.push(row);
+  }
+  return kept;
+}
+
 export function filterFollowFeed(items: readonly FollowFeedItem[], filter: FollowFeedFilter) {
-  if (filter === "all") return [...items];
+  if (filter === "all") return items.slice(0, FOLLOW_FEED_LIMIT);
   const kind: FollowFeedKind = filter === "reports"
     ? "report"
     : filter === "calendar"
@@ -491,22 +594,22 @@ export function buildFollowFeed(input: {
   }
 
   const today = stockholmIsoDate(input.now ?? new Date());
-  const primary = sortDrafts(input.companies.flatMap((company) => collectPrimary(company, today)));
+  const primary = input.companies.flatMap((company) => collectPrimary(company, today));
   const usingFallback = primary.length === 0;
-  const selected = usingFallback
-    ? sortDrafts(input.companies.flatMap((company) => {
+  const selected = boundByCategory(usingFallback
+    ? input.companies.flatMap((company) => {
         const calendar = nextCalendar(company, today);
         return calendar ? [calendar] : [];
-      }))
-    : primary;
-  const items = selected.slice(0, FOLLOW_FEED_LIMIT).map(toItem);
-  const official = primary.filter((item) => item.kind === "report" || item.kind === "press" || item.kind === "dividend");
+      })
+    : primary);
+  const items = selected.map(toItem);
+  const official = selected.filter((item) => item.kind === "report" || item.kind === "press" || item.kind === "dividend");
 
   return {
     items,
     summary: {
       followedCount: input.followedCount,
-      upcomingReports: selected.filter((item) => item.kind === "calendar").length,
+      upcomingReports: selected.filter((item) => item.reportCalendar).length,
       newOfficialEvents: official.length,
     },
     mode: usingFallback ? "calendar_fallback" : "feed",

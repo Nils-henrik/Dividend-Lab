@@ -79,6 +79,14 @@ function feedCompanies(
     const profile = getCompanyProfile(company.slug);
     if (!profile) return [];
     const stored = records.byCompanyId.get(company.id);
+    const publishersByUrl = new Map<string, string>();
+    const fiscalPeriodsByUrl = new Map<string, string>();
+    for (const document of stored?.documents ?? []) {
+      const publisher = document.publisher.trim();
+      if (publisher) publishersByUrl.set(document.url, publisher);
+      const fiscalPeriod = document.fiscalPeriod?.trim();
+      if (fiscalPeriod) fiscalPeriodsByUrl.set(document.url, fiscalPeriod);
+    }
     const official = assembleCompanyOfficialData({
       slug: profile.slug,
       pressReleasesUrl: profile.pressReleasesUrl,
@@ -106,6 +114,8 @@ function feedCompanies(
       official,
       articles: articles.get(profile.slug) ?? [],
       priceMove: priceMoveFor(quotes[profile.slug]),
+      publishersByUrl,
+      fiscalPeriodsByUrl,
     })];
   });
 }

@@ -3,13 +3,17 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import FollowFeedList from "../components/companies/FollowFeedList";
 import WatchlistBoard from "../components/companies/WatchlistBoard";
 import { decideFollowWrite, FOLLOW_PREMIUM_PLAN } from "../lib/companies/follow-policy";
 import {
   buildFollowFeed,
   filterFollowFeed,
+  followFeedCalendarEventAfter,
   followFeedCompanyFromOfficial,
+  followFeedDocumentPublishedAfter,
   FOLLOW_FEED_FILTERS,
+  FOLLOW_FEED_LIMIT,
   type FollowFeedCompanyInput,
   type FollowFeedModel,
 } from "../lib/companies/follow-feed";
@@ -228,7 +232,7 @@ test("ordningen är kalender, rapport, utdelning, press, artikel och kurs", () =
     feed.items.filter((item) => item.kind === "calendar").map((item) => item.title),
     ["Nästa rapport", "Senare rapport"],
   );
-  assert.equal(feed.summary.upcomingReports, 2);
+  assert.equal(feed.summary.upcomingReports, 0);
   assert.equal(feed.summary.newOfficialEvents, 3);
 });
 
@@ -466,6 +470,183 @@ test("sparad utdelningsfakt når sidmodellen och följgränsen är avstängd", (
   assert.equal(FOLLOW_PREMIUM_PLAN.enforcement, "disabled");
   assert.deepEqual(decideFollowWrite(4), { allowed: true, enforcement: "disabled" });
   assert.doesNotMatch(read("app/bolag/actions.ts"), /decideFollowWrite|FOLLOW_PREMIUM_PLAN/);
+});
+
+test("filter får egna rader även när högre prioritet fyller alla-vyn", () => {
+  const companies: FollowFeedCompanyInput[] = Array.from({ length: FOLLOW_FEED_LIMIT + 1 }, (_, index) => company({
+    slug: `bolag-${index}`,
+    name: `Bolag ${index}`,
+    ticker: `T${index}`,
+    events: [{
+      title: `Kalender ${index}`,
+      date: "2026-10-02",
+      url: `https://www.example.com/kalender/${index}`,
+      publisher: "Bolag",
+    }],
+  }));
+  companies.push(company({
+    slug: "tele2",
+    name: "Tele2",
+    ticker: "TEL2 B",
+    press: [{
+      title: "Inbjudan till presentation",
+      date: "2026-09-20",
+      url: "https://www.tele2.com/media/news/invitation",
+      publisher: "Tele2",
+    }],
+    articles: [{
+      id: "tele2-artikel",
+      title: "Tele2 i DivLab",
+      publishedAt: "2026-09-27T06:00:00.000Z",
+      href: "/news/tele2",
+    }],
+  }));
+
+  const feed = buildFollowFeed({
+    companies,
+    followedCount: companies.length,
+    available: true,
+    now: NOW,
+  });
+
+  assert.equal(filterFollowFeed(feed.items, "all").length, FOLLOW_FEED_LIMIT);
+  assert.equal(filterFollowFeed(feed.items, "all").some((item) => item.kind === "press"), false);
+  assert.deepEqual(filterFollowFeed(feed.items, "press").map((item) => item.title), ["Inbjudan till presentation"]);
+  assert.deepEqual(filterFollowFeed(feed.items, "articles").map((item) => item.title), ["Tele2 i DivLab"]);
+  assert.ok(feed.items.length <= (FOLLOW_FEED_LIMIT * 6));
+});
+
+test("sparad utgivare når rapport-, press- och kalenderkortet", () => {
+  const official: CompanyOfficialData = {
+    pressReleases: {
+      ...section("available_with_items", [{
+        title: "Changes in leadership",
+        date: "2026-09-18",
+        url: "https://www.nordea.com/en/press/leadership",
+      }]),
+      sourcePublisher: null,
+    },
+    reports: {
+      ...section("available_with_items", [{
+        title: "Half-year results 2026",
+        date: "2026-09-16",
+        url: "https://www.nordea.com/en/press/half-year",
+      }]),
+      sourcePublisher: "Yahoo Finance",
+    },
+    events: {
+      ...section("available_with_items", [{
+        title: "Interim report Q3 2026",
+        date: "2026-10-16",
+        url: "https://www.tele2.com/investors/calendar/q3",
+      }]),
+      sourcePublisher: null,
+    },
+    ownership: section("available_empty"),
+    ceo: {
+      status: "available_empty",
+      name: null,
+      sourceUrl: null,
+      sourcePublisher: null,
+      asOf: null,
+    },
+    dividend: {
+      status: "available_empty",
+      perShare: null,
+      currency: null,
+      year: null,
+      sourceUrl: null,
+      sourcePublisher: null,
+      asOf: null,
+      kind: null,
+      exDate: null,
+      recordDate: null,
+      paymentDate: null,
+    },
+  };
+  const input = followFeedCompanyFromOfficial({
+    slug: "nordea",
+    name: "Nordea",
+    ticker: "NDA SE",
+    official,
+    articles: [],
+    priceMove: null,
+    publishersByUrl: new Map([
+      ["https://www.nordea.com/en/press/leadership", "Nordea"],
+      ["https://www.nordea.com/en/press/half-year", "Nordea"],
+      ["https://www.tele2.com/investors/calendar/q3", "Tele2"],
+    ]),
+  });
+  const feed = buildFollowFeed({
+    companies: [input],
+    followedCount: 1,
+    available: true,
+    now: NOW,
+  });
+  const html = renderToStaticMarkup(createElement(FollowFeedList, { items: feed.items }));
+
+  assert.equal(input.reports[0]?.publisher, "Nordea");
+  assert.equal(input.press[0]?.publisher, "Nordea");
+  assert.equal(input.events[0]?.publisher, "Tele2");
+  assert.match(html, /Nordea/);
+  assert.match(html, /Tele2/);
+  assert.doesNotMatch(html, /Yahoo Finance/);
+  assert.match(read("app/watchlist/page.tsx"), /publishersByUrl/);
+  assert.match(read("app/watchlist/page.tsx"), /document\.publisher\.trim\(\)/);
+});
+
+test("kommande rapporter räknar bara rapportdatum", () => {
+  const feed = buildFollowFeed({
+    followedCount: 1,
+    available: true,
+    now: NOW,
+    companies: [company({
+      slug: "industrivarden",
+      name: "Industrivärden",
+      ticker: "INDU C",
+      events: [
+        {
+          title: "Interim report Q3 2026",
+          date: "2026-10-20",
+          url: "https://www.industrivarden.se/investerare/Kalender/q3-2026",
+          publisher: "Industrivärden",
+          fiscalPeriod: "2026 Q3",
+        },
+        {
+          title: "Årsstämma 2026",
+          date: "2026-11-05",
+          url: "https://www.industrivarden.se/investerare/Kalender/arsstamma-2026",
+          publisher: "Industrivärden",
+          fiscalPeriod: null,
+        },
+      ],
+    })],
+  });
+
+  assert.deepEqual(feed.items.map((item) => item.title), ["Interim report Q3 2026", "Årsstämma 2026"]);
+  assert.equal(feed.summary.upcomingReports, 1);
+  assert.equal(feed.items.every((item) => item.kind === "calendar"), true);
+});
+
+test("dokumentfrågan stannar inom fönstret och behåller kommande kalender", () => {
+  const summer = new Date("2026-09-29T10:00:00.000Z");
+  const winter = new Date("2026-01-15T12:00:00.000Z");
+  const lateEvening = new Date("2026-09-29T22:30:00.000Z");
+
+  assert.equal(followFeedDocumentPublishedAfter(summer), "2026-08-14T22:00:00.000Z");
+  assert.equal(followFeedCalendarEventAfter(summer), "2026-09-28T22:00:00.000Z");
+  assert.equal(followFeedDocumentPublishedAfter(winter), "2025-11-30T23:00:00.000Z");
+  assert.equal(followFeedCalendarEventAfter(winter), "2026-01-14T23:00:00.000Z");
+  assert.equal(followFeedCalendarEventAfter(lateEvening), "2026-09-29T22:00:00.000Z");
+  assert.ok(followFeedCalendarEventAfter(summer) < "2027-03-23T00:00:00.000Z");
+
+  const loader = read("lib/companies/follow-feed.server.ts");
+  assert.match(loader, /followFeedDocumentPublishedAfter\(\)/);
+  assert.match(loader, /\.gte\("published_at", publishedAfter\)/);
+  assert.match(loader, /followFeedCalendarEventAfter\(\)/);
+  assert.match(loader, /\.gte\("event_at", calendarAfter\)/);
+  assert.doesNotMatch(loader, /\.lte\("event_at"|\.lt\("event_at"/);
+  assert.doesNotMatch(loader, /user_id|userId|SUPABASE_SERVICE_ROLE_KEY/);
 });
 
 test("flödeskort visar bolag, typ, datum, källa och status", () => {

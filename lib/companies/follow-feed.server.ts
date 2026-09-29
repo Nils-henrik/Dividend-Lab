@@ -1,6 +1,10 @@
 import "server-only";
 
 import { companyDocumentQueryFailure, isCompanySchemaUnavailable } from "@/lib/companies/document-query";
+import {
+  followFeedCalendarEventAfter,
+  followFeedDocumentPublishedAfter,
+} from "@/lib/companies/follow-feed";
 import type { CompanyOfficialDocument } from "@/lib/companies/server";
 import { persistedFactFromRow, type PersistedCompanyFact } from "@/lib/companies/official-data";
 import { tryGetSupabaseConfig } from "@/lib/supabase/config";
@@ -75,6 +79,8 @@ export async function loadFollowedOfficialRecords(
 
   const supabase = await createClient();
   const limit = Math.min(ids.length * DOCUMENTS_PER_COMPANY, DOCUMENT_QUERY_CAP);
+  const publishedAfter = followFeedDocumentPublishedAfter();
+  const calendarAfter = followFeedCalendarEventAfter();
   const [documentsResult, reportDatesResult, factsResult] = await Promise.all([
     supabase
       .from("company_documents")
@@ -82,6 +88,7 @@ export async function loadFollowedOfficialRecords(
       .in("company_id", ids)
       .eq("is_published", true)
       .neq("document_type", "report_date")
+      .gte("published_at", publishedAfter)
       .order("published_at", { ascending: false, nullsFirst: false })
       .limit(limit),
     supabase
@@ -90,6 +97,7 @@ export async function loadFollowedOfficialRecords(
       .in("company_id", ids)
       .eq("is_published", true)
       .eq("document_type", "report_date")
+      .gte("event_at", calendarAfter)
       .order("event_at", { ascending: true })
       .limit(limit),
     supabase
