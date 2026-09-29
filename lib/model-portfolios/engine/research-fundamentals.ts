@@ -30,8 +30,14 @@ export type EodhdFundamentalsSnapshot = {
   payoutRatio?: number | null;
   forwardAnnualDividendYield?: number | null;
   trailingPe?: number | null;
+  forwardPe?: number | null;
   priceBookMrq?: number | null;
   priceSalesTtm?: number | null;
+  enterpriseValue?: number | null;
+  enterpriseToEbitda?: number | null;
+  beta?: number | null;
+  trailingEps?: number | null;
+  sharesOutstanding?: number | null;
 };
 
 function clamp01(value: number): number {

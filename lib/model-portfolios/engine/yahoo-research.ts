@@ -34,6 +34,8 @@ export type YahooResearchFundamentals = {
   scores: ResearchFundamentalScores;
   sourceUrl: string;
   fetchedAt: string;
+  /** Raw quoteSummary result. Present only when statement modules were requested. */
+  statements?: unknown;
 };
 
 export type YahooHistoryResearch = {
@@ -434,8 +436,14 @@ function snapshotFromSummary(result: YahooSummaryResult): EodhdFundamentalsSnaps
     payoutRatio: readModuleNumber(summary, "payoutRatio"),
     forwardAnnualDividendYield: normalizeYahooYield(readModuleNumber(summary, "dividendYield")),
     trailingPe: readModuleNumber(summary, "trailingPE"),
+    forwardPe: readModuleNumber(stats, "forwardPE") ?? readModuleNumber(summary, "forwardPE"),
     priceBookMrq: readModuleNumber(stats, "priceToBook"),
     priceSalesTtm: readModuleNumber(summary, "priceToSalesTrailing12Months"),
+    enterpriseValue: readModuleNumber(stats, "enterpriseValue") ?? readModuleNumber(financial, "enterpriseValue"),
+    enterpriseToEbitda: readModuleNumber(stats, "enterpriseToEbitda"),
+    beta: readModuleNumber(stats, "beta") ?? readModuleNumber(summary, "beta"),
+    trailingEps: readModuleNumber(stats, "trailingEps"),
+    sharesOutstanding: readModuleNumber(stats, "sharesOutstanding"),
   };
 }
 
@@ -450,18 +458,31 @@ function snapshotFromQuote(row: Record<string, unknown>): EodhdFundamentalsSnaps
     trailingPe: finiteNumber(row.trailingPE),
     dividendYield,
     forwardAnnualDividendYield: dividendYield,
+    forwardPe: finiteNumber(row.forwardPE),
     priceBookMrq: finiteNumber(row.priceToBook),
     priceSalesTtm: finiteNumber(row.priceToSalesTrailing12Months),
+    enterpriseValue: finiteNumber(row.enterpriseValue),
+    enterpriseToEbitda: finiteNumber(row.enterpriseToEbitda),
+    beta: finiteNumber(row.beta),
+    trailingEps: finiteNumber(row.epsTrailingTwelveMonths),
+    sharesOutstanding: finiteNumber(row.sharesOutstanding),
   };
 }
+
+const SUMMARY_MODULES = "summaryDetail,defaultKeyStatistics,financialData,price";
+const STATEMENT_MODULES = "incomeStatementHistory,balanceSheetHistory,cashflowStatementHistory";
 
 async function fetchSummarySnapshot(
   symbol: string,
   fetchImpl: typeof fetch,
   session: YahooSession,
-): Promise<EodhdFundamentalsSnapshot | null> {
+  includeStatements = false,
+): Promise<{ snapshot: EodhdFundamentalsSnapshot; statements: unknown } | null> {
   const url = new URL(`${YAHOO_SUMMARY_ENDPOINT}/${encodeURIComponent(symbol)}`);
-  url.searchParams.set("modules", "summaryDetail,defaultKeyStatistics,financialData,price");
+  url.searchParams.set(
+    "modules",
+    includeStatements ? `${SUMMARY_MODULES},${STATEMENT_MODULES}` : SUMMARY_MODULES,
+  );
   url.searchParams.set("formatted", "false");
   url.searchParams.set("crumb", session.crumb);
   try {
@@ -476,7 +497,9 @@ async function fetchSummarySnapshot(
     if (!response.ok) return null;
     const body = (await response.json()) as YahooSummaryResponse;
     const result = body.quoteSummary?.result?.[0];
-    return result ? snapshotFromSummary(result) : null;
+    return result
+      ? { snapshot: snapshotFromSummary(result), statements: includeStatements ? result : null }
+      : null;
   } catch {
     return null;
   }
@@ -513,6 +536,7 @@ export async function fetchYahooFundamentals(
   fxToSek: number,
   fetchImpl: typeof fetch = fetch,
   now = new Date(),
+  includeStatements = false,
 ): Promise<YahooResearchFundamentals | null> {
   if (!Number.isFinite(fxToSek) || fxToSek <= 0) return null;
   const symbol = yahooSymbol.trim();
@@ -521,9 +545,8 @@ export async function fetchYahooFundamentals(
   const session = await getYahooCrumbSession(fetchImpl, now);
   if (!session) return null;
 
-  const snapshot =
-    (await fetchSummarySnapshot(symbol, fetchImpl, session)) ??
-    (await fetchQuoteSnapshot(symbol, fetchImpl, session));
+  const summary = await fetchSummarySnapshot(symbol, fetchImpl, session, includeStatements);
+  const snapshot = summary?.snapshot ?? (await fetchQuoteSnapshot(symbol, fetchImpl, session));
   if (!snapshot) return null;
 
   const scores = scoreNormalizedFundamentals(snapshot, fxToSek);
@@ -542,5 +565,6 @@ export async function fetchYahooFundamentals(
     scores,
     sourceUrl: `https://finance.yahoo.com/quote/${encodeURIComponent(symbol)}/key-statistics/`,
     fetchedAt: now.toISOString(),
+    ...(includeStatements ? { statements: summary?.statements ?? null } : {}),
   };
 }

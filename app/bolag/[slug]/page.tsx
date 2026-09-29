@@ -4,20 +4,10 @@ import CompanyComments from "@/components/companies/CompanyComments";
 import CompanyPageContent from "@/components/companies/CompanyPageContent";
 import AppShell from "@/components/layout/AppShell";
 import { getAuthenticatedUser } from "@/lib/auth/session";
-import {
-  getCompanyProfile,
-  getPilotCompanies,
-  getRelatedCompanies,
-} from "@/lib/companies/catalog";
-import { getCompanyNews } from "@/lib/companies/news";
-import { getCompanyOfficialData } from "@/lib/companies/official-data.server";
-import {
-  getCompanyMarketData,
-  getRelatedCompanyMarketData,
-} from "@/lib/companies/market-data";
-import { getCompanyFollowState } from "@/lib/companies/server";
+import { getPilotCompanies } from "@/lib/companies/catalog";
+import { loadCompanyPage } from "@/lib/companies/page-data.server";
+import { companyPageJsonLd, companyPageMetadataCopy } from "@/lib/companies/page-seo";
 import { getProfileForUser } from "@/lib/profiles/profile";
-import { getNewsArticles } from "@/lib/news/get-articles";
 import { getCanonicalUrl } from "@/lib/seo/canonical";
 import { DIVLAB_BRAND_NAME } from "@/lib/site/brand";
 
@@ -35,51 +25,50 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const company = getCompanyProfile(slug);
+  const user = await getAuthenticatedUser();
+  const loaded = await loadCompanyPage(slug, user?.id);
 
-  if (!company) {
+  if (!loaded) {
     return {
       title: `Bolag | ${DIVLAB_BRAND_NAME}`,
       robots: { index: false, follow: true },
     };
   }
 
-  const title = `${company.name} (${company.ticker}) – aktie, nyheter och rapporter`;
-  const description = `Följ ${company.name}: TradingView-graf, senaste DivLab-artiklar, officiella pressmeddelanden och rapporter.`;
-  const path = `/bolag/${company.slug}`;
+  const copy = companyPageMetadataCopy(loaded.company, loaded.model);
+  const path = `/bolag/${loaded.company.slug}`;
 
   return {
-    title,
-    description,
+    title: copy.title,
+    description: copy.description,
+    robots: copy.robots,
     alternates: { canonical: getCanonicalUrl(path) },
     openGraph: {
-      title,
-      description,
+      title: copy.title,
+      description: copy.description,
       type: "website",
       url: getCanonicalUrl(path),
       locale: "sv_SE",
+    },
+    twitter: {
+      card: "summary",
+      title: copy.title,
+      description: copy.description,
     },
   };
 }
 
 export default async function CompanyPage({ params }: Props) {
   const { slug } = await params;
-  const company = getCompanyProfile(slug);
+  const user = await getAuthenticatedUser();
+  const loaded = await loadCompanyPage(slug, user?.id);
 
-  if (!company) {
+  if (!loaded) {
     notFound();
   }
 
-  const user = await getAuthenticatedUser();
-  const relatedCompanies = getRelatedCompanies(company);
-  const [articles, followState, marketData, relatedMarketData, profile] = await Promise.all([
-    Promise.resolve(getCompanyNews(company, getNewsArticles())),
-    getCompanyFollowState(company.slug, user?.id),
-    getCompanyMarketData(company),
-    getRelatedCompanyMarketData(relatedCompanies),
-    user ? getProfileForUser(user.id) : Promise.resolve(null),
-  ]);
-  const officialData = await getCompanyOfficialData(company, followState);
+  const profile = user ? await getProfileForUser(user.id) : null;
+  const { company, articles, followState, officialData, peers, model } = loaded;
 
   return (
     <AppShell allowGuest>
@@ -88,10 +77,10 @@ export default async function CompanyPage({ params }: Props) {
         articles={articles}
         isAuthenticated={Boolean(user)}
         followState={followState}
-        relatedCompanies={relatedCompanies}
-        marketData={marketData}
-        relatedMarketData={relatedMarketData}
+        peers={peers}
+        model={model}
         officialData={officialData}
+        jsonLd={companyPageJsonLd(company)}
       >
         <CompanyComments
           companyId={followState.companyId}

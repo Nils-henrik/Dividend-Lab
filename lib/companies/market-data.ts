@@ -1,8 +1,15 @@
 import "server-only";
 
+import { cache } from "react";
 import { getCompanyProfile } from "@/lib/companies/catalog";
+import {
+  parseYahooAnnualFinancials,
+  type AnnualFinancialPoint,
+  type FinancialHistoryStatus,
+} from "@/lib/companies/financial-history";
 import { sessionExtremes } from "@/lib/companies/quote-session";
 import type { CompanyProfile } from "@/lib/companies/types";
+import type { ValuationSnapshot } from "@/lib/companies/valuation";
 import {
   fetchYahooFundamentals,
   fetchYahooHistoryResearch,
@@ -29,7 +36,32 @@ export type CompanyMarketData = {
   sparkline: number[];
   sourceUrl: string;
   fetchedAt: string;
+  valuation: ValuationSnapshot;
+  financials: {
+    status: FinancialHistoryStatus;
+    points: AnnualFinancialPoint[];
+  };
 };
+
+function finiteOrNull(value: number | null | undefined) {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function emptyValuation(): ValuationSnapshot {
+  return {
+    trailingPe: null,
+    forwardPe: null,
+    priceToSales: null,
+    priceToBook: null,
+    enterpriseToEbitda: null,
+    enterpriseValue: null,
+    trailingEps: null,
+    beta: null,
+    sharesOutstanding: null,
+    payoutRatio: null,
+    dividendYield: null,
+  };
+}
 
 function finite(values: Array<number | null | undefined>) {
   return values.filter((value): value is number =>
@@ -37,17 +69,22 @@ function finite(values: Array<number | null | undefined>) {
   );
 }
 
-export async function getCompanyMarketData(
+async function loadCompanyMarketData(
   company: CompanyProfile,
   includeFundamentals = true,
+  includeStatements = false,
 ): Promise<CompanyMarketData> {
   const fetchedAt = new Date().toISOString();
-  const [history, fundamentals] = await Promise.all([
+  const [history, statementFundamentals] = await Promise.all([
     fetchYahooHistoryResearch(company.marketDataSymbol),
     includeFundamentals
-      ? fetchYahooFundamentals(company.marketDataSymbol, 1)
+      ? fetchYahooFundamentals(company.marketDataSymbol, 1, fetch, new Date(), includeStatements)
       : Promise.resolve(null),
   ]);
+  const fundamentals = statementFundamentals
+    ?? (includeFundamentals && includeStatements
+      ? await fetchYahooFundamentals(company.marketDataSymbol, 1)
+      : null);
   const quote = history?.quote ?? null;
   const cutoff = new Date();
   cutoff.setUTCFullYear(cutoff.getUTCFullYear() - 1);
@@ -73,6 +110,37 @@ export async function getCompanyMarketData(
     .slice(-30)
     .map((bar) => bar.close)
     .filter((close) => Number.isFinite(close));
+  const snapshot = fundamentals?.snapshot;
+  const valuation: ValuationSnapshot = snapshot
+    ? {
+        trailingPe: finiteOrNull(snapshot.trailingPe ?? snapshot.peRatio),
+        forwardPe: finiteOrNull(snapshot.forwardPe),
+        priceToSales: finiteOrNull(snapshot.priceSalesTtm),
+        priceToBook: finiteOrNull(snapshot.priceBookMrq),
+        enterpriseToEbitda: finiteOrNull(snapshot.enterpriseToEbitda),
+        enterpriseValue: finiteOrNull(snapshot.enterpriseValue),
+        trailingEps: finiteOrNull(snapshot.trailingEps),
+        beta: finiteOrNull(snapshot.beta),
+        sharesOutstanding: finiteOrNull(snapshot.sharesOutstanding),
+        payoutRatio: finiteOrNull(snapshot.payoutRatio),
+        dividendYield: finiteOrNull(snapshot.dividendYield ?? snapshot.forwardAnnualDividendYield),
+      }
+    : emptyValuation();
+  const currency = history?.currency ?? null;
+  // Listing currency stays on the quote. Statement rows read financialCurrency themselves.
+  const financialPoints = includeStatements && statementFundamentals
+    ? parseYahooAnnualFinancials(statementFundamentals.statements)
+    : [];
+  const financials = {
+    status: !includeStatements
+      ? "empty" as const
+      : !statementFundamentals
+        ? "unavailable" as const
+        : financialPoints.length
+          ? "available" as const
+          : "empty" as const,
+    points: financialPoints,
+  };
 
   return {
     price,
@@ -80,7 +148,7 @@ export async function getCompanyMarketData(
     change:
       price !== null && previousClose !== null ? price - previousClose : null,
     changePct: quote?.changePct ?? null,
-    currency: history?.currency ?? null,
+    currency,
     volume: quote?.volume ?? null,
     marketTimestamp: quote?.timestamp ?? null,
     marketCap: fundamentals?.snapshot.marketCap ?? null,
@@ -100,8 +168,12 @@ export async function getCompanyMarketData(
       history?.sourceUrl ??
       `https://finance.yahoo.com/quote/${encodeURIComponent(company.marketDataSymbol)}`,
     fetchedAt,
+    valuation,
+    financials,
   };
 }
+
+export const getCompanyMarketData = cache(loadCompanyMarketData);
 
 export async function getRelatedCompanyMarketData(
   companies: readonly CompanyProfile[],
