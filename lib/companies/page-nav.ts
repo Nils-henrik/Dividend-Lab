@@ -1,3 +1,22 @@
+/**
+ * Shared company-page modules. Navigation may still omit a section when the
+ * current page has neither data nor a useful source fallback.
+ */
+export const COMPANY_PAGE_MODULE_IDS = [
+  "oversikt",
+  "kursutveckling",
+  "nyckeltal",
+  "finansiell-utveckling",
+  "utdelning",
+  "rapporter",
+  "kalender",
+  "agarstruktur",
+  "blankning",
+  "insyn",
+  "nyheter",
+  "diskussion",
+] as const;
+
 export type CompanyNavItem = {
   id: string;
   label: string;

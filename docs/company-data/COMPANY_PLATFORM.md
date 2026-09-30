@@ -25,3 +25,17 @@ Differences are calculated only when a verified report snapshot has both the cur
 ## AI-portföljer
 
 A company page links only active or paused public DivLab model portfolios where the quantity is finite and above zero and the symbol matches the canonical instrument exactly. Draft and unknown portfolios are excluded. A failed read returns null and the block is omitted, which is distinct from an empty holding list. Neither case says that the company is unheld.
+
+## Dataparitet
+
+`auditCatalogDataParity()` walks every `getPilotCompanies()` entry. There is no 30-company page switch. The same page model, modules and fallback copy apply to the current catalog and to a later catalog company.
+
+Each cell is one of: PASS REAL DATA, SOURCE LINK ONLY, BLOCKED BY SOURCE, TEMPORARILY UNAVAILABLE, or NOT APPLICABLE / NO VERIFIED DATA. Only PASS REAL DATA is complete. A blocked or source-link cell keeps its official https URL and is not rendered as parsed rows or as zero.
+
+Yahoo price, valuation, annual statements and paid dividend history are real provider data for a verified `.ST` symbol. A missing field stays missing. A live fetch failure is temporarily unavailable on the page and is not written into the static audit as a number.
+
+Official press, reports, calendar, CEO, ownership and dividend follow `COMPANY_OFFICIAL_COVERAGE`. Report snapshots are parsed only for Nordea, Tele2 and Industrivärden. Other companies keep the report archive or source link. FI short interest uses the stored LEI and issuer name. A missing register row stays absence. Insider transactions stay a Finansinspektionen source link.
+
+A catalog company without a verified Avanza URL, Nordnet URL or FI identity must be listed in `CATALOG_IDENTIFIER_FAIL_CLOSED` with a fail-closed reason. The current catalog has no such exception.
+
+The remaining source-link and blocked categories were checked against the adapters already in this repository. No unused issuer RSS, issuer JSON or verifiable Cision binding can be turned on without a new source migration or a company-specific page branch. Those categories stay fail-closed. Boliden, Epiroc and Hexagon stay blocked. ABB, Lifco, SEB, SKF, Skanska and Telia stay source-link only, together with the profile fields whose official HTML has no stable table.

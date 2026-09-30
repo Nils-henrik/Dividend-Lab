@@ -12,7 +12,7 @@ import { isUpcomingReportCalendar } from "@/lib/companies/follow-feed";
 import { classifyCompanyDocuments, companySourceDisclaimer } from "@/lib/companies/documents-view";
 import type { OfficialItem } from "@/lib/companies/investor-official";
 import type { CompanyOfficialData, CompanyOfficialSection } from "@/lib/companies/official-data";
-import { officialPanelCopy, type OfficialPanel } from "@/lib/companies/official-copy";
+import { officialDividendFallback, officialLeadershipFallback, officialPanelCopy, type OfficialPanel } from "@/lib/companies/official-copy";
 import type { CompanyPageModel, MarketChangeDirection, SourcedRow } from "@/lib/companies/page-model";
 import { formatPaidDividend, partitionValuationMetrics } from "@/lib/companies/page-model";
 import { companyPageNavigation } from "@/lib/companies/page-nav";
@@ -163,6 +163,10 @@ export default function CompanyPageContent({
     const dividendIndex = pageTabs.findIndex((item) => item.id === "utdelning");
     pageTabs.splice(dividendIndex + 1, 0, { id: "rapport-i-siffror", label: "Rapport", href: "#rapport-i-siffror" });
   }
+  const leadershipFallback = officialLeadershipFallback(officialData.ceo.status);
+  const dividendFallback = model.dividend.perShareText === "—"
+    ? officialDividendFallback(officialData.dividend.status)
+    : null;
   const dividendDates = [
     model.dividend.exDate ? ["X-dag", model.dividend.exDate] : null,
     model.dividend.recordDate ? ["Avstämningsdag", model.dividend.recordDate] : null,
@@ -400,6 +404,7 @@ export default function CompanyPageContent({
                 </dl>
               ) : null}
               {model.dividend.kind === "board_proposal" ? <p className="mt-3 text-xs leading-5 text-divlab-text-muted">Källan beskriver ett styrelseförslag. Beloppet visas inte som en beslutad utdelning.</p> : null}
+              {dividendFallback ? <p className="mt-3 text-xs leading-5 text-divlab-text-muted">{dividendFallback}</p> : null}
               {model.dividend.yieldBlocked ? <p className="mt-3 text-xs leading-5 text-divlab-text-muted">{model.metrics.find((metric) => metric.id === "official_yield")?.definition}</p> : null}
               {model.dividend.sourcePublisher ? <p className="mt-3 text-[10px] text-divlab-text-muted">Källa: {model.dividend.sourcePublisher}{model.dividend.asOf ? ` · ${date(model.dividend.asOf)}` : ""}.</p> : null}
               <h3 className="mt-5 text-[13px] font-bold text-divlab-text">Historiskt utbetalda utdelningar</h3>
@@ -496,7 +501,13 @@ export default function CompanyPageContent({
                     <p className="mt-1 text-sm font-bold text-divlab-text">{ceo.name}</p>
                     <p className="mt-2 text-[11px] text-divlab-text-muted">{ceo.sourcePublisher ?? "Officiell källa"}{ceo.asOf ? ` · per ${date(ceo.asOf)}` : ""}</p>
                   </div>
-                ) : <p className="mt-4 text-xs leading-5 text-divlab-text-muted">{officialData.ceo.sourceUrl ? <a className="font-semibold text-divlab-blue" href={officialData.ceo.sourceUrl}>Se bolagets officiella ledningsinformation</a> : "Ingen verifierad VD-uppgift."}</p>}
+                ) : (
+                  <p className="mt-4 text-xs leading-5 text-divlab-text-muted">
+                    {leadershipFallback.showLink && officialData.ceo.sourceUrl
+                      ? <a className="font-semibold text-divlab-blue" href={officialData.ceo.sourceUrl}>{leadershipFallback.text}</a>
+                      : leadershipFallback.text}
+                  </p>
+                )}
               </section>
               <section id="insyn" className="divlab-card scroll-mt-28 p-5">
                 <PanelHeading title="Insyn" href={model.insiders.url} label={model.insiders.publisher} />
