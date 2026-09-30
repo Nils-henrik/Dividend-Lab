@@ -16,10 +16,10 @@ import { officialPanelCopy, type OfficialPanel } from "@/lib/companies/official-
 import type { CompanyPageModel, MarketChangeDirection, SourcedRow } from "@/lib/companies/page-model";
 import { formatPaidDividend, partitionValuationMetrics } from "@/lib/companies/page-model";
 import { companyPageNavigation } from "@/lib/companies/page-nav";
-import type { CompanyPortfolioPresence } from "@/lib/companies/portfolio-presence.server";
+import type { CompanyAiPortfolioLink } from "@/lib/companies/ai-portfolio-crosslinks";
 import { reportFactChanges } from "@/lib/companies/report-facts";
 import { dividendYearSeries, revenueSeries } from "@/lib/companies/series";
-import type { CompanyShortInterest } from "@/lib/companies/short-interest";
+import type { CompanyShortInterest } from "@/lib/companies/short-interest/types";
 import type { JsonLd } from "@/lib/seo/json-ld";
 import { formatReportMetric } from "@/lib/companies/report-snapshot";
 import { formatStatementAmount, formatSvNumber } from "@/lib/companies/valuation";
@@ -37,7 +37,7 @@ type Props = {
   officialData: CompanyOfficialData;
   jsonLd: JsonLd[];
   shortInterest: CompanyShortInterest;
-  portfolios: readonly CompanyPortfolioPresence[];
+  portfolios: readonly CompanyAiPortfolioLink[] | null;
   children?: ReactNode;
 };
 
@@ -543,7 +543,7 @@ export default function CompanyPageContent({
                 <li><a href="#diskussion" className="text-divlab-blue hover:text-divlab-blue-hover">Diskussion</a></li>
                 <li><Link href="/bolag" className="text-divlab-blue hover:text-divlab-blue-hover">Alla bolag</Link></li>
               </ul>
-              {portfolios.length ? (
+              {portfolios && portfolios.length ? (
                 <div className="mt-4 border-t divlab-border-neutral pt-3">
                   <p className="text-[11px] leading-5 text-divlab-text-muted">Bolaget finns just nu bland innehaven i:</p>
                   <ul className="mt-2 space-y-1">

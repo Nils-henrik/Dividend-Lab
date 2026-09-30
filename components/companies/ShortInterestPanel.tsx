@@ -1,8 +1,5 @@
-import {
-  formatShortPercent,
-  SHORT_INTEREST_MISSING_COPY,
-  type CompanyShortInterest,
-} from "@/lib/companies/short-interest";
+import { formatShortInterestPercent } from "@/lib/companies/short-interest/copy";
+import type { CompanyShortInterest } from "@/lib/companies/short-interest/types";
 
 function date(value: string) {
   return new Intl.DateTimeFormat("sv-SE", {
@@ -16,12 +13,19 @@ function date(value: string) {
 export default function ShortInterestPanel({ interest }: { interest: CompanyShortInterest }) {
   if (interest.status === "unmatched") return null;
 
+  const percentLabel = interest.status === "present"
+    && interest.aggregatePercent !== null
+    && interest.aggregatePercent > 0
+    ? interest.aggregatePercentLabel
+    : null;
+  const named = percentLabel ? interest.namedPositions.slice(0, 8) : [];
+
   return (
     <section id="blankning" className="divlab-card scroll-mt-28 p-5 sm:p-6">
       <div className="flex items-center justify-between gap-4">
         <h2 className="text-[15px] font-bold tracking-[-0.02em] text-divlab-text">Blankning</h2>
         <a
-          href={interest.sourceUrl}
+          href={interest.source.pageUrl}
           target="_blank"
           rel="noopener noreferrer"
           className="shrink-0 text-[11px] font-semibold text-divlab-blue hover:text-divlab-blue-hover"
@@ -30,28 +34,28 @@ export default function ShortInterestPanel({ interest }: { interest: CompanyShor
         </a>
       </div>
       <p className="mt-2 text-[11px] leading-5 text-divlab-text-muted">
-        Summan omfattar rapporterade positioner över 0,1 % av aktiekapitalet. Positioner under den gränsen anmäls inte och ingår inte. Namngivna innehav publiceras när en position passerar 0,5 %.
+        {interest.rules.aggregate} {interest.rules.significantPositions}
       </p>
-      {interest.status === "unavailable" ? (
-        <p className="mt-4 text-xs leading-5 text-divlab-text-muted">
-          FI:s blankningsregister kunde inte läsas just nu. Ingen blankningsnivå visas.
-        </p>
+      {interest.message ? (
+        <p className="mt-4 text-xs leading-5 text-divlab-text-muted">{interest.message}</p>
       ) : null}
-      {interest.status === "missing" ? (
-        <p className="mt-4 text-xs leading-5 text-divlab-text-muted">{SHORT_INTEREST_MISSING_COPY}</p>
+      {interest.status === "absent" ? (
+        <p className="mt-2 text-xs leading-5 text-divlab-text-muted">{interest.rules.absenceIsNotZero}</p>
       ) : null}
-      {interest.status === "available" && interest.aggregate ? (
+      {percentLabel ? (
         <div className="mt-4">
-          <p className="text-[10px] text-divlab-text-muted">Summa rapporterad blankning</p>
+          <p className="text-[10px] text-divlab-text-muted">{interest.labels.aggregate}</p>
           <p className="mt-1 text-2xl font-bold tracking-[-0.04em] text-divlab-text">
-            {formatShortPercent(interest.aggregate.percent)}
+            {percentLabel}
           </p>
-          <p className="mt-1 text-[11px] text-divlab-text-muted">
-            Positionsdatum {date(interest.aggregate.positionDate)}. {interest.sourceLabel}.
-          </p>
-          {interest.named.length ? (
+          {interest.aggregatePositionDate ? (
+            <p className="mt-1 text-[11px] text-divlab-text-muted">
+              Positionsdatum {date(interest.aggregatePositionDate)}. {interest.labels.source}.
+            </p>
+          ) : null}
+          {named.length ? (
             <div className="mt-5">
-              <h3 className="text-[13px] font-bold text-divlab-text">Större publicerade positioner</h3>
+              <h3 className="text-[13px] font-bold text-divlab-text">{interest.labels.significantPositions}</h3>
               <div className="mt-2 overflow-x-auto">
                 <table className="w-full min-w-[420px] text-left text-[11px]">
                   <thead className="text-divlab-text-muted">
@@ -62,16 +66,25 @@ export default function ShortInterestPanel({ interest }: { interest: CompanyShor
                     </tr>
                   </thead>
                   <tbody>
-                    {interest.named.map((row) => (
-                      <tr key={`${row.holder}-${row.isin}-${row.positionDate}`} className="border-t divlab-border-neutral">
-                        <td className="py-2 pr-3 font-semibold text-divlab-text">{row.holder}</td>
-                        <td className="py-2 pr-3 tabular-nums">{formatShortPercent(row.percent)}</td>
-                        <td className="py-2">{date(row.positionDate)}</td>
-                      </tr>
-                    ))}
+                    {named.map((row) => {
+                      const rowLabel = formatShortInterestPercent(row.percent);
+                      if (!rowLabel) return null;
+                      return (
+                        <tr key={`${row.holder}-${row.isin}-${row.positionDate}`} className="border-t divlab-border-neutral">
+                          <td className="py-2 pr-3 font-semibold text-divlab-text">{row.holder}</td>
+                          <td className="py-2 pr-3 tabular-nums">{rowLabel}</td>
+                          <td className="py-2">{date(row.positionDate)}</td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
+              {interest.namedPositions.length > named.length ? (
+                <p className="mt-2 text-[11px] leading-5 text-divlab-text-muted">
+                  Tabellen visar de största publicerade positionerna. Övriga finns i FI:s aktuella register.
+                </p>
+              ) : null}
             </div>
           ) : (
             <p className="mt-4 text-xs leading-5 text-divlab-text-muted">
@@ -81,8 +94,8 @@ export default function ShortInterestPanel({ interest }: { interest: CompanyShor
         </div>
       ) : null}
       <p className="mt-4 text-[10px] text-divlab-text-muted">
-        {interest.sourceLabel}
-        {interest.fetchedAt ? ` · läst ${date(interest.fetchedAt)}` : ""}. Historik visas inte, eftersom den aktuella filen bara beskriver nuläget.
+        {interest.labels.source}
+        {interest.source.fetchedAt ? ` · läst ${date(interest.source.fetchedAt)}` : ""}. {interest.history.reason}
       </p>
     </section>
   );

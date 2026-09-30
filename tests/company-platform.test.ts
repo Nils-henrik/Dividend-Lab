@@ -1,10 +1,14 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { deflateRawSync } from "node:zlib";
 import { describe, it } from "node:test";
 import { acceptBrokerUrl, resolveBrokerLinks } from "@/lib/companies/broker-links";
 import { getCompanyProfile, getPilotCompanies } from "@/lib/companies/catalog";
-import { followFeedRecencyCue } from "@/lib/companies/follow-feed";
+import {
+  buildFollowFeed,
+  followFeedRecencyLabel,
+  FOLLOW_FEED_RECENCY_LAST_24H_LABEL,
+  FOLLOW_FEED_RECENCY_TODAY_LABEL,
+} from "@/lib/companies/follow-feed";
 import {
   articleCompanyLinks,
   groupCompaniesByLetter,
@@ -15,19 +19,10 @@ import {
 import { COMPANY_PAGE_INDEX_MINIMUM, companyIndexSignals } from "@/lib/companies/page-model";
 import { companyPageMetadataCopy } from "@/lib/companies/page-seo";
 import { companyPageNavigation } from "@/lib/companies/page-nav";
-import { portfolioInstrumentKey } from "@/lib/companies/portfolio-presence";
 import { reportFactChanges } from "@/lib/companies/report-facts";
 import type { ReportSnapshotMetric } from "@/lib/companies/report-snapshot";
+import { INDEXABLE_STATIC_PUBLIC_PATHS } from "@/lib/seo/public-routes";
 import { dividendYearSeries } from "@/lib/companies/series";
-import {
-  formatShortPercent,
-  matchShortInterest,
-  parseAggregatePositions,
-  parseNamedPositions,
-  parseOdsRows,
-  readZipEntry,
-  SHORT_INTEREST_MISSING_COPY,
-} from "@/lib/companies/short-interest";
 import type { NewsArticle } from "@/types/news";
 
 function read(path: string) {
@@ -66,53 +61,19 @@ describe("mäklarlänkar", () => {
   });
 });
 
-describe("FI blankning", () => {
-  const aggregateXml = `<?xml version="1.0"?><table:table xmlns:table="urn:table" xmlns:office="urn:office" xmlns:text="urn:text"><table:table-row><table:table-cell office:value-type="string"><text:p>Investor Aktiebolag</text:p></table:table-cell><table:table-cell><text:p>549300VEBQPHRZBKUX38</text:p></table:table-cell><table:table-cell office:value="0.44" office:value-type="float"><text:p>0,44</text:p></table:table-cell><table:table-cell><text:p>2026-06-23</text:p></table:table-cell></table:table-row></table:table>`;
-  const namedXml = `<?xml version="1.0"?><table:table xmlns:table="urn:table" xmlns:office="urn:office" xmlns:text="urn:text"><table:table-row><table:table-cell><text:p>Exempel Capital</text:p></table:table-cell><table:table-cell><text:p>Investor Aktiebolag</text:p></table:table-cell><table:table-cell><text:p>SE0015811963</text:p></table:table-cell><table:table-cell office:value="0.7"><text:p>0,7</text:p></table:table-cell><table:table-cell><text:p>2026-09-18</text:p></table:table-cell></table:table-row></table:table>`;
-
-  it("läser aggregerat värde och namngiven position från ODS-rader", () => {
-    const aggregates = parseAggregatePositions(parseOdsRows(aggregateXml));
-    const named = parseNamedPositions(parseOdsRows(namedXml));
-    const view = matchShortInterest({
-      lei: "549300VEBQPHRZBKUX38",
-      issuerName: "Investor Aktiebolag",
-      register: { aggregates, named, fetchedAt: "2026-09-30T12:00:00.000Z" },
-    });
-    assert.equal(view.status, "available");
-    assert.equal(view.aggregate?.percent, 0.44);
-    assert.equal(view.named[0]?.holder, "Exempel Capital");
-    assert.equal(formatShortPercent(0.44).includes("0"), true);
-  });
-
-  it("tolkar en saknad rad som uppgift saknas och inte som noll", () => {
-    const view = matchShortInterest({
-      lei: "549300VEBQPHRZBKUX38",
-      issuerName: "Investor Aktiebolag",
-      register: { aggregates: [], named: [], fetchedAt: "2026-09-30T12:00:00.000Z" },
-    });
-    assert.equal(view.status, "missing");
-    assert.equal(view.aggregate, null);
-    assert.equal(SHORT_INTEREST_MISSING_COPY.includes("0%"), false);
-    assert.equal(formatShortPercent(0), "0,00 %");
+describe("FI blankning i bolagsytan", () => {
+  it("visar inte noll procent och hämtar registret en gång per sida", () => {
     const panel = read("components/companies/ShortInterestPanel.tsx");
-    assert.match(panel, /SHORT_INTEREST_MISSING_COPY/);
-    assert.doesNotMatch(panel, /0 %|0%/);
-  });
-
-  it("gömmer sektionen utan verifierad LEI och läser en lagrad zip-post", () => {
-    assert.equal(matchShortInterest({ lei: null, issuerName: null, register: null }).status, "unmatched");
-    const payload = new TextEncoder().encode("content");
-    const compressed = deflateRawSync(payload);
-    const name = "content.xml";
-    const header = Buffer.alloc(30);
-    header.writeUInt32LE(0x04034b50, 0);
-    header.writeUInt16LE(20, 4);
-    header.writeUInt16LE(8, 8);
-    header.writeUInt32LE(compressed.length, 18);
-    header.writeUInt32LE(payload.length, 22);
-    header.writeUInt16LE(name.length, 26);
-    const zip = Buffer.concat([header, Buffer.from(name), compressed]);
-    assert.equal(new TextDecoder().decode(readZipEntry(zip, name) ?? new Uint8Array()), "content");
+    const pageData = read("lib/companies/page-data.server.ts");
+    const hub = read("app/bolag/page.tsx");
+    const hubLoader = read("lib/companies/hub.server.ts");
+    assert.match(panel, /aggregatePercent > 0/);
+    assert.match(panel, /absenceIsNotZero/);
+    assert.doesNotMatch(panel, /0,00 %|0 %|>0%</);
+    assert.match(pageData, /loadCompanyShortInterest\(company\)/);
+    assert.doesNotMatch(pageData, /for\s*\([\s\S]*loadCompanyShortInterest/);
+    assert.doesNotMatch(hub, /loadCompanyShortInterest|fetchFiOds|fi\.se/);
+    assert.doesNotMatch(hubLoader, /fi\.se|loadCompanyShortInterest|getCompanyMarketData/);
   });
 });
 
@@ -151,8 +112,17 @@ describe("bolagshubb och navigering", () => {
       ownership: 0,
       articles: 0,
     });
+    assert.equal(COMPANY_PAGE_INDEX_MINIMUM, 2);
     assert.equal(thin.length >= COMPANY_PAGE_INDEX_MINIMUM, false);
     assert.equal(companyPageMetadataCopy(getCompanyProfile("investor")!, { indexable: false }).robots.index, false);
+    assert.equal(companyPageMetadataCopy(getCompanyProfile("investor")!, { indexable: true }).robots.index, true);
+    assert.equal(INDEXABLE_STATIC_PUBLIC_PATHS.includes("/bolag"), true);
+    assert.equal(INDEXABLE_STATIC_PUBLIC_PATHS.includes("/bolag/investor"), false);
+    const seo = read("lib/companies/page-seo.ts");
+    const hubPage = read("app/bolag/page.tsx");
+    assert.doesNotMatch(seo, /userId|email|followState|watchlist/);
+    assert.doesNotMatch(hubPage, /userId|email|followState/);
+    assert.match(hubPage, /robots: \{ index: true, follow: true \}/);
   });
 });
 
@@ -182,12 +152,56 @@ describe("artikellänkar och fas 3", () => {
     assert.equal(mentions[0]?.slug, "investor");
   });
 
-  it("märker senaste händelser utan oläst-status och kopplar portföljsymbolen stängt", () => {
-    assert.equal(followFeedRecencyCue("2026-09-28", "2026-09-30"), "Nyligen");
-    assert.equal(followFeedRecencyCue("2026-08-01", "2026-09-30"), null);
-    assert.equal(read("components/companies/FollowFeedList.tsx").includes("oläst"), false);
-    assert.deepEqual(portfolioInstrumentKey("INVE-B.ST"), { symbol: "INVE-B", exchange: "ST" });
-    assert.equal(portfolioInstrumentKey("Investor"), null);
+  it("märker senaste händelser utan oläst-status och utan 24-timmarspåstående för datumrader", () => {
+    const now = new Date("2026-09-29T10:00:00.000Z");
+    assert.equal(followFeedRecencyLabel("2026-09-29", now), FOLLOW_FEED_RECENCY_TODAY_LABEL);
+    assert.equal(followFeedRecencyLabel("2026-09-28", now), null);
+    assert.equal(followFeedRecencyLabel("2026-09-30", now), null);
+    assert.equal(followFeedRecencyLabel("2026-09-28T22:30:00.000Z", now), FOLLOW_FEED_RECENCY_TODAY_LABEL);
+    assert.equal(followFeedRecencyLabel("2026-09-28T21:00:00.000Z", now), FOLLOW_FEED_RECENCY_LAST_24H_LABEL);
+    assert.equal(followFeedRecencyLabel("2026-09-28T10:00:00.000Z", now), FOLLOW_FEED_RECENCY_LAST_24H_LABEL);
+    assert.equal(followFeedRecencyLabel("2026-09-28T09:59:59.999Z", now), null);
+    assert.equal(followFeedRecencyLabel("2026-09-29T12:00:00.000Z", now), null);
+    assert.equal(followFeedRecencyLabel("", now), null);
+    assert.equal(followFeedRecencyLabel("inte-ett-datum", now), null);
+    assert.notEqual(followFeedRecencyLabel("2026-09-29", now), FOLLOW_FEED_RECENCY_LAST_24H_LABEL);
+
+    const feed = buildFollowFeed({
+      followedCount: 1,
+      available: true,
+      now,
+      companies: [{
+        slug: "nordea",
+        name: "Nordea",
+        ticker: "NDA SE",
+        reports: [],
+        press: [{
+          title: "Dagens pressmeddelande",
+          date: "2026-09-29",
+          url: "https://www.nordea.com/en/press/today",
+          publisher: "Nordea",
+        }],
+        events: [{
+          title: "Kommande rapport",
+          date: "2026-10-02",
+          url: "https://www.nordea.com/en/calendar/next",
+          publisher: "Nordea",
+        }],
+        dividends: [],
+        articles: [],
+        priceMove: null,
+      }],
+    });
+    const press = feed.items.find((item) => item.kind === "press");
+    const calendar = feed.items.find((item) => item.kind === "calendar");
+    assert.equal(press?.recencyLabel, FOLLOW_FEED_RECENCY_TODAY_LABEL);
+    assert.notEqual(press?.recencyLabel, FOLLOW_FEED_RECENCY_LAST_24H_LABEL);
+    assert.equal(calendar?.recencyLabel, null);
+    assert.equal(calendar?.freshnessLabel, "Om 3 dagar");
+    const feedSource = read("lib/companies/follow-feed.ts");
+    const feedList = read("components/companies/FollowFeedList.tsx");
+    assert.doesNotMatch(feedSource, /Nyligen|oläst|unread|readAt|isRead/);
+    assert.doesNotMatch(feedList, /oläst|Oläst|unread/);
     const changes = reportFactChanges([
       metric({ id: "revenue", label: "Omsättning", amount: 12, comparisonAmount: 10, comparisonLabel: "Q2 2025" }),
       metric({ id: "ebit", label: "Rörelseresultat", amount: 1, comparisonAmount: 2, comparisonLabel: "Q2 2025" }),

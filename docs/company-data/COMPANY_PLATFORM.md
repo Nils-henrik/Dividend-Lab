@@ -8,7 +8,11 @@ Extends the existing `/bolag/[slug]` model. It does not replace market data, off
 
 ## Blankning
 
-Finansinspektionen's public register is read from the two ODS downloads the register page already uses: aggregated positions above 0.1% and current named positions above 0.5%. Files are capped at 1.5 MB and 8 seconds, cached for one hour, and matched by the catalog LEI. A missing LEI hides the section. A fetched register without that LEI uses "Ingen uppgift i FI:s aktuella blankningsregister." and never renders 0%. The current files are snapshots, so no short-interest history is shown.
+Finansinspektionen's public register is read from the two exact current ODS URLs: aggregated positions above 0.1% and current named positions above 0.5%. Requests reject redirects, require the ODS content type, and stay inside the byte and timeout caps. Headers, checksums and row shape are validated exactly. A drifted file, a 0% row, or a duplicate LEI or issuer name fails closed and is not shown as a number. Matching uses the stored LEI together with the known issuer name and ISIN when those are present. A missing register row stays "Ingen uppgift i FI:s aktuella blankningsregister." and is never rendered as 0%. A transport failure is not stored as that snapshot. The current files are snapshots, so no short-interest history is shown.
+
+## Mitt DivLab
+
+Recent follow events use the event timestamp. "Ny idag" means the event falls on the current Stockholm date. "Senaste 24 h" is used only when a real timestamp is inside 24 hours and the Stockholm date is not today. A date-only row may say "Ny idag" on that date and never "Senaste 24 h". Older events have no recency badge. Calendar labels such as Idag, Imorgon and Om N dagar stay separate. There is no read or unread state.
 
 ## Insyn
 
@@ -20,4 +24,4 @@ Differences are calculated only when a verified report snapshot has both the cur
 
 ## AI-portföljer
 
-A company page asks the existing model-portfolio reader whether the catalog Yahoo symbol (`INVE-B.ST` style) is an open holding on exchange ST. If the reader is unavailable, the block is omitted.
+A company page links only active or paused public DivLab model portfolios where the quantity is finite and above zero and the symbol matches the canonical instrument exactly. Draft and unknown portfolios are excluded. A failed read returns null and the block is omitted, which is distinct from an empty holding list. Neither case says that the company is unheld.

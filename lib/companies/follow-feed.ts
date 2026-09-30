@@ -11,6 +11,9 @@ export const FOLLOW_FEED_CALENDAR_DAYS = 45;
 export const FOLLOW_FEED_DIVIDEND_PAST_DAYS = 30;
 export const FOLLOW_FEED_DIVIDEND_FUTURE_DAYS = 60;
 export const FOLLOW_FEED_LIMIT = 40;
+export const FOLLOW_FEED_RECENCY_TODAY_LABEL = "Ny idag";
+export const FOLLOW_FEED_RECENCY_LAST_24H_LABEL = "Senaste 24 h";
+const FOLLOW_FEED_RECENCY_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 export const FOLLOW_FEED_FILTERS = [
   { id: "all", label: "Alla" },
@@ -76,7 +79,8 @@ export type FollowFeedItem = {
   href: string;
   companyHref: string;
   freshnessLabel: string;
-  recencyCue: string | null;
+  /** Timestamp-derived cue. Null when the event is outside the recent window. */
+  recencyLabel: string | null;
   dividendKind: FollowFeedDividendKind | null;
   fallback: boolean;
 };
@@ -216,10 +220,27 @@ function daysBetween(today: string, day: string) {
   return Math.round((end - start) / 86_400_000);
 }
 
-/** Honest recency from the event day. This is not an unread flag. */
-export function followFeedRecencyCue(day: string, today: string): string | null {
-  const days = daysBetween(today, day);
-  if (days <= 0 && days >= -7) return "Nyligen";
+/**
+ * Honest recency from the event timestamp only.
+ * Date-only values can be "Ny idag" on that Stockholm day, never "Senaste 24 h".
+ * This is not a notification state.
+ */
+export function followFeedRecencyLabel(sortAt: string, now = new Date()) {
+  if (!sortAt || !/^\d{4}-\d{2}-\d{2}/.test(sortAt)) return null;
+  const hasTime = sortAt.includes("T");
+  const day = sortAt.slice(0, 10);
+  const today = stockholmIsoDate(now);
+
+  if (!hasTime) {
+    if (day !== today) return null;
+    return FOLLOW_FEED_RECENCY_TODAY_LABEL;
+  }
+
+  const instant = new Date(sortAt);
+  if (Number.isNaN(instant.getTime()) || instant.getTime() > now.getTime()) return null;
+  if (stockholmIsoDate(instant) === today) return FOLLOW_FEED_RECENCY_TODAY_LABEL;
+  const ageMs = now.getTime() - instant.getTime();
+  if (ageMs >= 0 && ageMs <= FOLLOW_FEED_RECENCY_WINDOW_MS) return FOLLOW_FEED_RECENCY_LAST_24H_LABEL;
   return null;
 }
 
@@ -359,7 +380,7 @@ function draftItem(input: {
     href: input.href,
     companyHref: companyHref(input.company.slug),
     freshnessLabel: input.freshnessLabel,
-    recencyCue: null,
+    recencyLabel: null,
     dividendKind: input.dividendKind ?? null,
     fallback: input.fallback ?? false,
     rank: KIND_RANK[input.kind],
@@ -531,7 +552,7 @@ function sortDrafts(rows: readonly Draft[]) {
   });
 }
 
-function toItem(row: Draft, today: string): FollowFeedItem {
+function toItem(row: Draft, now: Date): FollowFeedItem {
   return {
     id: row.id,
     companySlug: row.companySlug,
@@ -546,7 +567,9 @@ function toItem(row: Draft, today: string): FollowFeedItem {
     href: row.href,
     companyHref: row.companyHref,
     freshnessLabel: row.freshnessLabel,
-    recencyCue: followFeedRecencyCue(row.day, today),
+    recencyLabel: row.kind === "calendar" || row.fallback
+      ? null
+      : followFeedRecencyLabel(row.sortAt, now),
     dividendKind: row.dividendKind,
     fallback: row.fallback,
   };
@@ -603,7 +626,8 @@ export function buildFollowFeed(input: {
     };
   }
 
-  const today = stockholmIsoDate(input.now ?? new Date());
+  const now = input.now ?? new Date();
+  const today = stockholmIsoDate(now);
   const primary = input.companies.flatMap((company) => collectPrimary(company, today));
   const usingFallback = primary.length === 0;
   const selected = boundByCategory(usingFallback
@@ -612,7 +636,7 @@ export function buildFollowFeed(input: {
         return calendar ? [calendar] : [];
       })
     : primary);
-  const items = selected.map((row) => toItem(row, today));
+  const items = selected.map((row) => toItem(row, now));
   const official = selected.filter((item) => item.kind === "report" || item.kind === "press" || item.kind === "dividend");
 
   return {

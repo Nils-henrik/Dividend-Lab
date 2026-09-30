@@ -1,3 +1,14 @@
+/**
+ * Explicit Finansinspektionen identity. Matching is exact.
+ * A missing field is not a guess, and a missing register row is not 0%.
+ */
+export type CompanyFiMatchIdentity = {
+  lei?: string;
+  organizationNumber?: string;
+  isins?: readonly string[];
+  issuerNames?: readonly string[];
+};
+
 export type CompanyProfile = {
   slug: string;
   name: string;
