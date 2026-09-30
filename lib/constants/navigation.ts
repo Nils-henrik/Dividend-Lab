@@ -4,6 +4,7 @@ import type { NavigationItem } from "@/types/navigation";
 export const appNavigation: NavigationItem[] = [
   { label: "Översikt", href: "/dashboard", icon: "dashboard" },
   { label: "Börsnyheter", href: "/news", icon: "news" },
+  { label: "Bolag", href: "/bolag", icon: "chart" },
   {
     label: "Mitt DivLab",
     href: "/watchlist",
@@ -65,6 +66,7 @@ export const pageTitles: Record<string, string> = {
   "/messages/new": "Nytt meddelande",
   "/contacts": "Kontakter",
   "/news": "Börsnyheter",
+  "/bolag": "Bolag",
   "/portfolio": "Modellportföljer",
   "/portfolios": "Modellportföljer",
   "/settings": "Inställningar",

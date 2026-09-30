@@ -27,4 +27,14 @@ export type CompanyProfile = {
   logoPath: string | null;
   aliases: string[];
   tickerAliases: string[];
+  /**
+   * Verified broker instrument URLs. Absent means no button.
+   * Query strings stay off these URLs until a tracked template is configured.
+   */
+  avanzaUrl?: string;
+  nordnetUrl?: string;
+  /** Exact LEI from FI:s blankningsregister. Matching never uses the display name. */
+  fiLei?: string;
+  /** Exact issuer name in FI:s register, used only to read named positions. */
+  fiIssuerName?: string;
 };

@@ -10,6 +10,8 @@ import {
   getNewsArticleBySlug,
   getNewsArticlesWithSlug,
 } from "@/lib/news/get-articles";
+import { getPilotCompanies } from "@/lib/companies/catalog";
+import { articleCompanyLinks } from "@/lib/companies/hub";
 import { getRelatedContentForNewsArticle } from "@/lib/news/internal-links";
 import { getCanonicalUrl } from "@/lib/seo/canonical";
 import {
@@ -129,6 +131,7 @@ export default async function NewsArticlePage({ params }: Props) {
         article={article}
         initialUniqueReaders={uniqueReaders}
         relatedContent={relatedContent}
+        companyLinks={articleCompanyLinks(article, getPilotCompanies())}
       />
     </PublicContentShell>
   );

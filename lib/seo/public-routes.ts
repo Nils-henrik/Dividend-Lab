@@ -16,6 +16,7 @@ export const INDEXABLE_STATIC_PUBLIC_PATHS = [
   "/terms",
   "/cookies",
   "/news",
+  "/bolag",
   "/learning",
   "/verktyg",
   "/verktyg/gav-kalkylator",

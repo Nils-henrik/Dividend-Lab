@@ -6,7 +6,9 @@ import { fetchPaidDividends } from "@/lib/companies/dividend-history.server";
 import { getCompanyMarketData } from "@/lib/companies/market-data";
 import { getCompanyNews } from "@/lib/companies/news";
 import { getCompanyOfficialData } from "@/lib/companies/official-data.server";
+import { loadCompanyPortfolioPresence } from "@/lib/companies/portfolio-presence.server";
 import { buildCompanyPageModel, type PageMarketInput } from "@/lib/companies/page-model";
+import { loadCompanyShortInterest } from "@/lib/companies/short-interest.server";
 import { selectLatestReportSnapshotUrl } from "@/lib/companies/report-snapshot";
 import { loadCompanyReportSnapshot } from "@/lib/companies/report-snapshot.server";
 import { sectorPeers } from "@/lib/companies/peers";
@@ -18,11 +20,13 @@ export const loadCompanyPage = cache(async (slug: string, userId: string | undef
   if (!company) return null;
   const followState = await getCompanyFollowState(company.slug, userId);
   const reportUrl = selectLatestReportSnapshotUrl(company.slug, followState.documents);
-  const [marketData, officialData, paidDividends, reportSnapshot] = await Promise.all([
+  const [marketData, officialData, paidDividends, reportSnapshot, shortInterest, portfolios] = await Promise.all([
     getCompanyMarketData(company, true, true),
     getCompanyOfficialData(company, followState),
     fetchPaidDividends(company.marketDataSymbol),
     loadCompanyReportSnapshot(company.slug, reportUrl),
+    loadCompanyShortInterest(company),
+    loadCompanyPortfolioPresence(company.marketDataSymbol),
   ]);
   const market: PageMarketInput = {
     price: marketData.price,
@@ -49,5 +53,5 @@ export const loadCompanyPage = cache(async (slug: string, userId: string | undef
     documents: followState.documents,
     reportSnapshot,
   });
-  return { company, followState, marketData, officialData, articles, peers, model };
+  return { company, followState, marketData, officialData, articles, peers, model, shortInterest, portfolios };
 });

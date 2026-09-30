@@ -68,7 +68,7 @@ export default async function CompanyPage({ params }: Props) {
   }
 
   const profile = user ? await getProfileForUser(user.id) : null;
-  const { company, articles, followState, officialData, peers, model } = loaded;
+  const { company, articles, followState, officialData, peers, model, shortInterest, portfolios } = loaded;
 
   return (
     <AppShell allowGuest>
@@ -81,6 +81,8 @@ export default async function CompanyPage({ params }: Props) {
         model={model}
         officialData={officialData}
         jsonLd={companyPageJsonLd(company)}
+        shortInterest={shortInterest}
+        portfolios={portfolios}
       >
         <CompanyComments
           companyId={followState.companyId}
