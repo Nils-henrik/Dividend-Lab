@@ -628,7 +628,7 @@ export default function CompanyPageContent({
                 <li><Link href="/watchlist" className="text-divlab-blue hover:text-divlab-blue-hover">Mitt DivLab</Link></li>
                 <li><Link href="/news" className="text-divlab-blue hover:text-divlab-blue-hover">DivLab-nyheter</Link></li>
                 <li><Link href="/portfolios" className="text-divlab-blue hover:text-divlab-blue-hover">AI-portföljer</Link></li>
-                <li><a href="#diskussion" className="text-divlab-blue hover:text-divlab-blue-hover">Diskussion</a></li>
+                <li><Link href={`/bolag/${company.slug}?tab=diskussion`} scroll={false} className="text-divlab-blue hover:text-divlab-blue-hover">Diskussion</Link></li>
                 <li><Link href="/bolag" className="text-divlab-blue hover:text-divlab-blue-hover">Alla bolag</Link></li>
               </ul>
               {portfolios && portfolios.length ? (
