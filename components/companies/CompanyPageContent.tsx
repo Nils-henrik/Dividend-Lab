@@ -3,6 +3,7 @@ import Link from "next/link";
 import AppIcon, { type AppIconName } from "@/components/layout/AppIcon";
 import BrokerActions from "@/components/companies/BrokerActions";
 import CompanyLogo from "@/components/companies/CompanyLogo";
+import CompanyPageTabs, { CompanyTabPanel } from "@/components/companies/CompanyPageTabs";
 import CompanyPriceChart from "@/components/companies/CompanyPriceChart";
 import CompanySeriesChart from "@/components/companies/CompanySeriesChart";
 import FollowCompanyButton from "@/components/companies/FollowCompanyButton";
@@ -39,6 +40,7 @@ type Props = {
   jsonLd: JsonLd[];
   shortInterest: CompanyShortInterest;
   portfolios: readonly CompanyAiPortfolioLink[] | null;
+  initialTab?: string;
   children?: ReactNode;
 };
 
@@ -128,6 +130,7 @@ export default function CompanyPageContent({
   jsonLd,
   shortInterest,
   portfolios,
+  initialTab,
   children,
 }: Props) {
   const loginHref = `/login?redirect=${encodeURIComponent(`/bolag/${company.slug}`)}`;
@@ -234,14 +237,56 @@ export default function CompanyPageContent({
           </div>
         </section>
 
-        <nav className="sticky top-0 z-30 mt-4 flex gap-1 overflow-x-auto border-b divlab-border-neutral bg-[var(--divlab-bg)]/95 px-1 py-1 backdrop-blur" aria-label="Bolagsinformation">
-          {pageTabs.map((item) => (
-            <a key={item.href} href={item.href} className="shrink-0 rounded-lg px-3 py-2 text-[11px] font-semibold text-divlab-text-muted hover:text-divlab-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/50">{item.label}</a>
-          ))}
-        </nav>
-
+        <CompanyPageTabs tabs={pageTabs} initialTab={initialTab}>
         <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,2.4fr)_minmax(270px,0.95fr)]">
           <main className="min-w-0 space-y-4">
+            <CompanyTabPanel id="oversikt">
+              <section className="divlab-card p-5 sm:p-6" aria-labelledby="company-overview-heading">
+                <PanelHeading title="Översikt" />
+                <p id="company-overview-heading" className="mt-3 text-sm leading-6 text-divlab-text-secondary">{company.description}</p>
+                <dl className="mt-5 grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-xl border divlab-border-neutral px-4 py-3">
+                    <dt className="text-[10px] text-divlab-text-muted">Nästa händelse</dt>
+                    <dd className="mt-1 text-sm font-bold text-divlab-text">{nextReport ? nextReport.title : "Ingen verifierad kommande händelse"}</dd>
+                    {nextReport?.date ? <dd className="mt-0.5 text-[11px] text-divlab-text-muted">{date(nextReport.date)}</dd> : null}
+                  </div>
+                  <div className="rounded-xl border divlab-border-neutral px-4 py-3">
+                    <dt className="text-[10px] text-divlab-text-muted">{model.dividend.kindLabel}</dt>
+                    <dd className="mt-1 text-sm font-bold text-divlab-text">
+                      {model.dividend.perShareText === "—" ? "Ingen verifierad utdelning" : model.dividend.perShareText}
+                      {model.dividend.perShareText !== "—" && model.dividend.year ? ` · ${model.dividend.year}` : ""}
+                    </dd>
+                  </div>
+                  <div className="rounded-xl border divlab-border-neutral px-4 py-3">
+                    <dt className="text-[10px] text-divlab-text-muted">Direktavkastning</dt>
+                    <dd className="mt-1 text-sm font-bold text-divlab-text">{officialYield && officialYield.value !== "—" ? officialYield.value : "—"}</dd>
+                  </div>
+                  <div className="rounded-xl border divlab-border-neutral px-4 py-3">
+                    <dt className="text-[10px] text-divlab-text-muted">VD</dt>
+                    <dd className="mt-1 text-sm font-bold text-divlab-text">{ceo?.name ?? "—"}</dd>
+                  </div>
+                </dl>
+                {model.currentEvents.length ? (
+                  <div className="mt-5 border-t divlab-border-neutral pt-4">
+                    <h3 className="text-[13px] font-bold text-divlab-text">Senaste aktuellt</h3>
+                    <ul className="mt-2 divide-y divide-[var(--divlab-divider)]">
+                      {model.currentEvents.slice(0, 3).map((event) => (
+                        <li key={`overview-${event.kind}-${event.href}`}>
+                          <a href={event.href} className="divlab-row-hover grid gap-1 py-3 sm:grid-cols-[108px_minmax(0,1fr)]">
+                            <time className="text-[11px] text-divlab-text-secondary">{event.date ? date(event.date) : "Datum saknas"}</time>
+                            <span className="min-w-0">
+                              <span className="block text-[13px] font-semibold leading-5 text-divlab-text">{event.title}</span>
+                              <span className="mt-0.5 block text-[11px] text-divlab-text-muted">{event.sourceLabel}</span>
+                            </span>
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+              </section>
+            </CompanyTabPanel>
+            <CompanyTabPanel id="kursutveckling">
             <section id="kursutveckling" className="divlab-card overflow-hidden scroll-mt-28">
               <div className="flex flex-wrap items-center justify-between gap-2 px-5 pt-4">
                 <p className="max-w-xl text-[10px] leading-4 text-divlab-text-muted">Grafen kommer från TradingView. Kurs, förändring och nyckeltal kommer från {model.delayedLabel}.</p>
@@ -255,7 +300,9 @@ export default function CompanyPageContent({
               </div>
               <p className="px-5 pb-4 text-[11px] leading-5 text-divlab-text-muted">{MARKET_DATA_REFRESH_NOTE}</p>
             </section>
+            </CompanyTabPanel>
 
+            <CompanyTabPanel id="nyckeltal">
             <section id="nyckeltal" className="divlab-card scroll-mt-28 p-5 sm:p-6">
               <PanelHeading title="Nyckeltal" href={model.marketSourceUrl} label="Marknadsdata" />
               <p className="mt-2 text-[11px] leading-5 text-divlab-text-muted">Värden visas bara när leverantören har dem. Saknad data är —. Inga tal räknas om mellan valutor.</p>
@@ -296,7 +343,9 @@ export default function CompanyPageContent({
                 </dl>
               </details>
             </section>
+            </CompanyTabPanel>
 
+            <CompanyTabPanel id="finansiell-utveckling">
             <section id="finansiell-utveckling" className="divlab-card scroll-mt-28 p-5 sm:p-6">
               <PanelHeading title="Finansiell utveckling" href={company.reportsUrl} label="Rapporter" />
               <p className="mt-2 text-[11px] leading-5 text-divlab-text-muted">
@@ -344,8 +393,10 @@ export default function CompanyPageContent({
                 </p>
               )}
             </section>
+            </CompanyTabPanel>
 
             {model.reportSnapshot ? (
+              <CompanyTabPanel id="rapport-i-siffror">
               <section id="rapport-i-siffror" className="divlab-card scroll-mt-28 p-5 sm:p-6">
                 <PanelHeading title="Senaste rapporten i siffror" href={model.reportSnapshot.sourceUrl} label="Officiell rapport" />
                 <p className="mt-2 text-[11px] leading-5 text-divlab-text-muted">
@@ -372,8 +423,10 @@ export default function CompanyPageContent({
                 ) : null}
                 <p className="mt-3 text-[10px] text-divlab-text-muted">Källa: {model.reportSnapshot.sourcePublisher}. Skalan är den bolaget själv använder. Inget citat från bolaget visas, eftersom rapportunderlaget inte innehåller en verifierad formulering.</p>
               </section>
+              </CompanyTabPanel>
             ) : null}
 
+            <CompanyTabPanel id="utdelning">
             <section id="utdelning" className="divlab-card scroll-mt-28 p-5 sm:p-6">
               <PanelHeading title="Utdelning" href={model.dividend.sourceUrl ?? company.websiteUrl} label="Officiell källa" />
               <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -435,7 +488,9 @@ export default function CompanyPageContent({
                 </div>
               ) : <p className="mt-3 text-xs leading-5 text-divlab-text-muted">Ingen verifierad utdelningshistorik från marknadsdatakällan.</p>}
             </section>
+            </CompanyTabPanel>
 
+            <CompanyTabPanel id="aktuellt">
             <section id="aktuellt" className="divlab-card scroll-mt-28 p-5 sm:p-6">
               <PanelHeading title="Aktuellt för bolaget" />
               {model.currentEvents.length ? (
@@ -454,23 +509,31 @@ export default function CompanyPageContent({
                 </ul>
               ) : <p className="mt-4 text-xs leading-5 text-divlab-text-muted">Inga aktuella händelser kunde härledas från kalender, rapporter, press, DivLab-nyheter eller en stor dagsrörelse.</p>}
             </section>
+            </CompanyTabPanel>
 
             <div className="grid gap-4 lg:grid-cols-2">
+              <CompanyTabPanel id="rapporter">
               <section id="rapporter" className="divlab-card scroll-mt-28 p-5">
                 <PanelHeading title="Rapporter" href={company.reportsUrl} label="Officiell källa" />
                 {reports.length ? <div className="mt-2 divide-y divide-[var(--divlab-divider)]">{reports.slice(0, 5).map((row, index) => <div key={row.url} className={index === 0 ? "rounded-xl bg-divlab-blue/5 px-2" : ""}><SourceLine row={row} /></div>)}</div> : <PanelState panel="reports" section={officialData.reports} />}
               </section>
+              </CompanyTabPanel>
+              <CompanyTabPanel id="rapporter">
               <section id="kalender" className="divlab-card scroll-mt-28 p-5">
                 <PanelHeading title="Kalender" href={company.calendarUrl} label="Officiell källa" />
                 {events.length ? <div className="mt-2 divide-y divide-[var(--divlab-divider)]">{events.slice(0, 5).map((row) => <SourceLine key={`${row.date}-${row.title}`} row={row} />)}</div> : <PanelState panel="calendar" section={officialData.events} />}
               </section>
+              </CompanyTabPanel>
             </div>
 
+            <CompanyTabPanel id="rapporter">
             <section className="divlab-card p-5">
               <PanelHeading title="Officiella pressmeddelanden" href={company.pressReleasesUrl} label="Officiell källa" badge="Bolaget" />
               {pressReleases.length ? <div className="mt-2 divide-y divide-[var(--divlab-divider)]">{pressReleases.slice(0, 5).map((row) => <SourceLine key={row.url} row={row} />)}</div> : <PanelState panel="press" section={officialData.pressReleases} />}
             </section>
+            </CompanyTabPanel>
 
+            <CompanyTabPanel id="agarstruktur">
             <section id="agarstruktur" className="divlab-card scroll-mt-28 p-5 sm:p-6">
               <PanelHeading title="Ägare" href={model.ownership.sourceUrl ?? company.ownershipUrl ?? company.websiteUrl} label="Officiell källa" />
               {model.ownership.rows.length ? (
@@ -493,8 +556,10 @@ export default function CompanyPageContent({
                 </div>
               ) : <PanelState panel="ownership" section={officialData.ownership} />}
             </section>
+            </CompanyTabPanel>
 
             <div className="grid gap-4 lg:grid-cols-2">
+              <CompanyTabPanel id="agarstruktur">
               <section id="ledning" className="divlab-card scroll-mt-28 p-5">
                 <PanelHeading title="Ledning" href={ceo?.sourceUrl ?? company.governanceUrl ?? company.websiteUrl} label="Officiell källa" />
                 {ceo ? (
@@ -511,18 +576,28 @@ export default function CompanyPageContent({
                   </p>
                 )}
               </section>
+              </CompanyTabPanel>
+              <CompanyTabPanel id="insyn">
               <section id="insyn" className="divlab-card scroll-mt-28 p-5">
                 <PanelHeading title="Insyn" href={model.insiders.url} label={model.insiders.publisher} />
                 <p className="mt-4 text-xs leading-5 text-divlab-text-muted">{model.insiders.reason}</p>
               </section>
+              </CompanyTabPanel>
             </div>
 
-            <ShortInterestPanel interest={shortInterest} />
+            <CompanyTabPanel id="blankning">
+              <ShortInterestPanel interest={shortInterest} />
+            </CompanyTabPanel>
 
+            <CompanyTabPanel id="nyheter">
             <section id="nyheter" className="divlab-card scroll-mt-28 p-5">
               <PanelHeading title={`DivLabs nyheter om ${company.name}`} href="/news" badge="DivLab" />
               {articles.length ? <div className="mt-2">{articles.map((article) => <NewsArticleRow key={article.id} article={article} />)}</div> : <p className="mt-5 text-xs leading-5 text-divlab-text-muted">Inga publicerade DivLab-nyheter matchar bolaget just nu.</p>}
             </section>
+            </CompanyTabPanel>
+            <CompanyTabPanel id="diskussion">
+              {children}
+            </CompanyTabPanel>
           </main>
 
           <aside className="min-w-0 space-y-4">
@@ -553,7 +628,7 @@ export default function CompanyPageContent({
                 <li><Link href="/watchlist" className="text-divlab-blue hover:text-divlab-blue-hover">Mitt DivLab</Link></li>
                 <li><Link href="/news" className="text-divlab-blue hover:text-divlab-blue-hover">DivLab-nyheter</Link></li>
                 <li><Link href="/portfolios" className="text-divlab-blue hover:text-divlab-blue-hover">AI-portföljer</Link></li>
-                <li><a href="#diskussion" className="text-divlab-blue hover:text-divlab-blue-hover">Diskussion</a></li>
+                <li><Link href={`/bolag/${company.slug}?tab=diskussion`} scroll={false} className="text-divlab-blue hover:text-divlab-blue-hover">Diskussion</Link></li>
                 <li><Link href="/bolag" className="text-divlab-blue hover:text-divlab-blue-hover">Alla bolag</Link></li>
               </ul>
               {portfolios && portfolios.length ? (
@@ -588,8 +663,8 @@ export default function CompanyPageContent({
             </section>
           </aside>
         </div>
+        </CompanyPageTabs>
         <p className="mt-4 text-[10px] leading-4 text-divlab-text-muted">{companySourceDisclaimer(company)}</p>
-        {children}
       </div>
     </div>
   );

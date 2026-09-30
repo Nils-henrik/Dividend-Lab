@@ -15,6 +15,9 @@ type Props = {
   params: Promise<{
     slug: string;
   }>;
+  searchParams?: Promise<{
+    tab?: string | string[];
+  }>;
 };
 
 export const dynamic = "force-dynamic";
@@ -58,8 +61,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function CompanyPage({ params }: Props) {
-  const { slug } = await params;
+export default async function CompanyPage({ params, searchParams }: Props) {
+  const [{ slug }, query] = await Promise.all([
+    params,
+    searchParams ?? Promise.resolve<{ tab?: string | string[] }>({}),
+  ]);
+  const initialTab = typeof query.tab === "string" ? query.tab : undefined;
   const user = await getAuthenticatedUser();
   const loaded = await loadCompanyPage(slug, user?.id);
 
@@ -83,6 +90,7 @@ export default async function CompanyPage({ params }: Props) {
         jsonLd={companyPageJsonLd(company)}
         shortInterest={shortInterest}
         portfolios={portfolios}
+        initialTab={initialTab}
       >
         <CompanyComments
           companyId={followState.companyId}
