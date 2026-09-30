@@ -21,7 +21,12 @@ import {
   yahooDividendEndpoint,
   type SourceSlot,
 } from "../lib/companies/source-chain";
-import { FI_AGGREGATE_ODS_URL } from "../lib/companies/short-interest/constants";
+import { INSIDER_LINK } from "../lib/companies/insiders";
+import { FI_INSIDER_SEARCH_URL } from "../lib/companies/source-policy";
+import {
+  FI_AGGREGATE_ODS_URL,
+  FI_CURRENT_POSITIONS_ODS_URL,
+} from "../lib/companies/short-interest/constants";
 
 function read(path: string) {
   return readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
@@ -114,11 +119,25 @@ test("every catalog company has an explicit three-slot chain", () => {
     assert.equal(chain.domains.dividend.slots[2]?.status, "licensing_blocked");
     assert.equal(chain.domains.ownership.slots[1]?.status, "licensing_blocked");
     assert.equal(chain.domains.ownership.slots[1]?.providerId, "euroclear_sweden_register");
-    assert.equal(chain.domains.insider.slots[0]?.endpoint, FI_AGGREGATE_ODS_URL);
+    assert.equal(chain.domains.insider.activeProviderId, null);
+    assert.equal(chain.domains.insider.activeEndpoint, null);
+    assert.equal(chain.domains.insider.slots[0]?.status, "source_link_only");
+    assert.equal(chain.domains.insider.slots[0]?.providerId, "fi_insider_register");
+    assert.equal(chain.domains.insider.slots[0]?.endpoint, INSIDER_LINK.url);
     assert.equal(chain.domains.insider.slots[0]?.binding, `lei:${company.fiLei}`);
     assert.equal(chain.domains.insider.slots[1]?.status, "source_link_only");
-    assert.notEqual(chain.domains.insider.slots[1]?.status, "functioning");
-    assert.notEqual(chain.domains.insider.slots[2]?.status, "functioning");
+    assert.equal(chain.domains.insider.slots[1]?.providerId, "fi_insider_search");
+    assert.equal(chain.domains.insider.slots[1]?.endpoint, FI_INSIDER_SEARCH_URL);
+    assert.equal(chain.domains.insider.slots[2]?.status, "gap");
+    assert.equal(
+      chain.domains.insider.slots.some((entry) => entry.status === "functioning"),
+      false,
+    );
+    const insiderEndpoints = chain.domains.insider.slots.map((entry) => entry.endpoint ?? "").join(" ");
+    const insiderProviders = chain.domains.insider.slots.map((entry) => entry.providerId ?? "").join(" ");
+    assert.equal(insiderEndpoints.includes(FI_AGGREGATE_ODS_URL), false);
+    assert.equal(insiderEndpoints.includes(FI_CURRENT_POSITIONS_ODS_URL), false);
+    assert.doesNotMatch(insiderProviders, /fi_short_interest/);
     for (const domain of ["press", "reports", "calendar"] as const) {
       const backups = chain.domains[domain].slots.filter((entry) => entry.role !== "primary");
       assert.equal(backups.some((entry) => entry.providerId === "nasdaq_cns_company_news"), true, company.slug);
@@ -145,6 +164,10 @@ test("every catalog company has an explicit three-slot chain", () => {
   assert.match(matrix, /### price/);
   assert.match(matrix, /\| investor \|/);
   assert.match(matrix, /\| telia \|/);
+  const insiderMatrix = matrix.split("### insider")[1]?.split("### ")[0] ?? "";
+  assert.match(insiderMatrix, /source_link_only fi_insider_register https:\/\/www\.fi\.se\/sv\/vara-register\/insynsregistret\//);
+  assert.match(insiderMatrix, /source_link_only fi_insider_search https:\/\/marknadssok\.fi\.se\/publiceringsklient/);
+  assert.doesNotMatch(insiderMatrix, /functioning|fi_short_interest|blankningsregistret/i);
   assert.equal(matrix.split("### ").length - 1, CRITICAL_SOURCE_DOMAINS.length);
   const dividend = dividendSlotsForSymbol("INVE-B.ST");
   assert.equal(dividend[0]?.endpoint, yahooDividendEndpoint("INVE-B.ST"));

@@ -19,6 +19,7 @@ import { companyPageNavigation } from "@/lib/companies/page-nav";
 import type { CompanyAiPortfolioLink } from "@/lib/companies/ai-portfolio-crosslinks";
 import { reportFactChanges } from "@/lib/companies/report-facts";
 import { dividendYearSeries, revenueSeries } from "@/lib/companies/series";
+import { MARKET_DATA_REFRESH_NOTE } from "@/lib/companies/source-labels";
 import type { CompanyShortInterest } from "@/lib/companies/short-interest/types";
 import type { JsonLd } from "@/lib/seo/json-ld";
 import { formatReportMetric } from "@/lib/companies/report-snapshot";
@@ -252,6 +253,7 @@ export default function CompanyPageContent({
               <div className="px-2 pb-2 pt-1 sm:px-4">
                 <CompanyPriceChart companyName={company.displayName} symbol={company.tradingViewSymbol} />
               </div>
+              <p className="px-5 pb-4 text-[11px] leading-5 text-divlab-text-muted">{MARKET_DATA_REFRESH_NOTE}</p>
             </section>
 
             <section id="nyckeltal" className="divlab-card scroll-mt-28 p-5 sm:p-6">

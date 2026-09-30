@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { presentMarketEvidencePublisher } from "@/lib/companies/source-labels";
 import type { PortfolioTradeDetail } from "@/lib/model-portfolios/transparency";
 
 function formatSek(minor: number): string {
@@ -106,7 +107,7 @@ export default function TradeDetailView({ detail }: { detail: PortfolioTradeDeta
               label="FX till SEK"
               value={trade.fxRateToSek === null ? "—" : trade.fxRateToSek.toFixed(4)}
             />
-            <Metric label="FX-källa" value={trade.fxSourcePublisher ?? "—"} />
+            <Metric label="FX-källa" value={trade.fxSourcePublisher ? presentMarketEvidencePublisher(trade.fxSourcePublisher) : "—"} />
             <Metric label="Fill" value={trade.fillLabel ?? "SIMULATED"} />
           </div>
         ) : trade.fillLabel ? (
@@ -135,7 +136,8 @@ export default function TradeDetailView({ detail }: { detail: PortfolioTradeDeta
               <div className="mt-5 space-y-4">
                 {evidence.map((item, index) => {
                   const title = textField(item, "title", "name", "label") ?? `Underlag ${index + 1}`;
-                  const publisher = textField(item, "publisher", "source", "provider");
+                  const storedPublisher = textField(item, "publisher", "source", "provider");
+                  const publisher = storedPublisher ? presentMarketEvidencePublisher(storedPublisher) : null;
                   const summary = textField(item, "summary", "text", "reason");
                   const publishedAt = textField(item, "publishedAt", "published_at", "verifiedAt", "verified_at");
                   return (

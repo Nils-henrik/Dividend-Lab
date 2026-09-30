@@ -12,6 +12,9 @@ import type {
 import { scoreNormalizedFundamentals } from "./research-fundamentals";
 
 const YAHOO_CHART_ENDPOINT = "https://query1.finance.yahoo.com/v8/finance/chart";
+
+/** DivLab cache window for chart history. Not a description of the exchange feed. */
+export const YAHOO_HISTORY_REVALIDATE_SECONDS = 15 * 60;
 const YAHOO_SUMMARY_ENDPOINT = "https://query1.finance.yahoo.com/v10/finance/quoteSummary";
 const YAHOO_QUOTE_ENDPOINT = "https://query1.finance.yahoo.com/v7/finance/quote";
 const YAHOO_CRUMB_ENDPOINT = "https://query1.finance.yahoo.com/v1/test/getcrumb";
@@ -333,7 +336,7 @@ export async function fetchYahooHistoryResearch(
   try {
     const response = await fetchImpl(url, {
       headers: { Accept: "application/json", "User-Agent": USER_AGENT },
-      next: { revalidate: 900 },
+      next: { revalidate: YAHOO_HISTORY_REVALIDATE_SECONDS },
     });
     if (!response.ok) return null;
     const body = (await response.json()) as YahooChartResponse;

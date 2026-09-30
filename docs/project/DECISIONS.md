@@ -300,7 +300,7 @@ A slot is still functioning only when the path is deterministic, issuer-bound an
 - Nasdaq Europe RSS feeds are exchange notices, IT notices or Nasdaq's own investor news. They are not issuer disclosures.
 - EODHD is not a Nordic price, valuation or dividend-history backup. The configured Nordic budget is 0, the free daily cap is 20 calls, and no commercial display entitlement is verified. The paid Nasdaq equity API is not added.
 - Euroclear remains the authoritative Swedish share register and is not automated.
-- FI insider data stays a source link. The search client has no company-specific feed. Blankning stays on the existing aggregate file.
+- FI insider data stays a source link. Insynsregistret and Marknadssök are source links only. No company-specific machine-readable insider feed is verified, so the insider chain has no active provider. The short-interest aggregate file is blankning, not insider transactions, and stays on the blankning path.
 - NIBE's MFN feed is the functioning press and report backup because the issuer page embeds that feed id and the feed's LEI matches the stored FI identifier. The company official-data loader reads it on the server only when the stored primary press or report section is missing or unavailable. The read uses the existing feed binding: exact feed id, exact LEI, HTTPS, exact origin, no redirects, byte cap, item cap and timeout. It does not write the database. Headlines are not dividend facts. Overlapping disclosures that disagree fail closed and are not merged.
 
 ### Consequences

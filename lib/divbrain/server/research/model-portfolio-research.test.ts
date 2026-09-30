@@ -316,6 +316,31 @@ describe("model portfolio research — source mapping quality", () => {
       source.canonicalUrl,
       "https://www.investorab.com/reports/q2-2026",
     );
+    assert.equal(source.publisher, "Investor IR");
+  });
+
+  it("neutralizes Yahoo Finance in the user-facing market publisher", () => {
+    const summary = "Historik och teknisk analys utan leverantörsnamn.";
+    const source = researchRowToDivBrainSource(
+      row({
+        id: "market-yahoo",
+        kind: "market_data",
+        title: "Investor – marknadsdata, teknisk analys och fundamentals",
+        publisher: "Yahoo Finance + EODHD + DivLab deterministic TA",
+        source_url: "https://finance.yahoo.com/quote/INVE-B.ST",
+        summary,
+        metadata: {
+          primary_source: "mixed",
+          verification_state: "verified",
+        },
+      }),
+    );
+    assert.equal(source.publisher, "Extern marknadsdata + DivLab-analys");
+    assert.equal(source.canonicalUrl, "https://finance.yahoo.com/quote/INVE-B.ST");
+    assert.equal(source.excerpt, summary);
+    assert.equal(source.category, "market_data_provider");
+    assert.doesNotMatch(source.publisher, /yahoo finance/i);
+    assert.doesNotMatch(JSON.stringify({ publisher: source.publisher, excerpt: source.excerpt, title: source.title }), /yahoo finance/i);
   });
 
   it("does not overclaim official status for unverified news hits", () => {

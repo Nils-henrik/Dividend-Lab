@@ -18,10 +18,6 @@ import {
   type OfficialCategoryCoverage,
 } from "@/lib/companies/official-coverage";
 import {
-  FI_AGGREGATE_ODS_URL,
-  FI_CURRENT_POSITIONS_ODS_URL,
-} from "@/lib/companies/short-interest/constants";
-import {
   DIVIDEND_HISTORY_LICENSE_BLOCKER,
   EODHD_NORDIC_DISPLAY_BLOCKER,
   EUROCLEAR_OWNERSHIP_BLOCKER,
@@ -108,7 +104,6 @@ export type CompanySourceChain = {
 export const YAHOO_CHART_PROVIDER = "yahoo_chart";
 export const YAHOO_SUMMARY_PROVIDER = "yahoo_quote_summary";
 export const YAHOO_DIVIDEND_PROVIDER = "yahoo_chart_dividends";
-export const FI_AGGREGATE_PROVIDER = "fi_short_interest_aggregate";
 
 export const PRICE_BACKUP_BLOCKER =
   "Ingen oberoende maskinläsbar reserv. Betalda källor ingår inte. query2.finance.yahoo.com är samma skal som query1.finance.yahoo.com och räknas inte.";
@@ -389,39 +384,29 @@ function domainChain(
 
 function insiderChain(company: CompanyProfile): DomainSourceChain {
   const lei = company.fiLei?.trim() || null;
-  const primary = lei
-    ? filledSlot({
-      role: "primary",
-      status: "functioning",
-      providerId: FI_AGGREGATE_PROVIDER,
-      endpoint: FI_AGGREGATE_ODS_URL,
-      binding: `lei:${lei}`,
-      presentationLabel: "Finansinspektionen",
-      blocker: null,
-    })
-    : gapSlot("primary", "Saknar verifierad LEI. Registret matchas inte på visningsnamn.");
+  const binding = lei ? `lei:${lei}` : null;
   return domainChain("insider", [
-    primary,
+    filledSlot({
+      role: "primary",
+      status: "source_link_only",
+      providerId: "fi_insider_register",
+      endpoint: INSIDER_LINK.url,
+      binding,
+      presentationLabel: INSIDER_LINK.publisher,
+      blocker: INSIDER_LINK.reason,
+      verifiedAsOf: SOURCE_POLICY_VERIFIED_ON,
+    }),
     filledSlot({
       role: "backup1",
       status: "source_link_only",
       providerId: "fi_insider_search",
       endpoint: FI_INSIDER_SEARCH_URL,
-      binding: lei ? `lei:${lei}` : null,
+      binding,
       presentationLabel: "Finansinspektionen",
-      blocker: `${FI_INSIDER_SEARCH_BLOCKER} ${SAME_SHELL_BACKUP_BLOCKER} ${FI_CURRENT_POSITIONS_ODS_URL} ligger på fi.se tillsammans med den aggregerade filen.`,
+      blocker: `${FI_INSIDER_SEARCH_BLOCKER} ${SAME_SHELL_BACKUP_BLOCKER}`,
       verifiedAsOf: SOURCE_POLICY_VERIFIED_ON,
     }),
-    filledSlot({
-      role: "backup2",
-      status: "source_link_only",
-      providerId: "fi_insider_register",
-      endpoint: INSIDER_LINK.url,
-      binding: lei ? `lei:${lei}` : null,
-      presentationLabel: INSIDER_LINK.publisher,
-      blocker: `${INSIDER_LINK.reason} ${SAME_SHELL_BACKUP_BLOCKER}`,
-      verifiedAsOf: SOURCE_POLICY_VERIFIED_ON,
-    }),
+    gapSlot("backup2", NO_THIRD_SOURCE_BLOCKER),
   ]);
 }
 
