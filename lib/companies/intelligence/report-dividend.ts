@@ -10,15 +10,12 @@ export type DeterministicDelta = {
   percentChange: number | null;
 };
 
-const ANNUAL_DELTA_METRICS = [
-  "revenue",
-  "operatingIncome",
-  "netIncome",
-  "eps",
-  "freeCashFlow",
-] as const;
-
-export type AnnualDeltaMetric = (typeof ANNUAL_DELTA_METRICS)[number];
+export type AnnualDeltaMetric =
+  | "revenue"
+  | "operatingIncome"
+  | "netIncome"
+  | "eps"
+  | "freeCashFlow";
 
 export type AnnualMetricDelta = DeterministicDelta & {
   metric: AnnualDeltaMetric;
