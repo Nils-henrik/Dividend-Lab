@@ -158,7 +158,7 @@ function yahooCell(company: CompanyProfile, reason: string): DataParityCell {
     return cell(
       "NOT APPLICABLE / NO VERIFIED DATA",
       null,
-      "Saknar verifierad Yahoo Finance-symbol på Nasdaq Stockholm.",
+      "Saknar verifierad marknadsdatasymbol på Nasdaq Stockholm.",
     );
   }
   return cell(
@@ -292,19 +292,19 @@ function rowFor(company: CompanyProfile): CatalogParityRow {
   const cells: Record<DataParityDimension, DataParityCell> = {
     delayedPrice: yahooCell(
       company,
-      "Fördröjd kurs från Yahoo Finance. Saknad kurs förblir saknad.",
+      "Fördröjd kurs från marknadsdata. Saknad kurs förblir saknad.",
     ),
     valuationMetrics: yahooCell(
       company,
-      "Nyckeltal från Yahoo Finance. Saknade fält visas som streck, aldrig som noll.",
+      "Nyckeltal från marknadsdata. Saknade fält visas som streck, aldrig som noll.",
     ),
     annualFinancialHistory: yahooCell(
       company,
-      "Årsserie från Yahoo Finance när fälten finns. Tomma år fylls inte med noll.",
+      "Årsserie från marknadsdata när fälten finns. Tomma år fylls inte med noll.",
     ),
     dividendHistory: yahooCell(
       company,
-      "Utbetalda utdelningar från Yahoo Finance. De årsberäknas inte från en inkompatibel officiell siffra.",
+      "Utbetalda utdelningar från marknadsdata. De årsberäknas inte från en inkompatibel officiell siffra.",
     ),
     officialPress,
     officialReports,

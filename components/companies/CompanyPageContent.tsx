@@ -243,9 +243,9 @@ export default function CompanyPageContent({
           <main className="min-w-0 space-y-4">
             <section id="kursutveckling" className="divlab-card overflow-hidden scroll-mt-28">
               <div className="flex flex-wrap items-center justify-between gap-2 px-5 pt-4">
-                <p className="max-w-xl text-[10px] leading-4 text-divlab-text-muted">Grafen kommer från TradingView. Kurs, förändring och nyckeltal kommer från Yahoo Finance.</p>
+                <p className="max-w-xl text-[10px] leading-4 text-divlab-text-muted">Grafen kommer från TradingView. Kurs, förändring och nyckeltal kommer från {model.delayedLabel}.</p>
                 <div className="flex flex-wrap justify-end gap-2">
-                  <a href={model.marketSourceUrl} target="_blank" rel="noopener noreferrer" className="rounded-lg border divlab-border-neutral px-3 py-2 text-[10px] font-medium text-divlab-text-secondary">Kurs och nyckeltal: Yahoo Finance ↗</a>
+                  <a href={model.marketSourceUrl} target="_blank" rel="noopener noreferrer" className="rounded-lg border divlab-border-neutral px-3 py-2 text-[10px] font-medium text-divlab-text-secondary">Kurs och nyckeltal: {model.delayedLabel} ↗</a>
                   <span className="rounded-lg border divlab-border-neutral px-3 py-2 text-[10px] font-medium text-divlab-text-secondary">Graf: TradingView</span>
                 </div>
               </div>
@@ -255,7 +255,7 @@ export default function CompanyPageContent({
             </section>
 
             <section id="nyckeltal" className="divlab-card scroll-mt-28 p-5 sm:p-6">
-              <PanelHeading title="Nyckeltal" href={model.marketSourceUrl} label="Yahoo Finance" />
+              <PanelHeading title="Nyckeltal" href={model.marketSourceUrl} label="Marknadsdata" />
               <p className="mt-2 text-[11px] leading-5 text-divlab-text-muted">Värden visas bara när leverantören har dem. Saknad data är —. Inga tal räknas om mellan valutor.</p>
               {valuationGroups.available.length ? (
                 <dl className="mt-4 grid gap-px overflow-hidden rounded-xl border divlab-border-neutral bg-[var(--divlab-divider)] sm:grid-cols-2 xl:grid-cols-3">
@@ -298,7 +298,7 @@ export default function CompanyPageContent({
             <section id="finansiell-utveckling" className="divlab-card scroll-mt-28 p-5 sm:p-6">
               <PanelHeading title="Finansiell utveckling" href={company.reportsUrl} label="Rapporter" />
               <p className="mt-2 text-[11px] leading-5 text-divlab-text-muted">
-                Årsserie från Yahoo Finance{currency ? ` i rapporteringsvalutan ${currency}` : ". Rapporteringsvaluta saknas, så ingen valuta visas"}. Belopp i miljoner (mn) eller miljarder (md). Rörelseresultat är fältet operatingIncome. Fritt kassaflöde är leverantörens eget fält, eller kassaflöde från löpande verksamhet plus investeringar när investeringarna är noll eller negativa. Nettoskuld är skuld minus likvida medel för samma rapport. Tomma år fylls inte i.
+                Årsserie från fördröjd marknadsdata{currency ? ` i rapporteringsvalutan ${currency}` : ". Rapporteringsvaluta saknas, så ingen valuta visas"}. Belopp i miljoner (mn) eller miljarder (md). Rörelseresultat är fältet operatingIncome. Fritt kassaflöde är leverantörens eget fält, eller kassaflöde från löpande verksamhet plus investeringar när investeringarna är noll eller negativa. Nettoskuld är skuld minus likvida medel för samma rapport. Tomma år fylls inte i.
               </p>
               {model.financials.points.length ? (
                 <div className="mt-4 overflow-x-auto">
@@ -337,8 +337,8 @@ export default function CompanyPageContent({
               ) : (
                 <p className="mt-4 text-xs leading-5 text-divlab-text-muted">
                   {model.financials.status === "unavailable"
-                    ? "Årsserien kunde inte hämtas från Yahoo Finance just nu."
-                    : "Yahoo Finance har ingen verifierad årsserie för bolaget."}
+                    ? "Årsserien kunde inte hämtas från marknadsdatakällan just nu."
+                    : "Marknadsdatakällan har ingen verifierad årsserie för bolaget."}
                 </p>
               )}
             </section>
@@ -386,7 +386,7 @@ export default function CompanyPageContent({
                 <div>
                   <p className="text-[10px] text-divlab-text-muted">Utdelningsandel</p>
                   <p className="mt-1 text-sm font-bold text-divlab-text">{model.dividend.payoutText}</p>
-                  <p className="mt-1 text-[10px] leading-4 text-divlab-text-muted">Enligt Yahoo Finance, och bara när värdet redan är en andel.</p>
+                  <p className="mt-1 text-[10px] leading-4 text-divlab-text-muted">Enligt fördröjd marknadsdata, och bara när värdet redan är en andel.</p>
                 </div>
                 <div>
                   <p className="text-[10px] text-divlab-text-muted">Tillväxt</p>
@@ -409,7 +409,7 @@ export default function CompanyPageContent({
               {model.dividend.sourcePublisher ? <p className="mt-3 text-[10px] text-divlab-text-muted">Källa: {model.dividend.sourcePublisher}{model.dividend.asOf ? ` · ${date(model.dividend.asOf)}` : ""}.</p> : null}
               <h3 className="mt-5 text-[13px] font-bold text-divlab-text">Historiskt utbetalda utdelningar</h3>
               <CompanySeriesChart points={dividendChart} label="Utbetald utdelning per kalenderår" unit={model.dividend.history[0]?.currency ?? ""} />
-              <p className="mt-1 text-[11px] leading-5 text-divlab-text-muted">X-dag och belopp från Yahoo Finance. Avstämningsdag och utbetalningsdag visas bara när en officiell källa anger dem.</p>
+              <p className="mt-1 text-[11px] leading-5 text-divlab-text-muted">X-dag och belopp från fördröjd marknadsdata. Avstämningsdag och utbetalningsdag visas bara när en officiell källa anger dem.</p>
               {model.dividend.history.length ? (
                 <div className="mt-3 overflow-x-auto">
                   <table className="w-full min-w-[420px] text-left text-[11px]">
@@ -431,7 +431,7 @@ export default function CompanyPageContent({
                     </tbody>
                   </table>
                 </div>
-              ) : <p className="mt-3 text-xs leading-5 text-divlab-text-muted">Ingen verifierad utdelningshistorik från Yahoo Finance.</p>}
+              ) : <p className="mt-3 text-xs leading-5 text-divlab-text-muted">Ingen verifierad utdelningshistorik från marknadsdatakällan.</p>}
             </section>
 
             <section id="aktuellt" className="divlab-card scroll-mt-28 p-5 sm:p-6">

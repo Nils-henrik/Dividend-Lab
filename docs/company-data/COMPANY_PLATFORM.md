@@ -32,7 +32,7 @@ A company page links only active or paused public DivLab model portfolios where 
 
 Each cell is one of: PASS REAL DATA, SOURCE LINK ONLY, BLOCKED BY SOURCE, TEMPORARILY UNAVAILABLE, or NOT APPLICABLE / NO VERIFIED DATA. Only PASS REAL DATA is complete. A blocked or source-link cell keeps its official https URL and is not rendered as parsed rows or as zero.
 
-Yahoo price, valuation, annual statements and paid dividend history are real provider data for a verified `.ST` symbol. A missing field stays missing. A live fetch failure is temporarily unavailable on the page and is not written into the static audit as a number.
+Delayed price, valuation, annual statements and paid dividend history are real provider data for a verified `.ST` symbol. The company page calls that provider through an explicit three-slot source chain. Backup slots stay empty where no independent machine-readable path exists, and a missing field stays missing. A live fetch failure is temporarily unavailable on the page and is not written into the static audit as a number. Rendered labels say fördröjd marknadsdata. The transport host and quote URL stay in the provider layer.
 
 Official press, reports, calendar, CEO, ownership and dividend follow `COMPANY_OFFICIAL_COVERAGE`. Report snapshots are parsed only for Nordea, Tele2 and Industrivärden. Other companies keep the report archive or source link. FI short interest uses the stored LEI and issuer name. A missing register row stays absence. Insider transactions stay a Finansinspektionen source link.
 

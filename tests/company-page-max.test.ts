@@ -622,8 +622,8 @@ test("saknad dagsförändring är neutral och nyckeltal utan värde är sekundä
   const content = read("components/companies/CompanyPageContent.tsx");
   assert.match(content, /Nyckeltal som saknas/);
   assert.match(content, /Graf: TradingView/);
-  assert.match(content, /Kurs och nyckeltal: Yahoo Finance/);
-  assert.doesNotMatch(content, /Källa: Yahoo Finance/);
+  assert.match(content, /Kurs och nyckeltal: \{model\.delayedLabel\}/);
+  assert.doesNotMatch(content, /Yahoo Finance/);
   assert.match(content, /text-divlab-text-secondary/);
   assert.doesNotMatch(content, /positiveChange/);
 });

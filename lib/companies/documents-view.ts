@@ -1,4 +1,5 @@
 import type { OfficialItem } from "@/lib/companies/investor-official";
+import { EXTERNAL_MARKET_DATA_LABEL } from "@/lib/companies/source-labels";
 
 export type ViewableCompanyDocument = {
   type:
@@ -78,5 +79,5 @@ export function companySourceDisclaimer(company: {
   name: string;
 }): string {
   const publisher = SOURCE_PUBLISHERS[company.slug] ?? company.name;
-  return `Kursdata från Yahoo Finance och TradingView kan vara fördröjd. Officiella pressmeddelanden, rapporter och kalenderdatum hämtas från ${publisher}. Informationen utgör inte investeringsrådgivning.`;
+  return `Kursdata från ${EXTERNAL_MARKET_DATA_LABEL.toLowerCase()} och TradingView kan vara fördröjd. Officiella pressmeddelanden, rapporter och kalenderdatum hämtas från ${publisher}. Informationen utgör inte investeringsrådgivning.`;
 }

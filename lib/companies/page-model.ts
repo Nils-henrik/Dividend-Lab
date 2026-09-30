@@ -15,6 +15,7 @@ import {
   type CompanyOfficialData,
 } from "@/lib/companies/official-data";
 import { companyOfficialCoverage } from "@/lib/companies/official-coverage";
+import { DELAYED_MARKET_DATA_LABEL } from "@/lib/companies/source-labels";
 import { selectOwnershipSnapshot } from "@/lib/companies/ownership-snapshot";
 import type { CompanyProfile } from "@/lib/companies/types";
 import {
@@ -284,7 +285,7 @@ export function buildCompanyPageModel(input: {
     : `${input.market.changePct > 0 ? "+" : ""}${formatSvNumber(input.market.changePct, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} %`;
 
   return {
-    delayedLabel: "Fördröjd marknadsdata",
+    delayedLabel: DELAYED_MARKET_DATA_LABEL,
     priceText: formatMoney(input.market.price, input.market.currency),
     changeText,
     changePctText,

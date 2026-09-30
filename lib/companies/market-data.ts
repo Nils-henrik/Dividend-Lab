@@ -8,6 +8,16 @@ import {
   type FinancialHistoryStatus,
 } from "@/lib/companies/financial-history";
 import { sessionExtremes } from "@/lib/companies/quote-session";
+import {
+  companySourceChain,
+  finiteOrMissing,
+  numbersMateriallyDisagree,
+  resolveSourceFailover,
+  sourceUseFromResolution,
+  YAHOO_CHART_PROVIDER,
+  YAHOO_SUMMARY_PROVIDER,
+  type SourceUse,
+} from "@/lib/companies/source-chain";
 import type { CompanyProfile } from "@/lib/companies/types";
 import type { ValuationSnapshot } from "@/lib/companies/valuation";
 import {
@@ -36,6 +46,8 @@ export type CompanyMarketData = {
   sparkline: number[];
   sourceUrl: string;
   fetchedAt: string;
+  priceSource: SourceUse;
+  valuationSource: SourceUse;
   valuation: ValuationSnapshot;
   financials: {
     status: FinancialHistoryStatus;
@@ -92,8 +104,39 @@ async function loadCompanyMarketData(
     history?.history.filter((bar) => new Date(`${bar.date}T00:00:00Z`) >= cutoff) ?? [];
   const lows = finite(yearBars.map((bar) => bar.low));
   const highs = finite(yearBars.map((bar) => bar.high));
-  const price = quote?.close ?? null;
-  const previousClose = quote?.previousClose ?? null;
+  const chain = companySourceChain(company);
+  const [priceResolution, valuationResolution] = await Promise.all([
+    resolveSourceFailover<{ close: number }>({
+      slots: chain.domains.price.slots,
+      valuesAgree: (left, right) => !numbersMateriallyDisagree(left.close, right.close),
+      read: async (slot) => {
+        if (slot.providerId !== YAHOO_CHART_PROVIDER) {
+          return { status: "unavailable", reason: "no_reader" };
+        }
+        if (!history) return { status: "unavailable", reason: "empty_chart" };
+        const close = finiteOrMissing(history.quote?.close ?? null);
+        const asOf = history.quote?.timestamp ?? fetchedAt;
+        if (close === null) return { status: "missing", reason: "missing_price" };
+        return { status: "ok", value: { close }, asOf };
+      },
+    }),
+    resolveSourceFailover({
+      slots: chain.domains.valuation.slots,
+      valuesAgree: () => true,
+      read: async (slot) => {
+        if (!includeFundamentals) return { status: "unavailable", reason: "not_requested" };
+        if (slot.providerId !== YAHOO_SUMMARY_PROVIDER) {
+          return { status: "unavailable", reason: "no_reader" };
+        }
+        if (!fundamentals?.fetchedAt) return { status: "unavailable", reason: "empty_summary" };
+        return { status: "ok", value: fundamentals, asOf: fundamentals.fetchedAt };
+      },
+    }),
+  ]);
+  const priceAccepted = priceResolution.status === "ok";
+  const price = priceAccepted ? priceResolution.value.close : null;
+  const acceptedFundamentals = valuationResolution.status === "ok" ? fundamentals : null;
+  const previousClose = priceAccepted ? finiteOrMissing(quote?.previousClose ?? null) : null;
   const lastBar = history?.history.at(-1) ?? null;
   const extremes = sessionExtremes(
     quote?.timestamp ?? null,
@@ -110,7 +153,7 @@ async function loadCompanyMarketData(
     .slice(-30)
     .map((bar) => bar.close)
     .filter((close) => Number.isFinite(close));
-  const snapshot = fundamentals?.snapshot;
+  const snapshot = acceptedFundamentals?.snapshot;
   const valuation: ValuationSnapshot = snapshot
     ? {
         trailingPe: finiteOrNull(snapshot.trailingPe ?? snapshot.peRatio),
@@ -128,13 +171,13 @@ async function loadCompanyMarketData(
     : emptyValuation();
   const currency = history?.currency ?? null;
   // Listing currency stays on the quote. Statement rows read financialCurrency themselves.
-  const financialPoints = includeStatements && statementFundamentals
+  const financialPoints = includeStatements && statementFundamentals && valuationResolution.status === "ok"
     ? parseYahooAnnualFinancials(statementFundamentals.statements)
     : [];
   const financials = {
     status: !includeStatements
       ? "empty" as const
-      : !statementFundamentals
+      : valuationResolution.status !== "ok" || !statementFundamentals
         ? "unavailable" as const
         : financialPoints.length
           ? "available" as const
@@ -147,17 +190,15 @@ async function loadCompanyMarketData(
     previousClose,
     change:
       price !== null && previousClose !== null ? price - previousClose : null,
-    changePct: quote?.changePct ?? null,
+    changePct: priceAccepted ? finiteOrMissing(quote?.changePct ?? null) : null,
     currency,
-    volume: quote?.volume ?? null,
-    marketTimestamp: quote?.timestamp ?? null,
-    marketCap: fundamentals?.snapshot.marketCap ?? null,
-    peRatio:
-      fundamentals?.snapshot.peRatio ?? fundamentals?.snapshot.trailingPe ?? null,
-    dividendYield:
-      fundamentals?.snapshot.dividendYield ??
-      fundamentals?.snapshot.forwardAnnualDividendYield ??
-      null,
+    volume: priceAccepted ? finiteOrMissing(quote?.volume ?? null) : null,
+    marketTimestamp: priceAccepted ? quote?.timestamp ?? null : null,
+    marketCap: finiteOrMissing(snapshot?.marketCap ?? null),
+    peRatio: finiteOrMissing(snapshot?.peRatio ?? snapshot?.trailingPe ?? null),
+    dividendYield: finiteOrMissing(
+      snapshot?.dividendYield ?? snapshot?.forwardAnnualDividendYield ?? null,
+    ),
     week52Low: lows.length ? Math.min(...lows) : null,
     week52High: highs.length ? Math.max(...highs) : null,
     dayHigh: history?.dayHigh ?? extremes.dayHigh,
@@ -168,6 +209,8 @@ async function loadCompanyMarketData(
       history?.sourceUrl ??
       `https://finance.yahoo.com/quote/${encodeURIComponent(company.marketDataSymbol)}`,
     fetchedAt,
+    priceSource: sourceUseFromResolution(priceResolution),
+    valuationSource: sourceUseFromResolution(valuationResolution),
     valuation,
     financials,
   };

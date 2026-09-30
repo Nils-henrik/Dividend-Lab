@@ -1,3 +1,5 @@
+import { DELAYED_MARKET_DATA_LABEL } from "@/lib/companies/source-labels";
+
 export const MATERIAL_DAY_MOVE_PERCENT = 3;
 export const CURRENT_EVENT_LIMIT = 6;
 
@@ -117,7 +119,7 @@ export function buildCurrentEvents(input: {
       kind: "price_move",
       title: `Dagsförändring ${sign}${input.changePct.toLocaleString("sv-SE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} %`,
       date: isoDay(input.marketTimestamp),
-      sourceLabel: "Fördröjd marknadsdata · Yahoo Finance",
+      sourceLabel: DELAYED_MARKET_DATA_LABEL,
       href: input.marketSourceUrl,
     });
   }

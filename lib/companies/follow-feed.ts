@@ -1,4 +1,5 @@
 import { MATERIAL_DAY_MOVE_PERCENT, stockholmIsoDate } from "@/lib/companies/current-events";
+import { DELAYED_MARKET_DATA_LABEL } from "@/lib/companies/source-labels";
 import { DIVIDEND_KIND_LABEL, type DividendKind } from "@/lib/companies/dividend-view";
 import { explicitFiscalPeriod, isReportPublicationTitle } from "@/lib/companies/ingestion/document";
 import type { CompanyOfficialData } from "@/lib/companies/official-data";
@@ -507,7 +508,7 @@ function collectPrimary(company: FollowFeedCompanyInput, today: string): Draft[]
       title: `Dagsförändring ${sign}${percent} %`,
       sortAt: move.marketTimestamp,
       day: moveDay,
-      sourceLabel: "Fördröjd marknadsdata · Yahoo Finance",
+      sourceLabel: DELAYED_MARKET_DATA_LABEL,
       href: move.sourceUrl,
       freshnessLabel: "Materiell kursrörelse",
     }));
