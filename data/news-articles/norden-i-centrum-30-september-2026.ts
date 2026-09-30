@@ -19,6 +19,9 @@ export const NORDEN_I_CENTRUM_30_SEPTEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-09-30T08:08:15+02:00",
   url: "/news/norden-i-centrum-30-september-2026",
   featured: true,
+  imageUrl: "/news/generated/norden-i-centrum-2026-09-30.png",
+  thumbnailImageUrl: "/news/generated/norden-i-centrum-2026-09-30.png",
+  imageAlt: "Norden i centrum 2026-09-30 – DivLabs morgonöversikt över nordiska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Danmarks BNP-revision i fokus för nordiska börsen",
   seoDescription:
