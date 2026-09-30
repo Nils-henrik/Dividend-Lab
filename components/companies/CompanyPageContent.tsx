@@ -1,16 +1,25 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import AppIcon, { type AppIconName } from "@/components/layout/AppIcon";
+import BrokerActions from "@/components/companies/BrokerActions";
 import CompanyLogo from "@/components/companies/CompanyLogo";
 import CompanyPriceChart from "@/components/companies/CompanyPriceChart";
+import CompanySeriesChart from "@/components/companies/CompanySeriesChart";
 import FollowCompanyButton from "@/components/companies/FollowCompanyButton";
+import ShortInterestPanel from "@/components/companies/ShortInterestPanel";
 import NewsArticleRow from "@/components/news/NewsArticleRow";
+import { isUpcomingReportCalendar } from "@/lib/companies/follow-feed";
 import { classifyCompanyDocuments, companySourceDisclaimer } from "@/lib/companies/documents-view";
 import type { OfficialItem } from "@/lib/companies/investor-official";
 import type { CompanyOfficialData, CompanyOfficialSection } from "@/lib/companies/official-data";
 import { officialPanelCopy, type OfficialPanel } from "@/lib/companies/official-copy";
 import type { CompanyPageModel, MarketChangeDirection, SourcedRow } from "@/lib/companies/page-model";
 import { formatPaidDividend, partitionValuationMetrics } from "@/lib/companies/page-model";
+import { companyPageNavigation } from "@/lib/companies/page-nav";
+import type { CompanyPortfolioPresence } from "@/lib/companies/portfolio-presence.server";
+import { reportFactChanges } from "@/lib/companies/report-facts";
+import { dividendYearSeries, revenueSeries } from "@/lib/companies/series";
+import type { CompanyShortInterest } from "@/lib/companies/short-interest";
 import type { JsonLd } from "@/lib/seo/json-ld";
 import { formatReportMetric } from "@/lib/companies/report-snapshot";
 import { formatStatementAmount, formatSvNumber } from "@/lib/companies/valuation";
@@ -27,19 +36,10 @@ type Props = {
   model: CompanyPageModel;
   officialData: CompanyOfficialData;
   jsonLd: JsonLd[];
+  shortInterest: CompanyShortInterest;
+  portfolios: readonly CompanyPortfolioPresence[];
   children?: ReactNode;
 };
-
-const PAGE_TABS = [
-  ["Kurs", "#kursutveckling"],
-  ["Nyckeltal", "#nyckeltal"],
-  ["Finansiellt", "#finansiell-utveckling"],
-  ["Utdelning", "#utdelning"],
-  ["Aktuellt", "#aktuellt"],
-  ["Rapporter", "#rapporter"],
-  ["Ägare", "#agarstruktur"],
-  ["Nyheter", "#nyheter"],
-] as const;
 
 function date(value: string | null) {
   if (!value) return "Datum saknas";
@@ -125,6 +125,8 @@ export default function CompanyPageContent({
   model,
   officialData,
   jsonLd,
+  shortInterest,
+  portfolios,
   children,
 }: Props) {
   const loginHref = `/login?redirect=${encodeURIComponent(`/bolag/${company.slug}`)}`;
@@ -138,17 +140,29 @@ export default function CompanyPageContent({
   const events = model.events.length
     ? model.events
     : rowsFromOfficial(classifiedDocuments.events, officialData.events.sourcePublisher, "Kalenderhändelse");
-  const revenuePoints = model.financials.points.filter((point) => point.revenue !== null);
-  const maxRevenue = revenuePoints.reduce((max, point) => Math.max(max, Math.abs(point.revenue ?? 0)), 0);
   const reportingCurrencies = [...new Set(model.financials.points.flatMap((point) => point.currency ? [point.currency] : []))];
   const currency = reportingCurrencies.length === 1 ? reportingCurrencies[0] : null;
   const valuationGroups = partitionValuationMetrics(model.metrics);
   const change = changeTone(model.changeDirection);
   const ceo = model.management[0];
   const json = JSON.stringify(jsonLd).replace(/</g, "\\u003c");
-  const pageTabs = model.reportSnapshot
-    ? [["Rapport", "#rapport-i-siffror"] as const, ...PAGE_TABS]
-    : PAGE_TABS;
+  const officialYield = model.metrics.find((metric) => metric.id === "official_yield");
+  const nextReport = model.events.find((event) => isUpcomingReportCalendar({ title: event.title })) ?? model.events[0] ?? null;
+  const revenueChart = revenueSeries(model.financials.points);
+  const dividendChart = dividendYearSeries(model.dividend.history);
+  const factChanges = model.reportSnapshot ? reportFactChanges(model.reportSnapshot.metrics) : [];
+  const pageTabs = companyPageNavigation({
+    hasReports: reports.length > 0 || events.length > 0 || pressReleases.length > 0,
+    hasOwnership: model.ownership.rows.length > 0,
+    hasShortInterest: shortInterest.status !== "unmatched",
+    hasInsiders: Boolean(model.insiders.url),
+    hasNews: articles.length > 0,
+    hasCurrentEvents: model.currentEvents.length > 0,
+  });
+  if (model.reportSnapshot) {
+    const dividendIndex = pageTabs.findIndex((item) => item.id === "utdelning");
+    pageTabs.splice(dividendIndex + 1, 0, { id: "rapport-i-siffror", label: "Rapport", href: "#rapport-i-siffror" });
+  }
   const dividendDates = [
     model.dividend.exDate ? ["X-dag", model.dividend.exDate] : null,
     model.dividend.recordDate ? ["Avstämningsdag", model.dividend.recordDate] : null,
@@ -162,50 +176,68 @@ export default function CompanyPageContent({
         <nav aria-label="Brödsmulor" className="mb-3 flex min-w-0 items-center gap-3 text-[11px] text-divlab-text-muted">
           <Link href="/">Hem</Link>
           <span>›</span>
-          <Link href="/watchlist">Bolag</Link>
+          <Link href="/bolag">Bolag</Link>
           <span>›</span>
           <span className="truncate text-divlab-text">{company.name}</span>
         </nav>
 
-        <section className="divlab-card p-5 sm:p-6">
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-center">
-            <div className="flex min-w-0 flex-col gap-5 sm:flex-row sm:items-center">
+        <section id="oversikt" className="divlab-card scroll-mt-28 p-4 sm:p-5">
+          <div className="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="flex min-w-0 items-start gap-3 sm:gap-4">
               <CompanyLogo name={company.name} logoPath={company.logoPath} size="hero" />
               <div className="min-w-0">
-                <div className="flex flex-wrap gap-2">
-                  <span className="rounded-md bg-divlab-elevated px-2 py-1 text-[10px] font-semibold uppercase text-divlab-text-secondary">Aktie</span>
-                  <span className="rounded-md bg-divlab-elevated px-2 py-1 text-[10px] font-semibold text-divlab-text-secondary">{company.segment}</span>
-                  <span className="rounded-md bg-divlab-elevated px-2 py-1 text-[10px] font-semibold text-divlab-text-secondary">{company.countryName}</span>
-                </div>
-                <h1 className="mt-2 break-words text-3xl font-bold tracking-[-0.045em] text-divlab-text sm:text-[38px]">{company.displayName}</h1>
+                <h1 className="break-words text-2xl font-bold tracking-[-0.04em] text-divlab-text sm:text-3xl">{company.displayName}</h1>
                 <p className="mt-1 text-sm text-divlab-text-secondary">{company.ticker} <span className="px-1">•</span> {company.exchange} <span className="px-1">•</span> {company.sector}</p>
                 <p className="mt-2 max-w-2xl text-[13px] leading-5 text-divlab-text-secondary">{company.shortDescription}</p>
               </div>
             </div>
-            <div className="flex flex-col items-start lg:items-end">
-              <FollowCompanyButton companySlug={company.slug} isAuthenticated={isAuthenticated} isAvailable={followState.isAvailable} isFollowing={followState.isFollowing} loginHref={loginHref} />
-              <div className="mt-7 text-left lg:text-right">
-                <p className="text-3xl font-bold tracking-[-0.04em] text-divlab-text sm:text-4xl">{model.priceText}</p>
-                <p className={`mt-1.5 text-base font-bold ${change.text}`}>
-                  {model.changeText} <span className="ml-1">{model.changePctText}</span>
-                </p>
-                <p className="mt-2 text-[10px] text-divlab-text-muted">
-                  <span className={`mr-1.5 inline-block h-2 w-2 rounded-full ${change.dot}`} />
-                  Fördröjd marknadsdata · {time(model.marketTimestamp)}
-                </p>
-              </div>
+            <div className="min-w-0 lg:text-right">
+              <p className="text-3xl font-bold tracking-[-0.04em] text-divlab-text">{model.priceText}</p>
+              <p className={`mt-1 text-base font-bold ${change.text}`}>
+                {model.changeText} <span className="ml-1">{model.changePctText}</span>
+              </p>
+              <p className="mt-1 text-[10px] text-divlab-text-muted">
+                <span className={`mr-1.5 inline-block h-2 w-2 rounded-full ${change.dot}`} />
+                Fördröjd marknadsdata · {time(model.marketTimestamp)}
+              </p>
             </div>
           </div>
+          <dl className="mt-4 grid gap-3 sm:grid-cols-3">
+            <div>
+              <dt className="text-[10px] text-divlab-text-muted">Nästa händelse</dt>
+              <dd className="mt-1 text-sm font-bold text-divlab-text">{nextReport ? nextReport.title : "Ingen verifierad kommande händelse"}</dd>
+              {nextReport?.date ? <dd className="mt-0.5 text-[11px] text-divlab-text-muted">{date(nextReport.date)}</dd> : null}
+            </div>
+            <div>
+              <dt className="text-[10px] text-divlab-text-muted">{model.dividend.kindLabel}</dt>
+              <dd className="mt-1 text-sm font-bold text-divlab-text">
+                {model.dividend.perShareText === "—" ? "Ingen verifierad utdelning" : model.dividend.perShareText}
+                {model.dividend.perShareText !== "—" && model.dividend.year ? ` · ${model.dividend.year}` : ""}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-[10px] text-divlab-text-muted">Direktavkastning</dt>
+              <dd className="mt-1 text-sm font-bold text-divlab-text">{officialYield && officialYield.value !== "—" ? officialYield.value : "—"}</dd>
+            </div>
+          </dl>
+          <div className="mt-4 flex flex-col gap-3 border-t divlab-border-neutral pt-4 sm:flex-row sm:items-end sm:justify-between">
+            <div className="min-w-0 sm:max-w-md">
+              <FollowCompanyButton companySlug={company.slug} companyName={company.displayName} isAuthenticated={isAuthenticated} isAvailable={followState.isAvailable} isFollowing={followState.isFollowing} loginHref={loginHref} />
+              <p className="mt-2 text-[11px] leading-5 text-divlab-text-muted">Följ bolaget för att få rapporter, pressmeddelanden och andra verifierade händelser i Mitt DivLab.</p>
+            </div>
+            <BrokerActions company={company} />
+          </div>
         </section>
+
+        <nav className="sticky top-0 z-30 mt-4 flex gap-1 overflow-x-auto border-b divlab-border-neutral bg-[var(--divlab-bg)]/95 px-1 py-1 backdrop-blur" aria-label="Bolagsinformation">
+          {pageTabs.map((item) => (
+            <a key={item.href} href={item.href} className="shrink-0 rounded-lg px-3 py-2 text-[11px] font-semibold text-divlab-text-muted hover:text-divlab-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/50">{item.label}</a>
+          ))}
+        </nav>
 
         <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,2.4fr)_minmax(270px,0.95fr)]">
           <main className="min-w-0 space-y-4">
             <section id="kursutveckling" className="divlab-card overflow-hidden scroll-mt-28">
-              <nav className="flex gap-1 overflow-x-auto border-b divlab-border-neutral px-4 pt-1" aria-label="Bolagsinformation">
-                {pageTabs.map(([label, href]) => (
-                  <a key={href} href={href} className="shrink-0 border-b-2 border-transparent px-3 py-3 text-[11px] font-semibold text-divlab-text-muted hover:text-divlab-text">{label}</a>
-                ))}
-              </nav>
               <div className="flex flex-wrap items-center justify-between gap-2 px-5 pt-4">
                 <p className="max-w-xl text-[10px] leading-4 text-divlab-text-muted">Grafen kommer från TradingView. Kurs, förändring och nyckeltal kommer från Yahoo Finance.</p>
                 <div className="flex flex-wrap justify-end gap-2">
@@ -266,18 +298,7 @@ export default function CompanyPageContent({
               </p>
               {model.financials.points.length ? (
                 <div className="mt-4 overflow-x-auto">
-                  {revenuePoints.length >= 2 && maxRevenue > 0 ? (
-                    <div className="mb-4 flex min-w-[280px] items-end gap-2">
-                      {revenuePoints.map((point) => (
-                        <div key={point.fiscalYear} className="flex min-w-0 flex-1 flex-col items-center gap-1">
-                          <div className="flex h-24 w-full items-end rounded-md bg-divlab-elevated">
-                            <span className="block w-full rounded-md bg-divlab-blue/80" style={{ height: `${Math.max(8, Math.abs(point.revenue ?? 0) / maxRevenue * 100)}%` }} />
-                          </div>
-                          <span className="text-[10px] text-divlab-text-muted">{point.fiscalYear}</span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : null}
+                  <CompanySeriesChart points={revenueChart} label="Omsättning per år" unit={currency ?? ""} />
                   <table className="w-full min-w-[640px] text-left text-[11px]">
                     <thead className="text-divlab-text-muted">
                       <tr>
@@ -324,15 +345,26 @@ export default function CompanyPageContent({
                 <p className="mt-2 text-[11px] leading-5 text-divlab-text-muted">
                   {model.reportSnapshot.period} · {model.reportSnapshot.currency} · publicerad {date(model.reportSnapshot.publishedOn)}. Bara fält som står uttryckligen i källan. Jämförelse visas när både aktuell period och jämförelseperiod finns.
                 </p>
-                <dl className="mt-4 grid gap-3 sm:grid-cols-2">
+                <h3 className="mt-4 text-[13px] font-bold text-divlab-text">Rapporten i korthet</h3>
+                <dl className="mt-3 grid gap-3 sm:grid-cols-2">
                   {model.reportSnapshot.metrics.map((metric) => (
-                    <div key={metric.id} className="min-w-0">
+                    <div key={metric.id} className="min-w-0 rounded-xl border divlab-border-neutral px-3 py-3">
                       <dt className="text-[10px] text-divlab-text-muted">{metric.label}</dt>
                       <dd className="mt-1 text-sm font-bold text-divlab-text">{formatReportMetric(metric, model.reportSnapshot?.currency ?? "")}</dd>
                     </div>
                   ))}
                 </dl>
-                <p className="mt-3 text-[10px] text-divlab-text-muted">Källa: {model.reportSnapshot.sourcePublisher}. Skalan är den bolaget själv använder.</p>
+                {factChanges.length ? (
+                  <ul className="mt-4 space-y-2">
+                    {factChanges.map((changeRow) => (
+                      <li key={changeRow.id} className="text-xs leading-5 text-divlab-text-secondary">
+                        <span className={changeRow.direction === "up" ? "text-emerald-600" : "text-red-500"} aria-hidden="true">{changeRow.direction === "up" ? "▲" : "▼"} </span>
+                        {changeRow.text}
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+                <p className="mt-3 text-[10px] text-divlab-text-muted">Källa: {model.reportSnapshot.sourcePublisher}. Skalan är den bolaget själv använder. Inget citat från bolaget visas, eftersom rapportunderlaget inte innehåller en verifierad formulering.</p>
               </section>
             ) : null}
 
@@ -371,6 +403,7 @@ export default function CompanyPageContent({
               {model.dividend.yieldBlocked ? <p className="mt-3 text-xs leading-5 text-divlab-text-muted">{model.metrics.find((metric) => metric.id === "official_yield")?.definition}</p> : null}
               {model.dividend.sourcePublisher ? <p className="mt-3 text-[10px] text-divlab-text-muted">Källa: {model.dividend.sourcePublisher}{model.dividend.asOf ? ` · ${date(model.dividend.asOf)}` : ""}.</p> : null}
               <h3 className="mt-5 text-[13px] font-bold text-divlab-text">Historiskt utbetalda utdelningar</h3>
+              <CompanySeriesChart points={dividendChart} label="Utbetald utdelning per kalenderår" unit={model.dividend.history[0]?.currency ?? ""} />
               <p className="mt-1 text-[11px] leading-5 text-divlab-text-muted">X-dag och belopp från Yahoo Finance. Avstämningsdag och utbetalningsdag visas bara när en officiell källa anger dem.</p>
               {model.dividend.history.length ? (
                 <div className="mt-3 overflow-x-auto">
@@ -436,9 +469,15 @@ export default function CompanyPageContent({
               {model.ownership.rows.length ? (
                 <div className="mt-4 space-y-3">
                   {model.ownership.rows.map((owner) => (
-                    <div key={owner.owner} className="grid grid-cols-[minmax(0,1fr)_72px] items-center gap-3 text-[12px]">
-                      <span className="truncate text-divlab-text" title={owner.owner}>{owner.owner}</span>
-                      <strong className="text-right text-divlab-text">{formatSvNumber(owner.capitalPct, { minimumFractionDigits: 1, maximumFractionDigits: 2 })} %</strong>
+                    <div key={owner.owner} className="min-w-0 text-[12px]">
+                      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-3">
+                        <span className="truncate text-divlab-text" title={owner.owner}>{owner.owner}</span>
+                        <strong className="text-right text-divlab-text">{formatSvNumber(owner.capitalPct, { minimumFractionDigits: 1, maximumFractionDigits: 2 })} %</strong>
+                      </div>
+                      <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-divlab-elevated">
+                        <span className="block h-full rounded-full bg-divlab-blue/80" style={{ width: `${Math.min(100, Math.max(0, owner.capitalPct))}%` }} />
+                      </div>
+                      {owner.votesPct !== null ? <p className="mt-1 text-[10px] text-divlab-text-muted">Röster {formatSvNumber(owner.votesPct, { minimumFractionDigits: 1, maximumFractionDigits: 2 })} %</p> : null}
                     </div>
                   ))}
                   <p className="text-[10px] text-divlab-text-muted">
@@ -464,6 +503,8 @@ export default function CompanyPageContent({
                 <p className="mt-4 text-xs leading-5 text-divlab-text-muted">{model.insiders.reason}</p>
               </section>
             </div>
+
+            <ShortInterestPanel interest={shortInterest} />
 
             <section id="nyheter" className="divlab-card scroll-mt-28 p-5">
               <PanelHeading title={`DivLabs nyheter om ${company.name}`} href="/news" badge="DivLab" />
@@ -492,6 +533,28 @@ export default function CompanyPageContent({
                 ))}
               </dl>
               <p className="mt-4 text-xs leading-5 text-divlab-text-secondary">{company.description}</p>
+            </section>
+            <section className="divlab-card p-5">
+              <PanelHeading title="Vidare i DivLab" />
+              <ul className="mt-3 space-y-2 text-xs font-semibold">
+                <li><Link href="/watchlist" className="text-divlab-blue hover:text-divlab-blue-hover">Mitt DivLab</Link></li>
+                <li><Link href="/news" className="text-divlab-blue hover:text-divlab-blue-hover">DivLab-nyheter</Link></li>
+                <li><Link href="/portfolios" className="text-divlab-blue hover:text-divlab-blue-hover">AI-portföljer</Link></li>
+                <li><a href="#diskussion" className="text-divlab-blue hover:text-divlab-blue-hover">Diskussion</a></li>
+                <li><Link href="/bolag" className="text-divlab-blue hover:text-divlab-blue-hover">Alla bolag</Link></li>
+              </ul>
+              {portfolios.length ? (
+                <div className="mt-4 border-t divlab-border-neutral pt-3">
+                  <p className="text-[11px] leading-5 text-divlab-text-muted">Bolaget finns just nu bland innehaven i:</p>
+                  <ul className="mt-2 space-y-1">
+                    {portfolios.map((portfolio) => (
+                      <li key={portfolio.slug}>
+                        <Link href={portfolio.href} className="text-xs font-semibold text-divlab-blue hover:text-divlab-blue-hover">{portfolio.name}</Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
             </section>
             <section className="divlab-card p-5">
               <PanelHeading title="Bolag i samma sektor" />

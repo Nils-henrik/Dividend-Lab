@@ -32,12 +32,12 @@ export default async function CompanyComments({
   const headingId = "company-comments-heading";
 
   return (
-    <section aria-labelledby={headingId} className="divlab-card mt-4 scroll-mt-28 p-5 sm:p-6">
+    <section id="diskussion" aria-labelledby={headingId} className="divlab-card mt-4 scroll-mt-28 p-5 sm:p-6">
       <h2 id={headingId} className="text-[15px] font-bold tracking-[-0.02em] text-divlab-text">
-        Kommentarer om {companyName}
+        Diskussion
       </h2>
       <p className="mt-2 text-xs leading-5 text-divlab-text-secondary">
-        Synliga kommentarer kan läsas av alla besökare.
+        Kommentarer om {companyName}. Synliga kommentarer kan läsas av alla besökare.
       </p>
 
       <div className="mt-4 space-y-3">

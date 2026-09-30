@@ -172,6 +172,11 @@ export default function WatchlistBoard({
             Händelser från bolagen du följer. Bara officiella källor, DivLab-artiklar och
             kursrörelser som redan finns för de bolagen.
           </p>
+          <nav aria-label="Vidare i DivLab" className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs font-semibold">
+            <Link href="/bolag" className="text-divlab-blue hover:text-divlab-blue-hover">Alla bolag</Link>
+            <Link href="/news" className="text-divlab-blue hover:text-divlab-blue-hover">DivLab-nyheter</Link>
+            <Link href="/portfolios" className="text-divlab-blue hover:text-divlab-blue-hover">AI-portföljer</Link>
+          </nav>
           <dl className="mt-4 grid grid-cols-3 gap-2 sm:gap-3">
             <SummaryStat
               label="Följda bolag"

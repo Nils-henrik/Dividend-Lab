@@ -72,6 +72,12 @@ export default function FollowFeedList({ items }: { items: readonly FollowFeedIt
                 {item.sourceLabel}
                 <span aria-hidden="true"> · </span>
                 <span>{item.freshnessLabel}</span>
+                {item.recencyCue ? (
+                  <>
+                    <span aria-hidden="true"> · </span>
+                    <span>{item.recencyCue}</span>
+                  </>
+                ) : null}
               </p>
               <p className="mt-2">
                 <Link
