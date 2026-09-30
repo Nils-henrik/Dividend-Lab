@@ -76,6 +76,7 @@ export type FollowFeedItem = {
   href: string;
   companyHref: string;
   freshnessLabel: string;
+  recencyCue: string | null;
   dividendKind: FollowFeedDividendKind | null;
   fallback: boolean;
 };
@@ -215,6 +216,13 @@ function daysBetween(today: string, day: string) {
   return Math.round((end - start) / 86_400_000);
 }
 
+/** Honest recency from the event day. This is not an unread flag. */
+export function followFeedRecencyCue(day: string, today: string): string | null {
+  const days = daysBetween(today, day);
+  if (days <= 0 && days >= -7) return "Nyligen";
+  return null;
+}
+
 function calendarFreshness(today: string, day: string, fallback: boolean) {
   if (fallback) return "Nästa kända datum";
   const days = daysBetween(today, day);
@@ -351,6 +359,7 @@ function draftItem(input: {
     href: input.href,
     companyHref: companyHref(input.company.slug),
     freshnessLabel: input.freshnessLabel,
+    recencyCue: null,
     dividendKind: input.dividendKind ?? null,
     fallback: input.fallback ?? false,
     rank: KIND_RANK[input.kind],
@@ -522,7 +531,7 @@ function sortDrafts(rows: readonly Draft[]) {
   });
 }
 
-function toItem(row: Draft): FollowFeedItem {
+function toItem(row: Draft, today: string): FollowFeedItem {
   return {
     id: row.id,
     companySlug: row.companySlug,
@@ -537,6 +546,7 @@ function toItem(row: Draft): FollowFeedItem {
     href: row.href,
     companyHref: row.companyHref,
     freshnessLabel: row.freshnessLabel,
+    recencyCue: followFeedRecencyCue(row.day, today),
     dividendKind: row.dividendKind,
     fallback: row.fallback,
   };
@@ -602,7 +612,7 @@ export function buildFollowFeed(input: {
         return calendar ? [calendar] : [];
       })
     : primary);
-  const items = selected.map(toItem);
+  const items = selected.map((row) => toItem(row, today));
   const official = selected.filter((item) => item.kind === "report" || item.kind === "press" || item.kind === "dividend");
 
   return {

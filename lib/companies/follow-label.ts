@@ -17,7 +17,7 @@ export function followButtonLabel(
     return isFollowing ? "Följer ✓" : "+ Följ";
   }
 
-  return isFollowing ? "Följer ✓" : "+ Följ bolaget";
+  return isFollowing ? "Följer" : "Följ bolaget";
 }
 
 export function followButtonAriaLabel(companyName: string, isFollowing: boolean) {

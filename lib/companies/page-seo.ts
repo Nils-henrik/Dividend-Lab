@@ -20,6 +20,7 @@ export function companyPageJsonLd(company: CompanyProfile): JsonLd[] {
   return [
     breadcrumbJsonLd([
       { name: "Hem", path: "/" },
+      { name: "Bolag", path: "/bolag" },
       { name: company.displayName, path: `/bolag/${company.slug}` },
     ]),
     {

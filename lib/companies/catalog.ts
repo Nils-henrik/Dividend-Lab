@@ -1,3 +1,4 @@
+import { withCompanyIdentifiers } from "@/lib/companies/external-identifiers";
 import type { CompanyProfile } from "@/lib/companies/types";
 
 const PILOT_COMPANIES = [
@@ -880,11 +881,12 @@ const PILOT_COMPANIES = [
 ] as const satisfies readonly CompanyProfile[];
 
 export function getPilotCompanies(): readonly CompanyProfile[] {
-  return PILOT_COMPANIES;
+  return PILOT_COMPANIES.map((company) => withCompanyIdentifiers(company));
 }
 
 export function getCompanyProfile(slug: string): CompanyProfile | null {
-  return PILOT_COMPANIES.find((company) => company.slug === slug) ?? null;
+  const company = PILOT_COMPANIES.find((candidate) => candidate.slug === slug);
+  return company ? withCompanyIdentifiers(company) : null;
 }
 
 export function getRelatedCompanies(
