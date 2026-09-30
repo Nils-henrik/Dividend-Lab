@@ -11,6 +11,7 @@ export const NIBE_MFN_ORIGIN = "https://feed.mfn.se";
 export const NIBE_MFN_FEED_ID = "f9cedcd2-6006-4325-bb43-6ffb51e93b6b";
 export const NIBE_MFN_LEI = "549300ZQH0FIF1P0MX67";
 export const NIBE_MFN_PROVIDER = "nibe_mfn_feed";
+export const NIBE_MFN_PUBLISHER = "MFN";
 
 export const MFN_FETCH_POLICY = {
   redirect: "error",

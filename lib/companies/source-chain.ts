@@ -10,6 +10,7 @@ import {
   NIBE_MFN_FEED_ID,
   NIBE_MFN_LEI,
   NIBE_MFN_PROVIDER,
+  NIBE_MFN_PUBLISHER,
   nibeMfnFeedUrl,
 } from "@/lib/companies/mfn-feed";
 import {
@@ -40,9 +41,12 @@ import type { CompanyProfile } from "@/lib/companies/types";
 
 /**
  * Explicit source chain for critical company-data domains.
- * Each domain has primary, backup 1 and backup 2. A slot is functioning only
- * when this repository already has an explicit machine-readable path.
+ * Each domain records a primary, one backup slot, and an optional second backup.
+ * A slot is functioning only when this repository already has an explicit free
+ * machine-readable path. One functioning independent backup is enough where that
+ * path exists. Backup 2 is optional and is not a release requirement.
  * A source link, a second URL on the same shell, or a paid provider is not a backup.
+ * Where no compliant free backup exists, the slot stays non-functioning and is not fetched.
  * Paths are taken from stored symbols, LEI codes and adapter URLs. They are not
  * built from the company display name.
  */
@@ -445,7 +449,7 @@ function nibeMfnSlot(company: CompanyProfile, role: SourceRole): SourceSlot | nu
     providerId: NIBE_MFN_PROVIDER,
     endpoint: nibeMfnFeedUrl(),
     binding: `lei:${NIBE_MFN_LEI}`,
-    presentationLabel: "MFN",
+    presentationLabel: NIBE_MFN_PUBLISHER,
     blocker: null,
     verifiedAsOf: SOURCE_POLICY_VERIFIED_ON,
   });
