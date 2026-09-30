@@ -14,6 +14,7 @@ import type { CompanyNavItem } from "@/lib/companies/page-nav";
 
 type TabsContextValue = {
   activeTab: string;
+  activeLabel: string;
 };
 
 const CompanyTabsContext = createContext<TabsContextValue | null>(null);
@@ -94,8 +95,10 @@ export default function CompanyPageTabs({
     tabRefs.current.get(next.id)?.focus();
   }
 
+  const activeLabel = tabs.find((tab) => tab.id === activeTab)?.label ?? activeTab;
+
   return (
-    <CompanyTabsContext.Provider value={{ activeTab }}>
+    <CompanyTabsContext.Provider value={{ activeTab, activeLabel }}>
       <nav
         className="sticky top-0 z-30 mt-4 overflow-x-auto border-b divlab-border-neutral bg-[var(--divlab-bg)]/95 px-1 backdrop-blur"
         aria-label="Bolagsinformation"
@@ -114,7 +117,6 @@ export default function CompanyPageTabs({
                 type="button"
                 role="tab"
                 aria-selected={active}
-                aria-controls={`company-panel-${item.id}`}
                 tabIndex={active ? 0 : -1}
                 onClick={() => selectTab(item.id)}
                 onKeyDown={(event) => handleKeyDown(event, index)}
@@ -152,9 +154,8 @@ export function CompanyTabPanel({
 
   return (
     <div
-      id={`company-panel-${id}`}
       role="tabpanel"
-      aria-labelledby={`company-tab-${id}`}
+      aria-label={context.activeLabel}
       className={className}
     >
       {children}
