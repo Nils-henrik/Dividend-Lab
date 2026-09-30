@@ -103,14 +103,27 @@ test("every catalog company has an explicit three-slot chain", () => {
     assert.equal(price[0]?.status, "functioning");
     assert.equal(price[0]?.endpoint, yahooChartEndpoint(company.marketDataSymbol));
     assert.equal(price[0]?.binding, `symbol:${company.marketDataSymbol}`);
-    assert.equal(price[1]?.status, "gap");
-    assert.equal(price[2]?.status, "gap");
-    assert.equal(chain.domains.valuation.slots[1]?.status, "gap");
-    assert.equal(chain.domains.dividend.slots[1]?.status, "gap");
+    assert.equal(price[1]?.status, "licensing_blocked");
+    assert.equal(price[1]?.providerId, "eodhd_nordic_display");
+    assert.equal(price[1]?.endpoint, null);
+    assert.equal(price[2]?.status, "licensing_blocked");
+    assert.equal(price[2]?.providerId, "nasdaq_nordic_equity_web_api");
+    assert.equal(chain.domains.valuation.slots[1]?.status, "licensing_blocked");
+    assert.equal(chain.domains.valuation.slots[2]?.status, "licensing_blocked");
+    assert.equal(chain.domains.dividend.slots[1]?.status, "licensing_blocked");
+    assert.equal(chain.domains.dividend.slots[2]?.status, "licensing_blocked");
+    assert.equal(chain.domains.ownership.slots[1]?.status, "licensing_blocked");
+    assert.equal(chain.domains.ownership.slots[1]?.providerId, "euroclear_sweden_register");
     assert.equal(chain.domains.insider.slots[0]?.endpoint, FI_AGGREGATE_ODS_URL);
     assert.equal(chain.domains.insider.slots[0]?.binding, `lei:${company.fiLei}`);
-    assert.equal(chain.domains.insider.slots[1]?.status, "gap");
+    assert.equal(chain.domains.insider.slots[1]?.status, "source_link_only");
+    assert.notEqual(chain.domains.insider.slots[1]?.status, "functioning");
     assert.notEqual(chain.domains.insider.slots[2]?.status, "functioning");
+    for (const domain of ["press", "reports", "calendar"] as const) {
+      const backups = chain.domains[domain].slots.filter((entry) => entry.role !== "primary");
+      assert.equal(backups.some((entry) => entry.providerId === "nasdaq_cns_company_news"), true, company.slug);
+      assert.equal(backups.every((entry) => entry.status !== "functioning" || entry.providerId === "nibe_mfn_feed"), true);
+    }
   }
 
   const addtech = chains.find((item) => item.slug === "addtech");
@@ -118,6 +131,12 @@ test("every catalog company has an explicit three-slot chain", () => {
   assert.equal(addtech?.domains.press.slots[0]?.status, "functioning");
   const nibe = chains.find((item) => item.slug === "nibe");
   assert.equal(nibe?.domains.reports.slots[0]?.endpoint, NIBE_ARCHIVE_WIDGET_URL);
+  assert.equal(nibe?.domains.reports.slots[1]?.providerId, "nibe_mfn_feed");
+  assert.equal(nibe?.domains.press.slots[1]?.providerId, "nibe_mfn_feed");
+  assert.equal(nibe?.domains.press.slots[1]?.status, "functioning");
+  assert.notEqual(nibe?.domains.press.slots[0]?.shell, nibe?.domains.press.slots[1]?.shell);
+  assert.equal(nibe?.domains.calendar.slots[1]?.providerId, "nasdaq_cns_company_news");
+  assert.equal(nibe?.domains.calendar.slots[1]?.status, "licensing_blocked");
   const boliden = chains.find((item) => item.slug === "boliden");
   assert.equal(boliden?.domains.press.slots[0]?.status, "blocked");
   assert.equal(boliden?.domains.press.activeProviderId, null);

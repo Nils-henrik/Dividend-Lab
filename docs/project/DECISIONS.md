@@ -276,3 +276,29 @@ Do not describe this policy as strict CSP in reviews or future work.
 - A future nonce + `strict-dynamic` migration remains valid only as a
   dedicated project that explicitly accepts site-wide dynamic rendering.
 
+---
+
+## ADR-008: Catalog backups stay fail-closed without a usable independent source
+
+Date: 2026-09-30
+Status: Accepted
+
+### Context
+
+Every catalog company needs a primary and two independent backups for critical company data. Several public candidates exist, but a slot is only functioning when the path is deterministic, issuer-bound and allowed for this product.
+
+### Decision
+
+- Nasdaq's public company-news query is recorded per exact CNS company id and is not fetched. Nasdaq's website terms allow personal non-commercial use and prohibit automated copying for redistribution.
+- Nasdaq Europe RSS feeds are exchange notices, IT notices or Nasdaq's own investor news. They are not issuer disclosures.
+- EODHD is not a Nordic price, valuation or dividend-history backup. The configured Nordic budget is 0, the free daily cap is 20 calls, and no commercial display entitlement is verified. The paid Nasdaq equity API is not added.
+- Euroclear remains the authoritative Swedish share register and is not automated.
+- FI insider data stays a source link. The search client has no company-specific feed. Blankning stays on the existing aggregate file.
+- NIBE's MFN feed is a functioning press and report backup because the issuer page embeds that feed id and the feed's LEI matches the stored FI identifier. The reader refuses redirects, caps the item count and drops any other issuer. Paid dividend history is not built from those headlines.
+
+### Consequences
+
+- Price, valuation and paid dividend history still have one functioning source.
+- No critical domain has three functioning sources. The catalog is not release-ready under a literal three-functioning-source rule.
+- A later backup requires a new verified binding and an explicit rights decision. Display names are not enough.
+

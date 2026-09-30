@@ -7,14 +7,35 @@ import {
 } from "@/lib/companies/ingestion/adapters/omxs30-completion";
 import { INSIDER_LINK } from "@/lib/companies/insiders";
 import {
+  NIBE_MFN_FEED_ID,
+  NIBE_MFN_LEI,
+  NIBE_MFN_PROVIDER,
+  nibeMfnFeedUrl,
+} from "@/lib/companies/mfn-feed";
+import {
   companyOfficialCoverage,
-  type OfficialCategory,
   type OfficialCategoryCoverage,
 } from "@/lib/companies/official-coverage";
 import {
   FI_AGGREGATE_ODS_URL,
   FI_CURRENT_POSITIONS_ODS_URL,
 } from "@/lib/companies/short-interest/constants";
+import {
+  DIVIDEND_HISTORY_LICENSE_BLOCKER,
+  EODHD_NORDIC_DISPLAY_BLOCKER,
+  EUROCLEAR_OWNERSHIP_BLOCKER,
+  EUROCLEAR_REGISTER_URL,
+  FI_INSIDER_SEARCH_BLOCKER,
+  FI_INSIDER_SEARCH_URL,
+  NASDAQ_DISCLOSURE_BLOCKER,
+  NASDAQ_DIVIDEND_NOTICE_BLOCKER,
+  NASDAQ_EQUITY_API_BLOCKER,
+  NASDAQ_NORDIC_EQUITY_API_PAGE,
+  SOURCE_POLICY_VERIFIED_ON,
+  VALUATION_LICENSE_BLOCKER,
+  nasdaqCnsCompanyId,
+  nasdaqCompanyNewsQueryUrl,
+} from "@/lib/companies/source-policy";
 import type { CompanyProfile } from "@/lib/companies/types";
 
 /**
@@ -32,6 +53,7 @@ export const CRITICAL_SOURCE_DOMAINS = [
   "dividend",
   "reports",
   "press",
+  "calendar",
   "ownership",
   "insider",
 ] as const;
@@ -42,7 +64,12 @@ export const SOURCE_ROLES = ["primary", "backup1", "backup2"] as const;
 
 export type SourceRole = (typeof SOURCE_ROLES)[number];
 
-export type SourceSlotStatus = "functioning" | "source_link_only" | "blocked" | "gap";
+export type SourceSlotStatus =
+  | "functioning"
+  | "source_link_only"
+  | "blocked"
+  | "licensing_blocked"
+  | "gap";
 
 export type SourceSlot = {
   role: SourceRole;
@@ -54,8 +81,11 @@ export type SourceSlot = {
   /** Stored identifier that selects the row. Never a display name. */
   binding: string | null;
   presentationLabel: string | null;
-  /** Live reads set as-of on the accepted result. The static chain does not invent one. */
-  verifiedAsOf: null;
+  /**
+   * Policy slots store the audit date. Live reads still put as-of on the accepted result.
+   * A null value is not a verification time.
+   */
+  verifiedAsOf: string | null;
   blocker: string | null;
 };
 
@@ -202,10 +232,11 @@ function filledSlot(input: {
   role: SourceRole;
   status: Exclude<SourceSlotStatus, "gap">;
   providerId: string;
-  endpoint: string;
+  endpoint: string | null;
   binding: string | null;
   presentationLabel: string;
   blocker: string | null;
+  verifiedAsOf?: string | null;
 }): SourceSlot {
   const host = hostOf(input.endpoint);
   return {
@@ -217,9 +248,29 @@ function filledSlot(input: {
     shell: host ? sourceShell(host) : null,
     binding: input.binding,
     presentationLabel: input.presentationLabel,
-    verifiedAsOf: null,
+    verifiedAsOf: input.verifiedAsOf ?? null,
     blocker: input.blocker,
   };
+}
+
+function licensingSlot(
+  role: SourceRole,
+  providerId: string,
+  endpoint: string | null,
+  binding: string | null,
+  presentationLabel: string,
+  blocker: string,
+): SourceSlot {
+  return filledSlot({
+    role,
+    status: "licensing_blocked",
+    providerId,
+    endpoint,
+    binding,
+    presentationLabel,
+    blocker,
+    verifiedAsOf: SOURCE_POLICY_VERIFIED_ON,
+  });
 }
 
 function marketSymbolSlot(
@@ -243,7 +294,14 @@ function marketSymbolSlot(
   });
 }
 
-export function dividendSlotsForSymbol(symbol: string): readonly [SourceSlot, SourceSlot, SourceSlot] {
+export function dividendSlotsForSymbol(
+  symbol: string,
+  slug: string | null = null,
+): readonly [SourceSlot, SourceSlot, SourceSlot] {
+  const resolvedSlug = slug
+    ?? getPilotCompanies().find((company) => company.marketDataSymbol === symbol)?.slug
+    ?? null;
+  const companyId = resolvedSlug ? nasdaqCnsCompanyId(resolvedSlug) : null;
   return [
     marketSymbolSlot(
       "primary",
@@ -252,8 +310,22 @@ export function dividendSlotsForSymbol(symbol: string): readonly [SourceSlot, So
       yahooDividendEndpoint(symbol),
       "Saknar verifierad marknadsdatasymbol på Nasdaq Stockholm.",
     ),
-    gapSlot("backup1", DIVIDEND_BACKUP_BLOCKER),
-    gapSlot("backup2", NO_THIRD_SOURCE_BLOCKER),
+    licensingSlot(
+      "backup1",
+      "eodhd_nordic_display",
+      null,
+      resolvedSlug ? `slug:${resolvedSlug}` : symbol ? `symbol:${symbol}` : null,
+      "EODHD",
+      DIVIDEND_HISTORY_LICENSE_BLOCKER,
+    ),
+    licensingSlot(
+      "backup2",
+      "nasdaq_cns_company_news",
+      companyId ? nasdaqCompanyNewsQueryUrl(companyId) : null,
+      companyId ? `cns:${companyId}` : null,
+      "Nasdaq",
+      NASDAQ_DIVIDEND_NOTICE_BLOCKER,
+    ),
   ];
 }
 
@@ -298,23 +370,6 @@ function coverageSlot(
   });
 }
 
-function issuerDomain(
-  company: CompanyProfile,
-  domain: CriticalSourceDomain,
-  category: OfficialCategory,
-  providerId: string,
-  override: PayloadOverride | undefined,
-  backup1Blocker: string,
-): DomainSourceChain {
-  const coverage = companyOfficialCoverage(company.slug)?.[category] ?? null;
-  const slots = [
-    coverageSlot("primary", coverage, providerId, `slug:${company.slug}`, override),
-    gapSlot("backup1", backup1Blocker),
-    gapSlot("backup2", NO_THIRD_SOURCE_BLOCKER),
-  ] as const;
-  return domainChain(domain, slots);
-}
-
 function domainChain(
   domain: CriticalSourceDomain,
   slots: readonly [SourceSlot, SourceSlot, SourceSlot],
@@ -343,10 +398,16 @@ function insiderChain(company: CompanyProfile): DomainSourceChain {
     : gapSlot("primary", "Saknar verifierad LEI. Registret matchas inte på visningsnamn.");
   return domainChain("insider", [
     primary,
-    gapSlot(
-      "backup1",
-      `${SAME_SHELL_BACKUP_BLOCKER} ${FI_CURRENT_POSITIONS_ODS_URL} ligger på fi.se tillsammans med den aggregerade filen.`,
-    ),
+    filledSlot({
+      role: "backup1",
+      status: "source_link_only",
+      providerId: "fi_insider_search",
+      endpoint: FI_INSIDER_SEARCH_URL,
+      binding: lei ? `lei:${lei}` : null,
+      presentationLabel: "Finansinspektionen",
+      blocker: `${FI_INSIDER_SEARCH_BLOCKER} ${SAME_SHELL_BACKUP_BLOCKER} ${FI_CURRENT_POSITIONS_ODS_URL} ligger på fi.se tillsammans med den aggregerade filen.`,
+      verifiedAsOf: SOURCE_POLICY_VERIFIED_ON,
+    }),
     filledSlot({
       role: "backup2",
       status: "source_link_only",
@@ -355,8 +416,54 @@ function insiderChain(company: CompanyProfile): DomainSourceChain {
       binding: lei ? `lei:${lei}` : null,
       presentationLabel: INSIDER_LINK.publisher,
       blocker: `${INSIDER_LINK.reason} ${SAME_SHELL_BACKUP_BLOCKER}`,
+      verifiedAsOf: SOURCE_POLICY_VERIFIED_ON,
     }),
   ]);
+}
+
+function nasdaqDisclosureSlot(company: CompanyProfile, role: SourceRole): SourceSlot {
+  const companyId = nasdaqCnsCompanyId(company.slug);
+  const endpoint = companyId ? nasdaqCompanyNewsQueryUrl(companyId) : null;
+  if (!companyId || !endpoint) {
+    return gapSlot(role, "Saknar verifierat Nasdaq-emittent-id. Visningsnamn används inte.");
+  }
+  return licensingSlot(
+    role,
+    "nasdaq_cns_company_news",
+    endpoint,
+    `cns:${companyId}`,
+    "Nasdaq",
+    NASDAQ_DISCLOSURE_BLOCKER,
+  );
+}
+
+function nibeMfnSlot(company: CompanyProfile, role: SourceRole): SourceSlot | null {
+  if (company.slug !== "nibe" || company.fiLei !== NIBE_MFN_LEI) return null;
+  return filledSlot({
+    role,
+    status: "functioning",
+    providerId: NIBE_MFN_PROVIDER,
+    endpoint: nibeMfnFeedUrl(),
+    binding: `lei:${NIBE_MFN_LEI}`,
+    presentationLabel: "MFN",
+    blocker: null,
+    verifiedAsOf: SOURCE_POLICY_VERIFIED_ON,
+  });
+}
+
+function disclosureBackups(
+  company: CompanyProfile,
+  primary: SourceSlot,
+  allowMfn: boolean,
+): readonly [SourceSlot, SourceSlot] {
+  const mfn = allowMfn ? nibeMfnSlot(company, "backup1") : null;
+  if (mfn && mfn.shell && mfn.shell !== primary.shell && mfn.endpoint?.includes(NIBE_MFN_FEED_ID)) {
+    return [mfn, nasdaqDisclosureSlot(company, "backup2")];
+  }
+  return [
+    nasdaqDisclosureSlot(company, "backup1"),
+    gapSlot("backup2", NO_THIRD_SOURCE_BLOCKER),
+  ];
 }
 
 export function companySourceChain(company: CompanyProfile): CompanySourceChain {
@@ -369,8 +476,22 @@ export function companySourceChain(company: CompanyProfile): CompanySourceChain 
       yahooChartEndpoint(symbol),
       "Saknar verifierad marknadsdatasymbol på Nasdaq Stockholm.",
     ),
-    gapSlot("backup1", PRICE_BACKUP_BLOCKER),
-    gapSlot("backup2", NO_THIRD_SOURCE_BLOCKER),
+    licensingSlot(
+      "backup1",
+      "eodhd_nordic_display",
+      null,
+      `symbol:${symbol}`,
+      "EODHD",
+      `${EODHD_NORDIC_DISPLAY_BLOCKER} ${PRICE_BACKUP_BLOCKER}`,
+    ),
+    licensingSlot(
+      "backup2",
+      "nasdaq_nordic_equity_web_api",
+      NASDAQ_NORDIC_EQUITY_API_PAGE,
+      `symbol:${symbol}`,
+      "Nasdaq",
+      NASDAQ_EQUITY_API_BLOCKER,
+    ),
   ]);
   const valuation = domainChain("valuation", [
     marketSymbolSlot(
@@ -380,37 +501,52 @@ export function companySourceChain(company: CompanyProfile): CompanySourceChain 
       yahooSummaryEndpoint(symbol),
       "Saknar verifierad marknadsdatasymbol på Nasdaq Stockholm.",
     ),
-    gapSlot("backup1", VALUATION_BACKUP_BLOCKER),
-    gapSlot("backup2", NO_THIRD_SOURCE_BLOCKER),
+    licensingSlot(
+      "backup1",
+      "eodhd_nordic_display",
+      null,
+      `symbol:${symbol}`,
+      "EODHD",
+      `${VALUATION_LICENSE_BLOCKER} ${VALUATION_BACKUP_BLOCKER}`,
+    ),
+    licensingSlot(
+      "backup2",
+      "nasdaq_nordic_equity_web_api",
+      NASDAQ_NORDIC_EQUITY_API_PAGE,
+      `symbol:${symbol}`,
+      "Nasdaq",
+      NASDAQ_EQUITY_API_BLOCKER,
+    ),
   ]);
-  const dividend = domainChain("dividend", dividendSlotsForSymbol(symbol));
-  const reports = issuerDomain(
-    company,
-    "reports",
-    "reports",
+  const dividend = domainChain("dividend", dividendSlotsForSymbol(symbol, company.slug));
+  const reportsPrimary = coverageSlot(
+    "primary",
+    companyOfficialCoverage(company.slug)?.reports ?? null,
     "issuer_reports",
+    `slug:${company.slug}`,
     REPORT_PAYLOAD[company.slug],
-    company.slug === "addtech" || company.slug === "nibe"
-      ? "Utfärdarsidan är en bindningskontroll för den maskinläsbara feeden, inte en egen rapportlista."
-      : NO_SECOND_SOURCE_BLOCKER,
   );
-  const press = issuerDomain(
-    company,
-    "press",
-    "press",
+  const pressPrimary = coverageSlot(
+    "primary",
+    companyOfficialCoverage(company.slug)?.press ?? null,
     "issuer_press",
+    `slug:${company.slug}`,
     PRESS_PAYLOAD[company.slug],
-    company.slug === "addtech"
-      ? "Utfärdarsidan är en bindningskontroll för Cision-feeden, inte en egen presslista."
-      : NO_SECOND_SOURCE_BLOCKER,
   );
-  const ownership = issuerDomain(
-    company,
-    "ownership",
-    "ownership",
+  const calendarPrimary = coverageSlot(
+    "primary",
+    companyOfficialCoverage(company.slug)?.calendar ?? null,
+    "issuer_calendar",
+    `slug:${company.slug}`,
+  );
+  const [reportsBackup1, reportsBackup2] = disclosureBackups(company, reportsPrimary, true);
+  const [pressBackup1, pressBackup2] = disclosureBackups(company, pressPrimary, true);
+  const [calendarBackup1, calendarBackup2] = disclosureBackups(company, calendarPrimary, false);
+  const ownershipPrimary = coverageSlot(
+    "primary",
+    companyOfficialCoverage(company.slug)?.ownership ?? null,
     "issuer_ownership",
-    undefined,
-    NO_SECOND_SOURCE_BLOCKER,
+    `slug:${company.slug}`,
   );
   return {
     slug: company.slug,
@@ -418,9 +554,21 @@ export function companySourceChain(company: CompanyProfile): CompanySourceChain 
       price,
       valuation,
       dividend,
-      reports,
-      press,
-      ownership,
+      reports: domainChain("reports", [reportsPrimary, reportsBackup1, reportsBackup2]),
+      press: domainChain("press", [pressPrimary, pressBackup1, pressBackup2]),
+      calendar: domainChain("calendar", [calendarPrimary, calendarBackup1, calendarBackup2]),
+      ownership: domainChain("ownership", [
+        ownershipPrimary,
+        licensingSlot(
+          "backup1",
+          "euroclear_sweden_register",
+          EUROCLEAR_REGISTER_URL,
+          company.fiLei ? `lei:${company.fiLei}` : null,
+          "Euroclear Sweden",
+          EUROCLEAR_OWNERSHIP_BLOCKER,
+        ),
+        gapSlot("backup2", NO_THIRD_SOURCE_BLOCKER),
+      ]),
       insider: insiderChain(company),
     },
   };
@@ -630,7 +778,7 @@ export function cachedReadingWithinPolicy<T>(input: {
 
 function slotCell(slot: SourceSlot): string {
   if (slot.status === "gap") return "GAP";
-  return `${slot.status} ${slot.providerId} ${slot.endpoint}`;
+  return `${slot.status} ${slot.providerId} ${slot.endpoint ?? "—"}`;
 }
 
 export function formatSourceRedundancyMatrix(
@@ -638,20 +786,27 @@ export function formatSourceRedundancyMatrix(
 ): string {
   const chains = auditCatalogSourceChains(companies);
   const lines = [
-    "As-of is the timestamp stored on an accepted live read. This matrix is the static contract and does not invent a verification time.",
+    `Policy decisions were verified on ${SOURCE_POLICY_VERIFIED_ON}.`,
+    "As-of on a row is the active functioning slot's stored verification time. A dash means this matrix did not live-fetch that slot.",
+    "licensing_blocked is a commercial or terms barrier. It is not a functioning backup and it is not fetched.",
     "",
   ];
   for (const domain of CRITICAL_SOURCE_DOMAINS) {
     lines.push(`### ${domain}`);
     lines.push("");
-    lines.push("| Bolag | Primär | Reserv 1 | Reserv 2 | Aktiv källa | As-of |");
-    lines.push("| --- | --- | --- | --- | --- | --- |");
+    lines.push("| Bolag | Primär | Reserv 1 | Reserv 2 | Aktiv källa | As-of | Blocker |");
+    lines.push("| --- | --- | --- | --- | --- | --- | --- |");
     const blockerGroups = new Map<string, string[]>();
     for (const chain of chains) {
       const item = chain.domains[domain];
       const [primary, backup1, backup2] = item.slots;
+      const verified = item.slots.find((entry) => entry.status === "functioning")?.verifiedAsOf ?? "—";
+      const blocker = [primary, backup1, backup2]
+        .filter((entry) => entry.blocker)
+        .map((entry) => `${entry.role}: ${entry.blocker}`)
+        .join(" · ") || "—";
       lines.push(
-        `| ${chain.slug} | ${slotCell(primary)} | ${slotCell(backup1)} | ${slotCell(backup2)} | ${item.activeProviderId ?? "—"} | — |`,
+        `| ${chain.slug} | ${slotCell(primary)} | ${slotCell(backup1)} | ${slotCell(backup2)} | ${item.activeProviderId ?? "—"} | ${verified} | ${blocker} |`,
       );
       for (const entry of [primary, backup1, backup2]) {
         if (!entry.blocker) continue;
