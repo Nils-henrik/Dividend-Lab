@@ -7,6 +7,7 @@ import {
   formatCompanyCommentTimestamp,
   getCompanyComments,
 } from "@/lib/companies/comments.server";
+import { COMPANY_DISCUSSION_SECTION_ID } from "@/lib/companies/cross-navigation";
 import { isDivLabOwnerUser } from "@/lib/moderation/access.server";
 
 type Props = {
@@ -32,7 +33,11 @@ export default async function CompanyComments({
   const headingId = "company-comments-heading";
 
   return (
-    <section aria-labelledby={headingId} className="divlab-card mt-4 scroll-mt-28 p-5 sm:p-6">
+    <section
+      id={COMPANY_DISCUSSION_SECTION_ID}
+      aria-labelledby={headingId}
+      className="divlab-card mt-4 scroll-mt-28 p-5 sm:p-6"
+    >
       <h2 id={headingId} className="text-[15px] font-bold tracking-[-0.02em] text-divlab-text">
         Kommentarer om {companyName}
       </h2>

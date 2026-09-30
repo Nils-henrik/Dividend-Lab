@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useFormStatus } from "react-dom";
 import { setCompanyFollowAction } from "@/app/bolag/actions";
+import FollowEventExplanation from "@/components/companies/FollowEventExplanation";
 import {
   followButtonAriaLabel,
   followButtonLabel,
@@ -66,9 +67,10 @@ export default function FollowCompanyButton({
   mode = "page",
 }: Props) {
   const labelName = companyName?.trim() || companySlug;
+  let control;
 
   if (!isAuthenticated) {
-    return (
+    control = (
       <Link
         href={loginHref}
         className={`${buttonClass(mode, false)} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/50`}
@@ -76,10 +78,8 @@ export default function FollowCompanyButton({
         {mode === "page" ? "+ Följ bolaget" : "Logga in för att följa"}
       </Link>
     );
-  }
-
-  if (!isAvailable) {
-    return (
+  } else if (!isAvailable) {
+    control = (
       <button
         type="button"
         disabled
@@ -88,13 +88,25 @@ export default function FollowCompanyButton({
         Bevakning öppnar snart
       </button>
     );
+  } else {
+    control = (
+      <form action={setCompanyFollowAction}>
+        <input type="hidden" name="companySlug" value={companySlug} />
+        <input type="hidden" name="follow" value={isFollowing ? "false" : "true"} />
+        <SubmitButton isFollowing={isFollowing} mode={mode} companyName={labelName} />
+      </form>
+    );
   }
 
+  if (mode !== "page") return control;
+
   return (
-    <form action={setCompanyFollowAction}>
-      <input type="hidden" name="companySlug" value={companySlug} />
-      <input type="hidden" name="follow" value={isFollowing ? "false" : "true"} />
-      <SubmitButton isFollowing={isFollowing} mode={mode} companyName={labelName} />
-    </form>
+    <div className="w-full">
+      {control}
+      <FollowEventExplanation
+        linkToMittDivlab
+        className="mt-2 text-left text-xs leading-5 text-divlab-text-secondary"
+      />
+    </div>
   );
 }

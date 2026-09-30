@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import AppShell from "@/components/layout/AppShell";
 import CompanyWatchlist from "@/components/companies/CompanyWatchlist";
 import { requireAuthenticatedUser } from "@/lib/auth/session";
-import { getCompanyProfile } from "@/lib/companies/catalog";
+import { companyAiPortfolioLinksBySlug } from "@/lib/companies/ai-portfolio-crosslinks";
+import { getCompanyProfile, getPilotCompanies } from "@/lib/companies/catalog";
 import {
   buildFollowFeed,
   followFeedCompanyFromOfficial,
@@ -18,6 +19,7 @@ import { articleMatchesCompany } from "@/lib/companies/news";
 import { assembleCompanyOfficialData } from "@/lib/companies/official-data";
 import { getFollowedCompanies, type FollowedCompany } from "@/lib/companies/server";
 import { buildFollowedCompanyCards, listDiscoveryCompanies } from "@/lib/companies/watchlist";
+import { loadPublicModelPortfolioHoldings } from "@/lib/model-portfolios/public-holdings.server";
 import { getNewsArticleHref, getNewsArticles } from "@/lib/news/get-articles";
 import { noIndexMetadata } from "@/lib/seo/robots-metadata";
 import type { CompanyProfile } from "@/lib/companies/types";
@@ -128,10 +130,15 @@ export default async function WatchlistPage() {
     documentsUnavailable: false,
     byCompanyId: new Map(),
   };
+  let holdings: Awaited<ReturnType<typeof loadPublicModelPortfolioHoldings>> = [];
   if (watchlist.isAvailable) {
-    [quotes, records] = await Promise.all([
+    const loadHoldings = watchlist.companies.length > 0
+      ? loadPublicModelPortfolioHoldings()
+      : Promise.resolve([]);
+    [quotes, records, holdings] = await Promise.all([
       getFollowedCompaniesMarketData(watchlist.companies.map((company) => company.slug)),
       loadFollowedOfficialRecords(watchlist.companies.map((company) => company.id)),
+      loadHoldings,
     ]);
   }
   const profiles = watchlist.companies.flatMap((company) => {
@@ -139,6 +146,15 @@ export default async function WatchlistPage() {
     return profile ? [profile] : [];
   });
   const articles = watchlist.isAvailable ? articlesForFollowed(profiles, getNewsArticles()) : new Map();
+  const catalog = getPilotCompanies().map((company) => ({
+    slug: company.slug,
+    marketDataSymbol: company.marketDataSymbol,
+  }));
+  const aiPortfolioLinks = companyAiPortfolioLinksBySlug(
+    profiles.map((company) => ({ slug: company.slug, marketDataSymbol: company.marketDataSymbol })),
+    holdings,
+    catalog,
+  );
   const feed = buildFollowFeed({
     followedCount: watchlist.isAvailable ? watchlist.companies.length : 0,
     available: watchlist.isAvailable,
@@ -155,6 +171,7 @@ export default async function WatchlistPage() {
         followed={buildFollowedCompanyCards(watchlist.companies, quotes)}
         discovery={listDiscoveryCompanies()}
         feed={feed}
+        aiPortfolioLinks={aiPortfolioLinks}
       />
     </AppShell>
   );

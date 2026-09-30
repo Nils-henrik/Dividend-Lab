@@ -1,5 +1,8 @@
 export type FollowButtonMode = "page" | "unfollow" | "discovery";
 
+export const FOLLOW_MITT_DIVLAB_EXPLANATION =
+  "Följ bolaget för att få rapporter, pressmeddelanden och andra verifierade händelser i Mitt DivLab.";
+
 export function followButtonLabel(
   isFollowing: boolean,
   mode: FollowButtonMode,

@@ -5,11 +5,12 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import WatchlistBoard from "../components/companies/WatchlistBoard";
 import { getCompanyProfile, getPilotCompanies } from "../lib/companies/catalog";
-import { followButtonLabel } from "../lib/companies/follow-label";
+import { FOLLOW_MITT_DIVLAB_EXPLANATION, followButtonLabel } from "../lib/companies/follow-label";
 import { isFollowableCompanySlug } from "../lib/companies/follow-policy";
 import { getFollowedCompanyNews } from "../lib/companies/news";
 import { VERIFIED_OMXS30_SLUGS } from "../lib/companies/omxs30";
 import { sessionExtremes } from "../lib/companies/quote-session";
+import type { CompanyAiPortfolioLink } from "../lib/companies/ai-portfolio-crosslinks";
 import { buildFollowFeed, type FollowFeedModel } from "../lib/companies/follow-feed";
 import {
   buildFollowedCompanyCards,
@@ -62,6 +63,7 @@ function renderBoard(options: {
   showNoDiscoveryMatches?: boolean;
   followedCount?: number | null;
   feed?: FollowFeedModel;
+  aiPortfolioLinks?: Record<string, readonly CompanyAiPortfolioLink[]>;
 }) {
   const discovery =
     options.discovery ??
@@ -77,6 +79,7 @@ function renderBoard(options: {
       followed,
       discovery,
       feed: options.feed ?? emptyFeed(followedCount ?? 0, isAvailable),
+      aiPortfolioLinks: options.aiPortfolioLinks,
       filters: listMarketFilters(listDiscoveryCompanies()),
       query: "",
       sort: "name",
@@ -155,6 +158,11 @@ test("följda bolag renderas med riktiga fält och saknad data som tankstreck", 
   assert.match(html, new RegExp(MISSING_MARKET_VALUE));
   assert.doesNotMatch(html, /Senaste stängningskurser/);
   assert.match(html, /Följer ✓/);
+  assert.equal(html.includes(FOLLOW_MITT_DIVLAB_EXPLANATION), true);
+  assert.match(html, /href="\/bolag\/volvo#diskussion"/);
+  assert.match(html, /href="\/portfolios"/);
+  assert.doesNotMatch(html, /Aktuellt innehav/);
+  assert.doesNotMatch(html, /oläst|Oläst|unread/i);
 });
 
 test("tom följlista renderar discovery och inte den gamla pilottexten", () => {
@@ -449,4 +457,27 @@ test("personligt nyhetsurval använder bara artiklar som matchar följda bolag",
     getFollowedCompanyNews([volvo], [article("other", ["Investor"])]).length,
     0,
   );
+});
+
+test("följda bolag visar bara faktiska AI-portföljinnehav och diskussionsankaret", () => {
+  const [investor] = buildFollowedCompanyCards([investorInput()], {});
+  const html = renderBoard({
+    followed: [investor!],
+    followedCount: 1,
+    aiPortfolioLinks: {
+      investor: [{ slug: "forsiktig", name: "Försiktig", href: "/portfolios/forsiktig" }],
+      volvo: [{ slug: "hog-risk", name: "Högrisk", href: "/portfolios/hog-risk" }],
+    },
+  });
+
+  assert.match(html, /Aktuellt innehav i/);
+  assert.match(html, /href="\/portfolios\/forsiktig"/);
+  assert.match(html, /AI-portföljen Försiktig/);
+  assert.doesNotMatch(html, /portfolios\/hog-risk/);
+  assert.match(html, /href="\/bolag\/investor#diskussion"/);
+  assert.doesNotMatch(html, /köp|sälj|rekommend/i);
+  assert.match(read("components/companies/FollowCompanyButton.tsx"), /mode !== "page"/);
+  assert.match(read("components/companies/FollowCompanyButton.tsx"), /FollowEventExplanation/);
+  assert.match(read("app/watchlist/page.tsx"), /loadPublicModelPortfolioHoldings/);
+  assert.doesNotMatch(read("lib/model-portfolios/public-holdings.server.ts"), /\.insert\(|\.update\(|\.delete\(|\.upsert\(/);
 });

@@ -11,6 +11,9 @@ export const FOLLOW_FEED_CALENDAR_DAYS = 45;
 export const FOLLOW_FEED_DIVIDEND_PAST_DAYS = 30;
 export const FOLLOW_FEED_DIVIDEND_FUTURE_DAYS = 60;
 export const FOLLOW_FEED_LIMIT = 40;
+export const FOLLOW_FEED_RECENCY_TODAY_LABEL = "Ny idag";
+export const FOLLOW_FEED_RECENCY_LAST_24H_LABEL = "Senaste 24 h";
+const FOLLOW_FEED_RECENCY_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 export const FOLLOW_FEED_FILTERS = [
   { id: "all", label: "Alla" },
@@ -76,6 +79,8 @@ export type FollowFeedItem = {
   href: string;
   companyHref: string;
   freshnessLabel: string;
+  /** Timestamp-derived cue. Null when the event is outside the recent window. */
+  recencyLabel: string | null;
   dividendKind: FollowFeedDividendKind | null;
   fallback: boolean;
 };
@@ -201,6 +206,29 @@ function titleKey(value: string) {
   return value.toLocaleLowerCase("sv").replace(/\s+/g, " ").trim();
 }
 
+/**
+ * Honest recency from the event timestamp only.
+ * Date-only values can be "Ny idag" on that Stockholm day, never "Senaste 24 h".
+ */
+export function followFeedRecencyLabel(sortAt: string, now = new Date()) {
+  if (!sortAt || !/^\d{4}-\d{2}-\d{2}/.test(sortAt)) return null;
+  const hasTime = sortAt.includes("T");
+  const day = sortAt.slice(0, 10);
+  const today = stockholmIsoDate(now);
+
+  if (!hasTime) {
+    if (day !== today) return null;
+    return FOLLOW_FEED_RECENCY_TODAY_LABEL;
+  }
+
+  const instant = new Date(sortAt);
+  if (Number.isNaN(instant.getTime()) || instant.getTime() > now.getTime()) return null;
+  if (stockholmIsoDate(instant) === today) return FOLLOW_FEED_RECENCY_TODAY_LABEL;
+  const ageMs = now.getTime() - instant.getTime();
+  if (ageMs >= 0 && ageMs <= FOLLOW_FEED_RECENCY_WINDOW_MS) return FOLLOW_FEED_RECENCY_LAST_24H_LABEL;
+  return null;
+}
+
 export function formatFollowFeedDate(value: string | null) {
   if (!value) return "Datum saknas";
   const hasTime = value.includes("T");
@@ -323,6 +351,10 @@ export function followFeedCompanyFromOfficial(input: {
 
 type Draft = FollowFeedItem & { rank: number; day: string; reportCalendar: boolean };
 
+function publicationRecency(sortAt: string, now: Date) {
+  return followFeedRecencyLabel(sortAt, now);
+}
+
 function draftItem(input: {
   company: FollowFeedCompanyInput;
   kind: FollowFeedKind;
@@ -332,6 +364,7 @@ function draftItem(input: {
   sourceLabel: string;
   href: string;
   freshnessLabel: string;
+  recencyLabel?: string | null;
   dividendKind?: FollowFeedDividendKind | null;
   fiscalPeriod?: string | null;
   fallback?: boolean;
@@ -351,6 +384,7 @@ function draftItem(input: {
     href: input.href,
     companyHref: companyHref(input.company.slug),
     freshnessLabel: input.freshnessLabel,
+    recencyLabel: input.recencyLabel ?? null,
     dividendKind: input.dividendKind ?? null,
     fallback: input.fallback ?? false,
     rank: KIND_RANK[input.kind],
@@ -362,7 +396,7 @@ function draftItem(input: {
   };
 }
 
-function collectPrimary(company: FollowFeedCompanyInput, today: string): Draft[] {
+function collectPrimary(company: FollowFeedCompanyInput, today: string, now: Date): Draft[] {
   const rows: Draft[] = [];
   const seenUrls = new Set<string>();
   const seenTitles = new Set<string>();
@@ -403,22 +437,24 @@ function collectPrimary(company: FollowFeedCompanyInput, today: string): Draft[]
     if (seenUrls.has(url) || (title && seenTitles.has(title))) return;
     seenUrls.add(url);
     if (title) seenTitles.add(title);
+    const sortAt = document.date ?? day;
     rows.push(draftItem({
       company,
       kind,
       title: document.title,
-      sortAt: document.date ?? day,
+      sortAt,
       day,
       sourceLabel: document.publisher ?? (kind === "report" ? "Officiell rapport" : "Officiellt pressmeddelande"),
       href: document.url,
       freshnessLabel: freshness,
+      recencyLabel: publicationRecency(sortAt, now),
     }));
   }
 
   const reports = [...company.reports].sort((left, right) => (right.date ?? "").localeCompare(left.date ?? ""));
   const press = [...company.press].sort((left, right) => (right.date ?? "").localeCompare(left.date ?? ""));
-  for (const report of reports) takeDocument("report", report, reportStart, "Ny rapport");
-  for (const item of press) takeDocument("press", item, pressStart, "Nytt pressmeddelande");
+  for (const report of reports) takeDocument("report", report, reportStart, "Officiell rapport");
+  for (const item of press) takeDocument("press", item, pressStart, "Officiellt pressmeddelande");
 
   const seenDividends = new Set<string>();
   for (const dividend of company.dividends) {
@@ -427,15 +463,17 @@ function collectPrimary(company: FollowFeedCompanyInput, today: string): Draft[]
     const idSuffix = `${dividend.kind}:${eventKey(dividend.url)}`;
     if (seenDividends.has(idSuffix)) continue;
     seenDividends.add(idSuffix);
+    const dividendSortAt = dividend.date ?? day;
     rows.push(draftItem({
       company,
       kind: "dividend",
       title: dividend.title,
-      sortAt: dividend.date ?? day,
+      sortAt: dividendSortAt,
       day,
       sourceLabel: dividend.publisher ?? "Officiell utdelning",
       href: dividend.url,
       freshnessLabel: DIVIDEND_KIND_LABEL[dividend.kind],
+      recencyLabel: publicationRecency(dividendSortAt, now),
       dividendKind: dividend.kind,
       idSuffix,
     }));
@@ -452,7 +490,8 @@ function collectPrimary(company: FollowFeedCompanyInput, today: string): Draft[]
       day,
       sourceLabel: "DivLab",
       href: article.href,
-      freshnessLabel: "Ny DivLab-artikel",
+      freshnessLabel: "DivLab-artikel",
+      recencyLabel: publicationRecency(article.publishedAt, now),
       idSuffix: article.id,
     }));
   }
@@ -480,6 +519,7 @@ function collectPrimary(company: FollowFeedCompanyInput, today: string): Draft[]
       sourceLabel: "Fördröjd marknadsdata · Yahoo Finance",
       href: move.sourceUrl,
       freshnessLabel: "Materiell kursrörelse",
+      recencyLabel: publicationRecency(move.marketTimestamp, now),
     }));
   }
 
@@ -537,6 +577,7 @@ function toItem(row: Draft): FollowFeedItem {
     href: row.href,
     companyHref: row.companyHref,
     freshnessLabel: row.freshnessLabel,
+    recencyLabel: row.recencyLabel,
     dividendKind: row.dividendKind,
     fallback: row.fallback,
   };
@@ -593,8 +634,9 @@ export function buildFollowFeed(input: {
     };
   }
 
-  const today = stockholmIsoDate(input.now ?? new Date());
-  const primary = input.companies.flatMap((company) => collectPrimary(company, today));
+  const now = input.now ?? new Date();
+  const today = stockholmIsoDate(now);
+  const primary = input.companies.flatMap((company) => collectPrimary(company, today, now));
   const usingFallback = primary.length === 0;
   const selected = boundByCategory(usingFallback
     ? input.companies.flatMap((company) => {
