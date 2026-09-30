@@ -1,5 +1,6 @@
 import Link from "next/link";
 import AppIcon, { type AppIconName } from "@/components/layout/AppIcon";
+import { companyDiscussionHref } from "@/lib/companies/cross-navigation";
 import type { FollowFeedItem, FollowFeedKind } from "@/lib/companies/follow-feed";
 
 const ICONS: Record<FollowFeedKind, AppIconName> = {
@@ -58,6 +59,11 @@ export default function FollowFeedList({ items }: { items: readonly FollowFeedIt
                 <span className="rounded-md bg-divlab-blue/10 px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-divlab-blue">
                   {item.typeLabel}
                 </span>
+                {item.recencyLabel ? (
+                  <span className="rounded-md border divlab-border-neutral px-1.5 py-0.5 text-[11px] font-medium text-divlab-text-secondary">
+                    {item.recencyLabel}
+                  </span>
+                ) : null}
                 <time
                   className="text-xs tabular-nums text-divlab-text-secondary sm:ml-auto"
                   dateTime={item.sortAt}
@@ -73,12 +79,18 @@ export default function FollowFeedList({ items }: { items: readonly FollowFeedIt
                 <span aria-hidden="true"> · </span>
                 <span>{item.freshnessLabel}</span>
               </p>
-              <p className="mt-2">
+              <p className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
                 <Link
                   href={item.companyHref}
                   className="text-xs font-semibold text-divlab-text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/50 hover:text-divlab-blue"
                 >
                   Bolagssida
+                </Link>
+                <Link
+                  href={companyDiscussionHref(item.companySlug)}
+                  className="text-xs font-semibold text-divlab-text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/50 hover:text-divlab-blue"
+                >
+                  Diskussion
                 </Link>
               </p>
             </div>

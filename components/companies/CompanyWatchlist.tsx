@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import FollowCompanyButton from "@/components/companies/FollowCompanyButton";
 import WatchlistBoard from "@/components/companies/WatchlistBoard";
+import type { CompanyAiPortfolioLink } from "@/lib/companies/ai-portfolio-crosslinks";
 import type { FollowButtonMode } from "@/lib/companies/follow-label";
 import type { FollowFeedModel } from "@/lib/companies/follow-feed";
 import {
@@ -22,6 +23,7 @@ type Props = {
   followed: readonly FollowedCompanyCard[];
   discovery: readonly DiscoveryCompany[];
   feed: FollowFeedModel;
+  aiPortfolioLinks?: Readonly<Record<string, readonly CompanyAiPortfolioLink[]>>;
 };
 
 export default function CompanyWatchlist({
@@ -29,6 +31,7 @@ export default function CompanyWatchlist({
   followed,
   discovery,
   feed,
+  aiPortfolioLinks = {},
 }: Props) {
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<WatchlistSort>("recent");
@@ -75,8 +78,9 @@ export default function CompanyWatchlist({
       isAvailable={isAvailable}
       followedCount={isAvailable ? followed.length : null}
       followed={visibleFollowed}
-      discovery={visibleDiscovery}
-      feed={feed}
+        discovery={visibleDiscovery}
+        feed={feed}
+        aiPortfolioLinks={aiPortfolioLinks}
       filters={filters}
       query={query}
       sort={sort}

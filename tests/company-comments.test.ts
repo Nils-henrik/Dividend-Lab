@@ -2,6 +2,10 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { COMPANY_COMMENT_MAX_LENGTH, validateCompanyCommentBody } from "../lib/companies/comments";
+import {
+  COMPANY_DISCUSSION_SECTION_ID,
+  companyDiscussionHref,
+} from "../lib/companies/cross-navigation";
 
 const migration = readFileSync(
   new URL(
@@ -101,6 +105,9 @@ test("bolagssidan visar kommentarer sist och mutationer är bundna", () => {
   assert.match(page, /<CompanyComments/);
   assert.match(page, /companyName=\{company\.displayName\}/);
   assert.match(page, /alternates: \{ canonical: getCanonicalUrl\(path\) \}/);
+  assert.equal(COMPANY_DISCUSSION_SECTION_ID, "diskussion");
+  assert.equal(companyDiscussionHref("investor"), "/bolag/investor#diskussion");
+  assert.match(comments, /id=\{COMPANY_DISCUSSION_SECTION_ID\}/);
   assert.match(comments, /Kommentarer om \{companyName\}/);
   assert.match(comments, /Logga in för att kommentera/);
   assert.match(comments, /login\?redirect=/);

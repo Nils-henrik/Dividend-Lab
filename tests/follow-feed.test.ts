@@ -12,8 +12,11 @@ import {
   followFeedCalendarEventAfter,
   followFeedCompanyFromOfficial,
   followFeedDocumentPublishedAfter,
+  followFeedRecencyLabel,
   FOLLOW_FEED_FILTERS,
   FOLLOW_FEED_LIMIT,
+  FOLLOW_FEED_RECENCY_LAST_24H_LABEL,
+  FOLLOW_FEED_RECENCY_TODAY_LABEL,
   type FollowFeedCompanyInput,
   type FollowFeedModel,
 } from "../lib/companies/follow-feed";
@@ -626,6 +629,7 @@ test("kommande rapporter räknar bara rapportdatum", () => {
   assert.deepEqual(feed.items.map((item) => item.title), ["Interim report Q3 2026", "Årsstämma 2026"]);
   assert.equal(feed.summary.upcomingReports, 1);
   assert.equal(feed.items.every((item) => item.kind === "calendar"), true);
+  assert.equal(feed.items.every((item) => item.recencyLabel === null), true);
 });
 
 test("dokumentfrågan stannar inom fönstret och behåller kommande kalender", () => {
@@ -687,10 +691,56 @@ test("flödeskort visar bolag, typ, datum, källa och status", () => {
   assert.match(html, /Nordea/);
   assert.match(html, /NDA SE/);
   assert.match(html, /Pressmeddelande/);
-  assert.match(html, /Nytt pressmeddelande/);
+  assert.match(html, /Officiellt pressmeddelande/);
+  assert.doesNotMatch(html, /Ny idag|Senaste 24 h|oläst|Oläst|unread/i);
   assert.match(html, /Nordea/);
   assert.match(html, /Bolagssida/);
   assert.match(html, /Filtrera flödet/);
   assert.match(html, /Ett mycket långt svenskt pressmeddelande/);
+  assert.match(html, /href="\/bolag\/nordea#diskussion"/);
   assert.doesNotMatch(html, /köp|sälj/i);
+});
+
+test("närhetsmarkeringar följer bara tidsstämplar och påstår inte läst eller oläst", () => {
+  const now = new Date("2026-09-29T10:00:00.000Z");
+
+  assert.equal(followFeedRecencyLabel("2026-09-29", now), FOLLOW_FEED_RECENCY_TODAY_LABEL);
+  assert.equal(followFeedRecencyLabel("2026-09-28", now), null);
+  assert.equal(followFeedRecencyLabel("2026-09-30", now), null);
+  assert.equal(followFeedRecencyLabel("2026-09-28T22:30:00.000Z", now), FOLLOW_FEED_RECENCY_TODAY_LABEL);
+  assert.equal(followFeedRecencyLabel("2026-09-28T21:00:00.000Z", now), FOLLOW_FEED_RECENCY_LAST_24H_LABEL);
+  assert.equal(followFeedRecencyLabel("2026-09-28T10:00:00.000Z", now), FOLLOW_FEED_RECENCY_LAST_24H_LABEL);
+  assert.equal(followFeedRecencyLabel("2026-09-28T09:59:59.999Z", now), null);
+  assert.equal(followFeedRecencyLabel("2026-09-29T12:00:00.000Z", now), null);
+  assert.equal(followFeedRecencyLabel("", now), null);
+  assert.equal(followFeedRecencyLabel("inte-ett-datum", now), null);
+
+  const feed = buildFollowFeed({
+    followedCount: 1,
+    available: true,
+    now,
+    companies: [company({
+      press: [{
+        title: "Dagens pressmeddelande",
+        date: "2026-09-29T07:00:00.000Z",
+        url: "https://www.nordea.com/en/press/today",
+        publisher: "Nordea",
+      }],
+      events: [{
+        title: "Kommande rapport",
+        date: "2026-10-02",
+        url: "https://www.nordea.com/en/calendar/next",
+        publisher: "Nordea",
+      }],
+    })],
+  });
+
+  const press = feed.items.find((item) => item.kind === "press");
+  const calendar = feed.items.find((item) => item.kind === "calendar");
+  assert.equal(press?.recencyLabel, FOLLOW_FEED_RECENCY_TODAY_LABEL);
+  assert.equal(press?.freshnessLabel, "Officiellt pressmeddelande");
+  assert.equal(calendar?.recencyLabel, null);
+  assert.equal(calendar?.freshnessLabel, "Om 3 dagar");
+  assert.equal(feed.items.some((item) => /oläst|läst|unread|read/i.test(item.recencyLabel ?? "")), false);
+  assert.doesNotMatch(read("lib/companies/follow-feed.ts"), /oläst|unread|readAt|isRead/);
 });

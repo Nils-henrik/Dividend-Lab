@@ -3,7 +3,10 @@
 import { useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import CompanyLogo from "@/components/companies/CompanyLogo";
+import FollowEventExplanation from "@/components/companies/FollowEventExplanation";
 import FollowFeedList from "@/components/companies/FollowFeedList";
+import type { CompanyAiPortfolioLink } from "@/lib/companies/ai-portfolio-crosslinks";
+import { AI_PORTFOLIOS_PATH, companyDiscussionHref } from "@/lib/companies/cross-navigation";
 import {
   FOLLOW_FEED_FILTERS,
   filterFollowFeed,
@@ -25,6 +28,7 @@ type Props = {
   followed: readonly FollowedCompanyCard[];
   discovery: readonly (DiscoveryCompany & { isFollowing: boolean })[];
   feed: FollowFeedModel;
+  aiPortfolioLinks?: Readonly<Record<string, readonly CompanyAiPortfolioLink[]>>;
   filters: readonly MarketFilter[];
   query: string;
   sort: WatchlistSort;
@@ -55,37 +59,68 @@ function SummaryStat({ label, value }: { label: string; value: string }) {
   );
 }
 
+const linkClassName =
+  "text-xs font-semibold text-divlab-text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/50 hover:text-divlab-blue";
+
+function PortfolioHoldingLinks({ links }: { links: readonly CompanyAiPortfolioLink[] }) {
+  if (links.length === 0) return null;
+
+  return (
+    <span className="inline-flex flex-wrap items-baseline gap-x-1 text-divlab-text-muted">
+      <span>Aktuellt innehav i</span>
+      {links.map((link, index) => (
+        <span key={link.slug}>
+          {index > 0 ? <span aria-hidden="true">, </span> : null}
+          <Link href={link.href} aria-label={`AI-portföljen ${link.name}`} className={linkClassName}>
+            {link.name}
+          </Link>
+        </span>
+      ))}
+    </span>
+  );
+}
+
 function FollowedRow({
   company,
   follow,
+  portfolioLinks,
 }: {
   company: FollowedCompanyCard;
   follow: ReactNode;
+  portfolioLinks: readonly CompanyAiPortfolioLink[];
 }) {
   return (
-    <article className="flex items-center gap-3 px-4 py-2.5 sm:px-5">
-      <Link
-        href={companyPath(company.slug)}
-        className="flex min-w-0 flex-1 items-center gap-3 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/50"
-      >
-        <CompanyLogo name={company.name} logoPath={company.logoPath} size="compact" />
-        <span className="min-w-0">
-          <span className="block truncate font-semibold text-divlab-text">{company.displayName}</span>
-          <span className="mt-0.5 block truncate text-sm text-divlab-text-muted">
-            {company.ticker}
-            <span className="px-1">·</span>
-            <span className="tabular-nums text-divlab-text">{company.priceLabel}</span>
-            <span className={`ml-1 tabular-nums ${quoteToneClass(company.tone)}`}>{company.changePctLabel}</span>
+    <article className="px-4 py-2.5 sm:px-5">
+      <div className="flex items-center gap-3">
+        <Link
+          href={companyPath(company.slug)}
+          className="flex min-w-0 flex-1 items-center gap-3 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/50"
+        >
+          <CompanyLogo name={company.name} logoPath={company.logoPath} size="compact" />
+          <span className="min-w-0">
+            <span className="block truncate font-semibold text-divlab-text">{company.displayName}</span>
+            <span className="mt-0.5 block truncate text-sm text-divlab-text-muted">
+              {company.ticker}
+              <span className="px-1">·</span>
+              <span className="tabular-nums text-divlab-text">{company.priceLabel}</span>
+              <span className={`ml-1 tabular-nums ${quoteToneClass(company.tone)}`}>{company.changePctLabel}</span>
+            </span>
           </span>
-        </span>
-      </Link>
-      <Link
-        href={companyPath(company.slug)}
-        className="hidden text-xs font-semibold text-divlab-text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/50 hover:text-divlab-blue sm:inline"
-      >
-        Visa bolagssida
-      </Link>
-      <div className="shrink-0">{follow}</div>
+        </Link>
+        <Link
+          href={companyPath(company.slug)}
+          className={`hidden sm:inline ${linkClassName}`}
+        >
+          Visa bolagssida
+        </Link>
+        <div className="shrink-0">{follow}</div>
+      </div>
+      <p className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <Link href={companyDiscussionHref(company.slug)} className={linkClassName}>
+          Diskussion
+        </Link>
+        <PortfolioHoldingLinks links={portfolioLinks} />
+      </p>
     </article>
   );
 }
@@ -129,6 +164,7 @@ export default function WatchlistBoard({
   followed,
   discovery,
   feed,
+  aiPortfolioLinks = {},
   filters,
   query,
   sort,
@@ -168,10 +204,19 @@ export default function WatchlistBoard({
           <h1 className="mt-2 text-3xl font-semibold tracking-[-0.045em] text-divlab-text">
             Mitt DivLab
           </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-divlab-text-secondary">
-            Händelser från bolagen du följer. Bara officiella källor, DivLab-artiklar och
-            kursrörelser som redan finns för de bolagen.
+          <FollowEventExplanation className="mt-3 max-w-2xl text-sm leading-6 text-divlab-text-secondary" />
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-divlab-text-secondary">
+            Bara officiella källor, DivLab-artiklar och kursrörelser som redan finns för de bolagen.
+            Tidsmarkeringar utgår från händelsens tid.
           </p>
+          <nav aria-label="Relaterat i DivLab" className="mt-4 flex flex-wrap gap-3 text-sm">
+            <Link
+              href={AI_PORTFOLIOS_PATH}
+              className="font-semibold text-divlab-blue underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/50"
+            >
+              AI-portföljer
+            </Link>
+          </nav>
           <dl className="mt-4 grid grid-cols-3 gap-2 sm:gap-3">
             <SummaryStat
               label="Följda bolag"
@@ -243,7 +288,8 @@ export default function WatchlistBoard({
             Du följer inga bolag ännu
           </h2>
           <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-divlab-text-secondary">
-            Sök bland bolagen och följ det första. Flödet byggs bara av bolag du själv följer.
+            Sök bland bolagen och följ det första. Rapporter, pressmeddelanden och andra
+            verifierade händelser samlas då här.
           </p>
           <button
             type="button"
@@ -269,6 +315,7 @@ export default function WatchlistBoard({
                   <FollowedRow
                     key={company.id}
                     company={company}
+                    portfolioLinks={aiPortfolioLinks[company.slug] ?? []}
                     follow={renderFollow({
                       slug: company.slug,
                       displayName: company.displayName,
