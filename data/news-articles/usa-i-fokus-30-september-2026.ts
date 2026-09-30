@@ -19,7 +19,9 @@ export const USA_I_FOKUS_30_SEPTEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-09-30T14:08:20+02:00",
   url: "/news/usa-i-fokus-30-september-2026-pce-boeing-micron",
   featured: true,
-  imageAlt: "USA i fokus 30 september 2026 – Wall Street inför PCE, BNP och Microns rapport.",
+  imageUrl: "/news/generated/usa-i-fokus-2026-09-30.png",
+  thumbnailImageUrl: "/news/generated/usa-i-fokus-2026-09-30.png",
+  imageAlt: "USA i fokus 2026-09-30 – DivLabs översikt över den amerikanska börsmarknaden inför Wall Streets öppning.",
   readingMinutes: 5,
   seoTitle: "USA i fokus: PCE, Boeing och Micron styr Wall Street",
   seoDescription:
