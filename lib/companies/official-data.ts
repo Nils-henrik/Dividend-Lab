@@ -13,6 +13,7 @@ export type CompanyDataStatus =
   | "available_with_items"
   | "available_empty"
   | "source_link_only"
+  | "blocked"
   | "temporarily_unavailable"
   | "schema_unavailable";
 
@@ -148,7 +149,8 @@ function resolveStatus(input: {
 }): CompanyDataStatus {
   if (input.hasItems) return "available_with_items";
   const mode = input.source?.supportMode ?? input.staticMode;
-  if (mode === "source_link_only" || mode === "blocked") return "source_link_only";
+  if (mode === "blocked") return "blocked";
+  if (mode === "source_link_only") return "source_link_only";
   if (input.source?.lastFailureReason) return "temporarily_unavailable";
   if (input.source?.lastSuccessAt) return "available_empty";
   if (input.query === "schema_unavailable") return "schema_unavailable";

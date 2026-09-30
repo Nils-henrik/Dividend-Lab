@@ -71,9 +71,10 @@ export default function FollowCompanyButton({
     return (
       <Link
         href={loginHref}
+        aria-label={followButtonAriaLabel(labelName, false)}
         className={`${buttonClass(mode, false)} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-divlab-blue/50`}
       >
-        {mode === "page" ? "+ Följ bolaget" : "Logga in för att följa"}
+        {mode === "page" ? followButtonLabel(false, "page") : "Logga in för att följa"}
       </Link>
     );
   }

@@ -293,8 +293,8 @@ test("följ och avfölj använder befintligt action-kontrakt", () => {
   assert.match(button, /name="companySlug"/);
   assert.match(button, /name="follow"/);
   assert.match(button, /followButtonLabel/);
-  assert.equal(followButtonLabel(false, "page"), "+ Följ bolaget");
-  assert.equal(followButtonLabel(true, "page"), "Följer ✓");
+  assert.equal(followButtonLabel(false, "page"), "Följ bolaget");
+  assert.equal(followButtonLabel(true, "page"), "Följer");
   assert.equal(followButtonLabel(true, "unfollow"), "Sluta följ");
   assert.equal(followButtonLabel(false, "discovery"), "+ Följ");
   assert.equal(followButtonLabel(true, "discovery"), "Följer ✓");

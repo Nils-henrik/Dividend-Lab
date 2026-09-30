@@ -33,16 +33,20 @@ function uniform(
   };
 }
 
+const PROFILE_SOURCE_LINK_REASON =
+  "Ingen verifierad VD-, ägar- eller utdelningsmarkup på profilsidan.";
+
 function documents(
   input: Record<"press" | "reports" | "calendar", OfficialCategoryCoverage>,
   profileHref: string,
   profileMode: SourceSupportMode = "source_link_only",
 ): CompanyOfficialCoverage {
+  const profileBlocker = profileMode === "source_link_only" ? PROFILE_SOURCE_LINK_REASON : null;
   return {
     ...input,
-    ceo: category(profileMode, profileHref),
-    ownership: category(profileMode, profileHref),
-    dividend: category(profileMode, profileHref),
+    ceo: category(profileMode, profileHref, profileBlocker),
+    ownership: category(profileMode, profileHref, profileBlocker),
+    dividend: category(profileMode, profileHref, profileBlocker),
   };
 }
 
@@ -167,9 +171,9 @@ export const COMPANY_OFFICIAL_COVERAGE: Record<string, CompanyOfficialCoverage> 
     press: category("source_link_only", "https://www.skanska.com/group/en/media/press-releases", "Presslistan renderas i klienten och visar Loading. Ingen datumlista i första HTML-svaret."),
     reports: category("source_link_only", "https://www.skanska.com/group/en/investors/financial-reports/interim-reports", "PDF-länkar finns, men time-attributet är tomt. Dagdatum gissas inte."),
     calendar: category("source_link_only", "https://www.skanska.com/group/en/investors/financial-reports/calendar", "Kalendern är en Next-payload utan verifierad datumlista i statisk HTML."),
-    ceo: category("source_link_only", "https://www.skanska.com/group/en/investors"),
-    ownership: category("source_link_only", "https://www.skanska.com/group/en/investors"),
-    dividend: category("source_link_only", "https://www.skanska.com/group/en/investors"),
+    ceo: category("source_link_only", "https://www.skanska.com/group/en/investors", "Ingen verifierad VD-markup på investerarsidan."),
+    ownership: category("source_link_only", "https://www.skanska.com/group/en/investors", "Ingen ägartabell med ett gemensamt avstämningsdatum verifierades."),
+    dividend: category("source_link_only", "https://www.skanska.com/group/en/investors", "Ingen beslutad utdelning per aktie verifierades på investerarsidan."),
   },
   industrivarden: {
     press: category("automated", "https://www.industrivarden.se/rss/"),

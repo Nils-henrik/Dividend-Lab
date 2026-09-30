@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import UniqueReaderCount from "@/components/analytics/UniqueReaderCount";
 import ArticleShareLinks from "@/components/content/ArticleShareLinks";
 import RelatedContent from "@/components/content/RelatedContent";
+import CompanyArticleLinks from "@/components/companies/CompanyArticleLinks";
 import { LearningRichText } from "@/components/learning/LearningRichText";
 import type { RelatedContentLink } from "@/lib/news/internal-links";
 import type { NewsArticle } from "@/types/news";
@@ -15,10 +16,18 @@ import {
   RESPONSIVE_THUMBNAIL_POSITION_CLASS,
 } from "@/lib/news/thumbnail-position";
 
+type CompanyChip = {
+  slug: string;
+  name: string;
+  ticker: string;
+  href: string;
+};
+
 type Props = {
   article: NewsArticle;
   initialUniqueReaders?: number;
   relatedContent?: readonly RelatedContentLink[];
+  companyLinks?: readonly CompanyChip[];
 };
 
 function MetadataIcon({ children }: { children: ReactNode }) {
@@ -64,6 +73,7 @@ export default function NewsArticleView({
   article,
   initialUniqueReaders = 0,
   relatedContent = [],
+  companyLinks = [],
 }: Props) {
   const introParagraphs = article.intro ?? [];
   const sections = article.sections ?? [];
@@ -261,6 +271,7 @@ export default function NewsArticleView({
           </section>
         ))}
 
+        <CompanyArticleLinks companies={companyLinks} />
         <RelatedContent links={relatedContent} />
 
         {sources.length > 0 && (

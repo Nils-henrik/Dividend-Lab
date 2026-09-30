@@ -4,6 +4,7 @@ import { cache } from "react";
 import { isCompanySchemaUnavailable } from "@/lib/companies/document-query";
 import type { ViewableCompanyDocument } from "@/lib/companies/documents-view";
 import { getInvestorOfficialData } from "@/lib/companies/investor-official";
+import { withNibeOfficialDisclosureFallback } from "@/lib/companies/nibe-official-fallback";
 import {
   assembleCompanyOfficialData,
   overlayInvestorLiveData,
@@ -52,10 +53,29 @@ async function loadInvestorFallback(base: CompanyOfficialData): Promise<CompanyO
   });
 }
 
-export const getCompanyOfficialData = cache(async (
+async function finishOfficialData(
+  company: CompanyProfile,
+  official: CompanyOfficialData,
+  fetchImpl: typeof fetch | undefined,
+  investorMode: "always" | "when_thin",
+): Promise<CompanyOfficialData> {
+  const backed = await withNibeOfficialDisclosureFallback({ company, official, fetchImpl });
+  if (company.slug !== "investor") return backed;
+  if (investorMode === "when_thin") {
+    const rich = backed.pressReleases.status === "available_with_items"
+      && backed.ownership.status === "available_with_items"
+      && backed.ceo.name
+      && backed.dividend.perShare !== null;
+    if (rich) return backed;
+  }
+  return loadInvestorFallback(backed);
+}
+
+export async function loadCompanyOfficialData(
   company: CompanyProfile,
   followState: CompanyFollowState,
-): Promise<CompanyOfficialData> => {
+  fetchImpl?: typeof fetch,
+): Promise<CompanyOfficialData> {
   const documents: ViewableCompanyDocument[] = followState.documents.map((document) => ({
     type: document.type,
     title: document.title,
@@ -78,7 +98,7 @@ export const getCompanyOfficialData = cache(async (
       profileQuery: "schema_unavailable",
       sources: [],
     });
-    return company.slug === "investor" ? loadInvestorFallback(base) : base;
+    return finishOfficialData(company, base, fetchImpl, "always");
   }
 
   const supabase = await createClient();
@@ -169,11 +189,10 @@ export const getCompanyOfficialData = cache(async (
     profileQuery,
     sources,
   });
-  if (company.slug !== "investor") return assembled;
-  const rich = assembled.pressReleases.status === "available_with_items"
-    && assembled.ownership.status === "available_with_items"
-    && assembled.ceo.name
-    && assembled.dividend.perShare !== null;
-  if (rich) return assembled;
-  return loadInvestorFallback(assembled);
-});
+  return finishOfficialData(company, assembled, fetchImpl, "when_thin");
+}
+
+export const getCompanyOfficialData = cache((
+  company: CompanyProfile,
+  followState: CompanyFollowState,
+) => loadCompanyOfficialData(company, followState));

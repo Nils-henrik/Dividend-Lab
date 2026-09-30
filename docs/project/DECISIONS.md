@@ -276,3 +276,37 @@ Do not describe this policy as strict CSP in reviews or future work.
 - A future nonce + `strict-dynamic` migration remains valid only as a
   dedicated project that explicitly accepts site-wide dynamic rendering.
 
+---
+
+## ADR-008: Practical free redundancy, fail closed without a compliant backup
+
+Date: 2026-09-30
+Status: Accepted
+
+### Context
+
+An earlier draft treated the catalog as not release-ready until every critical domain had three functioning sources. That rule is superseded.
+
+The Product Owner clarified the requirement: practical free redundancy only. Each critical domain keeps its primary and, where technically possible, one functioning independent free backup. A second backup is optional. A paid provider is not added just to fill a backup slot. If no compliant free backup exists, the gap is documented and the read fails closed.
+
+A slot is still functioning only when the path is deterministic, issuer-bound and allowed for this product.
+
+### Decision
+
+- Record primary, backup 1 and optional backup 2 for each critical domain. Backup 2 may stay empty. Release readiness does not require three functioning sources.
+- Where a free, independent, issuer-bound machine-readable backup already exists, that slot is functioning. A source link, a second URL on the same shell, or a paid provider is not a functioning backup.
+- If no compliant free backup exists, leave the slot non-functioning, document the blocker, and do not fetch it. Do not invent a value.
+- Nasdaq's public company-news query is recorded per exact CNS company id and is not fetched. Nasdaq's website terms allow personal non-commercial use and prohibit automated copying for redistribution.
+- Nasdaq Europe RSS feeds are exchange notices, IT notices or Nasdaq's own investor news. They are not issuer disclosures.
+- EODHD is not a Nordic price, valuation or dividend-history backup. The configured Nordic budget is 0, the free daily cap is 20 calls, and no commercial display entitlement is verified. The paid Nasdaq equity API is not added.
+- Euroclear remains the authoritative Swedish share register and is not automated.
+- FI insider data stays a source link. Insynsregistret and Marknadssök are source links only. No company-specific machine-readable insider feed is verified, so the insider chain has no active provider. The short-interest aggregate file is blankning, not insider transactions, and stays on the blankning path.
+- NIBE's MFN feed is the functioning press and report backup because the issuer page embeds that feed id and the feed's LEI matches the stored FI identifier. The company official-data loader reads it on the server only when the stored primary press or report section is missing or unavailable. The read uses the existing feed binding: exact feed id, exact LEI, HTTPS, exact origin, no redirects, byte cap, item cap and timeout. It does not write the database. Headlines are not dividend facts. Overlapping disclosures that disagree fail closed and are not merged.
+
+### Consequences
+
+- Price, valuation and paid dividend history still have one functioning source. Their backup slots stay licensing-blocked.
+- NIBE press and NIBE reports have a primary and one functioning free backup. Other disclosure domains do not, and they stay fail-closed.
+- Backup 2 remains in the chain so a later free source can be added. Its absence is not a release blocker.
+- A later backup requires a new verified binding and an explicit rights decision. Display names are not enough.
+

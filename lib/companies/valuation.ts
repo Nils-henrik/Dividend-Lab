@@ -1,3 +1,5 @@
+import { MARKET_DATA_LABEL } from "@/lib/companies/source-labels";
+
 export type ValuationSnapshot = {
   trailingPe: number | null;
   forwardPe: number | null;
@@ -25,7 +27,7 @@ export const MISSING_METRIC = "—";
 export const CURRENCY_MISMATCH_YIELD_REASON =
   "Direktavkastning visas inte eftersom utdelningens valuta och kursens valuta skiljer sig.";
 
-const YAHOO = "Yahoo Finance";
+const MARKET_DATA_SOURCE = MARKET_DATA_LABEL;
 
 export function formatSvNumber(value: number, options?: Intl.NumberFormatOptions) {
   return new Intl.NumberFormat("sv-SE", options).format(value);
@@ -118,100 +120,100 @@ export function buildValuationMetrics(input: {
     {
       id: "market_cap",
       label: "Börsvärde",
-      definition: "Bolagets börsvärde i kursens valuta enligt Yahoo Finance. DivLab räknar inte om till en annan valuta.",
+      definition: "Bolagets börsvärde i kursens valuta enligt fördröjd marknadsdata. DivLab räknar inte om till en annan valuta.",
       value: formatCompactMoney(input.marketCap, input.currency),
-      source: YAHOO,
+      source: MARKET_DATA_SOURCE,
     },
     {
       id: "trailing_pe",
       label: "P/E",
-      definition: "Pris delat med rapporterad vinst per aktie (trailing P/E) enligt Yahoo Finance.",
+      definition: "Pris delat med rapporterad vinst per aktie (trailing P/E) enligt fördröjd marknadsdata.",
       value: formatRatio(valuation.trailingPe, 1),
-      source: YAHOO,
+      source: MARKET_DATA_SOURCE,
     },
     {
       id: "forward_pe",
       label: "Forward P/E",
-      definition: "Pris delat med förväntad vinst per aktie enligt Yahoo Finance. DivLab gör ingen egen prognos.",
+      definition: "Pris delat med förväntad vinst per aktie enligt fördröjd marknadsdata. DivLab gör ingen egen prognos.",
       value: formatRatio(valuation.forwardPe, 1),
-      source: YAHOO,
+      source: MARKET_DATA_SOURCE,
     },
     {
       id: "ps",
       label: "P/S",
-      definition: "Pris delat med omsättning de senaste tolv månaderna enligt Yahoo Finance.",
+      definition: "Pris delat med omsättning de senaste tolv månaderna enligt fördröjd marknadsdata.",
       value: formatRatio(valuation.priceToSales, 2),
-      source: YAHOO,
+      source: MARKET_DATA_SOURCE,
     },
     {
       id: "pb",
       label: "P/B",
-      definition: "Pris delat med bokfört eget kapital enligt Yahoo Finance.",
+      definition: "Pris delat med bokfört eget kapital enligt fördröjd marknadsdata.",
       value: formatRatio(valuation.priceToBook, 2),
-      source: YAHOO,
+      source: MARKET_DATA_SOURCE,
     },
     {
       id: "ev_ebitda",
       label: "EV/EBITDA",
-      definition: "Enterprise value delat med EBITDA enligt Yahoo Finance.",
+      definition: "Enterprise value delat med EBITDA enligt fördröjd marknadsdata.",
       value: formatRatio(valuation.enterpriseToEbitda, 1),
-      source: YAHOO,
+      source: MARKET_DATA_SOURCE,
     },
     {
       id: "enterprise_value",
       label: "Enterprise value",
-      definition: "Enterprise value i kursens valuta enligt Yahoo Finance.",
+      definition: "Enterprise value i kursens valuta enligt fördröjd marknadsdata.",
       value: formatCompactMoney(valuation.enterpriseValue, input.currency),
-      source: YAHOO,
+      source: MARKET_DATA_SOURCE,
     },
     {
       id: "yahoo_yield",
       label: "Direktavkastning",
-      definition: "Direktavkastning enligt Yahoo Finance, som andel av kursen. Inte omräknad mellan valutor.",
+      definition: "Direktavkastning enligt fördröjd marknadsdata, som andel av kursen. Inte omräknad mellan valutor.",
       value: formatPercentFromFraction(valuation.dividendYield),
-      source: YAHOO,
+      source: MARKET_DATA_SOURCE,
     },
     {
       id: "official_yield",
       label: "Direktavkastning (officiell)",
       definition: officialDefinition,
       value: formatPercentPoints(input.officialYieldPercent),
-      source: "Officiell utdelning och Yahoo Finance",
+      source: "Officiell utdelning och marknadsdata",
     },
     {
       id: "eps",
       label: "EPS",
-      definition: "Rapporterad vinst per aktie (trailing) enligt Yahoo Finance, i kursens valuta.",
+      definition: "Rapporterad vinst per aktie (trailing) enligt fördröjd marknadsdata, i kursens valuta.",
       value: formatMoney(valuation.trailingEps, input.currency),
-      source: YAHOO,
+      source: MARKET_DATA_SOURCE,
     },
     {
       id: "beta",
       label: "Beta",
-      definition: "Beta enligt Yahoo Finance.",
+      definition: "Beta enligt fördröjd marknadsdata.",
       value: formatRatio(valuation.beta, 2),
-      source: YAHOO,
+      source: MARKET_DATA_SOURCE,
     },
     {
       id: "week52",
       label: "52 veckor",
-      definition: "Lägsta och högsta dagsnotering de senaste tolv månaderna, beräknat från Yahoo-historik i kursens valuta.",
+      definition: "Lägsta och högsta dagsnotering de senaste tolv månaderna, beräknat från fördröjd kurshistorik i kursens valuta.",
       value: range,
-      source: YAHOO,
+      source: MARKET_DATA_SOURCE,
     },
     {
       id: "volume",
       label: "Volym",
-      definition: "Senast rapporterad omsatt volym enligt Yahoo Finance.",
+      definition: "Senast rapporterad omsatt volym enligt fördröjd marknadsdata.",
       value: formatCount(input.volume),
-      source: YAHOO,
+      source: MARKET_DATA_SOURCE,
     },
     {
       id: "shares",
       label: "Utestående aktier",
-      definition: "Antal utestående aktier enligt Yahoo Finance.",
+      definition: "Antal utestående aktier enligt fördröjd marknadsdata.",
       value: formatCount(valuation.sharesOutstanding),
-      source: YAHOO,
+      source: MARKET_DATA_SOURCE,
     },
   ];
 }

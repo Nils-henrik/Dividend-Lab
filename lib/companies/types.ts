@@ -1,3 +1,14 @@
+/**
+ * Explicit Finansinspektionen identity. Matching is exact.
+ * A missing field is not a guess, and a missing register row is not 0%.
+ */
+export type CompanyFiMatchIdentity = {
+  lei?: string;
+  organizationNumber?: string;
+  isins?: readonly string[];
+  issuerNames?: readonly string[];
+};
+
 export type CompanyProfile = {
   slug: string;
   name: string;
@@ -27,4 +38,14 @@ export type CompanyProfile = {
   logoPath: string | null;
   aliases: string[];
   tickerAliases: string[];
+  /**
+   * Verified broker instrument URLs. Absent means no button.
+   * Query strings stay off these URLs until a tracked template is configured.
+   */
+  avanzaUrl?: string;
+  nordnetUrl?: string;
+  /** Exact LEI from FI:s blankningsregister. Matching never uses the display name. */
+  fiLei?: string;
+  /** Exact issuer name in FI:s register, used only to read named positions. */
+  fiIssuerName?: string;
 };

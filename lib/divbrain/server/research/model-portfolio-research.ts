@@ -1,5 +1,6 @@
 import "server-only";
 
+import { presentMarketEvidencePublisher } from "@/lib/companies/source-labels";
 import { createModelPortfolioAdminClient } from "@/lib/model-portfolios/admin";
 import type { DivBrainSource } from "../../sources";
 
@@ -810,7 +811,7 @@ export function researchRowToDivBrainSource(
     category: mapModelPortfolioResearchCategory(row),
     verificationState: verificationState(row),
     freshnessState: freshnessState(row),
-    publisher: row.publisher.slice(0, 120),
+    publisher: presentMarketEvidencePublisher(row.publisher).slice(0, 120),
     canonicalUrl: resolveResearchCanonicalUrl(row),
     publishedAt: row.published_at,
     retrievedAt,

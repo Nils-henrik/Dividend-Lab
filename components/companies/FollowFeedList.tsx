@@ -58,6 +58,11 @@ export default function FollowFeedList({ items }: { items: readonly FollowFeedIt
                 <span className="rounded-md bg-divlab-blue/10 px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-divlab-blue">
                   {item.typeLabel}
                 </span>
+                {item.recencyLabel ? (
+                  <span className="rounded-md border divlab-border-neutral px-1.5 py-0.5 text-[11px] font-medium text-divlab-text-secondary">
+                    {item.recencyLabel}
+                  </span>
+                ) : null}
                 <time
                   className="text-xs tabular-nums text-divlab-text-secondary sm:ml-auto"
                   dateTime={item.sortAt}
