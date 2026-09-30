@@ -2,7 +2,6 @@ import { companyAiPortfolioLinksForSymbol } from "@/lib/companies/ai-portfolio-c
 import { acceptBrokerUrl } from "@/lib/companies/broker-links";
 import { getPilotCompanies } from "@/lib/companies/catalog";
 import { isFollowableCompanySlug } from "@/lib/companies/follow-policy";
-import { INSIDER_LINK } from "@/lib/companies/insiders";
 import type { SourceSupportMode } from "@/lib/companies/ingestion/baseline";
 import {
   companyOfficialCoverage,
@@ -206,7 +205,7 @@ function fiCell(company: CompanyProfile): DataParityCell {
       "Saknar verifierad FI-identitet.",
     );
   }
-  if (identity.lei !== lei || !identity.issuerNames.includes(issuer) || !isLei(lei)) {
+  if (identity.lei !== lei || !identity.issuerNames?.includes(issuer) || !isLei(lei)) {
     return identifierCell(
       company,
       "fiShortInterest",
