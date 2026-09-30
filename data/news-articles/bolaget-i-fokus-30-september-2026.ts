@@ -18,6 +18,9 @@ export const BOLAGET_I_FOKUS_EPIROC_30_SEPTEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-09-30T10:59:20+02:00",
   url: "/news/bolaget-i-fokus-epiroc-30-september-2026",
   featured: true,
+  imageUrl: "/news/generated/bolaget-i-fokus-2026-09-30.png",
+  thumbnailImageUrl: "/news/generated/bolaget-i-fokus-2026-09-30.png",
+  imageAlt: "Bolaget i fokus 2026-09-30 – DivLabs artikel om dagens mest intressanta bolagshändelse.",
   readingMinutes: 5,
   seoTitle: "Epiroc vinner stor order till platinagruva i Sydafrika",
   seoDescription:
