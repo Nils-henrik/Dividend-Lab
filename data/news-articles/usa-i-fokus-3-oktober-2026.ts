@@ -20,7 +20,9 @@ export const USA_I_FOKUS_3_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-03T14:05:30+02:00",
   url: "/news/usa-i-fokus-3-oktober-2026-veckan-som-gatt-jobbrapport-nasdaq",
   featured: true,
-  imageAlt: "USA i fokus – Veckan som gått den 3 oktober 2026 med Wall Street, jobbrapport och Nasdaq.",
+  imageUrl: "/news/generated/usa-i-fokus-2026-10-03.png",
+  thumbnailImageUrl: "/news/generated/usa-i-fokus-2026-10-03.png",
+  imageAlt: "USA i fokus 2026-10-03 – DivLabs översikt över den amerikanska börsmarknaden inför Wall Streets öppning.",
   readingMinutes: 6,
   seoTitle: "USA i fokus veckan som gått: Jobbrapport och Nasdaq",
   seoDescription:
