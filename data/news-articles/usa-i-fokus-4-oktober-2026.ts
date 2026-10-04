@@ -20,7 +20,9 @@ export const USA_I_FOKUS_4_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-04T13:58:00+02:00",
   url: "/news/usa-i-fokus-4-oktober-2026-veckan-som-kommer-fed-protokoll-delta",
   featured: true,
-  imageAlt: "USA i fokus – Veckan som kommer den 4 oktober 2026 med Federal Reserve, USA-räntor och Delta Air Lines.",
+  imageUrl: "/news/generated/usa-i-fokus-2026-10-04.png",
+  thumbnailImageUrl: "/news/generated/usa-i-fokus-2026-10-04.png",
+  imageAlt: "USA i fokus 2026-10-04 – DivLabs översikt över den amerikanska börsmarknaden inför Wall Streets öppning.",
   readingMinutes: 6,
   seoTitle: "USA i fokus veckan som kommer: Fed-protokoll och Delta",
   seoDescription:
