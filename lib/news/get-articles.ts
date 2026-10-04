@@ -1,3 +1,4 @@
+import { BORSSVERIGE_4_OKTOBER_2026_ARTICLE } from "@/data/news-articles/borssverige-4-oktober-2026";
 import { NORDEN_I_CENTRUM_4_OKTOBER_2026_ARTICLE } from "@/data/news-articles/norden-i-centrum-4-oktober-2026";
 import { USA_I_FOKUS_3_OKTOBER_2026_ARTICLE } from "@/data/news-articles/usa-i-fokus-3-oktober-2026";
 import { BORSSVERIGE_3_OKTOBER_2026_ARTICLE } from "@/data/news-articles/borssverige-3-oktober-2026";
@@ -112,6 +113,7 @@ function resolveNewsImagePath(path: string): string { return NEWS_IMAGE_ASSET_AL
 function resolveOptionalNewsImagePath(path: string | null | undefined): string | null | undefined { return path ? resolveNewsImagePath(path) : path; }
 function resolveNewsArticleImages(article: NewsArticle): NewsArticle { return { ...article, imageUrl: resolveOptionalNewsImagePath(article.imageUrl), thumbnailImageUrl: resolveOptionalNewsImagePath(article.thumbnailImageUrl), sections: article.sections?.map((section) => section.inlineImage ? { ...section, inlineImage: { ...section.inlineImage, src: resolveNewsImagePath(section.inlineImage.src) } } : section) }; }
 const PUBLISHED_NEWS_ARTICLES: NewsArticle[] = [
+  applyNewsSearchSeo(BORSSVERIGE_4_OKTOBER_2026_ARTICLE),
   applyNewsSearchSeo(NORDEN_I_CENTRUM_4_OKTOBER_2026_ARTICLE),
   applyNewsSearchSeo(USA_I_FOKUS_3_OKTOBER_2026_ARTICLE),
   applyNewsSearchSeo(BORSSVERIGE_3_OKTOBER_2026_ARTICLE),
@@ -177,4 +179,5 @@ export function getNewsArticleBySlug(slug: string): NewsArticle | undefined { re
 export function getNewsArticlesWithSlug(): NewsArticle[] { return getNewsArticles().filter((article) => Boolean(article.slug)); }
 export function getNewsArticleHref(article: NewsArticle): string | null { if (article.slug) return `/news/${article.slug}`; return article.url; }
 export function isInternalNewsArticleHref(href: string) { return href.startsWith("/"); }
+
 
