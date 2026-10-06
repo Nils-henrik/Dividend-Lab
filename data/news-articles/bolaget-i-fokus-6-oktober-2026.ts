@@ -18,7 +18,9 @@ export const BOLAGET_I_FOKUS_SKANSKA_6_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-06T11:04:00+02:00",
   url: "/news/bolaget-i-fokus-skanska-6-oktober-2026",
   featured: true,
-  imageAlt: "Bolaget i fokus 2026-10-06 – DivLabs fördjupning om Skanskas nya USA-order.",
+  imageUrl: "/news/generated/bolaget-i-fokus-2026-10-06.png",
+  thumbnailImageUrl: "/news/generated/bolaget-i-fokus-2026-10-06.png",
+  imageAlt: "Bolaget i fokus 2026-10-06 – DivLabs artikel om dagens mest intressanta bolagshändelse.",
   readingMinutes: 5,
   seoTitle: "Skanska får USA-tillägg värt 1,3 miljarder kronor",
   seoDescription:
