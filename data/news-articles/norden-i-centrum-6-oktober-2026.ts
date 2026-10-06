@@ -19,7 +19,9 @@ export const NORDEN_I_CENTRUM_6_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-06T08:02:45+02:00",
   url: "/news/norden-i-centrum-6-oktober-2026",
   featured: true,
-  imageAlt: "Norden i centrum 6 oktober 2026 – nordiska bolag och kapitalmarknad.",
+  imageUrl: "/news/generated/norden-i-centrum-2026-10-06.png",
+  thumbnailImageUrl: "/news/generated/norden-i-centrum-2026-10-06.png",
+  imageAlt: "Norden i centrum 2026-10-06 – DivLabs morgonöversikt över nordiska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Volare och Martela i fokus på nordiska kapitalmarknaden",
   seoDescription:
