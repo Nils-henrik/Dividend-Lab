@@ -20,6 +20,8 @@ export const BORSSVERIGE_6_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-06T08:21:55+02:00",
   url: "/news/borssverige-6-oktober-2026",
   featured: true,
+  imageUrl: "/news/generated/borssverige-2026-10-06.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-10-06.png",
   imageAlt: "BörsSverige 2026-10-06 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Loomis slutför Hermes-köp för 3 miljarder kronor",
