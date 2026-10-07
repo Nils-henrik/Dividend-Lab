@@ -19,6 +19,8 @@ export const BORSSVERIGE_7_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-07T08:22:30+02:00",
   url: "/news/borssverige-7-oktober-2026",
   featured: true,
+  imageUrl: "/news/generated/borssverige-2026-10-07.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-10-07.png",
   imageAlt: "BörsSverige 2026-10-07 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Svensk inflation stiger till 1,1 procent i september",
