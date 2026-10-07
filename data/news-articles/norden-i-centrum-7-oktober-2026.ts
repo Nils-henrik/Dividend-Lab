@@ -18,7 +18,9 @@ export const NORDEN_I_CENTRUM_7_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-07T08:04:20+02:00",
   url: "/news/norden-i-centrum-7-oktober-2026",
   featured: true,
-  imageAlt: "Norden i centrum 7 oktober 2026 – NORDEN höjer prognosen och SalMar redovisar Q3-volym.",
+  imageUrl: "/news/generated/norden-i-centrum-2026-10-07.png",
+  thumbnailImageUrl: "/news/generated/norden-i-centrum-2026-10-07.png",
+  imageAlt: "Norden i centrum 2026-10-07 – DivLabs morgonöversikt över nordiska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "NORDEN höjer prognosen – SalMar redovisar Q3-volym",
   seoDescription:
