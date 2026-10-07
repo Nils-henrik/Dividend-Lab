@@ -17,7 +17,9 @@ export const BOLAGET_I_FOKUS_NCC_7_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-07T11:02:00+02:00",
   url: "/news/bolaget-i-fokus-ncc-7-oktober-2026",
   featured: true,
-  imageAlt: "Bolaget i fokus 2026-10-07 – DivLabs artikel om NCC:s försäljning av affärsområdet Industry.",
+  imageUrl: "/news/generated/bolaget-i-fokus-2026-10-07.png",
+  thumbnailImageUrl: "/news/generated/bolaget-i-fokus-2026-10-07.png",
+  imageAlt: "Bolaget i fokus 2026-10-07 – DivLabs artikel om dagens mest intressanta bolagshändelse.",
   readingMinutes: 5,
   seoTitle: "NCC säljer Industry för 8,2 miljarder kronor",
   seoDescription:
