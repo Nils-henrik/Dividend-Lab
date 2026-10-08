@@ -17,7 +17,9 @@ export const BOLAGET_I_FOKUS_GOODTECH_8_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-08T11:04:00+02:00",
   url: "/news/bolaget-i-fokus-goodtech-8-oktober-2026",
   featured: true,
-  imageAlt: "Bolaget i fokus 2026-10-08 – DivLabs artikel om Goodtechs EPC-order till Nussirs kopparprojekt.",
+  imageUrl: "/news/generated/bolaget-i-fokus-2026-10-08.png",
+  thumbnailImageUrl: "/news/generated/bolaget-i-fokus-2026-10-08.png",
+  imageAlt: "Bolaget i fokus 2026-10-08 – DivLabs artikel om dagens mest intressanta bolagshändelse.",
   readingMinutes: 4,
   seoTitle: "Goodtech tar EPC-order värd 240 miljoner norska kronor",
   seoDescription:
