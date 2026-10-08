@@ -19,6 +19,9 @@ export const BORSSVERIGE_8_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-08T08:24:30+02:00",
   url: "/news/borssverige-8-oktober-2026",
   featured: true,
+  imageUrl: "/news/generated/borssverige-2026-10-08.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-10-08.png",
+  imageAlt: "BörsSverige 2026-10-08 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Industrivärdens substansvärde stiger 17 procent",
   seoDescription:
