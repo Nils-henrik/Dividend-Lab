@@ -19,7 +19,9 @@ export const NORDEN_I_CENTRUM_8_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-08T07:58:40+02:00",
   url: "/news/norden-i-centrum-8-oktober-2026",
   featured: true,
-  imageAlt: "Norden i centrum 8 oktober 2026 – Kid, ett planerat AI-campus i Finland och Deep Value Driller.",
+  imageUrl: "/news/generated/norden-i-centrum-2026-10-08.png",
+  thumbnailImageUrl: "/news/generated/norden-i-centrum-2026-10-08.png",
+  imageAlt: "Norden i centrum 2026-10-08 – DivLabs morgonöversikt över nordiska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Kid växer i Q3 – AI-campus planeras i Finland",
   seoDescription:
