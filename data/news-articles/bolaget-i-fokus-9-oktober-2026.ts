@@ -17,7 +17,9 @@ export const BOLAGET_I_FOKUS_ADVENICA_9_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-09T11:06:20+02:00",
   url: "/news/bolaget-i-fokus-advenica-9-oktober-2026",
   featured: true,
-  imageAlt: "Bolaget i fokus 9 oktober 2026 – Advenicas order på säkerhetsgodkända krypteringsprodukter.",
+  imageUrl: "/news/generated/bolaget-i-fokus-2026-10-09.png",
+  thumbnailImageUrl: "/news/generated/bolaget-i-fokus-2026-10-09.png",
+  imageAlt: "Bolaget i fokus 2026-10-09 – DivLabs artikel om dagens mest intressanta bolagshändelse.",
   readingMinutes: 4,
   seoTitle: "Advenica får myndighetsorder värd 41 miljoner kronor",
   seoDescription:
