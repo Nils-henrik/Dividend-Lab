@@ -19,7 +19,9 @@ export const BORSSVERIGE_9_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-09T08:27:00+02:00",
   url: "/news/borssverige-9-oktober-2026",
   featured: true,
-  imageAlt: "BörsSverige 9 oktober 2026 – Sleep Cycle, Öresund och Hexagon i morgonens svenska bolagsflöde.",
+  imageUrl: "/news/generated/borssverige-2026-10-09.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-10-09.png",
+  imageAlt: "BörsSverige 2026-10-09 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Sleep Cycle föreslår miljardförvärv – Öresund slår index",
   seoDescription:
