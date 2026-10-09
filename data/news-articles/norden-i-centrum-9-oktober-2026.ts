@@ -20,6 +20,8 @@ export const NORDEN_I_CENTRUM_9_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-09T08:04:20+02:00",
   url: "/news/norden-i-centrum-9-oktober-2026",
   featured: true,
+  imageUrl: "/news/generated/norden-i-centrum-2026-10-09.png",
+  thumbnailImageUrl: "/news/generated/norden-i-centrum-2026-10-09.png",
   imageAlt: "Norden i centrum 2026-10-09 – DivLabs morgonöversikt över nordiska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Tryg rekordresultat och Atrium Ljungbergs Q3-rapport",
