@@ -20,7 +20,9 @@ export const BORSSVERIGE_10_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-10T08:23:00+02:00",
   url: "/news/borssverige-10-oktober-2026",
   featured: true,
-  imageAlt: "Veckan som gått på Stockholmsbörsen den 10 oktober 2026.",
+  imageUrl: "/news/generated/borssverige-2026-10-10.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-10-10.png",
+  imageAlt: "BörsSverige 2026-10-10 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Svensk BNP ökade 1,1 procent – veckans viktigaste besked",
   seoDescription:
