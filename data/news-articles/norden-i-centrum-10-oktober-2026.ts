@@ -20,7 +20,9 @@ export const NORDEN_I_CENTRUM_10_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-10T08:04:20+02:00",
   url: "/news/norden-i-centrum-10-oktober-2026",
   featured: true,
-  imageAlt: "Norden i centrum 10 oktober 2026 – veckans viktigaste nordiska bolagshändelser.",
+  imageUrl: "/news/generated/norden-i-centrum-2026-10-10.png",
+  thumbnailImageUrl: "/news/generated/norden-i-centrum-2026-10-10.png",
+  imageAlt: "Norden i centrum 2026-10-10 – DivLabs morgonöversikt över nordiska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Veckan som gått: Demant höjer prognosen och NCC säljer Industry",
   seoDescription:
