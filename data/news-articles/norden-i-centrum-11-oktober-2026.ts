@@ -20,7 +20,9 @@ export const NORDEN_I_CENTRUM_11_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-11T08:05:00+02:00",
   url: "/news/norden-i-centrum-11-oktober-2026",
   featured: true,
-  imageAlt: "Veckan som kommer i Norden den 11 oktober 2026 med inflation och nordiska Q3-rapporter i fokus.",
+  imageUrl: "/news/generated/norden-i-centrum-2026-10-11.png",
+  thumbnailImageUrl: "/news/generated/norden-i-centrum-2026-10-11.png",
+  imageAlt: "Norden i centrum 2026-10-11 – DivLabs morgonöversikt över nordiska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Ericsson och Nordea rapporterar – nordiska veckan som kommer",
   seoDescription:
