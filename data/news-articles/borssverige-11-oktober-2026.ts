@@ -20,7 +20,9 @@ export const BORSSVERIGE_11_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-11T08:24:10+02:00",
   url: "/news/borssverige-11-oktober-2026",
   featured: true,
-  imageAlt: "Veckan som kommer på Stockholmsbörsen den 11 oktober 2026 med svenska rapporter och statistik i fokus.",
+  imageUrl: "/news/generated/borssverige-2026-10-11.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-10-11.png",
+  imageAlt: "BörsSverige 2026-10-11 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Ericsson och Avanza rapporterar – svenska börsveckan",
   seoDescription:
