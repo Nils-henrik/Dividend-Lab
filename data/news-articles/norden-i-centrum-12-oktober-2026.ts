@@ -19,6 +19,9 @@ export const NORDEN_I_CENTRUM_12_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-12T08:07:47+02:00",
   url: "/news/norden-i-centrum-12-oktober-2026",
   featured: true,
+  imageUrl: "/news/generated/norden-i-centrum-2026-10-12.png",
+  thumbnailImageUrl: "/news/generated/norden-i-centrum-2026-10-12.png",
+  imageAlt: "Norden i centrum 2026-10-12 – DivLabs morgonöversikt över nordiska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Dansk inflation 2,2 procent – Hacksaw och Nordic Mining",
   seoDescription:
