@@ -17,6 +17,9 @@ export const BOLAGET_I_FOKUS_CAMURUS_12_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-12T10:59:07+02:00",
   url: "/news/bolaget-i-fokus-camurus-12-oktober-2026",
   featured: true,
+  imageUrl: "/news/generated/bolaget-i-fokus-2026-10-12.png",
+  thumbnailImageUrl: "/news/generated/bolaget-i-fokus-2026-10-12.png",
+  imageAlt: "Bolaget i fokus 2026-10-12 – DivLabs artikel om dagens mest intressanta bolagshändelse.",
   readingMinutes: 4,
   seoTitle: "Camurus får Oczyesa XR godkänt i Kanada",
   seoDescription:
