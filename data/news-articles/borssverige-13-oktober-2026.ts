@@ -18,6 +18,9 @@ export const BORSSVERIGE_13_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-13T08:20:28+02:00",
   url: "/news/borssverige-13-oktober-2026",
   featured: true,
+  imageUrl: "/news/generated/borssverige-2026-10-13.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-10-13.png",
+  imageAlt: "BörsSverige 2026-10-13 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 4,
   seoTitle: "Karnell lyfter marginalen – AVTECH tappar ARR i Q3",
   seoDescription:
