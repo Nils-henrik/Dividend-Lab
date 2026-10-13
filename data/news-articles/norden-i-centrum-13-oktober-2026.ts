@@ -18,6 +18,9 @@ export const NORDEN_I_CENTRUM_13_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-13T08:00:49+02:00",
   url: "/news/norden-i-centrum-13-oktober-2026",
   featured: true,
+  imageUrl: "/news/generated/norden-i-centrum-2026-10-13.png",
+  thumbnailImageUrl: "/news/generated/norden-i-centrum-2026-10-13.png",
+  imageAlt: "Norden i centrum 2026-10-13 – DivLabs morgonöversikt över nordiska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Vår Energi justerar produktionsmålet efter Q3",
   seoDescription:
