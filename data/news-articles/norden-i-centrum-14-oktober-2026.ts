@@ -19,6 +19,9 @@ export const NORDEN_I_CENTRUM_14_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-14T08:04:27+02:00",
   url: "/news/norden-i-centrum-14-oktober-2026",
   featured: true,
+  imageUrl: "/news/generated/norden-i-centrum-2026-10-14.png",
+  thumbnailImageUrl: "/news/generated/norden-i-centrum-2026-10-14.png",
+  imageAlt: "Norden i centrum 2026-10-14 – DivLabs morgonöversikt över nordiska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "DNO återstartar Kurdistanproduktion – Avarda ökar vinsten",
   seoDescription:
