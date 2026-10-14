@@ -17,6 +17,9 @@ export const BORSSVERIGE_14_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-14T08:24:37+02:00",
   url: "/news/borssverige-14-oktober-2026",
   featured: true,
+  imageUrl: "/news/generated/borssverige-2026-10-14.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-10-14.png",
+  imageAlt: "BörsSverige 2026-10-14 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 4,
   seoTitle: "Dustin höjer marginalen trots lägre försäljning i Q4",
   seoDescription:
