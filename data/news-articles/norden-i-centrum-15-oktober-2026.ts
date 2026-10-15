@@ -19,6 +19,9 @@ export const NORDEN_I_CENTRUM_15_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-15T07:59:46+02:00",
   url: "/news/norden-i-centrum-15-oktober-2026",
   featured: true,
+  imageUrl: "/news/generated/norden-i-centrum-2026-10-15.png",
+  thumbnailImageUrl: "/news/generated/norden-i-centrum-2026-10-15.png",
+  imageAlt: "Norden i centrum 2026-10-15 – DivLabs morgonöversikt över nordiska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Ericsson och Nordea rapporterar – EQT köper Stockbridge",
   seoDescription:
