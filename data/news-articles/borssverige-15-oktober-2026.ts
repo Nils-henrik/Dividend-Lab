@@ -17,6 +17,9 @@ export const BORSSVERIGE_15_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-15T08:17:10+02:00",
   url: "/news/borssverige-15-oktober-2026",
   featured: true,
+  imageUrl: "/news/generated/borssverige-2026-10-15.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-10-15.png",
+  imageAlt: "BörsSverige 2026-10-15 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 4,
   seoTitle: "SLP ökar förvaltningsresultatet 27 procent",
   seoDescription:
