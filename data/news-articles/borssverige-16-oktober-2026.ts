@@ -18,6 +18,9 @@ export const BORSSVERIGE_16_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-16T08:19:39+02:00",
   url: "/news/borssverige-16-oktober-2026",
   featured: true,
+  imageUrl: "/news/generated/borssverige-2026-10-16.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-10-16.png",
+  imageAlt: "BörsSverige 2026-10-16 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 4,
   seoTitle: "Avanza ökar vinsten 13 procent – Platzer växer",
   seoDescription:
