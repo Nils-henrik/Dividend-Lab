@@ -18,6 +18,9 @@ export const NORDEN_I_CENTRUM_16_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-16T08:03:27+02:00",
   url: "/news/norden-i-centrum-16-oktober-2026",
   featured: true,
+  imageUrl: "/news/generated/norden-i-centrum-2026-10-16.png",
+  thumbnailImageUrl: "/news/generated/norden-i-centrum-2026-10-16.png",
+  imageAlt: "Norden i centrum 2026-10-16 – DivLabs morgonöversikt över nordiska börsnyheter.",
   readingMinutes: 4,
   seoTitle: "AQ Group ökar rörelseresultatet – Nordic Mining pressat",
   seoDescription:
