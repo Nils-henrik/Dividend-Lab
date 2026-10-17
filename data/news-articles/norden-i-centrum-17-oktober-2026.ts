@@ -20,6 +20,9 @@ export const NORDEN_I_CENTRUM_17_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-17T08:02:26+02:00",
   url: "/news/norden-i-centrum-17-oktober-2026",
   featured: true,
+  imageUrl: "/news/generated/norden-i-centrum-2026-10-17.png",
+  thumbnailImageUrl: "/news/generated/norden-i-centrum-2026-10-17.png",
+  imageAlt: "Norden i centrum 2026-10-17 – DivLabs morgonöversikt över nordiska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Veckan som gått: Investor, Avanza och Ericsson",
   seoDescription:
