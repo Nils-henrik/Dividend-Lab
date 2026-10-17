@@ -19,6 +19,9 @@ export const BORSSVERIGE_17_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-17T08:21:06+02:00",
   url: "/news/borssverige-17-oktober-2026",
   featured: true,
+  imageUrl: "/news/generated/borssverige-2026-10-17.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-10-17.png",
+  imageAlt: "BörsSverige 2026-10-17 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "AQ och Dustin lyfter lönsamheten – veckan på börsen",
   seoDescription:
