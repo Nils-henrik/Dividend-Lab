@@ -20,6 +20,9 @@ export const BORSSVERIGE_18_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-18T08:25:43+02:00",
   url: "/news/borssverige-18-oktober-2026",
   featured: true,
+  imageUrl: "/news/generated/borssverige-2026-10-18.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-10-18.png",
+  imageAlt: "BörsSverige 2026-10-18 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Rapportveckan: Handelsbanken, Atlas Copco och Electrolux",
   seoDescription:
