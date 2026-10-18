@@ -20,6 +20,9 @@ export const NORDEN_I_CENTRUM_18_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-18T07:59:44+02:00",
   url: "/news/norden-i-centrum-18-oktober-2026",
   featured: true,
+  imageUrl: "/news/generated/norden-i-centrum-2026-10-18.png",
+  thumbnailImageUrl: "/news/generated/norden-i-centrum-2026-10-18.png",
+  imageAlt: "Norden i centrum 2026-10-18 – DivLabs morgonöversikt över nordiska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Nordiska rapportveckan: Tele2, DNB, Nokia och Volvo",
   seoDescription:
