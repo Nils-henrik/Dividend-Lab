@@ -21,6 +21,9 @@ export const USA_I_FOKUS_18_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-18T14:05:46+02:00",
   url: "/news/usa-i-fokus-18-oktober-2026-veckan-som-kommer-netflix-tesla-ibm",
   featured: true,
+  imageUrl: "/news/generated/usa-i-fokus-2026-10-18.png",
+  thumbnailImageUrl: "/news/generated/usa-i-fokus-2026-10-18.png",
+  imageAlt: "USA i fokus 2026-10-18 – DivLabs översikt över den amerikanska börsmarknaden inför Wall Streets öppning.",
   readingMinutes: 5,
   seoTitle: "USA i fokus: Netflix, Tesla och IBM rapporterar",
   seoDescription:
