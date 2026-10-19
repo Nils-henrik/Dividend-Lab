@@ -20,6 +20,9 @@ export const NORDEN_I_CENTRUM_19_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-19T07:59:44+02:00",
   url: "/news/norden-i-centrum-19-oktober-2026",
   featured: true,
+  imageUrl: "/news/generated/norden-i-centrum-2026-10-19.png",
+  thumbnailImageUrl: "/news/generated/norden-i-centrum-2026-10-19.png",
+  imageAlt: "Norden i centrum 2026-10-19 – DivLabs morgonöversikt över nordiska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "EQT köper Cleanaway – Zealand visar fas 1-data",
   seoDescription:
