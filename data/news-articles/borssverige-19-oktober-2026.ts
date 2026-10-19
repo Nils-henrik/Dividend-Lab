@@ -21,6 +21,9 @@ export const BORSSVERIGE_19_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-19T08:28:16+02:00",
   url: "/news/borssverige-19-oktober-2026",
   featured: true,
+  imageUrl: "/news/generated/borssverige-2026-10-19.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-10-19.png",
+  imageAlt: "BörsSverige 2026-10-19 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Truecaller Q3 växer valutajusterat – Catena sänker mål",
   seoDescription:
