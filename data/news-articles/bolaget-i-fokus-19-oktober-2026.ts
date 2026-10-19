@@ -17,7 +17,9 @@ export const BOLAGET_I_FOKUS_SCANDIC_19_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-19T10:57:00+02:00",
   url: "/news/bolaget-i-fokus-scandic-19-oktober-2026",
   featured: true,
-  imageAlt: "Bolaget i fokus 19 oktober 2026 – Scandic och Hiltons nordiska hotellsamarbete.",
+  imageUrl: "/news/generated/bolaget-i-fokus-2026-10-19.png",
+  thumbnailImageUrl: "/news/generated/bolaget-i-fokus-2026-10-19.png",
+  imageAlt: "Bolaget i fokus 2026-10-19 – DivLabs artikel om dagens mest intressanta bolagshändelse.",
   readingMinutes: 4,
   seoTitle: "Scandic och Hilton ingår nordiskt hotellavtal",
   seoDescription:
