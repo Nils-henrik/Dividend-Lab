@@ -17,6 +17,9 @@ export const BOLAGET_I_FOKUS_SCANDI_STANDARD_20_OKTOBER_2026_ARTICLE: NewsArticl
   publishedAt: "2026-10-20T10:59:43+02:00",
   url: "/news/bolaget-i-fokus-scandi-standard-20-oktober-2026",
   featured: true,
+  imageUrl: "/news/generated/bolaget-i-fokus-2026-10-20.png",
+  thumbnailImageUrl: "/news/generated/bolaget-i-fokus-2026-10-20.png",
+  imageAlt: "Bolaget i fokus 2026-10-20 – DivLabs artikel om dagens mest intressanta bolagshändelse.",
   readingMinutes: 4,
   seoTitle: "Scandi Standard Q3 2026: högre vinst före Glenhaven",
   seoDescription:
