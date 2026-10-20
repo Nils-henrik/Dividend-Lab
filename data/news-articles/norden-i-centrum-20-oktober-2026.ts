@@ -17,6 +17,9 @@ export const NORDEN_I_CENTRUM_20_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-20T08:04:56+02:00",
   url: "/news/norden-i-centrum-20-oktober-2026",
   featured: true,
+  imageUrl: "/news/generated/norden-i-centrum-2026-10-20.png",
+  thumbnailImageUrl: "/news/generated/norden-i-centrum-2026-10-20.png",
+  imageAlt: "Norden i centrum 2026-10-20 – DivLabs morgonöversikt över nordiska börsnyheter.",
   readingMinutes: 4,
   seoTitle: "Tele2 Q3: rekordhögt kassaflöde och lägre capexram",
   seoDescription:
