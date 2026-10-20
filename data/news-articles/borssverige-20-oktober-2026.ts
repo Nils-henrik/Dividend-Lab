@@ -17,6 +17,9 @@ export const BORSSVERIGE_20_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-20T08:25:08+02:00",
   url: "/news/borssverige-20-oktober-2026",
   featured: true,
+  imageUrl: "/news/generated/borssverige-2026-10-20.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-10-20.png",
+  imageAlt: "BörsSverige 2026-10-20 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 4,
   seoTitle: "HAKI Safety Q3: omsättningen ökar men justerad EBITA faller",
   seoDescription:
