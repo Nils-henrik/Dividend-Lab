@@ -18,6 +18,9 @@ export const BOLAGET_I_FOKUS_HANDELSBANKEN_21_OKTOBER_2026_ARTICLE: NewsArticle 
   publishedAt: "2026-10-21T11:05:28+02:00",
   url: "/news/bolaget-i-fokus-handelsbanken-21-oktober-2026",
   featured: true,
+  imageUrl: "/news/generated/bolaget-i-fokus-2026-10-21.png",
+  thumbnailImageUrl: "/news/generated/bolaget-i-fokus-2026-10-21.png",
+  imageAlt: "Bolaget i fokus 2026-10-21 – DivLabs artikel om dagens mest intressanta bolagshändelse.",
   readingMinutes: 5,
   seoTitle: "Handelsbanken Q3 2026: resultatet upp 10 procent",
   seoDescription:
