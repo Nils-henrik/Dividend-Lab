@@ -22,6 +22,9 @@ export const USA_I_FOKUS_21_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-21T13:57:30+02:00",
   url: "/news/usa-i-fokus-21-oktober-2026-netflix-att-tesla-ibm",
   featured: true,
+  imageUrl: "/news/generated/usa-i-fokus-2026-10-21.png",
+  thumbnailImageUrl: "/news/generated/usa-i-fokus-2026-10-21.png",
+  imageAlt: "USA i fokus 2026-10-21 – DivLabs översikt över den amerikanska börsmarknaden inför Wall Streets öppning.",
   readingMinutes: 5,
   seoTitle: "USA i fokus: Netflix och AT&T rapporterar – Tesla väntar",
   seoDescription:
