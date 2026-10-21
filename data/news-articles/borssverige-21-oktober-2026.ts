@@ -17,7 +17,9 @@ export const BORSSVERIGE_21_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-21T08:25:53+02:00",
   url: "/news/borssverige-21-oktober-2026",
   featured: true,
-  imageAlt: "BörsSverige 2026-10-21 – HMS Networks rapporterar högre orderingång och omsättning.",
+  imageUrl: "/news/generated/borssverige-2026-10-21.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-10-21.png",
+  imageAlt: "BörsSverige 2026-10-21 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "HMS Networks Q3: orderingången ökar 29 procent",
   seoDescription:
