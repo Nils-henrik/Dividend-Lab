@@ -18,6 +18,9 @@ export const NORDEN_I_CENTRUM_21_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-21T08:02:06+02:00",
   url: "/news/norden-i-centrum-21-oktober-2026",
   featured: true,
+  imageUrl: "/news/generated/norden-i-centrum-2026-10-21.png",
+  thumbnailImageUrl: "/news/generated/norden-i-centrum-2026-10-21.png",
+  imageAlt: "Norden i centrum 2026-10-21 – DivLabs morgonöversikt över nordiska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "DNB Q3 och Vår Energi: vinst, kassaflöde och utdelning",
   seoDescription:
