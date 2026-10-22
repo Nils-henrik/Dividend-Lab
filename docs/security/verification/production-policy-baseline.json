@@ -1,0 +1,74 @@
+[
+  {
+    "schemaname": "public",
+    "tablename": "forum_replies",
+    "policyname": "Visible forum replies are publicly readable",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "(moderation_status = 'visible'::text)",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "forum_reply_revisions",
+    "policyname": "Forum reply revisions are publicly readable",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "true",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "forum_thread_revisions",
+    "policyname": "Forum thread revisions are publicly readable",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "true",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "forum_threads",
+    "policyname": "Visible forum threads are publicly readable",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "(moderation_status = 'visible'::text)",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "learning_article_comments",
+    "policyname": "Authenticated users can create learning comments",
+    "roles": "{authenticated}",
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "(user_id = ( SELECT auth.uid() AS uid))"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "learning_article_comments",
+    "policyname": "Users can delete their own learning comments",
+    "roles": "{authenticated}",
+    "cmd": "DELETE",
+    "qual": "(user_id = ( SELECT auth.uid() AS uid))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "learning_article_comments",
+    "policyname": "Users can update their own learning comments",
+    "roles": "{authenticated}",
+    "cmd": "UPDATE",
+    "qual": "(user_id = ( SELECT auth.uid() AS uid))",
+    "with_check": "(user_id = ( SELECT auth.uid() AS uid))"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "learning_article_comments",
+    "policyname": "Visible moderated learning comments are publicly readable",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "((is_hidden = false) AND (moderation_status = 'visible'::text))",
+    "with_check": null
+  }
+]

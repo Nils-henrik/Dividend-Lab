@@ -1,0 +1,1594 @@
+{
+  "table_grants": [
+    {
+      "grantee": "service_role",
+      "table_name": "divbrain_messages",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "divbrain_messages",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "divbrain_messages",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "conversation_participants",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "conversation_participants",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "conversation_participants",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "conversation_participants",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "conversation_participants",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "conversation_participants",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "conversation_participants",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "conversation_participants",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "conversation_participants",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "messages",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "messages",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "messages",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "messages",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "messages",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "messages",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "messages",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "messages",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "messages",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "forum_replies",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "forum_replies",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "forum_replies",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "company_ownership",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "company_ownership",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "company_ownership",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "forum_threads",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "forum_threads",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "forum_threads",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "forum_companies",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "forum_companies",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "forum_companies",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "forum_companies",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "forum_companies",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "forum_companies",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "forum_companies",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "forum_companies",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "forum_companies",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "forum_company_collections",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "forum_company_collections",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "forum_company_collections",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "forum_company_collections",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "forum_company_collections",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "forum_company_collections",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "forum_company_collections",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "forum_company_collections",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "forum_company_collections",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "forum_company_collection_members",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "forum_company_collection_members",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "forum_company_collection_members",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "forum_company_collection_members",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "forum_company_collection_members",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "forum_company_collection_members",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "forum_company_collection_members",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "forum_company_collection_members",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "forum_company_collection_members",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "user_notifications",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "user_notifications",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "user_notifications",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "company_facts",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "company_facts",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "company_facts",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "legal_document_versions",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "legal_document_versions",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "legal_document_versions",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "forum_reactions",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "forum_reactions",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "forum_reactions",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "forum_reactions",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "forum_reactions",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "forum_reactions",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "forum_reactions",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "forum_reactions",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "forum_reactions",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "user_legal_acceptances",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "user_legal_acceptances",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "user_legal_acceptances",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "learning_article_comments",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "learning_article_comments",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "learning_article_comments",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "learning_article_comments",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "learning_article_comments",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "learning_article_comments",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "learning_article_comments",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "learning_article_comments",
+      "privilege_type": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "learning_article_comments",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "learning_article_comments",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "learning_article_comments",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "learning_article_comments",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "learning_article_comments",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "learning_article_comments",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "conversations",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "conversations",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "conversations",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "conversations",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "conversations",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "conversations",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "conversations",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "conversations",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "conversations",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "profile_staff_roles",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "profile_staff_roles",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "profile_staff_roles",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "profile_staff_roles",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "profile_staff_roles",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "profile_staff_roles",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "profile_staff_roles",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "profile_staff_roles",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "profile_staff_roles",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "user_connections",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "user_connections",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "user_connections",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "forum_thread_revisions",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "forum_thread_revisions",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "forum_thread_revisions",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "forum_reply_revisions",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "forum_reply_revisions",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "forum_reply_revisions",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "divbrain_conversations",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "divbrain_conversations",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "divbrain_conversations",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "company_sources",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "company_sources",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "company_sources",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "divbrain_usage_events",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "divbrain_usage_events",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "divbrain_usage_events",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "company_instruments",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "company_instruments",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "company_instruments",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "company_documents",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "company_documents",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "company_documents",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "company_follows",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "company_follows",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "company_follows",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "companies",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "companies",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "companies",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "company_ingestion_jobs",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "company_ingestion_jobs",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "company_ingestion_jobs",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "model_portfolios",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "model_portfolios",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "model_portfolios",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "model_portfolio_cash_ledger",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "model_portfolio_cash_ledger",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "model_portfolio_cash_ledger",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "model_portfolio_runs",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "model_portfolio_runs",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "model_portfolio_runs",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "model_portfolio_decisions",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "model_portfolio_decisions",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "model_portfolio_decisions",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "model_portfolio_holdings",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "model_portfolio_holdings",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "model_portfolio_holdings",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "model_portfolio_snapshots",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "model_portfolio_snapshots",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "model_portfolio_snapshots",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "model_portfolio_followers",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "model_portfolio_followers",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "model_portfolio_followers",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "model_portfolio_report_events",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "model_portfolio_report_events",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "model_portfolio_report_events",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "model_portfolio_transactions",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "model_portfolio_transactions",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "model_portfolio_transactions",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "model_portfolio_eodhd_budget_claims",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "model_portfolio_eodhd_budget_claims",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "model_portfolio_eodhd_budget_claims",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "model_portfolio_research_snapshots",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "model_portfolio_research_snapshots",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "model_portfolio_research_snapshots",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "model_portfolio_dividend_events",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "model_portfolio_dividend_events",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "model_portfolio_dividend_events",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "divbrain_attachments",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "divbrain_attachments",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "divbrain_attachments",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "content_reader_uniques",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "content_reader_uniques",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "content_reader_uniques",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "divlab_analyses",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "divlab_analyses",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "divlab_analyses",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "divlab_analysis_versions",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "divlab_analysis_versions",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "divlab_analysis_versions",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "divlab_analysis_sources",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "divlab_analysis_sources",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "divlab_analysis_sources",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "user_presence",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "user_presence",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "user_presence",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "model_portfolio_email_deliveries",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "model_portfolio_email_deliveries",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "model_portfolio_email_deliveries",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "seesomewhere_vote_events",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "seesomewhere_vote_events",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "seesomewhere_vote_events",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "seesomewhere_curator_preferred_views",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "seesomewhere_curator_preferred_views",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "seesomewhere_curator_preferred_views",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "seesomewhere_curator_preferred_views",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "seesomewhere_curator_preferred_views",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "seesomewhere_curator_preferred_views",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "seesomewhere_curator_preferred_views",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "seesomewhere_curator_preferred_views",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "seesomewhere_curator_preferred_views",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "seesomewhere_curator_codes",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "seesomewhere_curator_codes",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "seesomewhere_curator_codes",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "seesomewhere_curator_codes",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "seesomewhere_curator_codes",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "seesomewhere_curator_codes",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "seesomewhere_curator_codes",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "seesomewhere_curator_codes",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "seesomewhere_curator_codes",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "seesomewhere_curator_sessions",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "seesomewhere_curator_sessions",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "seesomewhere_curator_sessions",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "seesomewhere_curator_sessions",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "seesomewhere_curator_sessions",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "seesomewhere_curator_sessions",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "seesomewhere_curator_sessions",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "seesomewhere_curator_sessions",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "seesomewhere_curator_sessions",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "seesomewhere_curator_rejections",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "seesomewhere_curator_rejections",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "seesomewhere_curator_rejections",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "seesomewhere_curator_rejections",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "seesomewhere_curator_rejections",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "seesomewhere_curator_rejections",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "seesomewhere_curator_rejections",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "seesomewhere_curator_rejections",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "seesomewhere_curator_rejections",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "company_comments",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "company_comments",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "company_comments",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "moderation_actions",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "moderation_actions",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "moderation_actions",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "moderation_appeals",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "moderation_appeals",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "moderation_appeals",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "profiles",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "profiles",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "profiles",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "profiles",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "profiles",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "profiles",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "profiles",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "profiles",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "profiles",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "content_reports",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "content_reports",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "content_reports",
+      "privilege_type": "TRIGGER"
+    }
+  ],
+  "comment_column_grants": [
+    {
+      "grantee": "anon",
+      "table_name": "learning_article_comments",
+      "column_name": "article_slug",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "learning_article_comments",
+      "column_name": "article_slug",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "learning_article_comments",
+      "column_name": "body",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "learning_article_comments",
+      "column_name": "body",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "learning_article_comments",
+      "column_name": "created_at",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "learning_article_comments",
+      "column_name": "created_at",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "learning_article_comments",
+      "column_name": "id",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "learning_article_comments",
+      "column_name": "id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "learning_article_comments",
+      "column_name": "is_hidden",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "learning_article_comments",
+      "column_name": "is_hidden",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "learning_article_comments",
+      "column_name": "moderation_status",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "learning_article_comments",
+      "column_name": "moderation_status",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "learning_article_comments",
+      "column_name": "updated_at",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "learning_article_comments",
+      "column_name": "updated_at",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "learning_article_comments",
+      "column_name": "user_id",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "learning_article_comments",
+      "column_name": "user_id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "learning_article_comments",
+      "column_name": "article_slug",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "learning_article_comments",
+      "column_name": "article_slug",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "learning_article_comments",
+      "column_name": "article_slug",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "learning_article_comments",
+      "column_name": "article_slug",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "learning_article_comments",
+      "column_name": "body",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "learning_article_comments",
+      "column_name": "body",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "learning_article_comments",
+      "column_name": "body",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "learning_article_comments",
+      "column_name": "body",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "learning_article_comments",
+      "column_name": "created_at",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "learning_article_comments",
+      "column_name": "created_at",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "learning_article_comments",
+      "column_name": "created_at",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "learning_article_comments",
+      "column_name": "created_at",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "learning_article_comments",
+      "column_name": "id",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "learning_article_comments",
+      "column_name": "id",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "learning_article_comments",
+      "column_name": "id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "learning_article_comments",
+      "column_name": "id",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "learning_article_comments",
+      "column_name": "is_hidden",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "learning_article_comments",
+      "column_name": "is_hidden",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "learning_article_comments",
+      "column_name": "is_hidden",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "learning_article_comments",
+      "column_name": "is_hidden",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "learning_article_comments",
+      "column_name": "moderation_status",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "learning_article_comments",
+      "column_name": "moderation_status",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "learning_article_comments",
+      "column_name": "moderation_status",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "learning_article_comments",
+      "column_name": "moderation_status",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "learning_article_comments",
+      "column_name": "updated_at",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "learning_article_comments",
+      "column_name": "updated_at",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "learning_article_comments",
+      "column_name": "updated_at",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "learning_article_comments",
+      "column_name": "updated_at",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "learning_article_comments",
+      "column_name": "user_id",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "learning_article_comments",
+      "column_name": "user_id",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "learning_article_comments",
+      "column_name": "user_id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "learning_article_comments",
+      "column_name": "user_id",
+      "privilege_type": "UPDATE"
+    }
+  ]
+}
