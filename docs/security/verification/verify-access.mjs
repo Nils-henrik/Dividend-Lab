@@ -26,6 +26,7 @@ await db.exec(`
  grant select on public.learning_article_comments to anon;
  grant all on all tables in schema public to service_role;
  grant select on public.forum_threads,public.forum_replies,public.forum_thread_revisions,public.forum_reply_revisions to anon,authenticated;
+ grant truncate,references,trigger on all tables in schema public to anon,authenticated;
  insert into public.learning_article_comments(id,article_slug,user_id,body,is_hidden,moderation_status) values
  ('10000000-0000-4000-8000-000000000001','test','${actor}','visible',false,'visible'),
  ('10000000-0000-4000-8000-000000000002','test','${actor}','hidden',true,'hidden'),
@@ -52,7 +53,8 @@ await as('authenticated',async()=>{
  const rows=await db.query(`update learning_article_comments set moderation_status='visible',is_hidden=false where id='10000000-0000-4000-8000-000000000002' returning id`);
  assert.equal(rows.rows.length,0);
 });
-console.log('BASELINE: hidden revisions exposed; hidden comment restore blocked by existing SELECT RLS');
+assert.equal((await db.query("select has_table_privilege('authenticated','learning_article_comments','truncate') as allowed")).rows[0].allowed,true);
+console.log('BASELINE: hidden revisions exposed; hidden comment restore blocked by existing SELECT RLS; excess TRUNCATE granted');
 await db.exec(readFileSync(new URL('../proposals/moderation-and-revision-access.sql', import.meta.url),'utf8'));
 assert.equal((await db.query("select has_table_privilege('authenticated','learning_article_comments','truncate') as allowed")).rows[0].allowed,false);
 for(const role of ['anon','authenticated']) await as(role,async()=>{assert.equal(await count('forum_thread_revisions'),1);assert.equal(await count('forum_reply_revisions'),1)});
