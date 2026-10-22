@@ -18,7 +18,9 @@ export const BORSSVERIGE_22_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-22T08:27:00+02:00",
   url: "/news/borssverige-22-oktober-2026",
   featured: true,
-  imageAlt: "BörsSverige 22 oktober 2026 – Swedbanks Q3-rapport inför Stockholmsbörsens öppning.",
+  imageUrl: "/news/generated/borssverige-2026-10-22.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-10-22.png",
+  imageAlt: "BörsSverige 2026-10-22 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 4,
   seoTitle: "Swedbank Q3 2026: vinsten stiger 15 procent från Q2",
   seoDescription:
