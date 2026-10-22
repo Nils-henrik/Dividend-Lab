@@ -20,6 +20,9 @@ export const USA_I_FOKUS_22_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-22T14:07:01+02:00",
   url: "/news/usa-i-fokus-22-oktober-2026-nasdaq-tesla-ibm-olja",
   featured: true,
+  imageUrl: "/news/generated/usa-i-fokus-2026-10-22.png",
+  thumbnailImageUrl: "/news/generated/usa-i-fokus-2026-10-22.png",
+  imageAlt: "USA i fokus 2026-10-22 – DivLabs översikt över den amerikanska börsmarknaden inför Wall Streets öppning.",
   readingMinutes: 4,
   seoTitle: "USA i fokus: Nasdaq faller efter Tesla och IBM",
   seoDescription:
