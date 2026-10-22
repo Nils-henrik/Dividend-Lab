@@ -18,6 +18,9 @@ export const NORDEN_I_CENTRUM_22_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-22T08:02:40+02:00",
   url: "/news/norden-i-centrum-22-oktober-2026",
   featured: true,
+  imageUrl: "/news/generated/norden-i-centrum-2026-10-22.png",
+  thumbnailImageUrl: "/news/generated/norden-i-centrum-2026-10-22.png",
+  imageAlt: "Norden i centrum 2026-10-22 – DivLabs morgonöversikt över nordiska börsnyheter.",
   readingMinutes: 4,
   seoTitle: "Nokia Q3 och Fiskars rapport: EBIT upp 45,5 procent",
   seoDescription:
