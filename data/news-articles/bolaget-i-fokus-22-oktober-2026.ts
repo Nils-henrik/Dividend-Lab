@@ -17,7 +17,9 @@ export const BOLAGET_I_FOKUS_SANDVIK_22_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-22T11:03:00+02:00",
   url: "/news/bolaget-i-fokus-sandvik-22-oktober-2026",
   featured: true,
-  imageAlt: "Bolaget i fokus 22 oktober 2026 – DivLabs fördjupning om Sandviks Q3-rapport.",
+  imageUrl: "/news/generated/bolaget-i-fokus-2026-10-22.png",
+  thumbnailImageUrl: "/news/generated/bolaget-i-fokus-2026-10-22.png",
+  imageAlt: "Bolaget i fokus 2026-10-22 – DivLabs artikel om dagens mest intressanta bolagshändelse.",
   readingMinutes: 5,
   seoTitle: "Sandvik Q3 2026: marginal över mål och rekordkassaflöde",
   seoDescription:
