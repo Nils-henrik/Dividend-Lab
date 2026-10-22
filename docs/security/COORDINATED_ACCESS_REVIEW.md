@@ -1,6 +1,6 @@
-# Coordinated access hardening – approval required
+# Coordinated access hardening – production approval recorded
 
-This proposal changes production grants, RLS and scheduler configuration. Do not
+The owner explicitly approved this package on 2026-10-22. This change covers production grants, RLS and scheduler configuration. Do not
 merge/release the scheduler route until the production owner has explicitly
 approved the steps below. The SQL files are review proposals outside the automatic
 migrations directory. Generate proper migration files through the Supabase CLI
@@ -78,3 +78,8 @@ updates and no plaintext credential embedded in job commands.
 Approval of this package does not approve MFA enrollment, account/role changes,
 project separation, WAF/CSP changes, main-branch protection changes or new indexes.
 Those need their own concrete review after the outstanding settings are visible.
+
+
+## Installation record
+
+Owner approval received 2026-10-22. Scheduler credential provisioned in Vercel production and Vault. Scheduler migration `20261022183257` and independent grants/RLS migration `20261022183353` applied successfully. The independent access change was installed before the application release because it has no dependency on the new scheduler guard. All eight job IDs, schedules and active flags are unchanged. Live no-row role checks confirm member content-column permission and denial of protected moderation-column and anonymous writes. Existing service_role grants and moderation RPC execution privilege were preserved. No blanket service_role DML grant was added; moderation uses the existing privileged RPC.
