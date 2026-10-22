@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isAuthorizedModelPortfolioScheduler } from "@/lib/model-portfolios/cron-auth";
 import { createModelPortfolioAdminClient } from "@/lib/model-portfolios/admin";
 import { resolveModelPortfolioExecutionConfig } from "@/lib/model-portfolios/engine/config";
 import { runAllModelPortfoliosDryRun } from "@/lib/model-portfolios/engine/dry-run-orchestrator";
@@ -8,7 +9,6 @@ import { resolveModelPortfolioEvaluationSlot } from "@/lib/model-portfolios/engi
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const SCHEDULER_HEADER = "supabase-cron-v1";
 const STOCKHOLM_TIME_ZONE = "Europe/Stockholm";
 const PASSES = new Set<ModelPortfolioResearchPass>([
   "nordic_morning",
@@ -33,7 +33,7 @@ function manualResearchPass(value: unknown): ModelPortfolioResearchPass {
 }
 
 export async function POST(request: Request) {
-  if (request.headers.get("x-divlab-scheduler") !== SCHEDULER_HEADER) {
+  if (!isAuthorizedModelPortfolioScheduler(request.headers, process.env.MODEL_PORTFOLIO_CRON_SECRET)) {
     return new NextResponse(null, { status: 404 });
   }
 

@@ -1,0 +1,33 @@
+import { createRequire } from 'node:module';
+import { resolve } from 'node:path';
+const { PGlite } = createRequire(resolve(process.env.PGLITE_ROOT ?? '.tmp/security-db', 'package.json'))('@electric-sql/pglite');
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+const proposal=readFileSync(new URL('../proposals/model-portfolio-scheduler.sql', import.meta.url),'utf8');
+const names=[...proposal.matchAll(/'(divlab-model-portfolios-research-[^']+)'/g)].map(x=>x[1]);
+assert.equal(names.length,8);
+const db=new PGlite();
+await db.exec(`create schema cron; create schema vault;
+ create table cron.job(jobid bigint primary key,jobname text,schedule text,active boolean,command text);
+ create table vault.decrypted_secrets(name text,decrypted_secret text);
+ create function cron.alter_job(job_id bigint,schedule text default null,command text default null,database text default null,username text default null,active boolean default null) returns void language sql as $$update cron.job set command=alter_job.command where jobid=alter_job.job_id$$;`);
+for(let i=0;i<8;i++)await db.query('insert into cron.job values ($1,$2,$3,true,$4)',[10+i,names[i],`${i} * * * *`,'old command']);
+await db.exec("insert into cron.job values (99,'unrelated','* * * * *',true,'do not touch')");
+await assert.rejects(()=>db.exec(proposal),/credential is required/);
+await db.exec('rollback');
+await db.query('insert into vault.decrypted_secrets values ($1,$2)',['divlab_model_portfolio_cron_secret','synthetic-test-value-never-a-real-credential']);
+await db.exec("update cron.job set jobname='unexpected' where jobid=10");
+await assert.rejects(()=>db.exec(proposal),/eight-job inventory/);
+await db.exec('rollback');
+assert.equal((await db.query("select count(*)::int as n from cron.job where command='old command'")).rows[0].n,8);
+await db.query('update cron.job set jobname=$1 where jobid=10',[names[0]]);
+await db.exec(proposal);
+const rows=(await db.query('select * from cron.job order by jobid')).rows;
+for(let i=0;i<8;i++){
+ const r=rows[i];assert.equal(r.jobid,10+i);assert.equal(r.schedule,`${i} * * * *`);assert.equal(r.active,true);
+ assert.match(r.command,/Authorization/);assert.match(r.command,/vault\.decrypted_secrets/);
+ assert.equal(r.command.includes('synthetic-test-value'),false);
+}
+assert.equal(rows[8].command,'do not touch');
+console.log('PASS: missing-secret and catalog-drift fail closed; eight commands changed; schedules/IDs/active flags and unrelated job preserved; credential absent from cron command');
+await db.close();
