@@ -22,6 +22,9 @@ export const USA_I_FOKUS_23_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-23T13:57:23+02:00",
   url: "/news/usa-i-fokus-23-oktober-2026-american-express-slb-pmi",
   featured: true,
+  imageUrl: "/news/generated/usa-i-fokus-2026-10-23.png",
+  thumbnailImageUrl: "/news/generated/usa-i-fokus-2026-10-23.png",
+  imageAlt: "USA i fokus 2026-10-23 – DivLabs översikt över den amerikanska börsmarknaden inför Wall Streets öppning.",
   readingMinutes: 4,
   seoTitle: "USA i fokus: Amex höjer prognosen – Wall Street backar",
   seoDescription:
