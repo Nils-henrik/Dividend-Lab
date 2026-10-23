@@ -17,6 +17,9 @@ export const NORDEN_I_CENTRUM_23_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-23T08:03:00+02:00",
   url: "/news/norden-i-centrum-23-oktober-2026",
   featured: true,
+  imageUrl: "/news/generated/norden-i-centrum-2026-10-23.png",
+  thumbnailImageUrl: "/news/generated/norden-i-centrum-2026-10-23.png",
+  imageAlt: "Norden i centrum 2026-10-23 – DivLabs morgonöversikt över nordiska börsnyheter.",
   readingMinutes: 4,
   seoTitle: "Gjensidige Q3 2026: försäkringsresultatet ökar 32 procent",
   seoDescription:
