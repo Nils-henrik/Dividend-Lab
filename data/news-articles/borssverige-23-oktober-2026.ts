@@ -18,6 +18,9 @@ export const BORSSVERIGE_23_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-23T08:22:00+02:00",
   url: "/news/borssverige-23-oktober-2026",
   featured: true,
+  imageUrl: "/news/generated/borssverige-2026-10-23.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-10-23.png",
+  imageAlt: "BörsSverige 2026-10-23 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 4,
   seoTitle: "Electrolux Q3 2026: 3,6 miljarder i kassaflöde",
   seoDescription:
