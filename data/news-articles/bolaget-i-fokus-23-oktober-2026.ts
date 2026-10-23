@@ -18,6 +18,9 @@ export const BOLAGET_I_FOKUS_INTRUM_23_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-23T10:59:00+02:00",
   url: "/news/bolaget-i-fokus-intrum-23-oktober-2026",
   featured: true,
+  imageUrl: "/news/generated/bolaget-i-fokus-2026-10-23.png",
+  thumbnailImageUrl: "/news/generated/bolaget-i-fokus-2026-10-23.png",
+  imageAlt: "Bolaget i fokus 2026-10-23 – DivLabs artikel om dagens mest intressanta bolagshändelse.",
   readingMinutes: 5,
   seoTitle: "Intrum Q3 2026: EBIT missar prognosen och aktien faller",
   seoDescription:
