@@ -22,6 +22,9 @@ export const USA_I_FOKUS_24_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-24T14:06:32+02:00",
   url: "/news/usa-i-fokus-24-oktober-2026-veckan-som-gatt-teknik-olja",
   featured: true,
+  imageUrl: "/news/generated/usa-i-fokus-2026-10-24.png",
+  thumbnailImageUrl: "/news/generated/usa-i-fokus-2026-10-24.png",
+  imageAlt: "USA i fokus 2026-10-24 – DivLabs översikt över den amerikanska börsmarknaden inför Wall Streets öppning.",
   readingMinutes: 5,
   seoTitle: "USA i fokus: Teknikoro och olja präglade veckan",
   seoDescription:
