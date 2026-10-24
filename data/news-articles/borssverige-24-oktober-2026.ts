@@ -20,6 +20,9 @@ export const BORSSVERIGE_24_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-24T08:18:00+02:00",
   url: "/news/borssverige-24-oktober-2026",
   featured: true,
+  imageUrl: "/news/generated/borssverige-2026-10-24.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-10-24.png",
+  imageAlt: "BörsSverige 2026-10-24 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Veckan på Stockholmsbörsen: Atlas Copco, Tele2 och Electrolux",
   seoDescription:
