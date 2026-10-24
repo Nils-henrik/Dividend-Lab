@@ -20,6 +20,9 @@ export const NORDEN_I_CENTRUM_24_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-24T08:01:00+02:00",
   url: "/news/norden-i-centrum-24-oktober-2026",
   featured: true,
+  imageUrl: "/news/generated/norden-i-centrum-2026-10-24.png",
+  thumbnailImageUrl: "/news/generated/norden-i-centrum-2026-10-24.png",
+  imageAlt: "Norden i centrum 2026-10-24 – DivLabs morgonöversikt över nordiska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Nordiska rapportveckan: Sandvik, DNB, Nokia och DSV",
   seoDescription:
