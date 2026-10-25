@@ -53,6 +53,7 @@ export type ModelPortfolioOverview = {
   sortOrder: number;
   cashMinor: number;
   investedMinor: number;
+  totalDividendsMinor: number;
   totalValueMinor: number;
   contributedCapitalMinor: number;
   performancePct: number;
@@ -231,11 +232,15 @@ export async function loadModelPortfoliosOverview(): Promise<ModelPortfoliosOver
 
   const cashByPortfolio = new Map<string, number>();
   const contributedByPortfolio = new Map<string, number>();
+  const dividendsByPortfolio = new Map<string, number>();
   for (const row of (cashResult.data ?? []) as CashRow[]) {
     cashByPortfolio.set(
       row.portfolio_id,
       (cashByPortfolio.get(row.portfolio_id) ?? 0) + Number(row.amount_minor),
     );
+    if (row.event_type === "dividend") {
+      dividendsByPortfolio.set(row.portfolio_id, (dividendsByPortfolio.get(row.portfolio_id) ?? 0) + Number(row.amount_minor));
+    }
     if (row.event_type === "initial_capital" || row.event_type === "monthly_contribution") {
       contributedByPortfolio.set(
         row.portfolio_id,
@@ -320,6 +325,7 @@ export async function loadModelPortfoliosOverview(): Promise<ModelPortfoliosOver
       sortOrder: Number(row.sort_order),
       cashMinor,
       investedMinor,
+      totalDividendsMinor: dividendsByPortfolio.get(row.id) ?? 0,
       totalValueMinor,
       contributedCapitalMinor,
       performancePct,
