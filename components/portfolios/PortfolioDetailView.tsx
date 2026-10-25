@@ -137,6 +137,41 @@ export default function PortfolioDetailView({ detail }: { detail: PortfolioTrans
         showAccount={showDividendAccount}
       />
 
+      <section className="border divlab-border-neutral bg-divlab-surface/45 px-5 py-6 sm:px-7" aria-labelledby="portfolio-dividends-heading">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-divlab-text-muted">Kontantutdelningar</p>
+        <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h2 id="portfolio-dividends-heading" className="text-xl font-semibold tracking-[-0.03em] text-divlab-text">Mottagna utdelningar</h2>
+            <p className="mt-1 text-xs leading-5 text-divlab-text-muted">
+              Bokförda på avtalad utbetalningsdag. Ingår redan i kontantkassan och portföljvärdet – adderas inte en gång till.
+            </p>
+          </div>
+          <p className="text-2xl font-semibold tabular-nums text-emerald-400">{formatSek(detail.totalDividendsMinor)}</p>
+        </div>
+        {detail.dividendPayments.length ? (
+          <div className="mt-5 overflow-x-auto">
+            <table className="w-full min-w-[570px] text-left text-xs">
+              <thead><tr className="border-b divlab-border-neutral text-[10px] uppercase tracking-[0.12em] text-divlab-text-muted">
+                <th className="py-3 pr-4 font-medium">Utbetalningsdag</th>
+                <th className="py-3 pr-4 font-medium">Aktie</th>
+                <th className="py-3 pr-4 font-medium">Antal berättigade</th>
+                <th className="py-3 font-medium">Belopp</th>
+              </tr></thead>
+              <tbody>{detail.dividendPayments.map((payment) => (
+                <tr key={payment.id} className="border-b divlab-border-neutral last:border-b-0">
+                  <td className="py-3 pr-4 whitespace-nowrap">{payment.paymentDate}</td>
+                  <td className="py-3 pr-4"><span className="text-divlab-text">{payment.instrumentName}</span><span className="ml-1 text-divlab-text-muted">({payment.instrumentSymbol})</span><span className="block text-[10px] text-divlab-text-muted">Källa: {payment.sourcePublisher}</span></td>
+                  <td className="py-3 pr-4 tabular-nums">{payment.eligibleQuantity.toLocaleString("sv-SE")}</td>
+                  <td className="py-3 tabular-nums font-semibold text-emerald-400">{formatSek(payment.amountMinor)}</td>
+                </tr>
+              ))}</tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="mt-4 text-sm text-divlab-text-muted">Inga verifierade utbetalningar bokförda ännu.</p>
+        )}
+      </section>
+
       <section className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="border divlab-border-neutral bg-divlab-surface/45 px-5 py-6 sm:px-7">
           <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-divlab-text-muted">
