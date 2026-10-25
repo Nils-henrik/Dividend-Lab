@@ -245,6 +245,14 @@ describe("model portfolio dividends", () => {
     assert.equal(quantityHeldOnExDate(transactions, "INVE-B", "ST", "2026-04-15"), 11);
   });
 
+  it("excludes shares first purchased on the ex-dividend date", () => {
+    const sameDayBuy = {
+      instrumentSymbol: "INVE-B", exchange: "ST", transactionType: "buy" as const,
+      quantity: 100, executedAt: "2026-03-15T08:00:00.000Z",
+    };
+    assert.equal(quantityHeldOnExDate([...transactions, sameDayBuy], "INVE-B", "ST", "2026-03-15"), 10);
+  });
+
   it("credits SEK dividends exactly once via deterministic idempotency key", () => {
     const plan = planDividendCredit({
       event: {
