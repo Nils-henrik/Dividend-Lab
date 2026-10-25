@@ -60,7 +60,7 @@ export default function ModelPortfoliosOverview({ portfolios, recentTransactions
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
         <div id="historik" className="border divlab-border-neutral bg-divlab-surface/45">
-          <div className="flex items-start justify-between gap-4 px-5 pb-3 pt-5"><div><h2 className="text-xl font-semibold tracking-[-0.03em] text-divlab-text">Senaste affärer</h2><p className="mt-1 text-xs text-divlab-text-muted">Klicka på en affär för att läsa hela beslutsunderlaget.</p></div></div>
+          <div className="flex items-start justify-between gap-4 px-5 pb-3 pt-5"><div><h2 className="text-xl font-semibold tracking-[-0.03em] text-divlab-text">Senaste transaktioner</h2><p className="mt-1 text-xs text-divlab-text-muted">Köp, försäljningar och mottagna utdelningar. Klicka för underlag och källa.</p></div></div>
           <div className="overflow-x-auto px-5 pb-5">
             <table className="w-full min-w-[900px] border-collapse text-left text-xs">
               <thead><tr className="border-b divlab-border-neutral text-[10px] uppercase tracking-[0.14em] text-divlab-text-muted"><th className="py-3 pr-4 font-medium">Datum</th><th className="py-3 pr-4 font-medium">Portfölj</th><th className="py-3 pr-4 font-medium">Typ</th><th className="py-3 pr-4 font-medium">Aktie</th><th className="py-3 pr-4 font-medium">Belopp</th><th className="py-3 pr-4 font-medium">Antal</th><th className="py-3 pr-4 font-medium">Kurs</th><th className="py-3 pr-4 font-medium">AI-anledning</th></tr></thead>
