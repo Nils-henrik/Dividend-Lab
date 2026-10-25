@@ -101,3 +101,58 @@ export async function fetchFxRateToSek(
     return { ok: false, reason: "fx_unavailable" };
   }
 }
+
+/**
+ * Historic paid dividends use the ECB reference rate from their actual payment
+ * day (or the immediately preceding ECB business day), not today's spot rate.
+ * Missing and stale FX data fail closed rather than fabricating a conversion.
+ */
+export async function fetchFxRateToSekOnDate(
+  base: SupportedFxCurrency,
+  paymentDate: string,
+): Promise<FxAdapterResult> {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(paymentDate) || !Number.isFinite(Date.parse(paymentDate))) {
+    return { ok: false, reason: "fx_unavailable" };
+  }
+  if (base === "SEK") {
+    return fetchFxRateToSek("SEK", new Date(`${paymentDate}T12:00:00.000Z`));
+  }
+  try {
+    const response = await fetch(
+      `https://api.frankfurter.app/${paymentDate}?from=${encodeURIComponent(base)}&to=SEK`,
+      { headers: { Accept: "application/json" }, next: { revalidate: 86_400 } },
+    );
+    if (!response.ok) return { ok: false, reason: "fx_unavailable" };
+    const body = (await response.json()) as {
+      base?: unknown;
+      date?: unknown;
+      rates?: { SEK?: unknown };
+    };
+    const rate = typeof body.rates?.SEK === "number" ? body.rates.SEK : Number(body.rates?.SEK);
+    const publishedDate = typeof body.date === "string" ? body.date : "";
+    const daysOld = (Date.parse(paymentDate) - Date.parse(publishedDate)) / 86_400_000;
+    if (
+      body.base !== base ||
+      !Number.isFinite(rate) ||
+      rate <= 0 ||
+      !Number.isFinite(daysOld) ||
+      daysOld < 0 ||
+      daysOld > 7
+    ) {
+      return { ok: false, reason: "fx_unavailable" };
+    }
+    return {
+      ok: true,
+      quote: {
+        base,
+        quote: "SEK",
+        rate,
+        asOf: `${publishedDate}T16:00:00.000Z`,
+        sourcePublisher: "European Central Bank via Frankfurter",
+        provider: "frankfurter",
+      },
+    };
+  } catch {
+    return { ok: false, reason: "fx_unavailable" };
+  }
+}

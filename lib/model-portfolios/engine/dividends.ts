@@ -54,8 +54,9 @@ function dateOnly(value: string): string | null {
 }
 
 /**
- * Reconstruct simulated quantity held as of the ex-date close using the
- * transaction ledger. Dividends and fees do not change share quantity.
+ * Reconstruct simulated quantity held before the ex-dividend date using the
+ * transaction ledger. Purchases on the ex-date are not entitled to payment.
+ * Dividends and fees do not change share quantity.
  */
 export function quantityHeldOnExDate(
   transactions: readonly DividendLedgerTransaction[],
@@ -73,7 +74,7 @@ export function quantityHeldOnExDate(
     if (row.instrumentSymbol.trim().toUpperCase() !== symbol) continue;
     if (row.exchange.trim().toUpperCase() !== exch) continue;
     const executed = dateOnly(row.executedAt);
-    if (!executed || executed > ex) continue;
+    if (!executed || executed >= ex) continue;
     if (row.transactionType === "buy") quantity += Number(row.quantity);
     if (row.transactionType === "sell") quantity -= Number(row.quantity);
   }

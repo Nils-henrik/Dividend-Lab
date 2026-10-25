@@ -27,6 +27,10 @@ function formatSek(minor: number): string {
   }).format(minor / 100);
 }
 
+function formatDividendSek(minor: number): string {
+  return new Intl.NumberFormat("sv-SE", { style: "currency", currency: "SEK", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(minor / 100);
+}
+
 function formatDate(value: string): string {
   return new Intl.DateTimeFormat("sv-SE", {
     day: "numeric",
@@ -137,6 +141,41 @@ export default function PortfolioDetailView({ detail }: { detail: PortfolioTrans
         showAccount={showDividendAccount}
       />
 
+      <section className="border divlab-border-neutral bg-divlab-surface/45 px-5 py-6 sm:px-7" aria-labelledby="portfolio-dividends-heading">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-divlab-text-muted">Kontantutdelningar</p>
+        <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h2 id="portfolio-dividends-heading" className="text-xl font-semibold tracking-[-0.03em] text-divlab-text">Mottagna utdelningar</h2>
+            <p className="mt-1 text-xs leading-5 text-divlab-text-muted">
+              Visar bolagets utbetalningsdag och bokförda bruttobelopp före eventuell källskatt. Beloppen ingår redan i kontantkassan och portföljvärdet – de adderas inte en gång till.
+            </p>
+          </div>
+          <p className="text-2xl font-semibold tabular-nums text-emerald-400">{formatDividendSek(detail.totalDividendsMinor)}</p>
+        </div>
+        {detail.dividendPayments.length ? (
+          <div className="mt-5 overflow-x-auto">
+            <table className="w-full min-w-[570px] text-left text-xs">
+              <thead><tr className="border-b divlab-border-neutral text-[10px] uppercase tracking-[0.12em] text-divlab-text-muted">
+                <th className="py-3 pr-4 font-medium">Utbetalningsdag</th>
+                <th className="py-3 pr-4 font-medium">Aktie</th>
+                <th className="py-3 pr-4 font-medium">Antal berättigade</th>
+                <th className="py-3 font-medium">Belopp</th>
+              </tr></thead>
+              <tbody>{detail.dividendPayments.map((payment) => (
+                <tr key={payment.id} className="border-b divlab-border-neutral last:border-b-0">
+                  <td className="py-3 pr-4 whitespace-nowrap">{payment.paymentDate}</td>
+                  <td className="py-3 pr-4"><span className="text-divlab-text">{payment.instrumentName}</span><span className="ml-1 text-divlab-text-muted">({payment.instrumentSymbol})</span><span className="block text-[10px] text-divlab-text-muted">Källa: {payment.sourcePublisher}</span></td>
+                  <td className="py-3 pr-4 tabular-nums">{payment.eligibleQuantity.toLocaleString("sv-SE")}</td>
+                  <td className="py-3 tabular-nums font-semibold text-emerald-400">{formatDividendSek(payment.amountMinor)}</td>
+                </tr>
+              ))}</tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="mt-4 text-sm text-divlab-text-muted">Inga verifierade utbetalningar bokförda ännu.</p>
+        )}
+      </section>
+
       <section className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="border divlab-border-neutral bg-divlab-surface/45 px-5 py-6 sm:px-7">
           <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-divlab-text-muted">
@@ -227,9 +266,9 @@ export default function PortfolioDetailView({ detail }: { detail: PortfolioTrans
       <section className="border divlab-border-neutral bg-divlab-surface/45">
         <div className="flex flex-wrap items-end justify-between gap-4 px-5 pb-3 pt-5 sm:px-7">
           <div>
-            <h2 className="text-xl font-semibold tracking-[-0.03em] text-divlab-text">Affärshistorik</h2>
+            <h2 className="text-xl font-semibold tracking-[-0.03em] text-divlab-text">Transaktionshistorik</h2>
             <p className="mt-1 text-xs text-divlab-text-muted">
-              25 affärer per sida. Varje rad går att öppna för fullständigt beslutsunderlag.
+              25 transaktioner per sida. Köp och sälj har AI-underlag; utdelningar visar registrerad källhändelse.
             </p>
           </div>
           <p className="text-xs text-divlab-text-muted">
@@ -248,7 +287,7 @@ export default function PortfolioDetailView({ detail }: { detail: PortfolioTrans
                 <th className="py-3 pr-4 font-medium">Antal</th>
                 <th className="py-3 pr-4 font-medium">Kurs</th>
                 {showDividendAccount ? <th className="py-3 pr-4 font-medium">Konto</th> : null}
-                <th className="py-3 font-medium">AI-anledning</th>
+                <th className="py-3 font-medium">Motivering / källa</th>
               </tr>
             </thead>
             <tbody>
@@ -277,7 +316,7 @@ export default function PortfolioDetailView({ detail }: { detail: PortfolioTrans
                         <span className="text-divlab-text">{trade.instrumentName}</span>{" "}
                         <span className="text-divlab-text-muted">({trade.instrumentSymbol})</span>
                       </Cell>
-                      <Cell href={href}>{formatSek(trade.grossAmountMinor)}</Cell>
+                      <Cell href={href}>{trade.transactionType === "dividend" ? formatDividendSek(trade.grossAmountMinor) : formatSek(trade.grossAmountMinor)}</Cell>
                       <Cell href={href}>{formatSek(trade.feeMinor)}</Cell>
                       <Cell href={href}>
                         {new Intl.NumberFormat("sv-SE", { maximumFractionDigits: 0 }).format(trade.quantity)}
