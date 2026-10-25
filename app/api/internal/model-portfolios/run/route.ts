@@ -3,6 +3,7 @@ import { isAuthorizedModelPortfolioScheduler } from "@/lib/model-portfolios/cron
 import { createModelPortfolioAdminClient } from "@/lib/model-portfolios/admin";
 import { resolveModelPortfolioExecutionConfig } from "@/lib/model-portfolios/engine/config";
 import { runAllModelPortfoliosDryRun } from "@/lib/model-portfolios/engine/dry-run-orchestrator";
+import { creditDueRegisteredDividends } from "@/lib/model-portfolios/engine/due-dividends";
 import type { ModelPortfolioResearchPass } from "@/lib/model-portfolios/engine/eodhd-budget";
 import { resolveModelPortfolioEvaluationSlot } from "@/lib/model-portfolios/engine/schedule";
 
@@ -103,6 +104,15 @@ export async function POST(request: Request) {
   }
 
   try {
+    // Failures here must be visible but must not prevent the separate AI research run.
+    const dividendCredits = await creditDueRegisteredDividends({
+      supabase,
+      now,
+      stockholmDate: localDate,
+    }).catch((error: unknown) => ({
+      error: error instanceof Error ? error.message.slice(0, 120) : "dividend_credit_failed",
+    }));
+
     const evaluation = await runAllModelPortfoliosDryRun(now, {
       runId: run.id,
       executionAllowed: executionConfig.executionEnabled,
@@ -118,6 +128,7 @@ export async function POST(request: Request) {
           slot: slotId,
           research_pass: researchPass,
           stockholm_date: localDate,
+          dividend_credits: dividendCredits,
           ...evaluation,
         },
         completed_at: new Date().toISOString(),
@@ -129,6 +140,7 @@ export async function POST(request: Request) {
       mode: evaluation.mode,
       researchPass: evaluation.researchPass,
       researchSummary: evaluation.researchSummary,
+      dividendCredits,
       executionAllowed: evaluation.executionAllowed,
       auditPersisted: evaluation.auditPersisted,
       eodhdBudget: evaluation.eodhdBudget,
