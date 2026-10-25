@@ -8,6 +8,10 @@ function formatSek(minor: number): string {
   }).format(minor / 100);
 }
 
+function formatDividendSek(minor: number): string {
+  return new Intl.NumberFormat("sv-SE", { style: "currency", currency: "SEK", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(minor / 100);
+}
+
 function formatQuantity(value: number): string {
   return new Intl.NumberFormat("sv-SE", { maximumFractionDigits: 4 }).format(value);
 }
@@ -87,7 +91,7 @@ export default function PortfolioHoldingsOverview({
                       </>
                     ) : "—"}
                   </td>
-                  <td className="py-3 pr-4 tabular-nums">{formatSek(holding.dividendsMinor)}</td>
+                  <td className="py-3 pr-4 tabular-nums">{formatDividendSek(holding.dividendsMinor)}</td>
                   <td className="py-3">
                     <span className="whitespace-nowrap text-divlab-text-secondary">{formatDate(holding.loggedAt)}</span>
                     {holding.lastPriceAsOf ? <span className="mt-0.5 block whitespace-nowrap text-[10px] text-divlab-text-muted">Kursdata {formatDate(holding.lastPriceAsOf)}</span> : null}
