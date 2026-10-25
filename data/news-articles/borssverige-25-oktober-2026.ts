@@ -19,6 +19,9 @@ export const BORSSVERIGE_25_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-25T08:23:00+01:00",
   url: "/news/borssverige-25-oktober-2026",
   featured: true,
+  imageUrl: "/news/generated/borssverige-2026-10-25.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-10-25.png",
+  imageAlt: "BörsSverige 2026-10-25 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Svenska börsveckan: Alfa Laval rapporterar och BNP testas",
   seoDescription:
