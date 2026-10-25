@@ -27,6 +27,10 @@ function formatSek(minor: number): string {
   }).format(minor / 100);
 }
 
+function formatDividendSek(minor: number): string {
+  return new Intl.NumberFormat("sv-SE", { style: "currency", currency: "SEK", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(minor / 100);
+}
+
 function formatDate(value: string): string {
   return new Intl.DateTimeFormat("sv-SE", {
     day: "numeric",
@@ -146,7 +150,7 @@ export default function PortfolioDetailView({ detail }: { detail: PortfolioTrans
               Bokförda på avtalad utbetalningsdag. Ingår redan i kontantkassan och portföljvärdet – adderas inte en gång till.
             </p>
           </div>
-          <p className="text-2xl font-semibold tabular-nums text-emerald-400">{formatSek(detail.totalDividendsMinor)}</p>
+          <p className="text-2xl font-semibold tabular-nums text-emerald-400">{formatDividendSek(detail.totalDividendsMinor)}</p>
         </div>
         {detail.dividendPayments.length ? (
           <div className="mt-5 overflow-x-auto">
@@ -162,7 +166,7 @@ export default function PortfolioDetailView({ detail }: { detail: PortfolioTrans
                   <td className="py-3 pr-4 whitespace-nowrap">{payment.paymentDate}</td>
                   <td className="py-3 pr-4"><span className="text-divlab-text">{payment.instrumentName}</span><span className="ml-1 text-divlab-text-muted">({payment.instrumentSymbol})</span><span className="block text-[10px] text-divlab-text-muted">Källa: {payment.sourcePublisher}</span></td>
                   <td className="py-3 pr-4 tabular-nums">{payment.eligibleQuantity.toLocaleString("sv-SE")}</td>
-                  <td className="py-3 tabular-nums font-semibold text-emerald-400">{formatSek(payment.amountMinor)}</td>
+                  <td className="py-3 tabular-nums font-semibold text-emerald-400">{formatDividendSek(payment.amountMinor)}</td>
                 </tr>
               ))}</tbody>
             </table>
@@ -312,7 +316,7 @@ export default function PortfolioDetailView({ detail }: { detail: PortfolioTrans
                         <span className="text-divlab-text">{trade.instrumentName}</span>{" "}
                         <span className="text-divlab-text-muted">({trade.instrumentSymbol})</span>
                       </Cell>
-                      <Cell href={href}>{formatSek(trade.grossAmountMinor)}</Cell>
+                      <Cell href={href}>{trade.transactionType === "dividend" ? formatDividendSek(trade.grossAmountMinor) : formatSek(trade.grossAmountMinor)}</Cell>
                       <Cell href={href}>{formatSek(trade.feeMinor)}</Cell>
                       <Cell href={href}>
                         {new Intl.NumberFormat("sv-SE", { maximumFractionDigits: 0 }).format(trade.quantity)}
