@@ -59,6 +59,16 @@ export type PortfolioTransparencyHolding = {
   accountType: "ISK" | "KF" | null;
 };
 
+export type PortfolioDividendPayment = {
+  id: string;
+  instrumentName: string;
+  instrumentSymbol: string;
+  paymentDate: string;
+  eligibleQuantity: number;
+  amountMinor: number;
+  sourcePublisher: string;
+};
+
 export type PortfolioTransparencyDetail = {
   id: string;
   slug: string;
@@ -82,6 +92,8 @@ export type PortfolioTransparencyDetail = {
   } | null;
   valueHistory: PortfolioValuePoint[];
   holdings: PortfolioTransparencyHolding[];
+  totalDividendsMinor: number;
+  dividendPayments: PortfolioDividendPayment[];
   trades: PortfolioTransparencyTrade[];
   tradeCount: number;
   page: number;
@@ -176,7 +188,7 @@ export async function loadPortfolioTransparencyDetail(
 
   if (portfolioError || !portfolio) return null;
 
-  const [tradeResult, decisionResult, holdingResult, dividendResult] = await Promise.all([
+  const [tradeResult, decisionResult, holdingResult, dividendResult, dividendEventResult] = await Promise.all([
     supabase
       .from("model_portfolio_transactions")
       .select("id,decision_id,transaction_type,instrument_symbol,exchange,instrument_name,quantity,price_minor,gross_amount_minor,fee_minor,currency,executed_at,market_data_as_of,rationale,native_currency,native_price_minor,native_gross_amount_minor,fx_rate_to_sek,fx_as_of,fx_source_publisher,fill_label", { count: "exact" })
@@ -198,12 +210,19 @@ export async function loadPortfolioTransparencyDetail(
       .order("instrument_symbol", { ascending: true }),
     supabase
       .from("model_portfolio_transactions")
-      .select("instrument_symbol,exchange,gross_amount_minor")
+       .select("id,instrument_symbol,exchange,gross_amount_minor")
       .eq("portfolio_id", portfolio.id)
       .eq("transaction_type", "dividend"),
+    supabase
+      .from("model_portfolio_dividend_events")
+      .select("id,instrument_symbol,instrument_name,payment_date,eligible_quantity,credited_transaction_id,source_publisher")
+      .eq("portfolio_id", portfolio.id)
+      .eq("status", "credited")
+      .order("payment_date", { ascending: false })
+      .limit(100),
   ]);
 
-  if (tradeResult.error || decisionResult.error || holdingResult.error || dividendResult.error) return null;
+  if (tradeResult.error || decisionResult.error || holdingResult.error || dividendResult.error || dividendEventResult.error) return null;
 
   const snapshotRows: Record<string, unknown>[] = [];
   for (let offset = 0; offset < MODEL_PORTFOLIO_SNAPSHOT_MAX_POINTS; offset += MODEL_PORTFOLIO_SNAPSHOT_PAGE_SIZE) {
@@ -217,6 +236,28 @@ export async function loadPortfolioTransparencyDetail(
     const rows = (data ?? []) as Record<string, unknown>[];
     snapshotRows.push(...rows);
     if (rows.length < MODEL_PORTFOLIO_SNAPSHOT_PAGE_SIZE) break;
+  }
+
+  const creditedTransactions = new Map<string, number>();
+  let totalDividendsMinor = 0;
+  const dividendPayments: PortfolioDividendPayment[] = [];
+  for (const row of (dividendResult.data ?? []) as Record<string, unknown>[]) {
+    const amount = Number(row.gross_amount_minor ?? 0);
+    totalDividendsMinor += amount;
+    creditedTransactions.set(String(row.id), amount);
+  }
+  for (const row of (dividendEventResult.data ?? []) as Record<string, unknown>[]) {
+    const amountMinor = creditedTransactions.get(String(row.credited_transaction_id));
+    if (amountMinor === undefined) continue;
+    dividendPayments.push({
+      id: String(row.id),
+      instrumentName: String(row.instrument_name),
+      instrumentSymbol: String(row.instrument_symbol),
+      paymentDate: String(row.payment_date),
+      eligibleQuantity: Number(row.eligible_quantity),
+      amountMinor,
+      sourcePublisher: String(row.source_publisher),
+    });
   }
 
   const dividendsByHolding = new Map<string, number>();
@@ -275,6 +316,8 @@ export async function loadPortfolioTransparencyDetail(
       : null,
     valueHistory: buildCashFlowAdjustedPerformanceSeries(snapshotRows.map(mapValuePoint)),
     holdings,
+    totalDividendsMinor,
+    dividendPayments,
     trades: ((tradeResult.data ?? []) as Record<string, unknown>[]).map(mapTrade),
     tradeCount,
     page,
