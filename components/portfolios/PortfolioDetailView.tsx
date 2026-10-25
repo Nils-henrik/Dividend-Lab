@@ -147,7 +147,7 @@ export default function PortfolioDetailView({ detail }: { detail: PortfolioTrans
           <div>
             <h2 id="portfolio-dividends-heading" className="text-xl font-semibold tracking-[-0.03em] text-divlab-text">Mottagna utdelningar</h2>
             <p className="mt-1 text-xs leading-5 text-divlab-text-muted">
-              Bokförda på avtalad utbetalningsdag. Ingår redan i kontantkassan och portföljvärdet – adderas inte en gång till.
+              Visar bolagets utbetalningsdag och bokförda bruttobelopp före eventuell källskatt. Beloppen ingår redan i kontantkassan och portföljvärdet – de adderas inte en gång till.
             </p>
           </div>
           <p className="text-2xl font-semibold tabular-nums text-emerald-400">{formatDividendSek(detail.totalDividendsMinor)}</p>
@@ -266,9 +266,9 @@ export default function PortfolioDetailView({ detail }: { detail: PortfolioTrans
       <section className="border divlab-border-neutral bg-divlab-surface/45">
         <div className="flex flex-wrap items-end justify-between gap-4 px-5 pb-3 pt-5 sm:px-7">
           <div>
-            <h2 className="text-xl font-semibold tracking-[-0.03em] text-divlab-text">Affärshistorik</h2>
+            <h2 className="text-xl font-semibold tracking-[-0.03em] text-divlab-text">Transaktionshistorik</h2>
             <p className="mt-1 text-xs text-divlab-text-muted">
-              25 affärer per sida. Varje rad går att öppna för fullständigt beslutsunderlag.
+              25 transaktioner per sida. Köp och sälj har AI-underlag; utdelningar visar registrerad källhändelse.
             </p>
           </div>
           <p className="text-xs text-divlab-text-muted">
@@ -287,7 +287,7 @@ export default function PortfolioDetailView({ detail }: { detail: PortfolioTrans
                 <th className="py-3 pr-4 font-medium">Antal</th>
                 <th className="py-3 pr-4 font-medium">Kurs</th>
                 {showDividendAccount ? <th className="py-3 pr-4 font-medium">Konto</th> : null}
-                <th className="py-3 font-medium">AI-anledning</th>
+                <th className="py-3 font-medium">Motivering / källa</th>
               </tr>
             </thead>
             <tbody>
