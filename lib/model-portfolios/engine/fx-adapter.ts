@@ -111,7 +111,7 @@ export async function fetchFxRateToSekOnDate(
   base: SupportedFxCurrency,
   paymentDate: string,
 ): Promise<FxAdapterResult> {
-  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(paymentDate) || !Number.isFinite(Date.parse(paymentDate))) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(paymentDate) || !Number.isFinite(Date.parse(paymentDate))) {
     return { ok: false, reason: "fx_unavailable" };
   }
   if (base === "SEK") {
