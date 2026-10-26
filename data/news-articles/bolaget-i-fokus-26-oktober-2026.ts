@@ -18,7 +18,9 @@ export const BOLAGET_I_FOKUS_NEXTCELL_26_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-26T11:03:00+01:00",
   url: "/news/bolaget-i-fokus-nextcell-26-oktober-2026",
   featured: true,
-  imageAlt: "Bolaget i fokus 26 oktober 2026 – NextCells ProTrans-Young-resultat analyseras.",
+  imageUrl: "/news/generated/bolaget-i-fokus-2026-10-26.png",
+  thumbnailImageUrl: "/news/generated/bolaget-i-fokus-2026-10-26.png",
+  imageAlt: "Bolaget i fokus 2026-10-26 – DivLabs artikel om dagens mest intressanta bolagshändelse.",
   readingMinutes: 5,
   seoTitle: "NextCell ProTrans-Young: primärmålet missas i barnstudie",
   seoDescription:
