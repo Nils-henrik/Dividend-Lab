@@ -19,6 +19,9 @@ export const NORDEN_I_CENTRUM_26_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-26T08:06:00+01:00",
   url: "/news/norden-i-centrum-26-oktober-2026",
   featured: true,
+  imageUrl: "/news/generated/norden-i-centrum-2026-10-26.png",
+  thumbnailImageUrl: "/news/generated/norden-i-centrum-2026-10-26.png",
+  imageAlt: "Norden i centrum 2026-10-26 – DivLabs morgonöversikt över nordiska börsnyheter.",
   readingMinutes: 4,
   seoTitle: "Nordiska börsen idag: Nitro Games Q3 och svenska producentpriser",
   seoDescription:
