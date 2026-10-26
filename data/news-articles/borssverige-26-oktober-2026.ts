@@ -20,7 +20,9 @@ export const BORSSVERIGE_26_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-26T08:26:00+01:00",
   url: "/news/borssverige-26-oktober-2026",
   featured: true,
-  imageAlt: "BörsSverige 26 oktober 2026 – producentpriser, Mycronic och Alleima inför börsöppning.",
+  imageUrl: "/news/generated/borssverige-2026-10-26.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-10-26.png",
+  imageAlt: "BörsSverige 2026-10-26 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 4,
   seoTitle: "Producentpriserna stiger 11,2 procent – Mycronic får stororder",
   seoDescription:
