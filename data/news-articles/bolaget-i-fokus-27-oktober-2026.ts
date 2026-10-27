@@ -18,7 +18,9 @@ export const BOLAGET_I_FOKUS_ASSA_ABLOY_27_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-27T10:59:00+01:00",
   url: "/news/bolaget-i-fokus-assa-abloy-27-oktober-2026",
   featured: true,
-  imageAlt: "Bolaget i fokus 2026-10-27 – DivLabs fördjupning om ASSA ABLOYs Q3-rapport.",
+  imageUrl: "/news/generated/bolaget-i-fokus-2026-10-27.png",
+  thumbnailImageUrl: "/news/generated/bolaget-i-fokus-2026-10-27.png",
+  imageAlt: "Bolaget i fokus 2026-10-27 – DivLabs artikel om dagens mest intressanta bolagshändelse.",
   readingMinutes: 5,
   seoTitle: "ASSA ABLOY Q3 2026: EBIT slår prognosen och når rekord",
   seoDescription:
