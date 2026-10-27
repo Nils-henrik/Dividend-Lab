@@ -18,7 +18,9 @@ export const BORSSVERIGE_27_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-27T08:24:00+01:00",
   url: "/news/borssverige-27-oktober-2026",
   featured: true,
-  imageAlt: "BörsSverige 27 oktober 2026 – Alfa Lavals Q3-rapport inför Stockholmsbörsens öppning.",
+  imageUrl: "/news/generated/borssverige-2026-10-27.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-10-27.png",
+  imageAlt: "BörsSverige 2026-10-27 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 4,
   seoTitle: "Alfa Laval Q3 2026: orderingången når 23,2 miljarder",
   seoDescription:
