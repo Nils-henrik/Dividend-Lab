@@ -18,7 +18,9 @@ export const NORDEN_I_CENTRUM_27_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-27T08:01:00+01:00",
   url: "/news/norden-i-centrum-27-oktober-2026",
   featured: true,
-  imageAlt: "Norden i centrum 27 oktober 2026 – Wärtsiläs Q3-rapport och nordiska rapportmorgonen.",
+  imageUrl: "/news/generated/norden-i-centrum-2026-10-27.png",
+  thumbnailImageUrl: "/news/generated/norden-i-centrum-2026-10-27.png",
+  imageAlt: "Norden i centrum 2026-10-27 – DivLabs morgonöversikt över nordiska börsnyheter.",
   readingMinutes: 4,
   seoTitle: "Wärtsilä Q3 2026: orderintaget stiger 33 procent",
   seoDescription:
