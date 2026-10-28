@@ -20,7 +20,9 @@ export const NORDEN_I_CENTRUM_28_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-28T08:04:00+01:00",
   url: "/news/norden-i-centrum-28-oktober-2026",
   featured: true,
-  imageAlt: "Norden i centrum 2026-10-28 – DivLabs morgonöversikt över Equinor, Norwegian och SSAB.",
+  imageUrl: "/news/generated/norden-i-centrum-2026-10-28.png",
+  thumbnailImageUrl: "/news/generated/norden-i-centrum-2026-10-28.png",
+  imageAlt: "Norden i centrum 2026-10-28 – DivLabs morgonöversikt över nordiska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Nordiska börsen: Equinor höjer prognosen – Norwegian och SSAB rapporterar",
   seoDescription:
