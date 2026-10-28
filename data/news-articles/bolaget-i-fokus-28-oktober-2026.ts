@@ -19,7 +19,9 @@ export const BOLAGET_I_FOKUS_28_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-28T11:04:01+01:00",
   url: "/news/bolaget-i-fokus-28-oktober-2026",
   featured: true,
-  imageAlt: "Bolaget i fokus 28 oktober 2026 – Electrolux Professional och bolagets Q3-rapport.",
+  imageUrl: "/news/generated/bolaget-i-fokus-2026-10-28.png",
+  thumbnailImageUrl: "/news/generated/bolaget-i-fokus-2026-10-28.png",
+  imageAlt: "Bolaget i fokus 2026-10-28 – DivLabs artikel om dagens mest intressanta bolagshändelse.",
   readingMinutes: 4,
   seoTitle: "Electrolux Professional Q3 2026: EBITA slår estimaten",
   seoDescription:
