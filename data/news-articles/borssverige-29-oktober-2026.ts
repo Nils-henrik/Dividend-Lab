@@ -18,7 +18,9 @@ export const BORSSVERIGE_29_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-29T08:25:15+01:00",
   url: "/news/borssverige-29-oktober-2026",
   featured: true,
-  imageAlt: "BörsSverige 2026-10-29 – Swecos tredje kvartal och dagens svenska rapportagenda.",
+  imageUrl: "/news/generated/borssverige-2026-10-29.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-10-29.png",
+  imageAlt: "BörsSverige 2026-10-29 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 4,
   seoTitle: "Sweco Q3 2026: EBITA 786 miljoner och marginal 10,3 procent",
   seoDescription:
