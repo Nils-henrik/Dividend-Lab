@@ -18,7 +18,9 @@ export const BOLAGET_I_FOKUS_PARADOX_29_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-29T11:03:37+01:00",
   url: "/news/bolaget-i-fokus-paradox-29-oktober-2026",
   featured: true,
-  imageAlt: "Bolaget i fokus 2026-10-29 – DivLabs fördjupning om Paradox Interactives tredje kvartal.",
+  imageUrl: "/news/generated/bolaget-i-fokus-2026-10-29.png",
+  thumbnailImageUrl: "/news/generated/bolaget-i-fokus-2026-10-29.png",
+  imageAlt: "Bolaget i fokus 2026-10-29 – DivLabs artikel om dagens mest intressanta bolagshändelse.",
   readingMinutes: 5,
   seoTitle: "Paradox Q3 2026: intäkter 456 miljoner och vinstlyft med engångseffekt",
   seoDescription:
