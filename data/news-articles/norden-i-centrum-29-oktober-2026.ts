@@ -20,7 +20,9 @@ export const NORDEN_I_CENTRUM_29_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-29T08:02:08+01:00",
   url: "/news/norden-i-centrum-29-oktober-2026",
   featured: true,
-  imageAlt: "Norden i centrum 2026-10-29 – DivLabs morgonöversikt över nordiska rapporter.",
+  imageUrl: "/news/generated/norden-i-centrum-2026-10-29.png",
+  thumbnailImageUrl: "/news/generated/norden-i-centrum-2026-10-29.png",
+  imageAlt: "Norden i centrum 2026-10-29 – DivLabs morgonöversikt över nordiska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Nordiska rapporter: Aker BP, Danske Bank och Kongsberg i fokus",
   seoDescription:
