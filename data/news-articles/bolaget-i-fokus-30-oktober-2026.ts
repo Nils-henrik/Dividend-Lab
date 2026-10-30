@@ -18,7 +18,9 @@ export const BOLAGET_I_FOKUS_LOOMIS_30_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-30T11:02:15+01:00",
   url: "/news/bolaget-i-fokus-loomis-30-oktober-2026",
   featured: true,
-  imageAlt: "Bolaget i fokus 30 oktober 2026 – Loomis Q3-rapport med rekordmarginal och svagare kassaflöde.",
+  imageUrl: "/news/generated/bolaget-i-fokus-2026-10-30.png",
+  thumbnailImageUrl: "/news/generated/bolaget-i-fokus-2026-10-30.png",
+  imageAlt: "Bolaget i fokus 2026-10-30 – DivLabs artikel om dagens mest intressanta bolagshändelse.",
   readingMinutes: 5,
   seoTitle: "Loomis Q3 2026: rekordmarginal och EBITA över estimaten",
   seoDescription:
