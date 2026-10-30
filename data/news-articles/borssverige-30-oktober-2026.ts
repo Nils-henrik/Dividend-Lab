@@ -18,7 +18,9 @@ export const BORSSVERIGE_30_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-30T08:24:37+01:00",
   url: "/news/borssverige-30-oktober-2026",
   featured: true,
-  imageAlt: "BörsSverige 30 oktober 2026 med Boliden och AstraZeneca i fokus.",
+  imageUrl: "/news/generated/borssverige-2026-10-30.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-10-30.png",
+  imageAlt: "BörsSverige 2026-10-30 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Boliden Q3 lyfter vinsten – AstraZeneca bekräftar prognosen",
   seoDescription:
