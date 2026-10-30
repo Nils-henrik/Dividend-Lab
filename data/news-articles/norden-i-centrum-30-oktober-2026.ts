@@ -18,7 +18,9 @@ export const NORDEN_I_CENTRUM_30_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-30T08:03:08+01:00",
   url: "/news/norden-i-centrum-30-oktober-2026",
   featured: true,
-  imageAlt: "Norden i centrum 2026-10-30 – Scatecs och Triforks tredje kvartal.",
+  imageUrl: "/news/generated/norden-i-centrum-2026-10-30.png",
+  thumbnailImageUrl: "/news/generated/norden-i-centrum-2026-10-30.png",
+  imageAlt: "Norden i centrum 2026-10-30 – DivLabs morgonöversikt över nordiska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Nordiska rapporter: Scatec sänker prognosen – Trifork växer 24 procent",
   seoDescription:
