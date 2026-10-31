@@ -20,7 +20,9 @@ export const BORSSVERIGE_31_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-31T08:20:36+01:00",
   url: "/news/borssverige-31-oktober-2026",
   featured: true,
-  imageAlt: "Veckan som gått på Stockholmsbörsen med Boliden, SSAB, ASSA ABLOY och Alfa Laval i fokus.",
+  imageUrl: "/news/generated/borssverige-2026-10-31.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-10-31.png",
+  imageAlt: "BörsSverige 2026-10-31 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Stockholmsbörsen veckan: Boliden, SSAB och Alfa Laval i fokus",
   seoDescription:
