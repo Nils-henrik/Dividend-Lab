@@ -20,7 +20,9 @@ export const NORDEN_I_CENTRUM_31_OKTOBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-10-31T07:59:47+01:00",
   url: "/news/norden-i-centrum-31-oktober-2026",
   featured: true,
-  imageAlt: "Veckan som gått i Norden med energi, industri, bank och finländsk konjunktur i fokus.",
+  imageUrl: "/news/generated/norden-i-centrum-2026-10-31.png",
+  thumbnailImageUrl: "/news/generated/norden-i-centrum-2026-10-31.png",
+  imageAlt: "Norden i centrum 2026-10-31 – DivLabs morgonöversikt över nordiska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Nordiska börsveckan: Equinor höjer målet och Kongsberg växer",
   seoDescription:
