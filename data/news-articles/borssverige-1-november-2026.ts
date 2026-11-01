@@ -20,7 +20,9 @@ export const BORSSVERIGE_1_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-01T08:26:25+01:00",
   url: "/news/borssverige-1-november-2026",
   featured: true,
-  imageAlt: "BörsSverige 2026-11-01 – veckans viktigaste svenska börshändelser med Riksbanken, Skanska och Sinch.",
+  imageUrl: "/news/generated/borssverige-2026-11-01.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-11-01.png",
+  imageAlt: "BörsSverige 2026-11-01 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 4,
   seoTitle: "Veckan på Stockholmsbörsen: Riksbanken, Skanska och Sinch",
   seoDescription:
