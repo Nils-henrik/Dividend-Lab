@@ -20,7 +20,9 @@ export const NORDEN_I_CENTRUM_1_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-01T07:56:55+01:00",
   url: "/news/norden-i-centrum-1-november-2026",
   featured: true,
-  imageAlt: "Veckan som kommer i Norden med centralbanksbesked, Novo Nordisk och Maersk i fokus.",
+  imageUrl: "/news/generated/norden-i-centrum-2026-11-01.png",
+  thumbnailImageUrl: "/news/generated/norden-i-centrum-2026-11-01.png",
+  imageAlt: "Norden i centrum 2026-11-01 – DivLabs morgonöversikt över nordiska börsnyheter.",
   readingMinutes: 4,
   seoTitle: "Nordiska börsveckan: Riksbanken, Norges Bank, Novo och Maersk",
   seoDescription:
