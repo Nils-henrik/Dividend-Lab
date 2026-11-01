@@ -28,7 +28,7 @@ export async function GET() {
       <div style={{ display: "flex", position: "absolute", inset: 0, width: 1280, height: 720, background: "linear-gradient(90deg, #061427 0%, rgba(6,20,39,0.97) 44%, rgba(6,20,39,0.50) 100%)" }} />
       {/* Preserve the original approved masthead's unaltered upper-left pixels. */}
       <div style={{ position: "absolute", display: "flex", top: 0, left: 0, width: 570, height: 170, overflow: "hidden", background: "#f3f7fc", borderBottomRightRadius: 18 }}>
-        <img src={canonicalSrc} width={1280} height={720} alt="" style={{ position: "absolute", top: 0, left: 0, width: 1280, height: 720, maxWidth: "none" }} />
+        <img src={canonicalSrc} width={1280} height={720} alt="" style={{ position: "absolute", top: 0, left: 0, width: 1280, height: 720 }} />
       </div>
       <div style={{ position: "absolute", display: "flex", flexDirection: "column", left: 90, top: 220, width: 1040 }}>
         <div style={{ fontSize: 25, fontWeight: 700, color: "#9cbce7", letterSpacing: 3, marginBottom: 24 }}>VECKAN SOM GÅTT · 26–30 OKTOBER 2026</div>
