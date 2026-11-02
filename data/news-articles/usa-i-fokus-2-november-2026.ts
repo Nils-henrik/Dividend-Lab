@@ -20,6 +20,9 @@ export const USA_I_FOKUS_2_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-02T14:01:51+01:00",
   url: "/news/usa-i-fokus-2-november-2026-wall-street-estee-lauder-apple-palantir",
   featured: true,
+  imageUrl: "/news/generated/usa-i-fokus-2026-11-02.png",
+  thumbnailImageUrl: "/news/generated/usa-i-fokus-2026-11-02.png",
+  imageAlt: "USA i fokus 2026-11-02 – DivLabs översikt över den amerikanska börsmarknaden inför Wall Streets öppning.",
   readingMinutes: 5,
   seoTitle: "Wall Street idag: Estée Lauder höjer prognosen",
   seoDescription:
