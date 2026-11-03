@@ -18,7 +18,9 @@ export const NORDEN_I_CENTRUM_3_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-03T08:04:24+01:00",
   url: "/news/norden-i-centrum-3-november-2026",
   featured: true,
-  imageAlt: "Norden i centrum 2026-11-03 – NCC:s orderingång och Norconsults lönsamhet i fokus.",
+  imageUrl: "/news/generated/norden-i-centrum-2026-11-03.png",
+  thumbnailImageUrl: "/news/generated/norden-i-centrum-2026-11-03.png",
+  imageAlt: "Norden i centrum 2026-11-03 – DivLabs morgonöversikt över nordiska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Nordiska börsen idag: NCC och Norconsult rapporterar Q3",
   seoDescription:
