@@ -19,7 +19,9 @@ export const NORDEN_I_CENTRUM_4_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-04T07:58:24+01:00",
   url: "/news/norden-i-centrum-4-november-2026",
   featured: true,
-  imageAlt: "Norden i centrum 2026-11-04 – Novo Nordisks prognoshöjning och OKEAs återupptagna utdelning.",
+  imageUrl: "/news/generated/norden-i-centrum-2026-11-04.png",
+  thumbnailImageUrl: "/news/generated/norden-i-centrum-2026-11-04.png",
+  imageAlt: "Norden i centrum 2026-11-04 – DivLabs morgonöversikt över nordiska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Nordiska börsen idag: Novo Nordisk höjer prognosen",
   seoDescription:
