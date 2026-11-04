@@ -21,6 +21,9 @@ export const USA_I_FOKUS_4_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-04T14:03:51+01:00",
   url: "/news/usa-i-fokus-4-november-2026-wall-street-amd-val-qualcomm",
   featured: true,
+  imageUrl: "/news/generated/usa-i-fokus-2026-11-04.png",
+  thumbnailImageUrl: "/news/generated/usa-i-fokus-2026-11-04.png",
+  imageAlt: "USA i fokus 2026-11-04 – DivLabs översikt över den amerikanska börsmarknaden inför Wall Streets öppning.",
   readingMinutes: 5,
   seoTitle: "Wall Street idag: AMD lyfter efter rekordkvartal",
   seoDescription:
