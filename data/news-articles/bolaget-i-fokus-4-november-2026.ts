@@ -18,6 +18,9 @@ export const BOLAGET_I_FOKUS_NYAB_4_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-04T11:03:02+01:00",
   url: "/news/bolaget-i-fokus-nyab-4-november-2026",
   featured: true,
+  imageUrl: "/news/generated/bolaget-i-fokus-2026-11-04.png",
+  thumbnailImageUrl: "/news/generated/bolaget-i-fokus-2026-11-04.png",
+  imageAlt: "Bolaget i fokus 2026-11-04 – DivLabs artikel om dagens mest intressanta bolagshändelse.",
   readingMinutes: 5,
   seoTitle: "NYAB Q3 2026: rekordstor orderstock och stark resultattillväxt",
   seoDescription:
