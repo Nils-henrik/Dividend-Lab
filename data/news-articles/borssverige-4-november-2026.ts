@@ -18,6 +18,9 @@ export const BORSSVERIGE_4_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-04T08:21:41+01:00",
   url: "/news/borssverige-4-november-2026",
   featured: true,
+  imageUrl: "/news/generated/borssverige-2026-11-04.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-11-04.png",
+  imageAlt: "BörsSverige 2026-11-04 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 4,
   seoTitle: "Ambea Q3: högre marginal före Riksbankens besked",
   seoDescription:
