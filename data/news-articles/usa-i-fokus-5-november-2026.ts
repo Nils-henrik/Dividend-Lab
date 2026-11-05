@@ -20,6 +20,9 @@ export const USA_I_FOKUS_5_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-05T14:00:54+01:00",
   url: "/news/usa-i-fokus-5-november-2026-nasdaq-qualcomm-uber-jobbrapport",
   featured: true,
+  imageUrl: "/news/generated/usa-i-fokus-2026-11-05.png",
+  thumbnailImageUrl: "/news/generated/usa-i-fokus-2026-11-05.png",
+  imageAlt: "USA i fokus 2026-11-05 – DivLabs översikt över den amerikanska börsmarknaden inför Wall Streets öppning.",
   readingMinutes: 5,
   seoTitle: "Nasdaq idag: Qualcomm faller efter rapporten",
   seoDescription:
