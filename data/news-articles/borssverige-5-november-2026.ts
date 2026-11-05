@@ -19,6 +19,9 @@ export const BORSSVERIGE_5_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-05T08:25:43+01:00",
   url: "/news/borssverige-5-november-2026",
   featured: true,
+  imageUrl: "/news/generated/borssverige-2026-11-05.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-11-05.png",
+  imageAlt: "BörsSverige 2026-11-05 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Stockholmsbörsen idag: Yubico lyfter vinsten och Riksbanken höjer",
   seoDescription:
