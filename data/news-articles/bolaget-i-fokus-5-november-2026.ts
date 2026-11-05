@@ -17,6 +17,9 @@ export const BOLAGET_I_FOKUS_MTG_5_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-05T10:59:07+01:00",
   url: "/news/bolaget-i-fokus-mtg-5-november-2026",
   featured: true,
+  imageUrl: "/news/generated/bolaget-i-fokus-2026-11-05.png",
+  thumbnailImageUrl: "/news/generated/bolaget-i-fokus-2026-11-05.png",
+  imageAlt: "Bolaget i fokus 2026-11-05 – DivLabs artikel om dagens mest intressanta bolagshändelse.",
   readingMinutes: 4,
   seoTitle: "MTG Q3 2026: omsättning 2,99 miljarder och 23 procents marginal",
   seoDescription:
