@@ -19,6 +19,9 @@ export const USA_I_FOKUS_6_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-06T14:06:56+01:00",
   url: "/news/usa-i-fokus-6-november-2026-nasdaq-humana-jobbrapport",
   featured: true,
+  imageUrl: "/news/generated/usa-i-fokus-2026-11-06.png",
+  thumbnailImageUrl: "/news/generated/usa-i-fokus-2026-11-06.png",
+  imageAlt: "USA i fokus 2026-11-06 – DivLabs översikt över den amerikanska börsmarknaden inför Wall Streets öppning.",
   readingMinutes: 5,
   seoTitle: "Nasdaq idag: AI-aktier studsar inför jobbrapporten",
   seoDescription:
