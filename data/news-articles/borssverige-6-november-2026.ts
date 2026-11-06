@@ -18,6 +18,9 @@ export const BORSSVERIGE_6_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-06T08:22:18+01:00",
   url: "/news/borssverige-6-november-2026",
   featured: true,
+  imageUrl: "/news/generated/borssverige-2026-11-06.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-11-06.png",
+  imageAlt: "BörsSverige 2026-11-06 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Börsen idag Sverige: BTS lyfter EBITA 79 procent",
   seoDescription:
