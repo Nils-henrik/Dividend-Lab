@@ -18,6 +18,9 @@ export const BOLAGET_I_FOKUS_ATTENDO_6_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-06T10:58:34+01:00",
   url: "/news/bolaget-i-fokus-attendo-6-november-2026",
   featured: true,
+  imageUrl: "/news/generated/bolaget-i-fokus-2026-11-06.png",
+  thumbnailImageUrl: "/news/generated/bolaget-i-fokus-2026-11-06.png",
+  imageAlt: "Bolaget i fokus 2026-11-06 – DivLabs artikel om dagens mest intressanta bolagshändelse.",
   readingMinutes: 5,
   seoTitle: "Attendo Q3 2026: kassaflödet ökar 59 procent",
   seoDescription:
