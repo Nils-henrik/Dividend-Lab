@@ -21,7 +21,9 @@ export const NORDEN_I_CENTRUM_7_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-07T07:58:32+01:00",
   url: "/news/norden-i-centrum-7-november-2026",
   featured: true,
-  imageAlt: "Norden i centrum den 7 november 2026 – veckans viktigaste nordiska börs- och ekonominyheter.",
+  imageUrl: "/news/generated/norden-i-centrum-2026-11-07.png",
+  thumbnailImageUrl: "/news/generated/norden-i-centrum-2026-11-07.png",
+  imageAlt: "Norden i centrum 2026-11-07 – DivLabs morgonöversikt över nordiska börsnyheter.",
   readingMinutes: 6,
   seoTitle: "Nordiska börsen veckan: Riksbanken höjer och Outokumpu bromsar",
   seoDescription:
