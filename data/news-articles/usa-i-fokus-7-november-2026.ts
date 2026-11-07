@@ -21,6 +21,9 @@ export const USA_I_FOKUS_7_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-07T14:00:51+01:00",
   url: "/news/usa-i-fokus-7-november-2026-veckan-som-gatt-jobb-ai",
   featured: true,
+  imageUrl: "/news/generated/usa-i-fokus-2026-11-07.png",
+  thumbnailImageUrl: "/news/generated/usa-i-fokus-2026-11-07.png",
+  imageAlt: "USA i fokus 2026-11-07 – DivLabs översikt över den amerikanska börsmarknaden inför Wall Streets öppning.",
   readingMinutes: 5,
   seoTitle: "Wall Street veckan: Nasdaq föll trots fredagsrekyl",
   seoDescription:
