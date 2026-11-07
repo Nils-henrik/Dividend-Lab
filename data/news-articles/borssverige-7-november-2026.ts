@@ -21,7 +21,9 @@ export const BORSSVERIGE_7_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-07T08:19:06+01:00",
   url: "/news/borssverige-7-november-2026",
   featured: true,
-  imageAlt: "BörsSverige den 7 november 2026 – veckans viktigaste svenska börs- och ekonominyheter.",
+  imageUrl: "/news/generated/borssverige-2026-11-07.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-11-07.png",
+  imageAlt: "BörsSverige 2026-11-07 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 6,
   seoTitle: "Stockholmsbörsen veckan: Yubico och BTS lyfter vinsten",
   seoDescription:
