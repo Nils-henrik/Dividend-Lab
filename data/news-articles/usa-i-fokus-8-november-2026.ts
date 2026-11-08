@@ -21,6 +21,9 @@ export const USA_I_FOKUS_8_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-08T14:02:32+01:00",
   url: "/news/usa-i-fokus-8-november-2026-veckan-som-kommer-inflation-ai",
   featured: true,
+  imageUrl: "/news/generated/usa-i-fokus-2026-11-08.png",
+  thumbnailImageUrl: "/news/generated/usa-i-fokus-2026-11-08.png",
+  imageAlt: "USA i fokus 2026-11-08 – DivLabs översikt över den amerikanska börsmarknaden inför Wall Streets öppning.",
   readingMinutes: 5,
   seoTitle: "Wall Street veckan: USA-inflation och AI-rapporter",
   seoDescription:
