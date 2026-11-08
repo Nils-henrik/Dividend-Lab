@@ -20,7 +20,9 @@ export const BORSSVERIGE_8_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-08T08:22:38+01:00",
   url: "/news/borssverige-8-november-2026",
   featured: true,
-  imageAlt: "BörsSverige 8 november 2026 – veckans viktigaste svenska rapporter och statistik.",
+  imageUrl: "/news/generated/borssverige-2026-11-08.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-11-08.png",
+  imageAlt: "BörsSverige 2026-11-08 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Stockholmsbörsen veckan: Scandic, Embracer och svensk statistik",
   seoDescription:
