@@ -21,7 +21,9 @@ export const USA_I_FOKUS_9_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-09T14:00:24+01:00",
   url: "/news/usa-i-fokus-9-november-2026-terminer-kkr-nvidia",
   featured: true,
-  imageAlt: "USA i fokus 9 november 2026 – terminer, Nvidia och KKR inför Wall Streets öppning.",
+  imageUrl: "/news/generated/usa-i-fokus-2026-11-09.png",
+  thumbnailImageUrl: "/news/generated/usa-i-fokus-2026-11-09.png",
+  imageAlt: "USA i fokus 2026-11-09 – DivLabs översikt över den amerikanska börsmarknaden inför Wall Streets öppning.",
   readingMinutes: 5,
   seoTitle: "Wall Street idag: Terminer stiger, KKR sätter rekord",
   seoDescription:
