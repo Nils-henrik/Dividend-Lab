@@ -18,7 +18,9 @@ export const BOLAGET_I_FOKUS_BAHNHOF_9_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-09T11:07:06+01:00",
   url: "/news/bolaget-i-fokus-bahnhof-9-november-2026",
   featured: true,
-  imageAlt: "Bolaget i fokus 9 november 2026 – DivLabs fördjupning om Telenors bud på Bahnhof.",
+  imageUrl: "/news/generated/bolaget-i-fokus-2026-11-09.png",
+  thumbnailImageUrl: "/news/generated/bolaget-i-fokus-2026-11-09.png",
+  imageAlt: "Bolaget i fokus 2026-11-09 – DivLabs artikel om dagens mest intressanta bolagshändelse.",
   readingMinutes: 4,
   seoTitle: "Bahnhof-budet 2026: Telenor erbjuder 62 kronor per aktie",
   seoDescription:
