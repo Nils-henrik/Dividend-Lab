@@ -21,6 +21,9 @@ export const USA_I_FOKUS_11_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-11T14:08:11+01:00",
   url: "/news/usa-i-fokus-11-november-2026-coreweave-inflation-nasdaq",
   featured: true,
+  imageUrl: "/news/generated/usa-i-fokus-2026-11-11.png",
+  thumbnailImageUrl: "/news/generated/usa-i-fokus-2026-11-11.png",
+  imageAlt: "USA i fokus 2026-11-11 – DivLabs översikt över den amerikanska börsmarknaden inför Wall Streets öppning.",
   readingMinutes: 5,
   seoTitle: "USA-börsen idag: CoreWeave lyfter Nasdaq-terminen",
   seoDescription:
