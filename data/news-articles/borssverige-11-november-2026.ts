@@ -21,6 +21,9 @@ export const BORSSVERIGE_11_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-11T08:26:13+01:00",
   url: "/news/borssverige-11-november-2026",
   featured: true,
+  imageUrl: "/news/generated/borssverige-2026-11-11.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-11-11.png",
+  imageAlt: "BörsSverige 2026-11-11 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Stockholmsbörsen idag: New Wave, Ferronordic och BICO Q3",
   seoDescription:
