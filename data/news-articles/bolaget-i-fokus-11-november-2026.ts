@@ -19,6 +19,9 @@ export const BOLAGET_I_FOKUS_HANSA_BIOPHARMA_11_NOVEMBER_2026_ARTICLE: NewsArtic
   publishedAt: "2026-11-11T11:03:46+01:00",
   url: "/news/bolaget-i-fokus-hansa-biopharma-11-november-2026",
   featured: true,
+  imageUrl: "/news/generated/bolaget-i-fokus-2026-11-11.png",
+  thumbnailImageUrl: "/news/generated/bolaget-i-fokus-2026-11-11.png",
+  imageAlt: "Bolaget i fokus 2026-11-11 – DivLabs artikel om dagens mest intressanta bolagshändelse.",
   readingMinutes: 4,
   seoTitle: "Hansa Biopharma Q3 2026: kassan stärks inför FDA-besked",
   seoDescription:
