@@ -19,7 +19,9 @@ export const NORDEN_I_CENTRUM_11_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-11T08:00:44+01:00",
   url: "/news/norden-i-centrum-11-november-2026",
   featured: true,
-  imageAlt: "Norden i centrum 11 november 2026 – Vestas och Embracer står i centrum för den nordiska rapportmorgonen.",
+  imageUrl: "/news/generated/norden-i-centrum-2026-11-11.png",
+  thumbnailImageUrl: "/news/generated/norden-i-centrum-2026-11-11.png",
+  imageAlt: "Norden i centrum 2026-11-11 – DivLabs morgonöversikt över nordiska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Nordiska börsen idag: Vestas Q3 och Embracers resultatvändning",
   seoDescription:
