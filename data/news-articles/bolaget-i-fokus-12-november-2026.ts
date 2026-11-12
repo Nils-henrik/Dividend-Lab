@@ -18,6 +18,9 @@ export const BOLAGET_I_FOKUS_MEKO_12_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-12T10:59:53+01:00",
   url: "/news/bolaget-i-fokus-meko-12-november-2026",
   featured: true,
+  imageUrl: "/news/generated/bolaget-i-fokus-2026-11-12.png",
+  thumbnailImageUrl: "/news/generated/bolaget-i-fokus-2026-11-12.png",
+  imageAlt: "Bolaget i fokus 2026-11-12 – DivLabs artikel om dagens mest intressanta bolagshändelse.",
   readingMinutes: 4,
   seoTitle: "MEKO Q3 2026: skuldkvoten nere på 3,0",
   seoDescription:
