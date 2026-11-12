@@ -17,6 +17,9 @@ export const BORSSVERIGE_12_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-12T08:28:55+01:00",
   url: "/news/borssverige-12-november-2026",
   featured: true,
+  imageUrl: "/news/generated/borssverige-2026-11-12.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-11-12.png",
+  imageAlt: "BörsSverige 2026-11-12 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Synsam Q3 2026: högre försäljning, EBIT och marginal",
   seoDescription:
