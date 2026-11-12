@@ -21,6 +21,9 @@ export const USA_I_FOKUS_12_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-12T13:59:56+01:00",
   url: "/news/usa-i-fokus-12-november-2026-nasdaq-brookfield-nvidia",
   featured: true,
+  imageUrl: "/news/generated/usa-i-fokus-2026-11-12.png",
+  thumbnailImageUrl: "/news/generated/usa-i-fokus-2026-11-12.png",
+  imageAlt: "USA i fokus 2026-11-12 – DivLabs översikt över den amerikanska börsmarknaden inför Wall Streets öppning.",
   readingMinutes: 5,
   seoTitle: "USA-börsen idag: Nasdaq-terminen faller, Brookfield rapporterar",
   seoDescription:
