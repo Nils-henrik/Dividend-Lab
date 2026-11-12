@@ -21,6 +21,9 @@ export const NORDEN_I_CENTRUM_12_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-12T08:03:35+01:00",
   url: "/news/norden-i-centrum-12-november-2026",
   featured: true,
+  imageUrl: "/news/generated/norden-i-centrum-2026-11-12.png",
+  thumbnailImageUrl: "/news/generated/norden-i-centrum-2026-11-12.png",
+  imageAlt: "Norden i centrum 2026-11-12 – DivLabs morgonöversikt över nordiska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Nordiska börsen idag: Royal Unibrew Q3 och svensk inflation",
   seoDescription:
