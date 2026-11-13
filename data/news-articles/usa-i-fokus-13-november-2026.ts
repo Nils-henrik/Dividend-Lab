@@ -21,6 +21,9 @@ export const USA_I_FOKUS_13_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-13T13:57:54+01:00",
   url: "/news/usa-i-fokus-13-november-2026-nvidia-cisco-applied-materials",
   featured: true,
+  imageUrl: "/news/generated/usa-i-fokus-2026-11-13.png",
+  thumbnailImageUrl: "/news/generated/usa-i-fokus-2026-11-13.png",
+  imageAlt: "USA i fokus 2026-11-13 – DivLabs översikt över den amerikanska börsmarknaden inför Wall Streets öppning.",
   readingMinutes: 6,
   seoTitle: "USA-börsen idag: Nvidia byter vd, Cisco och Applied rapporterar",
   seoDescription:
