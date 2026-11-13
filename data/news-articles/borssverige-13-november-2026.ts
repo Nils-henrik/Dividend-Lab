@@ -18,6 +18,9 @@ export const BORSSVERIGE_13_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-13T08:21:54+01:00",
   url: "/news/borssverige-13-november-2026",
   featured: true,
+  imageUrl: "/news/generated/borssverige-2026-11-13.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-11-13.png",
+  imageAlt: "BörsSverige 2026-11-13 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Stockholmsbörsen idag: Asmodee och Pierce rapporterar",
   seoDescription:
