@@ -18,7 +18,9 @@ export const BOLAGET_I_FOKUS_EOLUS_13_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-13T11:01:45+01:00",
   url: "/news/bolaget-i-fokus-eolus-13-november-2026",
   featured: true,
-  imageAlt: "Bolaget i fokus 13 november 2026 – Eolus Q3-rapport och projektportfölj.",
+  imageUrl: "/news/generated/bolaget-i-fokus-2026-11-13.png",
+  thumbnailImageUrl: "/news/generated/bolaget-i-fokus-2026-11-13.png",
+  imageAlt: "Bolaget i fokus 2026-11-13 – DivLabs artikel om dagens mest intressanta bolagshändelse.",
   readingMinutes: 5,
   seoTitle: "Eolus Q3 2026: USA-betalningar lyfter vinsten",
   seoDescription:
