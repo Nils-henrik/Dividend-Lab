@@ -18,6 +18,9 @@ export const BORSSVERIGE_14_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-14T08:23:52+01:00",
   url: "/news/borssverige-14-november-2026",
   featured: true,
+  imageUrl: "/news/generated/borssverige-2026-11-14.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-11-14.png",
+  imageAlt: "BörsSverige 2026-11-14 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Stockholmsbörsen veckan: Scandic och Embracer levererar",
   seoDescription:
