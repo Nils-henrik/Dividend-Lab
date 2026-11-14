@@ -21,6 +21,9 @@ export const USA_I_FOKUS_14_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-14T14:06:55+01:00",
   url: "/news/usa-i-fokus-14-november-2026-veckan-wall-street-nvidia-inflation",
   featured: true,
+  imageUrl: "/news/generated/usa-i-fokus-2026-11-14.png",
+  thumbnailImageUrl: "/news/generated/usa-i-fokus-2026-11-14.png",
+  imageAlt: "USA i fokus 2026-11-14 – DivLabs översikt över den amerikanska börsmarknaden inför Wall Streets öppning.",
   readingMinutes: 6,
   seoTitle: "Wall Street veckan: Nvidia, PPI, Cisco och Applied Materials",
   seoDescription:
