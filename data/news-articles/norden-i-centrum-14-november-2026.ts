@@ -20,7 +20,9 @@ export const NORDEN_I_CENTRUM_14_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-14T08:03:38+01:00",
   url: "/news/norden-i-centrum-14-november-2026",
   featured: true,
-  imageAlt: "Norden i centrum 14 november 2026 – Veckan som gått på de nordiska marknaderna.",
+  imageUrl: "/news/generated/norden-i-centrum-2026-11-14.png",
+  thumbnailImageUrl: "/news/generated/norden-i-centrum-2026-11-14.png",
+  imageAlt: "Norden i centrum 2026-11-14 – DivLabs morgonöversikt över nordiska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Nordiska börsen veckan: Vestas, AF Gruppen och Mandatum",
   seoDescription:
