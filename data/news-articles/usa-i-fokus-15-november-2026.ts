@@ -21,6 +21,9 @@ export const USA_I_FOKUS_15_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-15T13:59:14+01:00",
   url: "/news/usa-i-fokus-15-november-2026-veckan-nvidia-detaljhandel-fed",
   featured: true,
+  imageUrl: "/news/generated/usa-i-fokus-2026-11-15.png",
+  thumbnailImageUrl: "/news/generated/usa-i-fokus-2026-11-15.png",
+  imageAlt: "USA i fokus 2026-11-15 – DivLabs översikt över den amerikanska börsmarknaden inför Wall Streets öppning.",
   readingMinutes: 6,
   seoTitle: "Wall Street veckan: Nvidia, detaljhandel och Fed-protokoll",
   seoDescription:
