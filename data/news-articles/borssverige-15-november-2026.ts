@@ -21,6 +21,9 @@ export const BORSSVERIGE_15_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-15T08:23:06+01:00",
   url: "/news/borssverige-15-november-2026",
   featured: true,
+  imageUrl: "/news/generated/borssverige-2026-11-15.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-11-15.png",
+  imageAlt: "BörsSverige 2026-11-15 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Stockholmsbörsen veckan: NIBE, Sveafastigheter och RevolutionRace",
   seoDescription:
