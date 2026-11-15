@@ -21,6 +21,9 @@ export const NORDEN_I_CENTRUM_15_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-15T08:02:57+01:00",
   url: "/news/norden-i-centrum-15-november-2026",
   featured: true,
+  imageUrl: "/news/generated/norden-i-centrum-2026-11-15.png",
+  thumbnailImageUrl: "/news/generated/norden-i-centrum-2026-11-15.png",
+  imageAlt: "Norden i centrum 2026-11-15 – DivLabs morgonöversikt över nordiska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Nordiska börsveckan: NIBE, ALK och dansk BNP i fokus",
   seoDescription:
