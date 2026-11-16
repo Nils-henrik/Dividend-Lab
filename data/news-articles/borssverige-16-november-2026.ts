@@ -18,6 +18,9 @@ export const BORSSVERIGE_16_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-16T08:37:19+01:00",
   url: "/news/borssverige-16-november-2026",
   featured: true,
+  imageUrl: "/news/generated/borssverige-2026-11-16.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-11-16.png",
+  imageAlt: "BörsSverige 2026-11-16 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Dynavox korrigerar tillväxtmått – Q3 sänks till 12 procent",
   seoDescription:
