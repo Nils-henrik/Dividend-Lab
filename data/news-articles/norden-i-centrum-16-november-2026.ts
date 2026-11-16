@@ -19,6 +19,9 @@ export const NORDEN_I_CENTRUM_16_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-16T08:05:11+01:00",
   url: "/news/norden-i-centrum-16-november-2026",
   featured: true,
+  imageUrl: "/news/generated/norden-i-centrum-2026-11-16.png",
+  thumbnailImageUrl: "/news/generated/norden-i-centrum-2026-11-16.png",
+  imageAlt: "Norden i centrum 2026-11-16 – DivLabs morgonöversikt över nordiska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Bavarian Nordic Q3 2026: Travel Health växer 22 procent",
   seoDescription:
