@@ -20,7 +20,9 @@ export const USA_I_FOKUS_16_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-16T14:13:07+01:00",
   url: "/news/usa-i-fokus-16-november-2026-teknikpress-nvidia-fed",
   featured: true,
-  imageAlt: "USA i fokus 16 november 2026 – teknikaktier, Nvidia och Federal Reserve inför Wall Streets öppning.",
+  imageUrl: "/news/generated/usa-i-fokus-2026-11-16.png",
+  thumbnailImageUrl: "/news/generated/usa-i-fokus-2026-11-16.png",
+  imageAlt: "USA i fokus 2026-11-16 – DivLabs översikt över den amerikanska börsmarknaden inför Wall Streets öppning.",
   readingMinutes: 5,
   seoTitle: "USA-börsen idag: Teknikpress inför Nvidia och Fed-tal",
   seoDescription:
