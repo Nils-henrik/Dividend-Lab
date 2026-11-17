@@ -22,7 +22,9 @@ export const USA_I_FOKUS_17_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-17T14:02:25+01:00",
   url: "/news/usa-i-fokus-17-november-2026-disney-home-depot-nvidia",
   featured: true,
-  imageAlt: "USA i fokus 17 november 2026 – Disney, Home Depot och Nvidia inför Wall Streets öppning.",
+  imageUrl: "/news/generated/usa-i-fokus-2026-11-17.png",
+  thumbnailImageUrl: "/news/generated/usa-i-fokus-2026-11-17.png",
+  imageAlt: "USA i fokus 2026-11-17 – DivLabs översikt över den amerikanska börsmarknaden inför Wall Streets öppning.",
   readingMinutes: 6,
   seoTitle: "USA-börsen idag: Disney, Home Depot och Nvidia i fokus",
   seoDescription:
