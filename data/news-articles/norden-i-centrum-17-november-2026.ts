@@ -19,6 +19,9 @@ export const NORDEN_I_CENTRUM_17_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-17T08:01:14+01:00",
   url: "/news/norden-i-centrum-17-november-2026",
   featured: true,
+  imageUrl: "/news/generated/norden-i-centrum-2026-11-17.png",
+  thumbnailImageUrl: "/news/generated/norden-i-centrum-2026-11-17.png",
+  imageAlt: "Norden i centrum 2026-11-17 – DivLabs morgonöversikt över nordiska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Ålandsbanken höjer korrigerad CET1-kvot till 13,2 procent",
   seoDescription:
