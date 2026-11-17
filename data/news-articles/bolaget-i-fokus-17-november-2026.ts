@@ -18,6 +18,9 @@ export const BOLAGET_I_FOKUS_ZINZINO_17_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-17T11:04:30+01:00",
   url: "/news/bolaget-i-fokus-zinzino-17-november-2026",
   featured: true,
+  imageUrl: "/news/generated/bolaget-i-fokus-2026-11-17.png",
+  thumbnailImageUrl: "/news/generated/bolaget-i-fokus-2026-11-17.png",
+  imageAlt: "Bolaget i fokus 2026-11-17 – DivLabs artikel om dagens mest intressanta bolagshändelse.",
   readingMinutes: 4,
   seoTitle: "Zinzino Q3 2026: EBITDA-marginalen stiger till 17,9 procent",
   seoDescription:
