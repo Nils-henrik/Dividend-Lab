@@ -18,6 +18,9 @@ export const BORSSVERIGE_17_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-17T08:18:13+01:00",
   url: "/news/borssverige-17-november-2026",
   featured: true,
+  imageUrl: "/news/generated/borssverige-2026-11-17.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-11-17.png",
+  imageAlt: "BörsSverige 2026-11-17 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "NIBE Q3 2026: marginalen stiger till 13,6 procent",
   seoDescription:
