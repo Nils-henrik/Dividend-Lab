@@ -19,6 +19,9 @@ export const BORSSVERIGE_18_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-18T08:18:20+01:00",
   url: "/news/borssverige-18-november-2026",
   featured: true,
+  imageUrl: "/news/generated/borssverige-2026-11-18.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-11-18.png",
+  imageAlt: "BörsSverige 2026-11-18 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Sveafastigheter Q3 2026: driftnetto upp 8,6 procent",
   seoDescription:
