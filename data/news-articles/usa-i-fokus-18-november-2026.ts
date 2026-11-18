@@ -22,7 +22,9 @@ export const USA_I_FOKUS_18_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-18T14:02:00+01:00",
   url: "/news/usa-i-fokus-18-november-2026-nvidia-target-lowes",
   featured: true,
-  imageAlt: "USA i fokus 18 november 2026 – Nvidia, Target och Lowe’s inför Wall Streets öppning.",
+  imageUrl: "/news/generated/usa-i-fokus-2026-11-18.png",
+  thumbnailImageUrl: "/news/generated/usa-i-fokus-2026-11-18.png",
+  imageAlt: "USA i fokus 2026-11-18 – DivLabs översikt över den amerikanska börsmarknaden inför Wall Streets öppning.",
   readingMinutes: 6,
   seoTitle: "USA-börsen idag: Nvidia lyfter Nasdaq inför Fed-protokoll",
   seoDescription:
