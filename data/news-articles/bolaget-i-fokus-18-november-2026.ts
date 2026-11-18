@@ -17,7 +17,9 @@ export const BOLAGET_I_FOKUS_HOMEMAID_18_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-18T10:58:59+01:00",
   url: "/news/bolaget-i-fokus-homemaid-18-november-2026",
   featured: true,
-  imageAlt: "Bolaget i fokus 2026-11-18 – DivLabs fördjupning om HomeMaids Q3-rapport.",
+  imageUrl: "/news/generated/bolaget-i-fokus-2026-11-18.png",
+  thumbnailImageUrl: "/news/generated/bolaget-i-fokus-2026-11-18.png",
+  imageAlt: "Bolaget i fokus 2026-11-18 – DivLabs artikel om dagens mest intressanta bolagshändelse.",
   readingMinutes: 4,
   seoTitle: "HomeMaid Q3 2026: EBITA ökar 35 procent",
   seoDescription:
