@@ -17,7 +17,9 @@ export const BOLAGET_I_FOKUS_SOLTECH_19_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-19T11:05:45+01:00",
   url: "/news/bolaget-i-fokus-soltech-19-november-2026",
   featured: true,
-  imageAlt: "Bolaget i fokus 2026-11-19 – Soltechs resultatvändning, kassaflöde och kommande omstrukturering.",
+  imageUrl: "/news/generated/bolaget-i-fokus-2026-11-19.png",
+  thumbnailImageUrl: "/news/generated/bolaget-i-fokus-2026-11-19.png",
+  imageAlt: "Bolaget i fokus 2026-11-19 – DivLabs artikel om dagens mest intressanta bolagshändelse.",
   readingMinutes: 4,
   seoTitle: "Soltech Q3 2026: EBITA vänder till plus",
   seoDescription:
