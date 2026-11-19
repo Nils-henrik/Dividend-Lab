@@ -17,7 +17,9 @@ export const BORSSVERIGE_19_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-19T08:22:25+01:00",
   url: "/news/borssverige-19-november-2026",
   featured: true,
-  imageAlt: "BörsSverige 2026-11-19 – Einrides Q3-uppdatering och vägen mot kassaflödesbalans.",
+  imageUrl: "/news/generated/borssverige-2026-11-19.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-11-19.png",
+  imageAlt: "BörsSverige 2026-11-19 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Einride Q3 2026: intäkter upp 27 procent, prognos sänks",
   seoDescription:
