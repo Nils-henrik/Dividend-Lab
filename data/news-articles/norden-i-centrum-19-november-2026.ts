@@ -20,6 +20,8 @@ export const NORDEN_I_CENTRUM_19_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-19T07:58:33+01:00",
   url: "/news/norden-i-centrum-19-november-2026",
   featured: true,
+  imageUrl: "/news/generated/norden-i-centrum-2026-11-19.png",
+  thumbnailImageUrl: "/news/generated/norden-i-centrum-2026-11-19.png",
   imageAlt: "Norden i centrum 2026-11-19 – DivLabs morgonöversikt över nordiska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Better Collective Q3 2026: rekordintäkt och Brasilienrisk",
