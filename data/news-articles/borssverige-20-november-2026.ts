@@ -17,6 +17,9 @@ export const BORSSVERIGE_20_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-20T08:21:35+01:00",
   url: "/news/borssverige-20-november-2026",
   featured: true,
+  imageUrl: "/news/generated/borssverige-2026-11-20.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-11-20.png",
+  imageAlt: "BörsSverige 2026-11-20 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 4,
   seoTitle: "PowerCell får USA-order på 440 MSEK för vätgaskraft",
   seoDescription:
