@@ -21,6 +21,9 @@ export const USA_I_FOKUS_21_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-21T14:00:34+01:00",
   url: "/news/usa-i-fokus-21-november-2026-veckan-ai-ras-nvidia-anthropic",
   featured: true,
+  imageUrl: "/news/generated/usa-i-fokus-2026-11-21.png",
+  thumbnailImageUrl: "/news/generated/usa-i-fokus-2026-11-21.png",
+  imageAlt: "USA i fokus 2026-11-21 – DivLabs översikt över den amerikanska börsmarknaden inför Wall Streets öppning.",
   readingMinutes: 6,
   seoTitle: "Veckan på Wall Street: Nasdaq faller 10 procent i AI-ras",
   seoDescription:
