@@ -20,7 +20,9 @@ export const BORSSVERIGE_22_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-22T08:24:23+01:00",
   url: "/news/borssverige-22-november-2026",
   featured: true,
-  imageAlt: "BörsSverige den 22 november 2026 – veckans viktigaste svenska rapporter och bolagshändelser.",
+  imageUrl: "/news/generated/borssverige-2026-11-22.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-11-22.png",
+  imageAlt: "BörsSverige 2026-11-22 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 4,
   seoTitle: "Börsveckan: Lundbergs, Elekta och BioArctic rapporterar",
   seoDescription:
