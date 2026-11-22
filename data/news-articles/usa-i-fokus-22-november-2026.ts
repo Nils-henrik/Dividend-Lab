@@ -21,6 +21,9 @@ export const USA_I_FOKUS_22_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-22T14:05:29+01:00",
   url: "/news/usa-i-fokus-22-november-2026-veckan-pce-bnp-dell-deere",
   featured: true,
+  imageUrl: "/news/generated/usa-i-fokus-2026-11-22.png",
+  thumbnailImageUrl: "/news/generated/usa-i-fokus-2026-11-22.png",
+  imageAlt: "USA i fokus 2026-11-22 – DivLabs översikt över den amerikanska börsmarknaden inför Wall Streets öppning.",
   readingMinutes: 6,
   seoTitle: "Wall Street veckan: PCE, BNP, Dell och Deere i fokus",
   seoDescription:
