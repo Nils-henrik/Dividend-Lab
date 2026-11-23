@@ -20,7 +20,9 @@ export const NORDEN_I_CENTRUM_23_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-23T08:03:20+01:00",
   url: "/news/norden-i-centrum-23-november-2026",
   featured: true,
-  imageAlt: "Norden i centrum den 23 november 2026 – Cadeler och Nykode rapporterar före börsöppning.",
+  imageUrl: "/news/generated/norden-i-centrum-2026-11-23.png",
+  thumbnailImageUrl: "/news/generated/norden-i-centrum-2026-11-23.png",
+  imageAlt: "Norden i centrum 2026-11-23 – DivLabs morgonöversikt över nordiska börsnyheter.",
   readingMinutes: 4,
   seoTitle: "Cadeler och Nykode Q3 2026 – rapporter före börsöppning",
   seoDescription:
