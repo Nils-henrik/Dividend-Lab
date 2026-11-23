@@ -18,6 +18,9 @@ export const BORSSVERIGE_23_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-23T08:26:44+01:00",
   url: "/news/borssverige-23-november-2026",
   featured: true,
+  imageUrl: "/news/generated/borssverige-2026-11-23.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-11-23.png",
+  imageAlt: "BörsSverige 2026-11-23 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Verve Q3 2026: tillväxt men mot guidningens nedre del",
   seoDescription:
