@@ -19,6 +19,9 @@ export const BOLAGET_I_FOKUS_HILBERT_23_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-23T11:03:05+01:00",
   url: "/news/bolaget-i-fokus-hilbert-23-november-2026",
   featured: true,
+  imageUrl: "/news/generated/bolaget-i-fokus-2026-11-23.png",
+  thumbnailImageUrl: "/news/generated/bolaget-i-fokus-2026-11-23.png",
+  imageAlt: "Bolaget i fokus 2026-11-23 – DivLabs artikel om dagens mest intressanta bolagshändelse.",
   readingMinutes: 5,
   seoTitle: "Hilbert Q3 2026: AUM upp 55 procent men stor förlust",
   seoDescription:
