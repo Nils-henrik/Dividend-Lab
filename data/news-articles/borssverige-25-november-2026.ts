@@ -18,7 +18,9 @@ export const BORSSVERIGE_25_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-25T08:22:25+01:00",
   url: "/news/borssverige-25-november-2026",
   featured: true,
-  imageAlt: "BörsSverige 2026-11-25 – BioArctics kvartalsrapport och Leqembis kommersiella utveckling.",
+  imageUrl: "/news/generated/borssverige-2026-11-25.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-11-25.png",
+  imageAlt: "BörsSverige 2026-11-25 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "BioArctic Q3 2026: Leqembi-royalty lyfter resultatet",
   seoDescription:
