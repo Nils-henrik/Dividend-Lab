@@ -21,7 +21,9 @@ export const USA_I_FOKUS_25_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-25T14:03:03+01:00",
   url: "/news/usa-i-fokus-25-november-2026-ai-press-dell-pce",
   featured: true,
-  imageAlt: "USA i fokus 25 november 2026 – AI-aktier, Dell, Deere och amerikansk makrostatistik inför Wall Street.",
+  imageUrl: "/news/generated/usa-i-fokus-2026-11-25.png",
+  thumbnailImageUrl: "/news/generated/usa-i-fokus-2026-11-25.png",
+  imageAlt: "USA i fokus 2026-11-25 – DivLabs översikt över den amerikanska börsmarknaden inför Wall Streets öppning.",
   readingMinutes: 6,
   seoTitle: "Wall Street idag: AI-press, Dellrekord och PCE i fokus",
   seoDescription:
