@@ -18,7 +18,9 @@ export const BOLAGET_I_FOKUS_SECTRA_25_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-25T11:02:18+01:00",
   url: "/news/bolaget-i-fokus-sectra-25-november-2026",
   featured: true,
-  imageAlt: "Bolaget i fokus 2026-11-25 – DivLabs fördjupning om Sectras sexmånadersrapport.",
+  imageUrl: "/news/generated/bolaget-i-fokus-2026-11-25.png",
+  thumbnailImageUrl: "/news/generated/bolaget-i-fokus-2026-11-25.png",
+  imageAlt: "Bolaget i fokus 2026-11-25 – DivLabs artikel om dagens mest intressanta bolagshändelse.",
   readingMinutes: 5,
   seoTitle: "Sectra Q2 2026/27: molnintäkterna ökar 87 procent",
   seoDescription:
