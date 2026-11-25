@@ -19,7 +19,9 @@ export const NORDEN_I_CENTRUM_25_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-25T08:04:06+01:00",
   url: "/news/norden-i-centrum-25-november-2026",
   featured: true,
-  imageAlt: "Norden i centrum 25 november 2026 – Elekta rapporterar högre försäljning och lönsamhet.",
+  imageUrl: "/news/generated/norden-i-centrum-2026-11-25.png",
+  thumbnailImageUrl: "/news/generated/norden-i-centrum-2026-11-25.png",
+  imageAlt: "Norden i centrum 2026-11-25 – DivLabs morgonöversikt över nordiska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Elekta Q2 2026/27: marginalen stiger till 14 procent",
   seoDescription:
