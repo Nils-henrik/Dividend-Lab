@@ -19,7 +19,9 @@ export const NORDEN_I_CENTRUM_26_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-26T07:58:25+01:00",
   url: "/news/norden-i-centrum-26-november-2026",
   featured: true,
-  imageAlt: "Norden i centrum den 26 november 2026 med TCM Group och Thor Medical i fokus.",
+  imageUrl: "/news/generated/norden-i-centrum-2026-11-26.png",
+  thumbnailImageUrl: "/news/generated/norden-i-centrum-2026-11-26.png",
+  imageAlt: "Norden i centrum 2026-11-26 – DivLabs morgonöversikt över nordiska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "TCM sänker prognosen – Thor Medical pausar AlphaOne",
   seoDescription:
