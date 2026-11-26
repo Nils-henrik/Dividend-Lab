@@ -18,7 +18,9 @@ export const BOLAGET_I_FOKUS_K33_26_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-26T11:06:33+01:00",
   url: "/news/bolaget-i-fokus-26-november-2026",
   featured: true,
-  imageAlt: "Bolaget i fokus den 26 november 2026 med K33:s kryptohandel och Q3-rapport i centrum.",
+  imageUrl: "/news/generated/bolaget-i-fokus-2026-11-26.png",
+  thumbnailImageUrl: "/news/generated/bolaget-i-fokus-2026-11-26.png",
+  imageAlt: "Bolaget i fokus 2026-11-26 – DivLabs artikel om dagens mest intressanta bolagshändelse.",
   readingMinutes: 5,
   seoTitle: "K33 Q3 2026: intäkterna återhämtas men vinsten är en bitcoineffekt",
   seoDescription:
