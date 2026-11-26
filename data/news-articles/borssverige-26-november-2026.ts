@@ -17,7 +17,9 @@ export const BORSSVERIGE_26_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-26T08:26:11+01:00",
   url: "/news/borssverige-26-november-2026",
   featured: true,
-  imageAlt: "BörsSverige den 26 november 2026 med Minestos företrädesemission i fokus.",
+  imageUrl: "/news/generated/borssverige-2026-11-26.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-11-26.png",
+  imageAlt: "BörsSverige 2026-11-26 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 4,
   seoTitle: "Minesto emission 2026: villkor, teckningskurs och utspädning",
   seoDescription:
