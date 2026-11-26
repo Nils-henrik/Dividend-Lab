@@ -22,7 +22,9 @@ export const USA_I_FOKUS_26_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-26T13:58:48+01:00",
   url: "/news/usa-i-fokus-26-november-2026-pce-bnp-thanksgiving",
   featured: true,
-  imageAlt: "USA i fokus 26 november 2026 – PCE-inflation, amerikansk BNP och stängd Wall Street-handel på Thanksgiving.",
+  imageUrl: "/news/generated/usa-i-fokus-2026-11-26.png",
+  thumbnailImageUrl: "/news/generated/usa-i-fokus-2026-11-26.png",
+  imageAlt: "USA i fokus 2026-11-26 – DivLabs översikt över den amerikanska börsmarknaden inför Wall Streets öppning.",
   readingMinutes: 6,
   seoTitle: "USA-börsen: PCE 3,8 procent, BNP 4,3 och Thanksgiving",
   seoDescription:
