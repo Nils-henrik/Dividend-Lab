@@ -18,6 +18,9 @@ export const NORDEN_I_CENTRUM_27_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-27T08:00:31+01:00",
   url: "/news/norden-i-centrum-27-november-2026",
   featured: true,
+  imageUrl: "/news/generated/norden-i-centrum-2026-11-27.png",
+  thumbnailImageUrl: "/news/generated/norden-i-centrum-2026-11-27.png",
+  imageAlt: "Norden i centrum 2026-11-27 – DivLabs morgonöversikt över nordiska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "G5 föreslår inlösen – Parkens resultat faller",
   seoDescription:
