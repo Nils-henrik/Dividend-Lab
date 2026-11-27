@@ -18,6 +18,9 @@ export const BORSSVERIGE_27_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-27T08:18:54+01:00",
   url: "/news/borssverige-27-november-2026",
   featured: true,
+  imageUrl: "/news/generated/borssverige-2026-11-27.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-11-27.png",
+  imageAlt: "BörsSverige 2026-11-27 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Svensk BNP växer 0,5 procent – hushållen tvekar",
   seoDescription:
