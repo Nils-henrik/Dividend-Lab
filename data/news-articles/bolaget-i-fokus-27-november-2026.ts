@@ -17,7 +17,9 @@ export const BOLAGET_I_FOKUS_27_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-27T10:59:26+01:00",
   url: "/news/bolaget-i-fokus-27-november-2026",
   featured: true,
-  imageAlt: "Bolaget i fokus 2026-11-27 – DivLabs fördjupning om WeSports avtal att förvärva HSNG.",
+  imageUrl: "/news/generated/bolaget-i-fokus-2026-11-27.png",
+  thumbnailImageUrl: "/news/generated/bolaget-i-fokus-2026-11-27.png",
+  imageAlt: "Bolaget i fokus 2026-11-27 – DivLabs artikel om dagens mest intressanta bolagshändelse.",
   readingMinutes: 4,
   seoTitle: "WeSports köper HSNG för 600 Mkr – affären bakom Gymgrossisten",
   seoDescription:
