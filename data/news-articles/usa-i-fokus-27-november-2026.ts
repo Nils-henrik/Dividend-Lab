@@ -21,7 +21,9 @@ export const USA_I_FOKUS_27_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-27T13:58:18+01:00",
   url: "/news/usa-i-fokus-27-november-2026-nasdaq-olja-black-friday",
   featured: true,
-  imageAlt: "USA i fokus 27 november 2026 – terminsuppgång inför Wall Streets förkortade Black Friday-session.",
+  imageUrl: "/news/generated/usa-i-fokus-2026-11-27.png",
+  thumbnailImageUrl: "/news/generated/usa-i-fokus-2026-11-27.png",
+  imageAlt: "USA i fokus 2026-11-27 – DivLabs översikt över den amerikanska börsmarknaden inför Wall Streets öppning.",
   readingMinutes: 5,
   seoTitle: "USA-börsen idag: Nasdaq-terminer upp inför Black Friday",
   seoDescription:
