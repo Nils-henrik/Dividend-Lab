@@ -19,7 +19,9 @@ export const NORDEN_I_CENTRUM_28_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-28T07:57:49+01:00",
   url: "/news/norden-i-centrum-28-november-2026",
   featured: true,
-  imageAlt: "Norden i centrum 2026-11-28 – Veckan som gått på de nordiska marknaderna.",
+  imageUrl: "/news/generated/norden-i-centrum-2026-11-28.png",
+  thumbnailImageUrl: "/news/generated/norden-i-centrum-2026-11-28.png",
+  imageAlt: "Norden i centrum 2026-11-28 – DivLabs morgonöversikt över nordiska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Veckan som gått: WeSports, Aker Solutions och Kesko",
   seoDescription:
