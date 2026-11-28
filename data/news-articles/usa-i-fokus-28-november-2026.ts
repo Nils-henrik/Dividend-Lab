@@ -22,7 +22,9 @@ export const USA_I_FOKUS_28_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-28T13:57:20+01:00",
   url: "/news/usa-i-fokus-28-november-2026-veckan-nasdaq-ai-handelsunderskott",
   featured: true,
-  imageAlt: "USA i fokus 28 november 2026 – veckosummering av Wall Street, AI-aktier och amerikansk handel.",
+  imageUrl: "/news/generated/usa-i-fokus-2026-11-28.png",
+  thumbnailImageUrl: "/news/generated/usa-i-fokus-2026-11-28.png",
+  imageAlt: "USA i fokus 2026-11-28 – DivLabs översikt över den amerikanska börsmarknaden inför Wall Streets öppning.",
   readingMinutes: 6,
   seoTitle: "Wall Street veckan: Nasdaq upp 6,7 procent efter AI-rekyl",
   seoDescription:
