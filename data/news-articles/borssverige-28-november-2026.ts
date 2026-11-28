@@ -20,7 +20,9 @@ export const BORSSVERIGE_28_NOVEMBER_2026_ARTICLE: NewsArticle = {
   publishedAt: "2026-11-28T08:25:56+01:00",
   url: "/news/borssverige-28-november-2026",
   featured: true,
-  imageAlt: "BörsSverige 2026-11-28 – Veckan som gått på den svenska aktiemarknaden.",
+  imageUrl: "/news/generated/borssverige-2026-11-28.png",
+  thumbnailImageUrl: "/news/generated/borssverige-2026-11-28.png",
+  imageAlt: "BörsSverige 2026-11-28 – DivLabs morgonöversikt över svenska börsnyheter.",
   readingMinutes: 5,
   seoTitle: "Veckan som gått: Orexo, Minesto, Boliden och svensk BNP",
   seoDescription:
